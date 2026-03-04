@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 59 130 246;
+    --primary-dark: 37 99 235;
+    --secondary: 156 163 175;
+    --success: 34 197 94;
+    --warning: 234 179 8;
+    --error: 239 68 68;
+    --background: 249 250 251;
+    --surface: 255 255 255;
+    --text: 17 24 39;
+    --text-secondary: 107 114 128;
+    --border: 229 231 235;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-600 text-white hover:bg-gray-700;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md border border-gray-200;
+  }
+  
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
+  }
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+}

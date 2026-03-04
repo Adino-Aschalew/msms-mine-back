@@ -1,20 +1,15 @@
-// Test setup file
+// test-setup.js
 require('dotenv').config({ path: '../config.env' });
 
 // Set test environment
 process.env.NODE_ENV = 'test';
 
-// Mock console methods to reduce noise during tests
-if (process.env.NODE_ENV === 'test') {
-  global.console = {
-    ...console,
-    log: jest.fn(),
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  };
-}
+// Increase timeout for async DB operations
+jest.setTimeout(15000);
 
-// Global test timeout
-jest.setTimeout(10000);
+// Optional: silence console during tests
+if (process.env.NODE_ENV === 'test') {
+  // console.log = jest.fn();
+  // console.warn = jest.fn();
+  // console.error = jest.fn();
+}
