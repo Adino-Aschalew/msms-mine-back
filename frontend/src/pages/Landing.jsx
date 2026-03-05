@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 const Landing = () => {
   const navigate = useNavigate()
   const [openFAQ, setOpenFAQ] = useState(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const toggleFAQ = (index) => {
     setOpenFAQ(openFAQ === index ? null : index)
@@ -59,12 +60,73 @@ const Landing = () => {
             </button>
             <button 
               onClick={() => navigate('/register')}
-              className="bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+              className="hidden sm:block bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
             >
               Get Started
             </button>
+            
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+            >
+              <span className="material-symbols-outlined text-2xl text-dark">
+                {mobileMenuOpen ? 'close' : 'menu'}
+              </span>
+            </button>
           </div>
         </header>
+        
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="fixed top-24 left-0 right-0 z-40 px-6">
+            <div className="max-w-[1200px] mx-auto glass-header rounded-2xl p-6 bg-white/95 backdrop-blur-xl border border-white/40 shadow-lg">
+              <nav className="flex flex-col gap-4">
+                <a 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2" 
+                  href="#about"
+                >
+                  About
+                </a>
+                <a 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2" 
+                  href="#faq"
+                >
+                  FAQ
+                </a>
+                <a 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2" 
+                  href="#contact"
+                >
+                  Contact
+                </a>
+                <div className="flex flex-col gap-3 pt-4 border-t border-slate-100">
+                  <button 
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      navigate('/login')
+                    }}
+                    className="text-dark text-sm font-bold hover:text-primary px-4 py-2 text-left"
+                  >
+                    Login
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      navigate('/register')
+                    }}
+                    className="bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+                  >
+                    Get Started
+                  </button>
+                </div>
+              </nav>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -129,19 +191,44 @@ const Landing = () => {
             </div>
           </div>
 
-          {/* Stats Section */}
-          <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 bg-white border border-slate-100 p-8 lg:p-12 rounded-full shadow-sm">
-            <div className="flex flex-col items-center text-center gap-2 border-r-0 md:border-r border-slate-100">
-              <span className="text-4xl lg:text-5xl font-black text-dark">500k+</span>
-              <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Active Users</span>
+          {/* Stats Section - Responsive */}
+          <div className="mt-24">
+            {/* Mobile: Single Card */}
+            <div className="md:hidden bg-white border border-slate-100 p-8 rounded-2xl shadow-sm">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-3xl font-black text-dark">500k+</span>
+                    <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Active Users</span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-3xl font-black text-primary">$250M+</span>
+                    <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Loans Disbursed</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="flex flex-col gap-1 items-center">
+                    <span className="text-3xl font-black text-secondary">98%</span>
+                    <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Scalability Rate</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col items-center text-center gap-2 border-r-0 md:border-r border-slate-100">
-              <span className="text-4xl lg:text-5xl font-black text-primary">$250M+</span>
-              <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Loans Disbursed</span>
-            </div>
-            <div className="flex flex-col items-center text-center gap-2">
-              <span className="text-4xl lg:text-5xl font-black text-secondary">98%</span>
-              <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Scalability Rate</span>
+            
+            {/* Desktop: Three Column Layout */}
+            <div className="hidden md:grid md:grid-cols-3 gap-8 bg-white border border-slate-100 p-8 lg:p-12 rounded-full shadow-sm">
+              <div className="flex flex-col items-center text-center gap-2 border-r border-slate-100">
+                <span className="text-4xl lg:text-5xl font-black text-dark">500k+</span>
+                <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Active Users</span>
+              </div>
+              <div className="flex flex-col items-center text-center gap-2 border-r border-slate-100">
+                <span className="text-4xl lg:text-5xl font-black text-primary">$250M+</span>
+                <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Loans Disbursed</span>
+              </div>
+              <div className="flex flex-col items-center text-center gap-2">
+                <span className="text-4xl lg:text-5xl font-black text-secondary">98%</span>
+                <span className="text-slate-custom font-semibold uppercase tracking-widest text-xs">Scalability Rate</span>
+              </div>
             </div>
           </div>
         </section>

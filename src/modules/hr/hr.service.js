@@ -320,6 +320,78 @@ class HrService {
     }
   }
 
+  static async validateEmployee(employee_id) {
+    try {
+      // Mock HR data for demonstration - replace with actual HR database connection
+      const mockHREmployees = [
+        {
+          employee_id: 'EMP001',
+          first_name: 'John',
+          last_name: 'Doe',
+          department: 'IT',
+          job_grade: 'SENIOR',
+          employment_status: 'ACTIVE',
+          hire_date: '2022-01-15',
+          phone: '+251911234567',
+          email: 'john.doe@company.com'
+        },
+        {
+          employee_id: 'EMP002',
+          first_name: 'Jane',
+          last_name: 'Smith',
+          department: 'Finance',
+          job_grade: 'MID',
+          employment_status: 'ACTIVE',
+          hire_date: '2021-06-01',
+          phone: '+251912345678',
+          email: 'jane.smith@company.com'
+        },
+        {
+          employee_id: 'EMP003',
+          first_name: 'Michael',
+          last_name: 'Johnson',
+          department: 'HR',
+          job_grade: 'MANAGER',
+          employment_status: 'ACTIVE',
+          hire_date: '2020-03-10',
+          phone: '+251913345679',
+          email: 'michael.johnson@company.com'
+        },
+        {
+          employee_id: 'EMP004',
+          first_name: 'Sarah',
+          last_name: 'Williams',
+          department: 'Operations',
+          job_grade: 'SUPERVISOR',
+          employment_status: 'ACTIVE',
+          hire_date: '2019-11-20',
+          phone: '+251914345680',
+          email: 'sarah.williams@company.com'
+        },
+        {
+          employee_id: 'EMP005',
+          first_name: 'David',
+          last_name: 'Brown',
+          department: 'Marketing',
+          job_grade: 'SPECIALIST',
+          employment_status: 'ACTIVE',
+          hire_date: '2021-09-15',
+          phone: '+251915345681',
+          email: 'david.brown@company.com'
+        }
+      ];
+      
+      const employee = mockHREmployees.find(emp => emp.employee_id === employee_id);
+      if (!employee) {
+        throw new Error('Employee not found in HR database or not active');
+      }
+      
+      return employee;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getEmployeeById(userId) {
     try {
       const [employee] = await query(`

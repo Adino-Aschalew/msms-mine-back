@@ -12,15 +12,19 @@ CREATE TABLE users (
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('EMPLOYEE', 'LOAN_COMMITTEE', 'FINANCE_ADMIN', 'SUPER_ADMIN') NOT NULL,
+    role ENUM('EMPLOYEE', 'LOAN_COMMITTEE', 'FINANCE_ADMIN', 'SUPER_ADMIN', 'HR', 'ADMIN') NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     email_verified BOOLEAN DEFAULT FALSE,
+    reset_token VARCHAR(255) NULL,
+    reset_token_expiry DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL,
     INDEX idx_employee_id (employee_id),
     INDEX idx_role (role),
-    INDEX idx_is_active (is_active)
+    INDEX idx_is_active (is_active),
+    INDEX idx_reset_token (reset_token),
+    INDEX idx_reset_token_expiry (reset_token_expiry)
 );
 
 -- Employee Profiles (Sync with HR Database)
@@ -364,6 +368,14 @@ INSERT INTO system_configuration (config_key, config_value, config_type, descrip
 INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified) VALUES
 ('ADMIN001', 'superadmin', 'admin@microfinance.com', '$2b$10$rQZ8kHWKtGY5uKx4vJ2zKOqGYvKqY8qGYvKqY8qGYvKqY8qGYvKqY8', 'SUPER_ADMIN', TRUE, TRUE);
 
+-- Create Default HR User (Password: Hr123456)
+INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified) VALUES
+('HR001', 'hr001', 'hr@company.com', '$2b$10$8K5O8kHWKtGY5uKx4vJ2zKOqGYvKqY8qGYvKqY8qGYvKqY8qGYvKqY8', 'HR', TRUE, TRUE);
+
 -- Insert Employee Profile for Super Admin
 INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, hr_verified, hr_verification_date) VALUES
 (1, 'ADMIN001', 'System', 'Administrator', 'IT', 'ADMIN', 'ACTIVE', '2024-01-01', TRUE, NOW());
+
+-- Insert Employee Profile for HR User
+INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, hr_verified, hr_verification_date) VALUES
+(2, 'HR001', 'John', 'Smith', 'HR', 'MANAGER', 'ACTIVE', '2024-01-01', TRUE, NOW());

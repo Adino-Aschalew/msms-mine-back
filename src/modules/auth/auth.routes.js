@@ -7,7 +7,9 @@ const {
   validateRegister,
   validateChangePassword,
   validateUpdateProfile,
-  validateRefreshToken
+  validateRefreshToken,
+  validateForgotPassword,
+  validateResetPassword
 } = require('./auth.validation');
 
 const router = express.Router();
@@ -16,6 +18,8 @@ router.post('/login', validateLogin, auditMiddleware('LOGIN_ATTEMPT'), AuthContr
 router.post('/register', validateRegister, auditMiddleware('USER_REGISTER'), AuthController.register);
 router.post('/refresh-token', validateRefreshToken, AuthController.refreshToken);
 router.post('/change-password', authMiddleware, validateChangePassword, auditMiddleware('PASSWORD_CHANGE'), AuthController.changePassword);
+router.post('/forgot-password', validateForgotPassword, auditMiddleware('PASSWORD_RESET_REQUEST'), AuthController.forgotPassword);
+router.post('/reset-password', validateResetPassword, auditMiddleware('PASSWORD_RESET'), AuthController.resetPassword);
 router.get('/profile', authMiddleware, AuthController.getProfile);
 router.put('/profile', authMiddleware, validateUpdateProfile, auditMiddleware('PROFILE_UPDATE', 'employee_profiles'), AuthController.updateProfile);
 

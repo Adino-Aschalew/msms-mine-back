@@ -13,10 +13,10 @@ import {
 } from 'lucide-react'
 
 const Layout = () => {
-  const { user, logout } = useAuth()
+  const { user, logout, isHR } = useAuth()
   const location = useLocation()
 
-  const menuItems = [
+  const regularMenuItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/loans', icon: CreditCard, label: 'Loans' },
     { path: '/savings', icon: TrendingUp, label: 'Savings' },
@@ -24,6 +24,18 @@ const Layout = () => {
     { path: '/reports', icon: BarChart3, label: 'Reports' },
     { path: '/ai', icon: Settings, label: 'AI & Analytics' },
   ]
+
+  const hrMenuItems = [
+    { path: '/hr', icon: Home, label: 'HR Dashboard' },
+    { path: '/hr/employees', icon: Users, label: 'Employee Management' },
+    { path: '/hr/verification', icon: Settings, label: 'Employee Verification' },
+    { path: '/hr/bulk-operations', icon: Users, label: 'Bulk Operations' },
+    { path: '/hr/departments', icon: BarChart3, label: 'Departments' },
+    { path: '/hr/job-grades', icon: FileText, label: 'Job Grades' },
+    { path: '/hr/stats', icon: TrendingUp, label: 'Statistics' },
+  ]
+
+  const menuItems = isHR() ? hrMenuItems : regularMenuItems
 
   const isActive = (path) => location.pathname === path
 

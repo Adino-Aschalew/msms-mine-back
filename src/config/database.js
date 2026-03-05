@@ -6,10 +6,15 @@ const dbConfig = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'microfinance_system',
-  port: process.env.DB_PORT || 3307,
+  port: process.env.DB_PORT || 3306, // XAMPP typically uses 3306
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  // Additional options for XAMPP compatibility
+  acquireTimeout: 60000,
+  timeout: 60000,
+  reconnect: true,
+  charset: 'utf8mb4'
 };
 
 const pool = mysql.createPool(dbConfig);

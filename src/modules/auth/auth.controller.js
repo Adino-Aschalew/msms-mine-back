@@ -41,7 +41,7 @@ class AuthController {
       
       res.status(201).json({
         success: true,
-        message: 'Registration successful. Please wait for HR verification.',
+        message: 'Registration successful. Employee verified and profile created.',
         data: result
       });
     } catch (error) {
@@ -103,6 +103,50 @@ class AuthController {
       res.status(500).json({
         success: false,
         message: 'Internal server error'
+      });
+    }
+  }
+  
+  static async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const result = await AuthService.forgotPassword(email, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to process password reset request'
+      });
+    }
+  }
+  
+  static async resetPassword(req, res) {
+    try {
+      const { token, newPassword } = req.body;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const result = await AuthService.resetPassword(token, newPassword, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to reset password'
       });
     }
   }

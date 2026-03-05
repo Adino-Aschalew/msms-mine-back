@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import api from '../services/api'
 
 const Register = () => {
   const [formData, setFormData] = useState({
     employee_id: '',
-    username: '',
     email: '',
     password: '',
     confirm_password: ''
@@ -15,6 +15,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [employeeInfo, setEmployeeInfo] = useState(null)
   
   const navigate = useNavigate()
 
@@ -39,26 +40,20 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:9999/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
-
-      const data = await response.json()
+      const response = await api.post('/auth/register', formData)
+      const data = response.data
 
       if (data.success) {
-        setSuccess('Registration successful! Please wait for HR verification.')
+        setEmployeeInfo(data.data.employee_info)
+        setSuccess('Registration successful! Employee verified and profile created.')
         setTimeout(() => {
           navigate('/login')
-        }, 2000)
+        }, 3000)
       } else {
         setError(data.message || 'Registration failed')
       }
     } catch (error) {
-      setError('Network error. Please try again.')
+      setError(error.response?.data?.message || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -169,7 +164,7 @@ const Register = () => {
             <div className="w-full max-w-[420px]">
               <div className="mb-12 text-center lg:text-left">
                 <h2 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">Create Account</h2>
-                <p className="mt-4 text-slate-500 dark:text-slate-400 text-lg">Join our microfinance platform today.</p>
+                <p className="mt-4 text-slate-500 dark:text-slate-400 text-lg">Register with your employee ID and create account</p>
               </div>
 
               {error && (
@@ -178,7 +173,24 @@ const Register = () => {
                 </div>
               )}
 
-              {success && (
+              {success && employeeInfo && (
+                <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-2xl">
+                  <p className="text-green-600 text-sm font-medium mb-4">{success}</p>
+                  <div className="bg-white p-4 rounded-xl border border-green-100">
+                    <h4 className="font-bold text-green-800 mb-3">Employee Information Verified:</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div><strong>Employee ID:</strong> {employeeInfo.employee_id}</div>
+                      <div><strong>Name:</strong> {employeeInfo.first_name} {employeeInfo.last_name}</div>
+                      <div><strong>Department:</strong> {employeeInfo.department}</div>
+                      <div><strong>Job Grade:</strong> {employeeInfo.job_grade}</div>
+                      <div><strong>Email:</strong> {employeeInfo.email}</div>
+                      <div><strong>Phone:</strong> {employeeInfo.phone}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {success && !employeeInfo && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
                   <p className="text-green-600 text-sm font-medium">{success}</p>
                 </div>
@@ -191,29 +203,12 @@ const Register = () => {
                     Employee ID
                   </label>
                   <input 
-                    className="block w-full rounded-full border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 border-primary"
+                    className="block w-full rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 focus:border-primary focus:ring-primary/20"
                     id="employee_id"
                     name="employee_id"
                     type="text"
                     placeholder="EMP001"
                     value={formData.employee_id}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                {/* Username Field */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 ml-1" htmlFor="username">
-                    Username
-                  </label>
-                  <input 
-                    className="block w-full rounded-full border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 border-primary"
-                    id="username"
-                    name="username"
-                    type="text"
-                    placeholder="Choose a username"
-                    value={formData.username}
                     onChange={handleChange}
                     required
                   />
@@ -225,11 +220,11 @@ const Register = () => {
                     Email Address
                   </label>
                   <input 
-                    className="block w-full rounded-full border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 border-primary"
+                    className="block w-full rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 focus:border-primary focus:ring-primary/20"
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="name@company.com"
+                    placeholder="name@adress.com"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -243,7 +238,7 @@ const Register = () => {
                   </label>
                   <div className="relative">
                     <input 
-                      className="block w-full rounded-full border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 border-primary"
+                      className="block w-full rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 focus:border-primary focus:ring-primary/20"
                       id="password"
                       name="password"
                       type={showPassword ? 'text' : 'password'}
@@ -272,7 +267,7 @@ const Register = () => {
                   </label>
                   <div className="relative">
                     <input 
-                      className="block w-full rounded-full border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 border-primary"
+                      className="block w-full rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 focus:border-primary focus:ring-primary/20"
                       id="confirm_password"
                       name="confirm_password"
                       type={showConfirmPassword ? 'text' : 'password'}

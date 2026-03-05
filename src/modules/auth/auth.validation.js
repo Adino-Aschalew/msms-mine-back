@@ -26,13 +26,13 @@ const validateLogin = (req, res, next) => {
 };
 
 const validateRegister = (req, res, next) => {
-  const { employee_id, username, email, password, confirm_password } = req.body;
+  const { employee_id, email, password, confirm_password } = req.body;
   
   // Check required fields
-  if (!employee_id || !username || !email || !password || !confirm_password) {
+  if (!employee_id || !email || !password || !confirm_password) {
     return res.status(400).json({
       success: false,
-      message: 'All fields are required'
+      message: 'Employee ID, email, password, and confirm password are required'
     });
   }
   
@@ -41,21 +41,6 @@ const validateRegister = (req, res, next) => {
     return res.status(400).json({
       success: false,
       message: 'Employee ID must be a non-empty string'
-    });
-  }
-  
-  // Validate username
-  if (typeof username !== 'string' || username.trim().length < 3) {
-    return res.status(400).json({
-      success: false,
-      message: 'Username must be at least 3 characters long'
-    });
-  }
-  
-  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Username can only contain letters, numbers, and underscores'
     });
   }
   
@@ -183,10 +168,64 @@ const validateRefreshToken = (req, res, next) => {
   next();
 };
 
+const validateForgotPassword = (req, res, next) => {
+  const { email } = req.body;
+  
+  // Check required fields
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email address is required'
+    });
+  }
+  
+  // Validate email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide a valid email address'
+    });
+  }
+  
+  next();
+};
+
+const validateResetPassword = (req, res, next) => {
+  const { token, newPassword } = req.body;
+  
+  // Check required fields
+  if (!token || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Reset token and new password are required'
+    });
+  }
+  
+  // Validate password
+  if (newPassword.length < 8) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must be at least 8 characters long'
+    });
+  }
+  
+  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    });
+  }
+  
+  next();
+};
+
 module.exports = {
   validateLogin,
   validateRegister,
   validateChangePassword,
   validateUpdateProfile,
-  validateRefreshToken
+  validateRefreshToken,
+  validateForgotPassword,
+  validateResetPassword
 };

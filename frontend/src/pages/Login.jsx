@@ -1,18 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import api from '../services/api'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
 
 const Login = () => {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, getDashboardRoute } = useAuth()
+  const formRef = useRef(null)
   const [formData, setFormData] = useState({
-    email: '',
+    employee_id: '',
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -22,15 +26,61 @@ const Login = () => {
     }))
   }
 
+  const handleForgotPassword = async (email) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email })
+      return { success: true, data: response.data }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Failed to send reset instructions' 
+      }
+    }
+  }
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     setLoading(true)
     setError('')
+    
+    // Store current form values to preserve them
+    const currentFormData = { ...formData }
+    console.log('Login attempt with:', currentFormData)
 
     try {
-      await login(formData.email, formData.password)
-      navigate('/dashboard')
+      const result = await login(formData.employee_id, formData.password)
+      if (result.success) {
+        console.log('Login successful, clearing form')
+        // Clear form only on successful login
+        setFormData({
+          employee_id: '',
+          password: ''
+        })
+        
+        // Get user data from the login result and determine route immediately
+        const user = result.user
+        const hrRoles = ['HR', 'ADMIN', 'SUPER_ADMIN']
+        const dashboardRoute = hrRoles.includes(user?.role) ? '/hr' : '/dashboard'
+        
+        console.log('Login successful - navigating to:', dashboardRoute)
+        
+        // Navigate immediately
+        navigate(dashboardRoute)
+      } else {
+        console.log('Login failed, restoring form values:', currentFormData)
+        // Restore form values on failed login
+        setFormData(currentFormData)
+        setError(result.error || 'Invalid credentials. Please check your Employee ID and password.')
+      }
     } catch (err) {
+      console.error('Login error details:', err)
+      console.log('Login error, restoring form values:', currentFormData)
+      // Restore form values on error
+      setFormData(currentFormData)
       setError(err.message || 'Login failed. Please try again.')
     } finally {
       setLoading(false)
@@ -151,37 +201,44 @@ const Login = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Email Field */}
+              <form ref={formRef} onSubmit={(e) => { e.preventDefault(); }} className="space-y-6">
+                {/* Employee ID Field */}
                 <div className="space-y-3">
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 ml-1" htmlFor="email">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 ml-1" htmlFor="employee_id">
                     Employee ID
                   </label>
                   <input 
-                    className="block w-full rounded-full border-black dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 border-primary"
-                    id="text"
-                    name="text"
+                    className="block w-full rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 focus:border-primary focus:ring-primary/20"
+                    id="employee_id"
+                    name="employee_id"
                     type="text"
                     placeholder="EMP001"
-                    value={formData.text}
+                    value={formData.employee_id}
                     onChange={handleChange}
                     required
+                    autoComplete="username"
                   />
                 </div>
 
                 {/* Password Field */}
                 <div className="space-y-3">
-                  <div className="flex justify-between items-ycenter px-1">
+                  <div className="flex justify-between items-center px-1">
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-200" htmlFor="password">
                       Password
                     </label>
-                    <a className="text-xs font-bold text-primary hover:text-primary-hover transition-colors" href="#">
-                      Forgot password?
-                    </a>
+                    <a 
+                    className="text-xs font-bold text-primary hover:text-primary-hover transition-colors cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setShowForgotPassword(true)
+                    }}
+                  >
+                    Forgot password?
+                  </a>
                   </div>
                   <div className="relative">
                     <input 
-                      className="block w-full rounded-full border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 border-primary"
+                      className="block w-full rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-5 py-4 text-base transition-all placeholder:text-slate-400 focus:ring-0 focus:border-primary focus:ring-primary/20"
                       id="password"
                       name="password"
                       type={showPassword ? 'text' : 'password'}
@@ -189,6 +246,7 @@ const Login = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
+                      autoComplete="current-password"
                     />
                     <button 
                       type="button"
@@ -206,37 +264,36 @@ const Login = () => {
                 <div className="flex items-center">
                   <label className="flex items-center gap-3 cursor-pointer group">
                     <input 
-                      className="h-4 w-4 rounded-full border-slate-300 dark:border-slate-700 text-primary focus:ring-0 transition-all cursor-pointer"
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary focus:ring-2"
                     />
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">
-                      Keep me logged in for 30 days
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">
+                      Remember me
                     </span>
                   </label>
                 </div>
 
                 {/* Submit Button */}
-                <div className="pt-2">
-                  <button 
-                    type="submit"
-                    disabled={loading}
-                    className="w-full h-16 rounded-full bg-primary text-white text-lg font-bold shadow-xl shadow-primary/20 hover:bg-primary-hover hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="material-symbols-outlined animate-spin">refresh</span>
-                        <span>Signing in...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Sign in to Account</span>
-                        <span className="material-symbols-outlined">arrow_forward</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                <button 
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full bg-primary text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin">refresh</span>
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined">login</span>
+                      Sign In
+                    </>
+                  )}
+                </button>
               </form>
 
               {/* Create Account Link */}
@@ -266,6 +323,13 @@ const Login = () => {
           </div>
         </footer>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        onSubmit={handleForgotPassword}
+      />
     </div>
   )
 }

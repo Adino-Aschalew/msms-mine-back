@@ -60,18 +60,27 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-  const login = async (credentials) => {
+  const login = async (employee_id, password) => {
     dispatch({ type: 'SET_LOADING', payload: true })
     try {
-      const response = await api.post('/auth/login', credentials)
-      const { token, user } = response.data
+      const response = await api.post('/auth/login', { employee_id, password })
+      const { data } = response
       
-      localStorage.setItem('token', token)
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } })
-      return { success: true }
+      if (data.success) {
+        const { token, user } = data.data
+        console.log('Login success - user data:', user)
+        localStorage.setItem('token', token)
+        dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } })
+        console.log('Login success - state dispatched')
+        return { success: true, user }
+      } else {
+        dispatch({ type: 'LOGIN_FAILURE', payload: data.message || 'Login failed' })
+        return { success: false, error: data.message || 'Login failed' }
+      }
     } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: error.response?.data?.message || 'Login failed' })
-      return { success: false, error: error.response?.data?.message || 'Login failed' }
+      const errorMessage = error.response?.data?.message || 'Login failed'
+      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage })
+      return { success: false, error: errorMessage }
     }
   }
 
@@ -80,10 +89,33 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGOUT' })
   }
 
+  const getDashboardRoute = () => {
+    const { user } = state
+    if (!user) return '/login'
+    
+    // HR roles get HR dashboard
+    const hrRoles = ['HR', 'ADMIN', 'SUPER_ADMIN']
+    if (hrRoles.includes(user.role)) {
+      return '/hr'
+    }
+    
+    // Other roles get regular dashboard
+    return '/dashboard'
+  }
+
+  const isHR = () => {
+    const { user } = state
+    if (!user) return false
+    const hrRoles = ['HR', 'ADMIN', 'SUPER_ADMIN']
+    return hrRoles.includes(user.role)
+  }
+
   const value = {
     ...state,
     login,
-    logout
+    logout,
+    getDashboardRoute,
+    isHR
   }
 
   return (
