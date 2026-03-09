@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import hrApi from '../../services/hrApi'
+import HRHeader from '../../components/common/HRHeader'
 
 const EmployeeVerification = () => {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user } = useAuth()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('pending')
@@ -21,7 +21,8 @@ const EmployeeVerification = () => {
 
   const fetchEmployees = async () => {
     try {
-      const employeesData = await hrApi.getEmployees()
+      const response = await hrApi.getEmployees()
+      const employeesData = response.data || []
       const formattedEmployees = employeesData.map(emp => ({
         id: emp.id,
         employeeId: emp.employee_id,
@@ -103,28 +104,27 @@ const EmployeeVerification = () => {
     }
   }
 
-  const getStatusColor = (status) => {
-    const colors = {
-      'Active': 'bg-green-100 text-green-800',
-      'On Leave': 'bg-yellow-100 text-yellow-800',
-      'Pending': 'bg-orange-100 text-orange-800',
-      'Inactive': 'bg-red-100 text-red-800'
-    }
-    return colors[status] || 'bg-gray-100 text-gray-800'
-  }
-
   const getVerificationColor = (verified) => {
     return verified 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-orange-100 text-orange-800'
+      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30' 
+      : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-amber-500/30'
+  }
+
+  const stats = {
+    total: employees.length,
+    verified: employees.filter(emp => emp.verified).length,
+    pending: employees.filter(emp => !emp.verified).length,
+    rate: employees.length > 0 
+      ? Math.round((employees.filter(emp => emp.verified).length / employees.length) * 100)
+      : 0
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading employees...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading verification data...</p>
         </div>
       </div>
     )
@@ -132,462 +132,349 @@ const EmployeeVerification = () => {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-gray-50">
-      {/* Fixed Header */}
-      <div className="fixed top-6 left-0 right-0 z-50 px-6">
-        <header className="max-w-[1200px] mx-auto glass-header rounded-full px-8 py-4 flex items-center justify-between bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary p-1.5 rounded-lg">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-              </svg>
+      {/* Consistent HR Header */}
+      <HRHeader 
+        currentPage="verification"
+        theme={{
+          icon: 'groups',
+          iconBg: 'from-blue-500 to-blue-700',
+          subtitle: 'Human Resources Management',
+          activeButton: 'from-blue-500 to-blue-700',
+          shadow: 'shadow-blue-500/30'
+        }}
+      />
+
+      <main className="w-full px-4 sm:px-6 lg:px-8 pt-28 pb-8 max-w-[1600px] mx-auto">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 bg-gradient-to-br from-slate-500 to-gray-600 rounded-2xl flex items-center justify-center shadow-lg shadow-slate-500/30 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-white text-xl">people</span>
+              </div>
+              <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1 rounded-full">Total</span>
             </div>
-            <h2 className="text-dark text-xl font-extrabold tracking-tight">MicroFinance HR</h2>
+            <p className="text-gray-500 text-sm mt-4">Total Employees</p>
+            <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
           </div>
-          <nav className="hidden md:flex items-center gap-8">
-            <button 
-              onClick={() => navigate('/hr/dashboard')}
-              className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors"
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={() => navigate('/hr/employees')}
-              className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors"
-            >
-              Employees
-            </button>
-            <button 
-              onClick={() => navigate('/hr/verification')}
-              className="text-primary text-sm font-semibold hover:text-primary/80 transition-colors"
-            >
-              Verification
-            </button>
-            <button 
-              onClick={() => navigate('/hr/bulk-operations')}
-              className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors"
-            >
-              Bulk Ops
-            </button>
-          </nav>
-          <div className="flex items-center gap-4">
+
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-white text-xl">check_circle</span>
+              </div>
+              <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">Verified</span>
+            </div>
+            <p className="text-gray-500 text-sm mt-4">Verified</p>
+            <p className="text-3xl font-bold text-gray-800">{stats.verified}</p>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-white text-xl">pending</span>
+              </div>
+              <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full">Pending</span>
+            </div>
+            <p className="text-gray-500 text-sm mt-4">Pending Verification</p>
+            <p className="text-3xl font-bold text-gray-800">{stats.pending}</p>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-white text-xl">percent</span>
+              </div>
+              <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded-full">Rate</span>
+            </div>
+            <p className="text-gray-500 text-sm mt-4">Verification Rate</p>
+            <p className="text-3xl font-bold text-gray-800">{stats.rate}%</p>
+            <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: `${stats.rate}%` }}></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters Card */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/40 mb-6 overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-emerald-600 text-xl">filter_list</span>
+                <h3 className="text-lg font-bold text-gray-800">Filter Employees</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setFilterStatus('all')
+                  setFilterDepartment('all')
+                }}
+                className="text-emerald-600 hover:text-emerald-800 text-sm font-semibold flex items-center gap-1 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">refresh</span>
+                Reset
+              </button>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="relative group">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                  <span className="material-symbols-outlined text-sm align-middle mr-1">search</span>
+                  Search
+                </label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors">search</span>
+                  <input
+                    type="text"
+                    placeholder="Name, ID, or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 text-sm bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  />
+                </div>
+              </div>
+              
+              {/* Status */}
+              <div className="relative group">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                  <span className="material-symbols-outlined text-sm align-middle mr-1">toggle_on</span>
+                  Status
+                </label>
+                <div className="relative">
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="w-full px-4 py-3 text-sm bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 appearance-none cursor-pointer transition-all"
+                  >
+                    {statuses.map(status => (
+                      <option key={status} value={status}>
+                        {status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                </div>
+              </div>
+              
+              {/* Department */}
+              <div className="relative group">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                  <span className="material-symbols-outlined text-sm align-middle mr-1">business</span>
+                  Department
+                </label>
+                <div className="relative">
+                  <select
+                    value={filterDepartment}
+                    onChange={(e) => setFilterDepartment(e.target.value)}
+                    className="w-full px-4 py-3 text-sm bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 appearance-none cursor-pointer transition-all"
+                  >
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>
+                        {dept === 'all' ? 'All Departments' : dept}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Selection Actions */}
+            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+              <button
+                onClick={handleSelectAll}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-all"
+              >
+                {selectedEmployees.length === filteredEmployees.length ? 'Deselect All' : 'Select All'}
+              </button>
+              <button
+                onClick={() => setSelectedEmployees([])}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-all"
+              >
+                Clear Selection
+              </button>
+              <span className="ml-auto text-sm font-semibold text-gray-600 flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600">check_box</span>
+                {selectedEmployees.length} selected
+              </span>
+            </div>
+            
+            {/* Active Filters */}
+            {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="flex flex-wrap gap-2">
+                  {searchTerm && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
+                      <span className="material-symbols-outlined text-sm">search</span>
+                      <span>{searchTerm}</span>
+                      <button onClick={() => setSearchTerm('')} className="hover:bg-emerald-200 rounded-full p-0.5">
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    </div>
+                  )}
+                  {filterStatus !== 'all' && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold">
+                      <span className="material-symbols-outlined text-sm">toggle_on</span>
+                      <span>{filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}</span>
+                      <button onClick={() => setFilterStatus('all')} className="hover:bg-teal-200 rounded-full p-0.5">
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    </div>
+                  )}
+                  {filterDepartment !== 'all' && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-100 text-cyan-700 rounded-full text-sm font-semibold">
+                      <span className="material-symbols-outlined text-sm">business</span>
+                      <span>{filterDepartment}</span>
+                      <button onClick={() => setFilterDepartment('all')} className="hover:bg-cyan-200 rounded-full p-0.5">
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Verification Table Card */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/40 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="material-symbols-outlined text-white">fact_check</span>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">Employee Verification</h2>
+                <p className="text-gray-500 text-sm">{filteredEmployees.length} employees</p>
+              </div>
+            </div>
             <button
               onClick={() => setShowBulkVerify(true)}
               disabled={selectedEmployees.length === 0}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
             >
-              <span className="material-symbols-outlined mr-2">verified</span>
-              Verify Selected ({selectedEmployees.length})
+              <span className="material-symbols-outlined">verified</span>
+              Bulk Verify ({selectedEmployees.length})
             </button>
-            <button 
-              onClick={() => {
-                logout()
-                navigate('/login')
-              }}
-              className="hidden sm:block text-dark text-sm font-bold hover:text-primary px-4"
-            >
-              Logout
-            </button>
-            
-            {/* Mobile Menu Button */}
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
-            >
-              <span className="material-symbols-outlined text-2xl text-dark">
-                {mobileMenuOpen ? 'close' : 'menu'}
-              </span>
-            </button>
-          </div>
-        </header>
-        
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="fixed top-24 left-0 right-0 z-40 px-6">
-            <div className="max-w-[1200px] mx-auto glass-header rounded-2xl p-6 bg-white/95 backdrop-blur-xl border border-white/40 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-dark/60 text-sm">
-                  Welcome, {user?.first_name || 'HR Admin'}
-                </span>
-              </div>
-              <nav className="flex flex-col gap-4">
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/dashboard')
-                  }}
-                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2 text-left"
-                >
-                  Dashboard
-                </button>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/employees')
-                  }}
-                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2 text-left"
-                >
-                  Employees
-                </button>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/verification')
-                  }}
-                  className="text-primary text-sm font-semibold hover:text-primary/80 transition-colors py-2 text-left"
-                >
-                  Verification
-                </button>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/bulk-operations')
-                  }}
-                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2 text-left"
-                >
-                  Bulk Operations
-                </button>
-                <button 
-                  onClick={() => {
-                    logout()
-                    navigate('/login')
-                  }}
-                  className="text-dark text-sm font-bold hover:text-primary transition-colors py-2 text-left pt-4 border-t"
-                >
-                  Logout
-                </button>
-              </nav>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <main className="w-full px-4 sm:px-6 lg:px-8 pt-32 pb-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <span className="material-symbols-outlined text-blue-600">people</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Total Employees</p>
-                <p className="text-2xl font-bold text-gray-900">{employees.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-full">
-                <span className="material-symbols-outlined text-green-600">verified</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Verified</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {employees.filter(emp => emp.verified).length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-full">
-                <span className="material-symbols-outlined text-orange-600">pending</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Pending Verification</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {employees.filter(emp => !emp.verified).length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 rounded-full">
-                <span className="material-symbols-outlined text-purple-600">percent</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Verification Rate</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {employees.length > 0 
-                    ? Math.round((employees.filter(emp => emp.verified).length / employees.length) * 100)
-                    : 0}%
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-            <button
-              onClick={() => {
-                setSearchTerm('')
-                setFilterStatus('all')
-                setFilterDepartment('all')
-              }}
-              className="text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-lg">refresh</span>
-              Clear Filters
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Search */}
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-                  search
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search by name, ID, or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                />
-              </div>
-            </div>
-            
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-                  toggle_on
-                </span>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full pl-10 pr-8 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none bg-white"
-                >
-                  {statuses.map(status => (
-                    <option key={status} value={status}>
-                      {status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
-                    </option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none">
-                  expand_more
-                </span>
-              </div>
-            </div>
-            
-            {/* Department */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-                  business
-                </span>
-                <select
-                  value={filterDepartment}
-                  onChange={(e) => setFilterDepartment(e.target.value)}
-                  className="w-full pl-10 pr-8 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none bg-white"
-                >
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>
-                      {dept === 'all' ? 'All Departments' : dept}
-                    </option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none">
-                  expand_more
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-4 mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={handleSelectAll}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors"
-            >
-              {selectedEmployees.length === filteredEmployees.length ? 'Deselect All' : 'Select All'}
-            </button>
-            <button
-              onClick={() => setSelectedEmployees([])}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors"
-            >
-              Clear Selection
-            </button>
-          </div>
-          
-          {/* Active Filters Display */}
-          {(searchTerm || filterStatus !== 'all' || filterDepartment !== 'all') && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex flex-wrap gap-2">
-                {searchTerm && (
-                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                    <span>Search: {searchTerm}</span>
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="ml-1 hover:text-primary/80"
-                    >
-                      <span className="material-symbols-outlined text-sm">close</span>
-                    </button>
-                  </div>
-                )}
-                {filterStatus !== 'all' && (
-                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                    <span>Status: {filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}</span>
-                    <button
-                      onClick={() => setFilterStatus('all')}
-                      className="ml-1 hover:text-primary/80"
-                    >
-                      <span className="material-symbols-outlined text-sm">close</span>
-                    </button>
-                  </div>
-                )}
-                {filterDepartment !== 'all' && (
-                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                    <span>Department: {filterDepartment}</span>
-                    <button
-                      onClick={() => setFilterDepartment('all')}
-                      className="ml-1 hover:text-primary/80"
-                    >
-                      <span className="material-symbols-outlined text-sm">close</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Employee Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Employee Verification ({filteredEmployees.length})
-              </h2>
-              <div className="text-sm text-gray-500">
-                {filteredEmployees.length} of {employees.length} total
-              </div>
-            </div>
           </div>
           
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50/50">
                 <tr>
                   <th className="px-6 py-4 text-left">
                     <input
                       type="checkbox"
                       checked={selectedEmployees.length === filteredEmployees.length && filteredEmployees.length > 0}
                       onChange={handleSelectAll}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Employee
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Contact
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Position
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Department
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Verification
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Join Date
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredEmployees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={employee.id} className="hover:bg-emerald-50/30 transition-all group">
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedEmployees.includes(employee.id)}
                         onChange={() => handleSelectEmployee(employee.id)}
-                        className="rounded border-gray-300"
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </span>
-                          </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                          {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                          <div className="text-sm text-gray-500 font-mono">{employee.employeeId}</div>
+                        <div>
+                          <div className="font-bold text-gray-800">{employee.name}</div>
+                          <div className="text-gray-400 text-xs font-mono">{employee.employeeId}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm">
-                        <div className="text-gray-900 font-medium">{employee.email}</div>
-                        <div className="text-gray-500">{employee.phone}</div>
+                        <div className="text-gray-800 font-medium">{employee.email}</div>
+                        <div className="text-gray-400 text-xs">{employee.phone}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{employee.position}</div>
+                      <div className="text-sm text-gray-800 font-medium">{employee.position}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{employee.department}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-gray-400 text-lg">business</span>
+                        <span className="text-sm text-gray-800">{employee.department}</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(employee.status)}`}>
+                      <span className="inline-flex px-3 py-1.5 text-xs font-bold rounded-full bg-gray-100 text-gray-700">
                         {employee.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div>
-                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getVerificationColor(employee.verified)}`}>
-                          {employee.verified ? 'Verified' : 'Pending'}
-                        </span>
-                        {employee.verified && employee.verificationDate && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {new Date(employee.verificationDate).toLocaleDateString()}
-                          </div>
-                        )}
+                      <span className={`inline-flex px-3 py-1.5 text-xs font-bold rounded-full shadow-md ${getVerificationColor(employee.verified)}`}>
+                        {employee.verified ? 'Verified' : 'Pending'}
+                      </span>
+                      {employee.verified && employee.verificationDate && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(employee.verificationDate).toLocaleDateString()}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">calendar_today</span>
+                          {employee.joinDate}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600">{employee.joinDate}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => navigate(`/hr/employees/${employee.id}`)}
-                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                          className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                          title="View"
                         >
-                          <span className="material-symbols-outlined text-sm mr-1">visibility</span>
-                          View
+                          <span className="material-symbols-outlined">visibility</span>
                         </button>
                         {!employee.verified && (
                           <button
                             onClick={() => handleVerifyEmployee(employee.id)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+                            className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                            title="Verify"
                           >
-                            <span className="material-symbols-outlined text-sm mr-1">verified</span>
-                            Verify
+                            <span className="material-symbols-outlined">verified</span>
                           </button>
                         )}
                       </div>
@@ -597,37 +484,60 @@ const EmployeeVerification = () => {
               </tbody>
             </table>
           </div>
+          
+          {filteredEmployees.length === 0 && (
+            <div className="p-12 text-center">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-gray-400 text-4xl">fact_check</span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">No employees found</h3>
+              <p className="text-gray-500">Try adjusting your filters or search term</p>
+            </div>
+          )}
         </div>
       </main>
 
       {/* Bulk Verify Modal */}
       {showBulkVerify && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Bulk Verify Employees</h2>
-              <button
-                onClick={() => setShowBulkVerify(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined">verified</span>
+                  Bulk Verify Employees
+                </h2>
+                <button
+                  onClick={() => setShowBulkVerify(false)}
+                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
             </div>
-            <div className="mb-4">
-              <p className="text-gray-600">
-                Are you sure you want to verify {selectedEmployees.length} employees?
+            <div className="p-6">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-emerald-600 text-3xl">group</span>
+                </div>
+              </div>
+              <p className="text-gray-600 text-center text-lg mb-2">
+                Are you sure you want to verify <span className="font-bold text-emerald-600">{selectedEmployees.length}</span> employees?
+              </p>
+              <p className="text-gray-400 text-center text-sm">
+                This action cannot be undone.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
               <button
                 onClick={() => setShowBulkVerify(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 font-semibold transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBulkVerify}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all"
               >
                 Verify Employees
               </button>

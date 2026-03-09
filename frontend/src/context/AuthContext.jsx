@@ -93,21 +93,34 @@ export const AuthProvider = ({ children }) => {
     const { user } = state
     if (!user) return '/login'
     
-    // HR roles get HR dashboard
-    const hrRoles = ['HR', 'ADMIN', 'SUPER_ADMIN']
-    if (hrRoles.includes(user.role)) {
+    // Admin roles get admin dashboard
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      return '/admin'
+    }
+    
+    // HR role gets HR dashboard
+    if (user.role === 'HR') {
       return '/hr'
     }
     
-    // Other roles get regular dashboard
+    // Loan Committee gets loans dashboard
+    if (user.role === 'LOAN_COMMITTEE') {
+      return '/loans'
+    }
+    
+    // Finance Admin gets payroll dashboard
+    if (user.role === 'FINANCE_ADMIN') {
+      return '/payroll'
+    }
+    
+    // Employees and any other roles get regular dashboard
     return '/dashboard'
   }
 
   const isHR = () => {
     const { user } = state
     if (!user) return false
-    const hrRoles = ['HR', 'ADMIN', 'SUPER_ADMIN']
-    return hrRoles.includes(user.role)
+    return user.role === 'HR'
   }
 
   const value = {

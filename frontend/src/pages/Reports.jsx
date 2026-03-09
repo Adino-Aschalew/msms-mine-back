@@ -1,60 +1,69 @@
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Download, Search, Calendar, Filter } from 'lucide-react'
+import { BarChart3, Download, Search, Calendar, Filter, Eye, Plus } from 'lucide-react'
+import api from '../services/api'
 
 const Reports = () => {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState('ALL')
+  const [stats, setStats] = useState({
+    totalReports: 0,
+    thisMonth: 0,
+    completed: 0,
+    processing: 0
+  })
 
   useEffect(() => {
-    // Mock data for now
-    setTimeout(() => {
-      setReports([
-        {
-          id: 1,
-          name: 'Loan Portfolio Report',
-          type: 'loan_portfolio',
-          generated_date: '2024-02-01',
-          status: 'COMPLETED',
-          file_size: '2.4 MB',
-          generated_by: 'admin'
-        },
-        {
-          id: 2,
-          name: 'Savings Summary',
-          type: 'savings_summary',
-          generated_date: '2024-02-01',
-          status: 'COMPLETED',
-          file_size: '1.8 MB',
-          generated_by: 'finance_manager'
-        },
-        {
-          id: 3,
-          name: 'Monthly Payroll Report',
-          type: 'payroll',
-          generated_date: '2024-01-31',
-          status: 'COMPLETED',
-          file_size: '3.2 MB',
-          generated_by: 'hr_manager'
-        },
-        {
-          id: 4,
-          name: 'Financial Summary',
-          type: 'financial_summary',
-          generated_date: '2024-01-31',
-          status: 'PROCESSING',
-          file_size: '-',
-          generated_by: 'admin'
-        }
-      ])
-      setLoading(false)
-    }, 1000)
+    fetchReports()
   }, [])
 
+  const fetchReports = async () => {
+    try {
+      setLoading(true)
+      // Fetch reports history from backend
+      const response = await api.get('/reports/history').catch(() => ({ data: [] }))
+      const reportsData = response.data || []
+      
+      // Calculate stats
+      const now = new Date()
+      const thisMonth = reportsData.filter(r => {
+        const date = new Date(r.generated_date || r.created_at)
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+      })
+      
+      setStats({
+        totalReports: reportsData.length,
+        thisMonth: thisMonth.length,
+        completed: reportsData.filter(r => r.status === 'COMPLETED').length,
+        processing: reportsData.filter(r => r.status === 'PROCESSING').length
+      })
+      
+      setReports(reportsData)
+    } catch (error) {
+      console.error('Failed to fetch reports:', error)
+      setReports([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateReport = async (reportType) => {
+    try {
+      const response = await api.post('/reports/generate', { reportType })
+      if (response.data) {
+        alert('Report generated successfully!')
+        fetchReports() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Failed to generate report:', error)
+      alert('Failed to generate report. Please try again.')
+    }
+  }
+
   const filteredReports = reports.filter(report => {
-    const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         report.type.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (report.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (report.type || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = selectedType === 'ALL' || report.type === selectedType
     return matchesSearch && matchesType
   })
@@ -66,6 +75,19 @@ const Reports = () => {
     { value: 'payroll', label: 'Payroll' },
     { value: 'financial_summary', label: 'Financial Summary' }
   ]
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'bg-green-100 text-green-800'
+      case 'PROCESSING':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'FAILED':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   if (loading) {
     return (
@@ -79,8 +101,11 @@ const Reports = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-        <button className="btn btn-primary flex items-center">
-          <BarChart3 className="h-4 w-4 mr-2" />
+        <button 
+          className="btn btn-primary flex items-center"
+          onClick={() => generateReport('financial_summary')}
+        >
+          <Plus className="h-4 w-4 mr-2" />
           Generate Report
         </button>
       </div>
@@ -95,7 +120,7 @@ const Reports = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Reports</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {reports.length}
+                {stats.totalReports}
               </p>
             </div>
           </div>
@@ -109,7 +134,7 @@ const Reports = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">This Month</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {reports.filter(r => new Date(r.generated_date).getMonth() === new Date().getMonth()).length}
+                {stats.thisMonth}
               </p>
             </div>
           </div>
@@ -121,9 +146,9 @@ const Reports = () => {
               <Download className="h-6 w-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Downloads</p>
+              <p className="text-sm font-medium text-gray-600">Completed</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {reports.filter(r => r.status === 'COMPLETED').length}
+                {stats.completed}
               </p>
             </div>
           </div>
@@ -137,7 +162,7 @@ const Reports = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Processing</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {reports.filter(r => r.status === 'PROCESSING').length}
+                {stats.processing}
               </p>
             </div>
           </div>
@@ -201,52 +226,54 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredReports.map((report) => (
-                <tr key={report.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800`}>
-                      {report.type.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(report.generated_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      report.status === 'COMPLETED' 
-                        ? 'bg-green-100 text-green-800'
-                        : report.status === 'PROCESSING'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {report.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.file_size}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.generated_by}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                      disabled={report.status === 'PROCESSING'}
-                    >
-                      View
-                    </button>
-                    <button 
-                      className="text-green-600 hover:text-green-900"
-                      disabled={report.status === 'PROCESSING'}
-                    >
-                      <Download className="h-4 w-4" />
-                    </button>
+              {filteredReports.length > 0 ? (
+                filteredReports.map((report) => (
+                  <tr key={report.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.name || 'Unnamed Report'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800`}>
+                        {(report.type || 'unknown').replace('_', ' ').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.generated_date ? new Date(report.generated_date).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(report.status)}`}>
+                        {report.status || 'PENDING'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.file_size || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.generated_by || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button 
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        disabled={report.status === 'PROCESSING'}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button 
+                        className="text-green-600 hover:text-green-900"
+                        disabled={report.status !== 'COMPLETED'}
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    No reports found. Generate a new report to get started.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

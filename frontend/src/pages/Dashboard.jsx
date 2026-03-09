@@ -12,24 +12,27 @@ const Dashboard = () => {
     pendingApplications: 0
   })
   const [loading, setLoading] = useState(true)
+  const [recentActivity, setRecentActivity] = useState([])
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
+        // Fetch data from backend APIs
         const [savingsRes, loansRes, applicationsRes] = await Promise.all([
-          api.get('/savings/accounts'),
-          api.get('/loans'),
-          api.get('/loans/applications')
+          api.get('/savings/account'),
+          api.get('/loans/my-loans'),
+          api.get('/loans/applications').catch(() => ({ data: [] }))
         ])
 
         setStats({
-          totalSavings: savingsRes.data?.reduce((sum, account) => sum + (account.current_balance || 0), 0) || 0,
+          totalSavings: savingsRes.data?.current_balance || savingsRes.data?.totalBalance || 0,
           activeLoans: loansRes.data?.filter(loan => loan.status === 'ACTIVE').length || 0,
-          monthlyDeposits: 1250, // Mock data
+          monthlyDeposits: savingsRes.data?.recent_contribution || savingsRes.data?.monthlyDeposits || 0,
           pendingApplications: applicationsRes.data?.filter(app => app.status === 'PENDING').length || 0
         })
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error)
+        // Fallback - keep zeros on error
       } finally {
         setLoading(false)
       }

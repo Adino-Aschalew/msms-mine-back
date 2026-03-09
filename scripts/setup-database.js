@@ -14,7 +14,7 @@ async function setupDatabase() {
       console.error('❌ Database configuration not found in .env file');
       console.log('\n📋 Please update your .env file with:');
       console.log('DB_HOST=localhost');
-      console.log('DB_PORT=3306');
+      console.log('DB_PORT=3307');
       console.log('DB_USER=root');
       console.log('DB_NAME=microfinance_system');
       console.log('\n💡 Then run: npm run setup-db again');
@@ -26,7 +26,7 @@ async function setupDatabase() {
     
     const connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
+      port: process.env.DB_PORT || 3307,
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'microfinance_system',

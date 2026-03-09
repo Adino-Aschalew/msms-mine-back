@@ -8,7 +8,7 @@ async function testXAMPPConnection() {
     user: 'root',
     password: '',
     database: 'microfinance_system',
-    port: 3306,
+    port: 3307,
     acquireTimeout: 60000,
     timeout: 60000,
     reconnect: true,
@@ -55,9 +55,9 @@ async function testXAMPPConnection() {
     console.log('\nTroubleshooting steps:');
     console.log('1. Make sure XAMPP is installed and running');
     console.log('2. Start Apache and MySQL from XAMPP Control Panel');
-    console.log('3. Check if MySQL is running on port 3306');
+    console.log('3. Check if MySQL is running on port 3307');
     console.log('4. Verify user credentials (usually root with no password)');
-    console.log('5. Check if firewall is blocking port 3306');
+    console.log('5. Check if firewall is blocking port 3307');
     
     if (error.code === 'ECONNREFUSED') {
       console.log('\n🔧 Quick fix: Start XAMPP MySQL service');

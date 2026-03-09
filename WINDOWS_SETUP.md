@@ -12,7 +12,7 @@
 - Open XAMPP Control Panel
 - Click on MySQL → Config
 - Set root password (remember it for .env file)
-- Note the port (usually 3306)
+- Note the port (usually 3307)
 - Start/Stop MySQL as needed
 
 ### 3. Update .env
@@ -102,10 +102,10 @@ net start mysql
 # Reset password with: ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';
 ```
 
-### Port 3306 Already in Use
+### Port 3307 Already in Use
 ```bash
-# Check what's using port 3306
-netstat -ano | findstr :3306
+# Check what's using port 3307
+netstat -ano | findstr :3307
 
 # Kill the process if needed
 taskkill /PID <PID> /F
@@ -162,7 +162,7 @@ mysql.createConnection({
 
 ### "Can't connect to MySQL server"
 - Check if MySQL service is running
-- Verify port 3306 is available
+- Verify port 3307 is available
 - Check firewall settings
 - Verify credentials in .env file
 

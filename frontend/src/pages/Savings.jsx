@@ -1,44 +1,78 @@
 import React, { useState, useEffect } from 'react'
-import { TrendingUp, Plus, Search, DollarSign } from 'lucide-react'
+import { TrendingUp, Plus, Search, DollarSign, Eye, ArrowUpRight } from 'lucide-react'
+import api from '../services/api'
 
 const Savings = () => {
   const [savings, setSavings] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [accountSummary, setAccountSummary] = useState({
+    current_balance: 0,
+    total_savings: 0,
+    total_contributions: 0,
+    interest_earned: 0,
+    interest_rate: 0
+  })
 
   useEffect(() => {
-    // Mock data for now
-    setTimeout(() => {
-      setSavings([
-        {
-          id: 1,
-          employee_id: 'EMP001',
-          account_type: 'REGULAR',
-          current_balance: 12500,
-          interest_rate: 5.5,
-          created_at: '2023-06-15',
-          last_deposit: '2024-02-01'
-        },
-        {
-          id: 2,
-          employee_id: 'EMP002',
-          account_type: 'FIXED',
-          current_balance: 8000,
-          interest_rate: 7.0,
-          created_at: '2023-08-20',
-          last_deposit: '2024-01-28'
-        }
-      ])
-      setLoading(false)
-    }, 1000)
+    fetchSavings()
   }, [])
 
+  const fetchSavings = async () => {
+    try {
+      setLoading(true)
+      // Fetch user's savings account from backend
+      const accountRes = await api.get('/savings/account')
+      const transactionsRes = await api.get('/savings/transactions').catch(() => ({ data: [] }))
+      
+      // Set account summary
+      if (accountRes.data) {
+        setAccountSummary({
+          current_balance: accountRes.data.current_balance || 0,
+          total_savings: accountRes.data.total_savings || accountRes.data.current_balance || 0,
+          total_contributions: accountRes.data.total_contributions || 0,
+          interest_earned: accountRes.data.interest_earned || 0,
+          interest_rate: accountRes.data.interest_rate || 0
+        })
+        setSavings([accountRes.data])
+      } else if (Array.isArray(accountRes.data)) {
+        setAccountSummary({
+          current_balance: accountRes.data.reduce((sum, acc) => sum + (acc.current_balance || 0), 0),
+          total_savings: accountRes.data.reduce((sum, acc) => sum + (acc.current_balance || 0), 0),
+          total_contributions: accountRes.data.reduce((sum, acc) => sum + (acc.total_contributions || 0), 0),
+          interest_earned: accountRes.data.reduce((sum, acc) => sum + (acc.interest_earned || 0), 0),
+          interest_rate: accountRes.data[0]?.interest_rate || 0
+        })
+        setSavings(accountRes.data)
+      } else {
+        setSavings([])
+      }
+    } catch (error) {
+      console.error('Failed to fetch savings:', error)
+      // Keep empty on error
+      setSavings([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const filteredSavings = savings.filter(account =>
-    account.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.account_type.toLowerCase().includes(searchTerm.toLowerCase())
+    (account.employee_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (account.account_type || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const totalSavings = savings.reduce((sum, account) => sum + account.current_balance, 0)
+  const getAccountTypeColor = (type) => {
+    switch (type) {
+      case 'REGULAR':
+        return 'bg-blue-100 text-blue-800'
+      case 'FIXED':
+        return 'bg-green-100 text-green-800'
+      case 'SAVINGS':
+        return 'bg-purple-100 text-purple-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   if (loading) {
     return (
@@ -66,9 +100,9 @@ const Savings = () => {
               <DollarSign className="h-6 w-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Savings</p>
+              <p className="text-sm font-medium text-gray-600">Current Balance</p>
               <p className="text-2xl font-semibold text-gray-900">
-                ${totalSavings.toLocaleString()}
+                ${(accountSummary.current_balance || 0).toLocaleString()}
               </p>
             </div>
           </div>
@@ -80,9 +114,9 @@ const Savings = () => {
               <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Accounts</p>
+              <p className="text-sm font-medium text-gray-600">Total Contributions</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {savings.length}
+                ${(accountSummary.total_contributions || 0).toLocaleString()}
               </p>
             </div>
           </div>
@@ -91,12 +125,12 @@ const Savings = () => {
         <div className="card p-6">
           <div className="flex items-center">
             <div className="p-3 bg-purple-100 rounded-full">
-              <Plus className="h-6 w-6 text-purple-600" />
+              <ArrowUpRight className="h-6 w-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Avg. Interest</p>
+              <p className="text-sm font-medium text-gray-600">Interest Earned</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {(savings.reduce((sum, acc) => sum + acc.interest_rate, 0) / savings.length).toFixed(1)}%
+                ${(accountSummary.interest_earned || 0).toLocaleString()} ({accountSummary.interest_rate}%)
               </p>
             </div>
           </div>
@@ -124,7 +158,7 @@ const Savings = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee ID
+                  Account ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Account Type
@@ -136,10 +170,10 @@ const Savings = () => {
                   Interest Rate
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created Date
+                  Total Contributions
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Deposit
+                  Created Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -147,42 +181,46 @@ const Savings = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredSavings.map((account) => (
-                <tr key={account.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {account.employee_id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      account.account_type === 'REGULAR' 
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {account.account_type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${account.current_balance.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {account.interest_rate}%
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(account.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(account.last_deposit).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      View
-                    </button>
-                    <button className="text-green-600 hover:text-green-900">
-                      Deposit
-                    </button>
+              {filteredSavings.length > 0 ? (
+                filteredSavings.map((account) => (
+                  <tr key={account.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      #{account.id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getAccountTypeColor(account.account_type)}`}>
+                        {account.account_type || 'SAVINGS'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${(account.current_balance || 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {account.interest_rate || 0}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${(account.total_contributions || 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {account.created_at ? new Date(account.created_at).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900 mr-3">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button className="text-green-600 hover:text-green-900">
+                        Deposit
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    No savings account found. Create a new account to get started.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

@@ -63,10 +63,23 @@ const Login = () => {
         
         // Get user data from the login result and determine route immediately
         const user = result.user
-        const hrRoles = ['HR', 'ADMIN', 'SUPER_ADMIN']
-        const dashboardRoute = hrRoles.includes(user?.role) ? '/hr' : '/dashboard'
+        let dashboardRoute
         
-        console.log('Login successful - navigating to:', dashboardRoute)
+        if (!user) {
+          dashboardRoute = '/login'
+        } else if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+          dashboardRoute = '/admin'
+        } else if (user.role === 'HR') {
+          dashboardRoute = '/hr'
+        } else if (user.role === 'LOAN_COMMITTEE') {
+          dashboardRoute = '/loans'
+        } else if (user.role === 'FINANCE_ADMIN') {
+          dashboardRoute = '/payroll'
+        } else {
+          dashboardRoute = '/dashboard'
+        }
+        
+        console.log('Login successful - user role:', user.role, 'navigating to:', dashboardRoute)
         
         // Navigate immediately
         navigate(dashboardRoute)

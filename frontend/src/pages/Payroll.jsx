@@ -1,53 +1,95 @@
 import React, { useState, useEffect } from 'react'
-import { FileText, Upload, Search, Calendar, DollarSign } from 'lucide-react'
+import { FileText, Upload, Search, Calendar, DollarSign, Eye, Download } from 'lucide-react'
+import api from '../services/api'
 
 const Payroll = () => {
   const [payrolls, setPayrolls] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [stats, setStats] = useState({
+    totalBatches: 0,
+    totalProcessed: 0,
+    thisMonth: 0,
+    processing: 0
+  })
 
   useEffect(() => {
-    // Mock data for now
-    setTimeout(() => {
-      setPayrolls([
-        {
-          id: 1,
-          batch_id: 'BATCH_001',
-          total_employees: 45,
-          total_amount: 125000,
-          status: 'COMPLETED',
-          processed_date: '2024-02-01',
-          created_by: 'admin'
-        },
-        {
-          id: 2,
-          batch_id: 'BATCH_002',
-          total_employees: 48,
-          total_amount: 132000,
-          status: 'PROCESSING',
-          processed_date: '2024-02-15',
-          created_by: 'hr_manager'
-        }
-      ])
-      setLoading(false)
-    }, 1000)
+    fetchPayrolls()
   }, [])
 
-  const filteredPayrolls = payrolls.filter(payroll =>
-    payroll.batch_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payroll.status.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const fetchPayrolls = async () => {
+    try {
+      setLoading(true)
+      // Fetch payroll batches from backend
+      const response = await api.get('/finance/payroll/batches').catch(() => ({ data: [] }))
+      const payrollData = response.data || []
+      
+      // Calculate stats
+      const now = new Date()
+      const thisMonth = payrollData.filter(p => {
+        const date = new Date(p.processed_date || p.created_at)
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+      })
+      
+      setStats({
+        totalBatches: payrollData.length,
+        totalProcessed: payrollData.reduce((sum, p) => sum + (p.total_amount || 0), 0),
+        thisMonth: thisMonth.reduce((sum, p) => sum + (p.total_amount || 0), 0),
+        processing: payrollData.filter(p => p.status === 'PROCESSING').length
+      })
+      
+      setPayrolls(payrollData)
+    } catch (error) {
+      console.error('Failed to fetch payrolls:', error)
+      setPayrolls([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0]
     if (file) {
       setUploading(true)
-      // Simulate upload
-      setTimeout(() => {
-        setUploading(false)
+      try {
+        const formData = new FormData()
+        formData.append('payroll', file)
+        
+        await api.post('/finance/payroll/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        
         alert('Payroll file uploaded successfully!')
-      }, 2000)
+        fetchPayrolls() // Refresh the list
+      } catch (error) {
+        console.error('Failed to upload payroll file:', error)
+        alert('Failed to upload payroll file. Please try again.')
+      } finally {
+        setUploading(false)
+      }
+    }
+  }
+
+  const filteredPayrolls = payrolls.filter(payroll =>
+    (payroll.batch_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (payroll.status || '').toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'bg-green-100 text-green-800'
+      case 'PROCESSING':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'FAILED':
+        return 'bg-red-100 text-red-800'
+      case 'PENDING':
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -88,7 +130,7 @@ const Payroll = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Batches</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {payrolls.length}
+                {stats.totalBatches}
               </p>
             </div>
           </div>
@@ -102,7 +144,7 @@ const Payroll = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Processed</p>
               <p className="text-2xl font-semibold text-gray-900">
-                ${payrolls.reduce((sum, p) => sum + p.total_amount, 0).toLocaleString()}
+                ${stats.totalProcessed.toLocaleString()}
               </p>
             </div>
           </div>
@@ -116,7 +158,7 @@ const Payroll = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">This Month</p>
               <p className="text-2xl font-semibold text-gray-900">
-                ${payrolls.filter(p => p.status === 'COMPLETED').reduce((sum, p) => sum + p.total_amount, 0).toLocaleString()}
+                ${stats.thisMonth.toLocaleString()}
               </p>
             </div>
           </div>
@@ -130,7 +172,7 @@ const Payroll = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Processing</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {payrolls.filter(p => p.status === 'PROCESSING').length}
+                {stats.processing}
               </p>
             </div>
           </div>
@@ -181,44 +223,46 @@ const Payroll = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredPayrolls.map((payroll) => (
-                <tr key={payroll.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {payroll.batch_id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {payroll.total_employees}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${payroll.total_amount.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      payroll.status === 'COMPLETED' 
-                        ? 'bg-green-100 text-green-800'
-                        : payroll.status === 'PROCESSING'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {payroll.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(payroll.processed_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {payroll.created_by}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      View
-                    </button>
-                    <button className="text-gray-600 hover:text-gray-900">
-                      Download
-                    </button>
+              {filteredPayrolls.length > 0 ? (
+                filteredPayrolls.map((payroll) => (
+                  <tr key={payroll.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {payroll.batch_id || `#${payroll.id}`}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {payroll.total_employees || 0}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${(payroll.total_amount || 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(payroll.status)}`}>
+                        {payroll.status || 'PENDING'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {payroll.processed_date ? new Date(payroll.processed_date).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {payroll.created_by || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900 mr-3">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Download className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    No payroll batches found. Upload a payroll file to get started.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

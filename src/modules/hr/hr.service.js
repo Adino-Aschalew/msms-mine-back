@@ -549,7 +549,7 @@ class HrService {
           COUNT(CASE WHEN is_active = TRUE THEN 1 END) as active_employees,
           COUNT(CASE WHEN email_verified = TRUE THEN 1 END) as verified_employees,
           COUNT(CASE WHEN employment_status = 'ACTIVE' THEN 1 END) as active_employment,
-          COUNT(CASE WHEN employment_status = 'ON_LEAVE' THEN 1 END) as on_leave,
+          COUNT(CASE WHEN employment_status = 'INACTIVE' THEN 1 END) as inactive,
           COUNT(CASE WHEN employment_status = 'TERMINATED' THEN 1 END) as terminated,
           COUNT(DISTINCT department) as departments,
           COUNT(DISTINCT job_grade) as job_grades

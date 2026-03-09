@@ -1,57 +1,71 @@
 import React, { useState, useEffect } from 'react'
-import { Brain, TrendingUp, Shield, AlertTriangle, Search, BarChart3 } from 'lucide-react'
+import { Brain, TrendingUp, Shield, AlertTriangle, Search, BarChart3, Play } from 'lucide-react'
+import api from '../services/api'
 
 const AI = () => {
   const [predictions, setPredictions] = useState([])
   const [riskAssessments, setRiskAssessments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [analyzing, setAnalyzing] = useState(false)
   const [activeTab, setActiveTab] = useState('predictions')
 
   useEffect(() => {
-    // Mock data for now
-    setTimeout(() => {
-      setPredictions([
-        {
-          id: 1,
-          type: 'loan_default',
-          user_id: 'EMP001',
-          confidence: 0.85,
-          prediction: 'LOW_RISK',
-          created_at: '2024-02-01',
-          details: 'Strong payment history, stable employment'
-        },
-        {
-          id: 2,
-          type: 'savings_growth',
-          user_id: 'EMP002',
-          confidence: 0.92,
-          prediction: 'HIGH_GROWTH',
-          created_at: '2024-02-01',
-          details: 'Consistent deposits, low withdrawal rate'
-        }
-      ])
-
-      setRiskAssessments([
-        {
-          id: 1,
-          user_id: 'EMP001',
-          loan_amount: 5000,
-          loan_term: 12,
-          risk_score: 0.25,
-          risk_level: 'LOW',
-          created_at: '2024-02-01',
-          factors: {
-            employment_stability: 0.8,
-            financial_stability: 0.9,
-            loan_history: 0.7,
-            loan_amount_ratio: 0.3
-          }
-        }
-      ])
-
-      setLoading(false)
-    }, 1000)
+    fetchAIData()
   }, [])
+
+  const fetchAIData = async () => {
+    try {
+      setLoading(true)
+      // Fetch predictions from backend AI API
+      const predictionsRes = await api.get('/ai/predictions').catch(() => ({ data: [] }))
+      setPredictions(predictionsRes.data || [])
+      
+      // Fetch risk assessments from loans eligibility endpoint
+      const riskRes = await api.get('/loans/eligibility-score').catch(() => ({ data: [] }))
+      const riskData = Array.isArray(riskRes.data) ? riskRes.data : []
+      setRiskAssessments(riskData)
+    } catch (error) {
+      console.error('Failed to fetch AI data:', error)
+      setPredictions([])
+      setRiskAssessments([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const runAnalysis = async () => {
+    try {
+      setAnalyzing(true)
+      // Run eligibility check
+      await api.get('/loans/eligibility-score')
+      alert('Analysis completed successfully!')
+      fetchAIData()
+    } catch (error) {
+      console.error('Failed to run analysis:', error)
+      alert('Failed to run analysis. Please try again.')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  const getRiskLevel = (score) => {
+    if (score < 0.3) return 'LOW'
+    if (score < 0.7) return 'MEDIUM'
+    return 'HIGH'
+  }
+
+  const getRiskColor = (level) => {
+    switch (level) {
+      case 'LOW':
+        return 'bg-green-100 text-green-800'
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'HIGH':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   if (loading) {
     return (
@@ -65,9 +79,13 @@ const AI = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">AI & Analytics</h1>
-        <button className="btn btn-primary flex items-center">
+        <button 
+          className="btn btn-primary flex items-center"
+          onClick={runAnalysis}
+          disabled={analyzing}
+        >
           <Brain className="h-4 w-4 mr-2" />
-          Run Analysis
+          {analyzing ? 'Analyzing...' : 'Run Analysis'}
         </button>
       </div>
 
@@ -109,7 +127,7 @@ const AI = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Avg. Confidence</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {predictions.length > 0 ? (predictions.reduce((sum, p) => sum + p.confidence, 0) / predictions.length * 100).toFixed(1) : 0}%
+                {predictions.length > 0 ? (predictions.reduce((sum, p) => sum + (p.confidence || 0), 0) / predictions.length * 100).toFixed(1) : 0}%
               </p>
             </div>
           </div>
@@ -123,7 +141,7 @@ const AI = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">High Risk</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {riskAssessments.filter(r => r.risk_level === 'HIGH').length}
+                {riskAssessments.filter(r => getRiskLevel(r.risk_score || r.score) === 'HIGH').length}
               </p>
             </div>
           </div>
@@ -185,50 +203,58 @@ const AI = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {predictions.map((prediction) => (
-                    <tr key={prediction.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          prediction.type === 'loan_default' 
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {prediction.type.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {prediction.user_id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          prediction.prediction.includes('LOW') || prediction.prediction.includes('HIGH')
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {prediction.prediction.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${prediction.confidence * 100}%` }}
-                            ></div>
+                  {predictions.length > 0 ? (
+                    predictions.map((prediction) => (
+                      <tr key={prediction.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            (prediction.type || '').includes('loan') 
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {(prediction.type || 'unknown').replace('_', ' ').toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {prediction.user_id || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            (prediction.prediction || '').includes('LOW') || (prediction.prediction || '').includes('HIGH')
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {(prediction.prediction || 'N/A').replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex items-center">
+                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ width: `${(prediction.confidence || 0) * 100}%` }}
+                              ></div>
+                            </div>
+                            {((prediction.confidence || 0) * 100).toFixed(1)}%
                           </div>
-                          {(prediction.confidence * 100).toFixed(1)}%
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(prediction.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900">
-                          View Details
-                        </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {prediction.created_at ? new Date(prediction.created_at).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-blue-600 hover:text-blue-900">
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                        No predictions found. Run analysis to generate predictions.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -264,49 +290,55 @@ const AI = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {riskAssessments.map((assessment) => (
-                    <tr key={assessment.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {assessment.user_id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${assessment.loan_amount.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div 
-                              className={`h-2 rounded-full ${
-                                assessment.risk_score < 0.3 ? 'bg-green-600' :
-                                assessment.risk_score < 0.7 ? 'bg-yellow-600' : 'bg-red-600'
-                              }`}
-                              style={{ width: `${assessment.risk_score * 100}%` }}
-                            ></div>
-                          </div>
-                          {(assessment.risk_score * 100).toFixed(1)}%
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          assessment.risk_level === 'LOW' 
-                            ? 'bg-green-100 text-green-800'
-                            : assessment.risk_level === 'MEDIUM'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {assessment.risk_level}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(assessment.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900">
-                          View Details
-                        </button>
+                  {riskAssessments.length > 0 ? (
+                    riskAssessments.map((assessment, index) => {
+                      const riskScore = assessment.risk_score || assessment.score || 0
+                      const riskLevel = getRiskLevel(riskScore)
+                      return (
+                        <tr key={assessment.id || index}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {assessment.user_id || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${(assessment.loan_amount || assessment.amount || 0).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="flex items-center">
+                              <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                <div 
+                                  className={`h-2 rounded-full ${
+                                    riskScore < 0.3 ? 'bg-green-600' :
+                                    riskScore < 0.7 ? 'bg-yellow-600' : 'bg-red-600'
+                                  }`}
+                                  style={{ width: `${riskScore * 100}%` }}
+                                ></div>
+                              </div>
+                              {(riskScore * 100).toFixed(1)}%
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRiskColor(riskLevel)}`}>
+                              {riskLevel}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button className="text-blue-600 hover:text-blue-900">
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                        No risk assessments found. Run analysis to generate assessments.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

@@ -103,10 +103,10 @@ async function setupDatabase() {
   } catch (error) {
     console.error('❌ Database setup failed:', error.message);
     console.error('\n💡 Troubleshooting:');
-    console.error('1. Make sure MySQL is running on localhost:3306');
+    console.error('1. Make sure MySQL is running on localhost:3307');
     console.error('2. If using XAMPP, start MySQL from XAMPP Control Panel');
     console.error('3. If using MySQL Server, start MySQL service');
-    console.error('4. Check if port 3306 is available');
+    console.error('4. Check if port 3307 is available');
     console.error('5. Verify database name exists');
     console.error('6. Check firewall settings');
     

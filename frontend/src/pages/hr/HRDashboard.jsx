@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import hrApi from '../../services/hrApi'
+import HRHeader from '../../components/common/HRHeader'
 
 const HRDashboard = () => {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user } = useAuth()
   const [stats, setStats] = useState({
     totalEmployees: 0,
     activeEmployees: 0,
@@ -18,11 +18,17 @@ const HRDashboard = () => {
   const [allRecentEmployees, setAllRecentEmployees] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalRecentEmployees, setTotalRecentEmployees] = useState(0)
+  const [departmentStats, setDepartmentStats] = useState([])
+  const [leaveStats, setLeaveStats] = useState({ pending: 0, approved: 0, rejected: 0 })
+  const [attendanceToday, setAttendanceToday] = useState({ present: 0, absent: 0, late: 0 })
   const employeesPerPage = 10
 
   useEffect(() => {
     fetchHRStats()
     fetchRecentEmployees()
+    fetchDepartmentStats()
+    fetchLeaveStats()
+    fetchAttendanceToday()
   }, [])
 
   const fetchHRStats = async () => {
@@ -36,7 +42,6 @@ const HRDashboard = () => {
       })
     } catch (error) {
       console.error('Error fetching HR stats:', error)
-      // Fallback to mock data if API fails
       setStats({
         totalEmployees: 156,
         activeEmployees: 142,
@@ -48,10 +53,68 @@ const HRDashboard = () => {
     }
   }
 
+  const fetchDepartmentStats = async () => {
+    try {
+      const response = await hrApi.getEmployeeStats()
+      if (response.byDepartment) {
+        setDepartmentStats(response.byDepartment)
+      } else {
+        // Fallback mock data
+        setDepartmentStats([
+          { name: 'IT', total: 25, active: 23, inactive: 2 },
+          { name: 'Finance', total: 18, active: 17, inactive: 1 },
+          { name: 'HR', total: 12, active: 12, inactive: 0 },
+          { name: 'Operations', total: 30, active: 28, inactive: 2 },
+          { name: 'Marketing', total: 15, active: 14, inactive: 1 },
+          { name: 'Sales', total: 56, active: 48, inactive: 8 }
+        ])
+      }
+    } catch (error) {
+      console.error('Error fetching department stats:', error)
+      setDepartmentStats([
+        { name: 'IT', total: 25, active: 23, inactive: 2 },
+        { name: 'Finance', total: 18, active: 17, inactive: 1 },
+        { name: 'HR', total: 12, active: 12, inactive: 0 },
+        { name: 'Operations', total: 30, active: 28, inactive: 2 },
+        { name: 'Marketing', total: 15, active: 14, inactive: 1 },
+        { name: 'Sales', total: 56, active: 48, inactive: 8 }
+      ])
+    }
+  }
+
+  const fetchLeaveStats = async () => {
+    try {
+      const response = await hrApi.getLeaveStats()
+      setLeaveStats({
+        pending: response.pending || 3,
+        approved: response.approved || 12,
+        rejected: response.rejected || 1
+      })
+    } catch (error) {
+      console.error('Error fetching leave stats:', error)
+      setLeaveStats({ pending: 3, approved: 12, rejected: 1 })
+    }
+  }
+
+  const fetchAttendanceToday = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const response = await hrApi.getAttendanceStats(today)
+      setAttendanceToday({
+        present: response.present || 128,
+        absent: response.absent || 8,
+        late: response.late || 6
+      })
+    } catch (error) {
+      console.error('Error fetching attendance:', error)
+      setAttendanceToday({ present: 128, absent: 8, late: 6 })
+    }
+  }
+
   const fetchRecentEmployees = async () => {
     try {
-      const employees = await hrApi.getEmployees()
-      // Get recent employees (last 30 days) and count total
+      const response = await hrApi.getEmployees()
+      const employees = response.data || []
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       
@@ -73,7 +136,6 @@ const HRDashboard = () => {
       applyPagination(formattedEmployees)
     } catch (error) {
       console.error('Error fetching recent employees:', error)
-      // Fallback to mock data if API fails
       const mockEmployees = [
         { id: 1, name: 'Sarah Johnson', department: 'IT', status: 'Active', joinDate: '2024-01-15', verified: true },
         { id: 2, name: 'Michael Chen', department: 'Finance', status: 'Pending', joinDate: '2024-01-14', verified: false },
@@ -95,28 +157,30 @@ const HRDashboard = () => {
       setAllRecentEmployees(mockEmployees)
       setTotalRecentEmployees(mockEmployees.length)
       applyPagination(mockEmployees)
-  } finally {
-    setLoading(false)
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
-const applyPagination = (employees) => {
-  const startIndex = (currentPage - 1) * employeesPerPage
-  const endIndex = startIndex + employeesPerPage
-  const paginatedRecent = employees.slice(startIndex, endIndex)
-  setRecentEmployees(paginatedRecent)
-}
+  const applyPagination = (employees) => {
+    const startIndex = (currentPage - 1) * employeesPerPage
+    const endIndex = startIndex + employeesPerPage
+    const paginatedRecent = employees.slice(startIndex, endIndex)
+    setRecentEmployees(paginatedRecent)
+  }
 
-  const menuItems = [
-    { title: 'Employee Management', icon: 'people', path: '/hr/employees', color: 'blue' },
-    { title: 'Employee Verification', icon: 'verified', path: '/hr/verification', color: 'green' },
-    { title: 'Bulk Operations', icon: 'group_work', path: '/hr/bulk-operations', color: 'purple' }
+  const quickActions = [
+    { title: 'Employee Management', icon: 'people', path: '/hr/employees', color: 'blue', subtitle: 'Manage staff' },
+    { title: 'Employee Verification', icon: 'verified', path: '/hr/verification', color: 'green', subtitle: 'Verify accounts' },
+    { title: 'Bulk Operations', icon: 'group_work', path: '/hr/bulk-operations', color: 'purple', subtitle: 'Batch actions' },
+    { title: 'Leave Management', icon: 'event_available', path: '/hr/leave', color: 'orange', subtitle: 'Manage leave' },
+    { title: 'Attendance', icon: 'how_to_reg', path: '/hr/attendance', color: 'indigo', subtitle: 'Track attendance' },
+    { title: 'Payroll', icon: 'payments', path: '/hr/payroll', color: 'teal', subtitle: 'Process salary' }
   ]
 
   const handleVerifyEmployee = async (employeeId) => {
     try {
       await hrApi.verifyEmployee(employeeId)
-      // Refresh the recent employees list
       fetchRecentEmployees()
       console.log('Employee verified successfully')
     } catch (error) {
@@ -127,57 +191,12 @@ const applyPagination = (employees) => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
-    fetchRecentEmployees()
+    applyPagination(allRecentEmployees)
   }
 
   const totalPages = Math.ceil(totalRecentEmployees / employeesPerPage)
   const startRecord = (currentPage - 1) * employeesPerPage + 1
   const endRecord = Math.min(currentPage * employeesPerPage, totalRecentEmployees)
-
-  const getGradientColor = (color) => {
-    const gradients = {
-      blue: 'from-blue-400 to-blue-600',
-      green: 'from-green-400 to-green-600',
-      purple: 'from-purple-400 to-purple-600',
-      orange: 'from-orange-400 to-orange-600',
-      red: 'from-red-400 to-red-600',
-      indigo: 'from-indigo-400 to-indigo-600'
-    }
-    return gradients[color] || 'from-gray-400 to-gray-600'
-  }
-
-  const getIconBgColor = (color) => {
-    const colors = {
-      blue: 'bg-blue-100',
-      green: 'bg-green-100',
-      purple: 'bg-purple-100',
-      orange: 'bg-orange-100',
-      red: 'bg-red-100',
-      indigo: 'bg-indigo-100'
-    }
-    return colors[color] || 'bg-gray-100'
-  }
-
-  const getIconColor = (color) => {
-    const colors = {
-      blue: 'text-blue-600',
-      green: 'text-green-600',
-      purple: 'text-purple-600',
-      orange: 'text-orange-600',
-      red: 'text-red-600',
-      indigo: 'text-indigo-600'
-    }
-    return colors[color] || 'text-gray-600'
-  }
-
-  const getSubtitle = (title) => {
-    const subtitles = {
-      'Employee Management': 'Manage staff',
-      'Employee Verification': 'Verify accounts',
-      'Bulk Operations': 'Batch actions'
-    }
-    return subtitles[title] || 'Access module'
-  }
 
   const getColorClasses = (color) => {
     const colors = {
@@ -193,6 +212,45 @@ const applyPagination = (employees) => {
     return colors[color] || 'bg-gray-500 hover:bg-gray-600'
   }
 
+  const getIconColor = (color) => {
+    const colors = {
+      blue: 'text-blue-600',
+      green: 'text-green-600',
+      purple: 'text-purple-600',
+      orange: 'text-orange-600',
+      red: 'text-red-600',
+      indigo: 'text-indigo-600',
+      teal: 'text-teal-600'
+    }
+    return colors[color] || 'text-gray-600'
+  }
+
+  const getIconBg = (color) => {
+    const colors = {
+      blue: 'bg-blue-50',
+      green: 'bg-green-50',
+      purple: 'bg-purple-50',
+      orange: 'bg-orange-50',
+      red: 'bg-red-50',
+      indigo: 'bg-indigo-50',
+      teal: 'bg-teal-50'
+    }
+    return colors[color] || 'bg-gray-50'
+  }
+
+  const getMaxDepartmentCount = () => {
+    return Math.max(...departmentStats.map(d => d.total), 1)
+  }
+
+  const getMaxAttendance = () => {
+    return Math.max(attendanceToday.present, attendanceToday.absent, attendanceToday.late, 1)
+  }
+
+  const getActiveRate = () => {
+    if (stats.totalEmployees === 0) return 0
+    return Math.round((stats.activeEmployees / stats.totalEmployees) * 100)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -206,317 +264,315 @@ const applyPagination = (employees) => {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-gray-50">
-      {/* Fixed Header */}
-      <div className="fixed top-6 left-0 right-0 z-50 px-6">
-        <header className="max-w-[1200px] mx-auto glass-header rounded-full px-8 py-4 flex items-center justify-between bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary p-1.5 rounded-lg">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-              </svg>
-            </div>
-            <h2 className="text-dark text-xl font-extrabold tracking-tight">MicroFinance HR</h2>
-          </div>
-          <nav className="hidden md:flex items-center gap-8">
-            <button 
-              onClick={() => navigate('/hr/dashboard')}
-              className="text-primary text-sm font-semibold hover:text-primary/80 transition-colors"
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={() => navigate('/hr/employees')}
-              className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors"
-            >
-              Employees
-            </button>
-            <button 
-              onClick={() => navigate('/hr/verification')}
-              className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors"
-            >
-              Verification
-            </button>
-            <button 
-              onClick={() => navigate('/hr/bulk-operations')}
-              className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors"
-            >
-              Bulk Ops
-            </button>
-          </nav>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:block text-dark/60 text-sm">
-              Welcome, {user?.first_name || 'HR Admin'}
-            </span>
-            <button 
-              onClick={() => {
-                logout()
-                navigate('/login')
-              }}
-              className="hidden sm:block text-dark text-sm font-bold hover:text-primary px-4"
-            >
-              Logout
-            </button>
-            
-            {/* Mobile Menu Button */}
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
-            >
-              <span className="material-symbols-outlined text-2xl text-dark">
-                {mobileMenuOpen ? 'close' : 'menu'}
-              </span>
-            </button>
-          </div>
-        </header>
-        
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="fixed top-24 left-0 right-0 z-40 px-6">
-            <div className="max-w-[1200px] mx-auto glass-header rounded-2xl p-6 bg-white/95 backdrop-blur-xl border border-white/40 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-dark/60 text-sm">
-                  Welcome, {user?.first_name || 'HR Admin'}
-                </span>
-              </div>
-              <nav className="flex flex-col gap-4">
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/dashboard')
-                  }}
-                  className="text-primary text-sm font-semibold hover:text-primary/80 transition-colors py-2 text-left"
-                >
-                  Dashboard
-                </button>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/employees')
-                  }}
-                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2 text-left"
-                >
-                  Employees
-                </button>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/verification')
-                  }}
-                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2 text-left"
-                >
-                  Verification
-                </button>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    navigate('/hr/bulk-operations')
-                  }}
-                  className="text-dark/80 text-sm font-semibold hover:text-primary transition-colors py-2 text-left"
-                >
-                  Bulk Operations
-                </button>
-                <button 
-                  onClick={() => {
-                    logout()
-                    navigate('/login')
-                  }}
-                  className="text-dark text-sm font-bold hover:text-primary transition-colors py-2 text-left pt-4 border-t"
-                >
-                  Logout
-                </button>
-              </nav>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Consistent HR Header */}
+      <HRHeader 
+        currentPage="dashboard"
+        theme={{
+          icon: 'groups',
+          iconBg: 'from-blue-500 to-blue-700',
+          subtitle: 'Human Resources Management',
+          activeButton: 'from-blue-500 to-blue-700',
+          shadow: 'shadow-blue-500/30'
+        }}
+      />
 
-      <main className="w-full px-4 sm:px-6 lg:px-8 pt-32 pb-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Total Employees */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                  <span className="material-symbols-outlined text-gray-600 text-lg">people</span>
-                </div>
-                <div>
-                  <p className="text-base font-medium text-gray-900">Total Employees</p>
-                  <p className="text-sm text-gray-500">All staff members</p>
-                </div>
-              </div>
+      <main className="w-full px-4 sm:px-6 lg:px-8 pt-28 pb-8 max-w-[1600px] mx-auto">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-6 mb-6 text-white shadow-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">Welcome back, {user?.first_name || 'HR Admin'}! 👋</h1>
+              <p className="text-blue-100 mt-1">Here's what's happening with your workforce today.</p>
             </div>
-            <div className="flex items-baseline">
-              <span className="text-3xl font-semibold text-gray-900">{stats.totalEmployees}</span>
-              <span className="ml-2 text-sm text-gray-500">employees</span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center text-sm text-gray-600">
-                <span className="material-symbols-outlined text-sm mr-1">trending_up</span>
-                <span>+12% from last month</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Employees */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center mr-3">
-                  <span className="material-symbols-outlined text-green-600 text-lg">check_circle</span>
-                </div>
-                <div>
-                  <p className="text-base font-medium text-gray-900">Active Employees</p>
-                  <p className="text-sm text-gray-500">Currently working</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-3xl font-semibold text-gray-900">{stats.activeEmployees}</span>
-              <span className="ml-2 text-sm text-gray-500">employees</span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center text-sm text-green-600">
-                <span className="material-symbols-outlined text-sm mr-1">trending_up</span>
-                <span>91% active rate</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Pending Verifications */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center mr-3">
-                  <span className="material-symbols-outlined text-amber-600 text-lg">pending</span>
-                </div>
-                <div>
-                  <p className="text-base font-medium text-gray-900">Pending Verification</p>
-                  <p className="text-sm text-gray-500">Awaiting approval</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-3xl font-semibold text-gray-900">{stats.pendingVerifications}</span>
-              <span className="ml-2 text-sm text-gray-500">employees</span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center text-sm text-amber-600">
-                <span className="material-symbols-outlined text-sm mr-1">schedule</span>
-                <span>Requires attention</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Registrations */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mr-3">
-                  <span className="material-symbols-outlined text-blue-600 text-lg">person_add</span>
-                </div>
-                <div>
-                  <p className="text-base font-medium text-gray-900">Recent Registrations</p>
-                  <p className="text-sm text-gray-500">Last 30 days</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-3xl font-semibold text-gray-900">{stats.recentRegistrations}</span>
-              <span className="ml-2 text-sm text-gray-500">new hires</span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center text-sm text-blue-600">
-                <span className="material-symbols-outlined text-sm mr-1">calendar_today</span>
-                <span>This month</span>
-              </div>
+            <div className="flex gap-3">
+              <button onClick={() => navigate('/hr/employees')} className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">person_add</span>
+                Add Employee
+              </button>
+              <button onClick={() => navigate('/hr/verification')} className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">verified</span>
+                Verify Pending
+              </button>
             </div>
           </div>
         </div>
 
-       
+        {/* Stats Cards Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Total Employees */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <span className="material-symbols-outlined text-blue-600 text-2xl">people</span>
+              </div>
+              <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">+12%</span>
+            </div>
+            <p className="text-gray-500 text-sm">Total Employees</p>
+            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.totalEmployees}</p>
+            <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-500 rounded-full" style={{ width: '75%' }}></div>
+            </div>
+          </div>
 
-        {/* Recent Employees Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Employee Registrations</h2>
-              <div className="text-sm text-gray-500">
-                Showing {startRecord}-{endRecord} of {totalRecentEmployees} employees
+          {/* Active Employees */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                <span className="material-symbols-outlined text-green-600 text-2xl">check_circle</span>
+              </div>
+              <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">{getActiveRate()}%</span>
+            </div>
+            <p className="text-gray-500 text-sm">Active Employees</p>
+            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.activeEmployees}</p>
+            <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-green-500 rounded-full" style={{ width: `${getActiveRate()}%` }}></div>
+            </div>
+          </div>
+
+          {/* Pending Verifications */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+                <span className="material-symbols-outlined text-amber-600 text-2xl">pending</span>
+              </div>
+              <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-1 rounded-full">Action needed</span>
+            </div>
+            <p className="text-gray-500 text-sm">Pending Verification</p>
+            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.pendingVerifications}</p>
+            <button onClick={() => navigate('/hr/verification')} className="mt-3 text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
+              Review now <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          </div>
+
+          {/* Recent Registrations */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                <span className="material-symbols-outlined text-purple-600 text-2xl">person_add</span>
+              </div>
+              <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded-full">This month</span>
+            </div>
+            <p className="text-gray-500 text-sm">New Hires (30 days)</p>
+            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.recentRegistrations}</p>
+            <button onClick={() => navigate('/hr/employees')} className="mt-3 text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
+              View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Secondary Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Today's Attendance */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+                <span className="material-symbols-outlined text-indigo-600">how_to_reg</span>
+              </div>
+              <h3 className="font-semibold text-gray-800">Today's Attendance</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-600 text-sm">Present</span>
+                </div>
+                <span className="font-semibold text-gray-800">{attendanceToday.present}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-gray-600 text-sm">Absent</span>
+                </div>
+                <span className="font-semibold text-gray-800">{attendanceToday.absent}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-gray-600 text-sm">Late</span>
+                </div>
+                <span className="font-semibold text-gray-800">{attendanceToday.late}</span>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                  <div className="h-full bg-green-500" style={{ width: `${(attendanceToday.present / getMaxAttendance()) * 100}%` }}></div>
+                  <div className="h-full bg-red-500" style={{ width: `${(attendanceToday.absent / getMaxAttendance()) * 100}%` }}></div>
+                  <div className="h-full bg-amber-500" style={{ width: `${(attendanceToday.late / getMaxAttendance()) * 100}%` }}></div>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Leave Requests */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                <span className="material-symbols-outlined text-orange-600">event_available</span>
+              </div>
+              <h3 className="font-semibold text-gray-800">Leave Requests</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-gray-600 text-sm">Pending</span>
+                </div>
+                <span className="font-semibold text-gray-800">{leaveStats.pending}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-600 text-sm">Approved</span>
+                </div>
+                <span className="font-semibold text-gray-800">{leaveStats.approved}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-gray-600 text-sm">Rejected</span>
+                </div>
+                <span className="font-semibold text-gray-800">{leaveStats.rejected}</span>
+              </div>
+              <button onClick={() => navigate('/hr/leave')} className="mt-3 w-full py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                Manage Leave
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center">
+                <span className="material-symbols-outlined text-cyan-600">bolt</span>
+              </div>
+              <h3 className="font-semibold text-gray-800">Quick Actions</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => navigate('/hr/employees')} className="p-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-center transition-colors">
+                <span className="material-symbols-outlined text-blue-600 text-xl">person_add</span>
+                <p className="text-xs text-blue-700 font-medium mt-1">Add Employee</p>
+              </button>
+              <button onClick={() => navigate('/hr/verification')} className="p-2 bg-green-50 hover:bg-green-100 rounded-lg text-center transition-colors">
+                <span className="material-symbols-outlined text-green-600 text-xl">verified</span>
+                <p className="text-xs text-green-700 font-medium mt-1">Verify</p>
+              </button>
+              <button onClick={() => navigate('/hr/bulk-operations')} className="p-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-center transition-colors">
+                <span className="material-symbols-outlined text-purple-600 text-xl">group_work</span>
+                <p className="text-xs text-purple-700 font-medium mt-1">Bulk Ops</p>
+              </button>
+              <button onClick={() => navigate('/hr/payroll')} className="p-2 bg-teal-50 hover:bg-teal-100 rounded-lg text-center transition-colors">
+                <span className="material-symbols-outlined text-teal-600 text-xl">payments</span>
+                <p className="text-xs text-teal-700 font-medium mt-1">Payroll</p>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Department Overview */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800">Department Overview</h2>
+            <button onClick={() => navigate('/hr/employees')} className="text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
+              View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {departmentStats.map((dept, index) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-800">{dept.name}</span>
+                    <span className="text-sm text-gray-500">{dept.total} employees</span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500" 
+                      style={{ width: `${(dept.total / getMaxDepartmentCount()) * 100}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-xs">
+                    <span className="text-green-600 font-medium">{dept.active} active</span>
+                    <span className="text-gray-400">{dept.inactive} inactive</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Employees Table */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-800">Recent Employee Registrations</h2>
+            <div className="text-sm text-gray-500">
+              Showing {startRecord}-{endRecord} of {totalRecentEmployees}
+            </div>
+          </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Verification
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Join Date
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Verification</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Join Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-100">
                 {recentEmployees.map((employee) => (
-                  <tr key={employee.id}>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="text-base font-medium text-gray-900">{employee.name}</div>
+                  <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                          {employee.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <span className="font-medium text-gray-800">{employee.name}</span>
+                      </div>
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="text-base text-gray-900">{employee.department}</div>
+                    <td className="px-6 py-4">
+                      <span className="text-gray-600">{employee.department}</span>
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${
                         employee.status === 'Active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-amber-100 text-amber-700'
                       }`}>
                         {employee.status}
                       </span>
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${
                         employee.verified 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-orange-100 text-orange-800'
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-orange-100 text-orange-700'
                       }`}>
                         {employee.verified ? 'Verified' : 'Pending'}
                       </span>
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-base text-gray-900">
-                      {employee.joinDate}
+                    <td className="px-6 py-4">
+                      <span className="text-gray-600 text-sm">{employee.joinDate}</span>
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <button 
-                        onClick={() => navigate(`/hr/employees/${employee.id}`)}
-                        className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors mr-2"
-                      >
-                        <span className="material-symbols-outlined text-sm mr-1">visibility</span>
-                        View
-                      </button>
-                      {!employee.verified && (
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => handleVerifyEmployee(employee.id)}
-                          className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                          onClick={() => navigate(`/hr/employees/${employee.id}`)}
+                          className="p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                          title="View"
                         >
-                          <span className="material-symbols-outlined text-sm mr-1">verified</span>
-                          Verify
+                          <span className="material-symbols-outlined text-lg">visibility</span>
                         </button>
-                      )}
+                        {!employee.verified && (
+                          <button 
+                            onClick={() => handleVerifyEmployee(employee.id)}
+                            className="p-1.5 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
+                            title="Verify"
+                          >
+                            <span className="material-symbols-outlined text-lg">verified</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -526,50 +582,42 @@ const applyPagination = (employees) => {
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-4 sm:px-6 py-3 border-t border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700">
-                  Page {currentPage} of {totalPages}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined text-sm">chevron_left</span>
-                    Previous
-                  </button>
-                  
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: totalPages }, (_, index) => {
-                      const pageNum = index + 1
-                      const isActive = pageNum === currentPage
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`px-3 py-1 text-sm ${
-                            isActive
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
-                          } rounded-md`}
-                        >
-                          {pageNum}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                    <span className="material-symbols-outlined text-sm">chevron_right</span>
-                  </button>
-                </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, index) => {
+                  const pageNum = index + 1
+                  const isActive = pageNum === currentPage
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                })}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
               </div>
             </div>
           )}

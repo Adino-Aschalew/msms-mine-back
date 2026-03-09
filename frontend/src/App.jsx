@@ -15,6 +15,7 @@ import AI from './pages/AI'
 import TestTailwind from './test-tailwind'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import HRProtectedRoute from './components/auth/HRProtectedRoute'
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute'
 
 // HR Pages
 import HRDashboard from './pages/hr/HRDashboard'
@@ -26,6 +27,13 @@ import DepartmentOverview from './pages/hr/DepartmentOverview'
 import JobGrades from './pages/hr/JobGrades'
 import EmployeeStats from './pages/hr/EmployeeStats'
 
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard'
+import HRAdminManagement from './pages/admin/HRAdminManagement'
+import CreateHRAdmin from './pages/admin/CreateHRAdmin'
+import LoanCommitteeAdminManagement from './pages/admin/LoanCommitteeAdminManagement'
+import CreateLoanCommitteeAdmin from './pages/admin/CreateLoanCommitteeAdmin'
+
 function App() {
   return (
     <ThemeProvider>
@@ -35,6 +43,33 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/test" element={<TestTailwind />} />
+          
+          {/* Admin Routes - Outside regular Layout */}
+          <Route path="/admin" element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          } />
+          <Route path="/admin/hr-admins" element={
+            <AdminProtectedRoute>
+              <HRAdminManagement />
+            </AdminProtectedRoute>
+          } />
+          <Route path="/admin/hr-admins/create" element={
+            <AdminProtectedRoute>
+              <CreateHRAdmin />
+            </AdminProtectedRoute>
+          } />
+          <Route path="/admin/loan-committee-admins" element={
+            <AdminProtectedRoute>
+              <LoanCommitteeAdminManagement />
+            </AdminProtectedRoute>
+          } />
+          <Route path="/admin/loan-committee-admins/create" element={
+            <AdminProtectedRoute>
+              <CreateLoanCommitteeAdmin />
+            </AdminProtectedRoute>
+          } />
           
           {/* HR Routes - Outside regular Layout */}
           <Route path="/hr" element={

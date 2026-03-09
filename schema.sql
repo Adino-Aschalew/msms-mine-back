@@ -17,6 +17,9 @@ CREATE TABLE users (
     email_verified BOOLEAN DEFAULT FALSE,
     reset_token VARCHAR(255) NULL,
     reset_token_expiry DATETIME NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    phone_number VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL,
@@ -29,17 +32,22 @@ CREATE TABLE users (
 
 -- Employee Profiles (Sync with HR Database)
 CREATE TABLE employee_profiles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    profile_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNIQUE NOT NULL,
     employee_id VARCHAR(50) UNIQUE NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     department VARCHAR(100) NOT NULL,
     job_grade VARCHAR(50) NOT NULL,
+    job_title VARCHAR(100),
     employment_status ENUM('ACTIVE', 'INACTIVE', 'TERMINATED') NOT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
     hire_date DATE NOT NULL,
     phone VARCHAR(20),
+    phone_number VARCHAR(20),
     address TEXT,
+    committee_level INT DEFAULT 1,
+    max_loan_amount DECIMAL(15,2) DEFAULT 100000.00,
     hr_verified BOOLEAN DEFAULT FALSE,
     hr_verification_date TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -52,7 +60,7 @@ CREATE TABLE employee_profiles (
 
 -- Savings Accounts
 CREATE TABLE savings_accounts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     employee_id VARCHAR(50) NOT NULL,
     saving_percentage DECIMAL(5,2) NOT NULL CHECK (saving_percentage >= 15 AND saving_percentage <= 65),
@@ -60,6 +68,8 @@ CREATE TABLE savings_accounts (
     total_contributions DECIMAL(15,2) DEFAULT 0.00,
     interest_earned DECIMAL(15,2) DEFAULT 0.00,
     account_status ENUM('ACTIVE', 'FROZEN', 'CLOSED') DEFAULT 'ACTIVE',
+    is_active BOOLEAN DEFAULT TRUE,
+    is_frozen BOOLEAN DEFAULT FALSE,
     lock_period_end_date DATE NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -82,7 +92,7 @@ CREATE TABLE savings_transactions (
     description TEXT,
     transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     payroll_batch_id INT NULL,
-    FOREIGN KEY (savings_account_id) REFERENCES savings_accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (savings_account_id) REFERENCES savings_accounts(account_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_savings_account_id (savings_account_id),
     INDEX idx_user_id (user_id),
@@ -366,11 +376,11 @@ INSERT INTO system_configuration (config_key, config_value, config_type, descrip
 
 -- Create Default Super Admin User (Password: admin123)
 INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified) VALUES
-('ADMIN001', 'superadmin', 'admin@microfinance.com', '$2b$10$rQZ8kHWKtGY5uKx4vJ2zKOqGYvKqY8qGYvKqY8qGYvKqY8qGYvKqY8', 'SUPER_ADMIN', TRUE, TRUE);
+('ADMIN001', 'superadmin', 'admin@microfinance.com', '$2a$12$VHvgDKLjx6yBccrp3QYf0edDR6GbF55mVFsz.FG.43ywsNcNI84XC', 'SUPER_ADMIN', TRUE, TRUE);
 
 -- Create Default HR User (Password: Hr123456)
 INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified) VALUES
-('HR001', 'hr001', 'hr@company.com', '$2b$10$8K5O8kHWKtGY5uKx4vJ2zKOqGYvKqY8qGYvKqY8qGYvKqY8qGYvKqY8', 'HR', TRUE, TRUE);
+('HR001', 'hr001', 'hr@company.com', '$2a$12$PO9tZ107f7sFiaH1TbPf/O6U7Jl2XD6DajVmOxIZinvkperzQ0pju', 'HR', TRUE, TRUE);
 
 -- Insert Employee Profile for Super Admin
 INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, hr_verified, hr_verification_date) VALUES

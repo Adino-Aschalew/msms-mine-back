@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/database');
+const { pool } = require('../config/database');
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -21,7 +21,12 @@ const authMiddleware = async (req, res, next) => {
       WHERE u.id = ? AND u.is_active = true
     `;
     
-    const user = await query(userQuery, [decoded.userId]);
+    const userResult = await pool.execute(userQuery, [decoded.userId]);
+    const user = userResult[0];
+    
+    console.log('Auth middleware - User found:', user.length > 0);
+    console.log('Auth middleware - User role:', user[0]?.role);
+    console.log('Auth middleware - User ID:', user[0]?.id);
     
     if (!user || user.length === 0) {
       return res.status(401).json({ 
@@ -44,6 +49,10 @@ const authMiddleware = async (req, res, next) => {
 
 const roleMiddleware = (allowedRoles) => {
   return (req, res, next) => {
+    console.log('Role middleware - User role:', req.user?.role);
+    console.log('Role middleware - Allowed roles:', allowedRoles);
+    console.log('Role middleware - User exists:', !!req.user);
+    
     if (!req.user) {
       return res.status(401).json({ 
         success: false, 
@@ -52,6 +61,7 @@ const roleMiddleware = (allowedRoles) => {
     }
 
     if (!allowedRoles.includes(req.user.role)) {
+      console.log('Role middleware - Access denied. Role not in allowed list');
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied. Insufficient permissions.' 
