@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import hrApi from '../../services/hrApi'
 import HRHeader from '../../components/common/HRHeader'
 
 const HRDashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { theme, colors } = useTheme()
+  const isDark = theme === 'dark'
   const [stats, setStats] = useState({
     totalEmployees: 0,
     activeEmployees: 0,
@@ -253,17 +256,34 @@ const HRDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading HR Dashboard...</p>
+          <p className={`mt-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading HR Dashboard...</p>
         </div>
       </div>
     )
   }
 
+  // Dynamic color classes based on theme
+  const cardColors = isDark ? {
+    bg: 'bg-gray-800',
+    border: 'border-gray-700',
+    hover: 'hover:shadow-lg hover:border-gray-600',
+    text: 'text-gray-100',
+    textSecondary: 'text-gray-300',
+    textMuted: 'text-gray-400',
+  } : {
+    bg: 'bg-white',
+    border: 'border-gray-100',
+    hover: 'hover:shadow-md',
+    text: 'text-gray-800',
+    textSecondary: 'text-gray-600',
+    textMuted: 'text-gray-500',
+  }
+
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-gray-50">
+    <div className={`relative flex min-h-screen w-full flex-col overflow-x-hidden ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Consistent HR Header */}
       <HRHeader 
         currentPage="dashboard"
@@ -300,244 +320,104 @@ const HRDashboard = () => {
         {/* Stats Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Total Employees */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-sm ${cardColors.border} ${cardColors.hover} transition-all`}>
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-blue-600 text-2xl">people</span>
+              <div className={`w-12 h-12 ${isDark ? 'bg-blue-900/30' : 'bg-blue-50'} rounded-xl flex items-center justify-center`}>
+                <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>people</span>
               </div>
-              <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">+12%</span>
+              <span className={`${isDark ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-100 text-blue-700'} text-xs font-medium px-2 py-1 rounded-full`}>+12%</span>
             </div>
-            <p className="text-gray-500 text-sm">Total Employees</p>
-            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.totalEmployees}</p>
-            <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <p className={`${cardColors.textMuted} text-sm`}>Total Employees</p>
+            <p className={`text-3xl font-bold ${cardColors.text} mt-1`}>{stats.totalEmployees}</p>
+            <div className={`mt-3 h-1.5 ${isDark ? 'bg-gray-700' : 'bg-gray-100'} rounded-full overflow-hidden`}>
               <div className="h-full bg-blue-500 rounded-full" style={{ width: '75%' }}></div>
             </div>
           </div>
 
           {/* Active Employees */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-sm ${cardColors.border} ${cardColors.hover} transition-all`}>
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-green-600 text-2xl">check_circle</span>
+              <div className={`w-12 h-12 ${isDark ? 'bg-green-900/30' : 'bg-green-50'} rounded-xl flex items-center justify-center`}>
+                <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-green-400' : 'text-green-600'}`}>check_circle</span>
               </div>
-              <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">{getActiveRate()}%</span>
+              <span className={`${isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-700'} text-xs font-medium px-2 py-1 rounded-full`}>{getActiveRate()}%</span>
             </div>
-            <p className="text-gray-500 text-sm">Active Employees</p>
-            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.activeEmployees}</p>
-            <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <p className={`${cardColors.textMuted} text-sm`}>Active Employees</p>
+            <p className={`text-3xl font-bold ${cardColors.text} mt-1`}>{stats.activeEmployees}</p>
+            <div className={`mt-3 h-1.5 ${isDark ? 'bg-gray-700' : 'bg-gray-100'} rounded-full overflow-hidden`}>
               <div className="h-full bg-green-500 rounded-full" style={{ width: `${getActiveRate()}%` }}></div>
             </div>
           </div>
 
           {/* Pending Verifications */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-sm ${cardColors.border} ${cardColors.hover} transition-all`}>
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-amber-600 text-2xl">pending</span>
+              <div className={`w-12 h-12 ${isDark ? 'bg-amber-900/30' : 'bg-amber-50'} rounded-xl flex items-center justify-center`}>
+                <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>pending</span>
               </div>
-              <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-1 rounded-full">Action needed</span>
+              <span className={`${isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-100 text-amber-700'} text-xs font-medium px-2 py-1 rounded-full`}>Action needed</span>
             </div>
-            <p className="text-gray-500 text-sm">Pending Verification</p>
-            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.pendingVerifications}</p>
-            <button onClick={() => navigate('/hr/verification')} className="mt-3 text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
+            <p className={`${cardColors.textMuted} text-sm`}>Pending Verification</p>
+            <p className={`text-3xl font-bold ${cardColors.text} mt-1`}>{stats.pendingVerifications}</p>
+            <button onClick={() => navigate('/hr/verification')} className={`mt-3 text-sm font-medium flex items-center gap-1 ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}>
               Review now <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </button>
           </div>
 
           {/* Recent Registrations */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-sm ${cardColors.border} ${cardColors.hover} transition-all`}>
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-purple-600 text-2xl">person_add</span>
+              <div className={`w-12 h-12 ${isDark ? 'bg-purple-900/30' : 'bg-purple-50'} rounded-xl flex items-center justify-center`}>
+                <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>person_add</span>
               </div>
-              <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded-full">This month</span>
+              <span className={`${isDark ? 'bg-purple-900/50 text-purple-400' : 'bg-purple-100 text-purple-700'} text-xs font-medium px-2 py-1 rounded-full`}>This month</span>
             </div>
-            <p className="text-gray-500 text-sm">New Hires (30 days)</p>
-            <p className="text-3xl font-bold text-gray-800 mt-1">{stats.recentRegistrations}</p>
-            <button onClick={() => navigate('/hr/employees')} className="mt-3 text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
+            <p className={`${cardColors.textMuted} text-sm`}>New Hires (30 days)</p>
+            <p className={`text-3xl font-bold ${cardColors.text} mt-1`}>{stats.recentRegistrations}</p>
+            <button onClick={() => navigate('/hr/employees')} className={`mt-3 text-sm font-medium flex items-center gap-1 ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}>
               View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </button>
           </div>
         </div>
-
-        {/* Secondary Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Today's Attendance */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-indigo-600">how_to_reg</span>
-              </div>
-              <h3 className="font-semibold text-gray-800">Today's Attendance</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-600 text-sm">Present</span>
-                </div>
-                <span className="font-semibold text-gray-800">{attendanceToday.present}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-gray-600 text-sm">Absent</span>
-                </div>
-                <span className="font-semibold text-gray-800">{attendanceToday.absent}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                  <span className="text-gray-600 text-sm">Late</span>
-                </div>
-                <span className="font-semibold text-gray-800">{attendanceToday.late}</span>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
-                  <div className="h-full bg-green-500" style={{ width: `${(attendanceToday.present / getMaxAttendance()) * 100}%` }}></div>
-                  <div className="h-full bg-red-500" style={{ width: `${(attendanceToday.absent / getMaxAttendance()) * 100}%` }}></div>
-                  <div className="h-full bg-amber-500" style={{ width: `${(attendanceToday.late / getMaxAttendance()) * 100}%` }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Leave Requests */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-orange-600">event_available</span>
-              </div>
-              <h3 className="font-semibold text-gray-800">Leave Requests</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                  <span className="text-gray-600 text-sm">Pending</span>
-                </div>
-                <span className="font-semibold text-gray-800">{leaveStats.pending}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-600 text-sm">Approved</span>
-                </div>
-                <span className="font-semibold text-gray-800">{leaveStats.approved}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-gray-600 text-sm">Rejected</span>
-                </div>
-                <span className="font-semibold text-gray-800">{leaveStats.rejected}</span>
-              </div>
-              <button onClick={() => navigate('/hr/leave')} className="mt-3 w-full py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors">
-                Manage Leave
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-cyan-600">bolt</span>
-              </div>
-              <h3 className="font-semibold text-gray-800">Quick Actions</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => navigate('/hr/employees')} className="p-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-center transition-colors">
-                <span className="material-symbols-outlined text-blue-600 text-xl">person_add</span>
-                <p className="text-xs text-blue-700 font-medium mt-1">Add Employee</p>
-              </button>
-              <button onClick={() => navigate('/hr/verification')} className="p-2 bg-green-50 hover:bg-green-100 rounded-lg text-center transition-colors">
-                <span className="material-symbols-outlined text-green-600 text-xl">verified</span>
-                <p className="text-xs text-green-700 font-medium mt-1">Verify</p>
-              </button>
-              <button onClick={() => navigate('/hr/bulk-operations')} className="p-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-center transition-colors">
-                <span className="material-symbols-outlined text-purple-600 text-xl">group_work</span>
-                <p className="text-xs text-purple-700 font-medium mt-1">Bulk Ops</p>
-              </button>
-              <button onClick={() => navigate('/hr/payroll')} className="p-2 bg-teal-50 hover:bg-teal-100 rounded-lg text-center transition-colors">
-                <span className="material-symbols-outlined text-teal-600 text-xl">payments</span>
-                <p className="text-xs text-teal-700 font-medium mt-1">Payroll</p>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Department Overview */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-800">Department Overview</h2>
-            <button onClick={() => navigate('/hr/employees')} className="text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
-              View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </button>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {departmentStats.map((dept, index) => (
-                <div key={index} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-800">{dept.name}</span>
-                    <span className="text-sm text-gray-500">{dept.total} employees</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500" 
-                      style={{ width: `${(dept.total / getMaxDepartmentCount()) * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex items-center justify-between mt-2 text-xs">
-                    <span className="text-green-600 font-medium">{dept.active} active</span>
-                    <span className="text-gray-400">{dept.inactive} inactive</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Recent Employees Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 className="text-lg font-semibold text-gray-800">Recent Employee Registrations</h2>
-            <div className="text-sm text-gray-500">
+        <div className={`${cardColors.bg} rounded-2xl shadow-sm ${cardColors.border} overflow-hidden`}>
+          <div className={`px-6 py-4 ${cardColors.border} flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3`}>
+            <h2 className={`text-lg font-semibold ${cardColors.text}`}>Recent Employee Registrations</h2>
+            <div className={`text-sm ${cardColors.textMuted}`}>
               Showing {startRecord}-{endRecord} of {totalRecentEmployees}
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50">
+              <thead className={isDark ? 'bg-gray-700/50' : 'bg-gray-50'}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Verification</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Join Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className={`px-6 py-3 text-left text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Employee</th>
+                  <th className={`px-6 py-3 text-left text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Department</th>
+                  <th className={`px-6 py-3 text-left text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Status</th>
+                  <th className={`px-6 py-3 text-left text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Verification</th>
+                  <th className={`px-6 py-3 text-left text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Join Date</th>
+                  <th className={`px-6 py-3 text-left text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-100'}`}>
                 {recentEmployees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={employee.id} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
                           {employee.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <span className="font-medium text-gray-800">{employee.name}</span>
+                        <span className={`font-medium ${cardColors.text}`}>{employee.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-gray-600">{employee.department}</span>
+                      <span className={cardColors.textSecondary}>{employee.department}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${
                         employee.status === 'Active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-amber-100 text-amber-700'
+                          ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700' 
+                          : isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-700'
                       }`}>
                         {employee.status}
                       </span>
@@ -545,20 +425,20 @@ const HRDashboard = () => {
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${
                         employee.verified 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-orange-100 text-orange-700'
+                          ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700' 
+                          : isDark ? 'bg-orange-900/30 text-orange-400' : 'bg-orange-100 text-orange-700'
                       }`}>
                         {employee.verified ? 'Verified' : 'Pending'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-gray-600 text-sm">{employee.joinDate}</span>
+                      <span className={`${cardColors.textSecondary} text-sm`}>{employee.joinDate}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => navigate(`/hr/employees/${employee.id}`)}
-                          className="p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                          className={`p-1.5 ${isDark ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'} rounded-lg transition-colors`}
                           title="View"
                         >
                           <span className="material-symbols-outlined text-lg">visibility</span>
@@ -566,7 +446,7 @@ const HRDashboard = () => {
                         {!employee.verified && (
                           <button 
                             onClick={() => handleVerifyEmployee(employee.id)}
-                            className="p-1.5 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
+                            className={`p-1.5 ${isDark ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-600 hover:bg-green-200'} rounded-lg transition-colors`}
                             title="Verify"
                           >
                             <span className="material-symbols-outlined text-lg">verified</span>
@@ -582,15 +462,19 @@ const HRDashboard = () => {
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-              <div className="text-sm text-gray-500">
+            <div className={`px-6 py-4 ${cardColors.border} flex items-center justify-between`}>
+              <div className={`text-sm ${cardColors.textMuted}`}>
                 Page {currentPage} of {totalPages}
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    isDark 
+                      ? 'text-gray-300 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800' 
+                      : 'text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   Previous
                 </button>
@@ -604,7 +488,9 @@ const HRDashboard = () => {
                       className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                         isActive
                           ? 'bg-blue-600 text-white'
-                          : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                          : isDark
+                            ? 'text-gray-300 bg-gray-700 hover:bg-gray-600'
+                            : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
                       }`}
                     >
                       {pageNum}
@@ -614,7 +500,11 @@ const HRDashboard = () => {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    isDark 
+                      ? 'text-gray-300 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800' 
+                      : 'text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   Next
                 </button>

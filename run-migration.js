@@ -18,7 +18,7 @@ async function runMigration() {
 
     // Read and execute migration
     const fs = require('fs');
-    const migrationSQL = fs.readFileSync('./src/migrations/add_password_reset_columns.sql', 'utf8');
+    const migrationSQL = fs.readFileSync('./migrations/add_profile_picture.sql', 'utf8');
     
     // Split SQL into individual statements
     const statements = migrationSQL

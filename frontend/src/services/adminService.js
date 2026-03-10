@@ -139,6 +139,12 @@ class AdminService {
     const response = await this.api.post('/admin/system/maintenance', { enabled })
     return response.data
   }
+
+  // Registered Users (Employees)
+  async getRegisteredUsers(params = {}) {
+    const response = await this.api.get('/employee/all', { params })
+    return response.data
+  }
 }
 
 const adminService = new AdminService()

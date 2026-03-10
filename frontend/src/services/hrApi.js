@@ -43,12 +43,22 @@ const hrApi = {
   },
 
   bulkVerifyEmployees: async (employeeIds) => {
-    const response = await api.post('/hr/employees/bulk-verify', { employeeIds })
+    const response = await api.post('/hr/employees/bulk-verify', { userIds: employeeIds })
     return response.data
   },
 
   createEmployee: async (employeeData) => {
     const response = await api.post('/hr/employees', employeeData)
+    return response.data
+  },
+
+  updateEmployee: async (userId, employeeData) => {
+    const response = await api.put(`/hr/employees/${userId}/profile`, employeeData)
+    return response.data
+  },
+
+  deleteEmployee: async (userId) => {
+    const response = await api.put(`/hr/employees/${userId}/status`, { employment_status: 'INACTIVE' })
     return response.data
   },
 

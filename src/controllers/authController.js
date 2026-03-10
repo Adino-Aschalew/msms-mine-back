@@ -210,6 +210,7 @@ class AuthController {
           department: user.department,
           job_grade: user.job_grade,
           employment_status: user.employment_status,
+          profile_picture: user.profile_picture,
           created_at: user.created_at,
           last_login: user.last_login
         }
@@ -219,6 +220,56 @@ class AuthController {
       res.status(500).json({
         success: false,
         message: 'Internal server error'
+      });
+    }
+  }
+  
+  static async uploadProfilePicture(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No image file provided'
+        });
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed'
+        });
+      }
+      
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (req.file.size > maxSize) {
+        return res.status(400).json({
+          success: false,
+          message: 'File too large. Maximum size is 5MB'
+        });
+      }
+      
+      const userId = req.userId;
+      const profilePicturePath = `/uploads/profile-pictures/${req.file.filename}`;
+      
+      await User.updateProfilePicture(userId, profilePicturePath);
+      
+      await auditLog(userId, 'PROFILE_PICTURE_UPLOAD', 'employee_profiles', userId, null, { profile_picture: profilePicturePath }, req.ip, req.get('User-Agent'));
+      
+      res.json({
+        success: true,
+        message: 'Profile picture uploaded successfully',
+        data: {
+          profile_picture: profilePicturePath
+        }
+      });
+    } catch (error) {
+      console.error('Upload profile picture error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload profile picture'
       });
     }
   }

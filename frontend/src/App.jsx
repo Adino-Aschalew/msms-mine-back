@@ -26,6 +26,8 @@ import EmployeeDetails from './pages/hr/EmployeeDetails'
 import DepartmentOverview from './pages/hr/DepartmentOverview'
 import JobGrades from './pages/hr/JobGrades'
 import EmployeeStats from './pages/hr/EmployeeStats'
+import HRProfile from './pages/hr/HRProfile'
+import HRSettings from './pages/hr/HRSettings'
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -33,6 +35,9 @@ import HRAdminManagement from './pages/admin/HRAdminManagement'
 import CreateHRAdmin from './pages/admin/CreateHRAdmin'
 import LoanCommitteeAdminManagement from './pages/admin/LoanCommitteeAdminManagement'
 import CreateLoanCommitteeAdmin from './pages/admin/CreateLoanCommitteeAdmin'
+import AdminProfile from './pages/admin/AdminProfile'
+import AdminSettings from './pages/admin/AdminSettings'
+import AdminSecurity from './pages/admin/AdminSecurity'
 
 function App() {
   return (
@@ -70,8 +75,23 @@ function App() {
               <CreateLoanCommitteeAdmin />
             </AdminProtectedRoute>
           } />
+          <Route path="/admin/profile" element={
+            <AdminProtectedRoute>
+              <AdminProfile />
+            </AdminProtectedRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <AdminProtectedRoute>
+              <AdminSettings />
+            </AdminProtectedRoute>
+          } />
+          <Route path="/admin/security" element={
+            <AdminProtectedRoute>
+              <AdminSecurity />
+            </AdminProtectedRoute>
+          } />
           
-          {/* HR Routes - Outside regular Layout */}
+          {/* HR Routes - Outside regular Layout (no duplicate inside Layout) */}
           <Route path="/hr" element={
             <HRProtectedRoute>
               <HRDashboard />
@@ -112,6 +132,16 @@ function App() {
               <EmployeeStats />
             </HRProtectedRoute>
           } />
+          <Route path="/hr/profile" element={
+            <HRProtectedRoute>
+              <HRProfile />
+            </HRProtectedRoute>
+          } />
+          <Route path="/hr/settings" element={
+            <HRProtectedRoute>
+              <HRSettings />
+            </HRProtectedRoute>
+          } />
           
           <Route path="/*" element={
             <Layout>
@@ -145,47 +175,6 @@ function App() {
                   <ProtectedRoute>
                     <AI />
                   </ProtectedRoute>
-                } />
-                {/* HR Routes */}
-                <Route path="/hr" element={
-                  <HRProtectedRoute>
-                    <HRDashboard />
-                  </HRProtectedRoute>
-                } />
-                <Route path="/hr/employees" element={
-                  <HRProtectedRoute>
-                    <EmployeeManagement />
-                  </HRProtectedRoute>
-                } />
-                <Route path="/hr/verification" element={
-                  <HRProtectedRoute>
-                    <EmployeeVerification />
-                  </HRProtectedRoute>
-                } />
-                <Route path="/hr/bulk-operations" element={
-                  <HRProtectedRoute>
-                    <BulkOperations />
-                  </HRProtectedRoute>
-                } />
-                <Route path="/hr/employees/:userId" element={
-                  <HRProtectedRoute>
-                    <EmployeeDetails />
-                  </HRProtectedRoute>
-                } />
-                <Route path="/hr/departments" element={
-                  <HRProtectedRoute>
-                    <DepartmentOverview />
-                  </HRProtectedRoute>
-                } />
-                <Route path="/hr/job-grades" element={
-                  <HRProtectedRoute>
-                    <JobGrades />
-                  </HRProtectedRoute>
-                } />
-                <Route path="/hr/stats" element={
-                  <HRProtectedRoute>
-                    <EmployeeStats />
-                  </HRProtectedRoute>
                 } />
               </Routes>
             </Layout>

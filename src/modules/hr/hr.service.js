@@ -62,7 +62,9 @@ class HrService {
           ep.department,
           ep.job_grade,
           ep.employment_status,
-          ep.hire_date
+          ep.hire_date,
+          ep.hr_verified,
+          ep.hr_verification_date
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         ${whereClause}
@@ -93,21 +95,21 @@ class HrService {
     try {
       // Check if user exists and is not already verified
       const [user] = await query(`
-        SELECT u.*, ep.first_name, ep.last_name, ep.email
+        SELECT u.*, ep.first_name, ep.last_name, ep.email, ep.hr_verified
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-        WHERE u.id = ? AND u.email_verified = FALSE
+        WHERE u.id = ? AND ep.hr_verified = FALSE
       `, [userId]);
       
       if (!user || !user[0]) {
-        throw new Error('User not found or already verified');
+        throw new Error('Employee not found or already verified');
       }
       
-      // Update user verification status
+      // Update HR verification status in employee_profiles
       await query(`
-        UPDATE users 
-        SET email_verified = TRUE, updated_at = NOW()
-        WHERE id = ?
+        UPDATE employee_profiles 
+        SET hr_verified = TRUE, hr_verification_date = NOW(), updated_at = NOW()
+        WHERE user_id = ?
       `, [userId]);
       
       // Log verification
@@ -547,7 +549,8 @@ class HrService {
         SELECT 
           COUNT(*) as total_employees,
           COUNT(CASE WHEN is_active = TRUE THEN 1 END) as active_employees,
-          COUNT(CASE WHEN email_verified = TRUE THEN 1 END) as verified_employees,
+          COUNT(CASE WHEN ep.hr_verified = TRUE THEN 1 END) as verified_employees,
+          COUNT(CASE WHEN ep.hr_verified = FALSE OR ep.hr_verified IS NULL THEN 1 END) as pending_verification,
           COUNT(CASE WHEN employment_status = 'ACTIVE' THEN 1 END) as active_employment,
           COUNT(CASE WHEN employment_status = 'INACTIVE' THEN 1 END) as inactive,
           COUNT(CASE WHEN employment_status = 'TERMINATED' THEN 1 END) as terminated,
@@ -574,22 +577,22 @@ class HrService {
       for (const userId of userIds) {
         try {
           const [user] = await query(`
-            SELECT u.*, ep.first_name, ep.last_name, ep.email
+            SELECT u.*, ep.first_name, ep.last_name, ep.email, ep.hr_verified
             FROM users u
             LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-            WHERE u.id = ? AND u.email_verified = FALSE
+            WHERE u.id = ? AND ep.hr_verified = FALSE
           `, [userId]);
           
           if (!user || !user[0]) {
-            results.failed.push({ userId, reason: 'User not found' });
+            results.failed.push({ userId, reason: 'User not found or already verified' });
             continue;
           }
           
-          // Update verification status
+          // Update HR verification status
           await query(`
-            UPDATE users 
-            SET email_verified = TRUE, updated_at = NOW()
-            WHERE id = ?
+            UPDATE employee_profiles 
+            SET hr_verified = TRUE, hr_verification_date = NOW(), updated_at = NOW()
+            WHERE user_id = ?
           `, [userId]);
           
           // Log verification

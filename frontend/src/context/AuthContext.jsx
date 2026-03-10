@@ -37,6 +37,14 @@ const authReducer = (state, action) => {
         ...state,
         loading: action.payload
       }
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          ...action.payload
+        }
+      }
     default:
       return state
   }
@@ -89,6 +97,10 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGOUT' })
   }
 
+  const setUser = (userData) => {
+    dispatch({ type: 'UPDATE_USER', payload: userData })
+  }
+
   const getDashboardRoute = () => {
     const { user } = state
     if (!user) return '/login'
@@ -127,6 +139,7 @@ export const AuthProvider = ({ children }) => {
     ...state,
     login,
     logout,
+    setUser,
     getDashboardRoute,
     isHR
   }

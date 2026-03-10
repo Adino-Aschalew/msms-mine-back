@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import hrApi from '../../services/hrApi'
 import HRHeader from '../../components/common/HRHeader'
 
 const BulkOperations = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { theme, colors } = useTheme()
+  const isDark = theme === 'dark'
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedEmployees, setSelectedEmployees] = useState([])
@@ -148,19 +151,42 @@ const BulkOperations = () => {
     inactive: employees.filter(e => e.status === 'INACTIVE' || e.status === 'Inactive').length
   }
 
+  // Dynamic color classes based on theme
+  const cardColors = isDark ? {
+    bg: 'bg-gray-800/80 backdrop-blur-xl',
+    border: 'border-gray-700/40',
+    hover: 'hover:shadow-xl hover:border-gray-600',
+    text: 'text-gray-100',
+    textSecondary: 'text-gray-300',
+    textMuted: 'text-gray-400',
+    iconBg: 'bg-gray-700',
+    inputBg: 'bg-gray-700/50',
+    divider: 'divide-gray-700',
+  } : {
+    bg: 'bg-white/80 backdrop-blur-xl',
+    border: 'border-white/40',
+    hover: 'hover:shadow-xl',
+    text: 'text-gray-800',
+    textSecondary: 'text-gray-600',
+    textMuted: 'text-gray-500',
+    iconBg: 'bg-gray-100',
+    inputBg: 'bg-gray-50',
+    divider: 'divide-gray-100',
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading bulk operations...</p>
+          <p className={`mt-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading bulk operations...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-gray-50">
+    <div className={`relative flex min-h-screen w-full flex-col overflow-x-hidden ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Consistent HR Header */}
       <HRHeader 
         currentPage="bulk-operations"
@@ -176,62 +202,62 @@ const BulkOperations = () => {
       <main className="w-full px-4 sm:px-6 lg:px-8 pt-28 pb-8 max-w-[1600px] mx-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-lg ${cardColors.border} ${cardColors.hover} transition-all group`}>
             <div className="flex items-start justify-between">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
+              <div className={`w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-outlined text-white text-xl">people</span>
               </div>
-              <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded-full">Total</span>
+              <span className={`${isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-100 text-indigo-700'} text-xs font-bold px-2 py-1 rounded-full`}>Total</span>
             </div>
-            <p className="text-gray-500 text-sm mt-4">Total Employees</p>
-            <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
+            <p className={`${cardColors.textMuted} text-sm mt-4`}>Total Employees</p>
+            <p className={`text-3xl font-bold ${cardColors.text}`}>{stats.total}</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-lg ${cardColors.border} ${cardColors.hover} transition-all group`}>
             <div className="flex items-start justify-between">
-              <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:scale-110 transition-transform">
+              <div className={`w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-outlined text-white text-xl">verified</span>
               </div>
-              <span className="bg-violet-100 text-violet-700 text-xs font-bold px-2 py-1 rounded-full">Verified</span>
+              <span className={`${isDark ? 'bg-violet-900/50 text-violet-400' : 'bg-violet-100 text-violet-700'} text-xs font-bold px-2 py-1 rounded-full`}>Verified</span>
             </div>
-            <p className="text-gray-500 text-sm mt-4">Verified</p>
-            <p className="text-3xl font-bold text-gray-800">{stats.verified}</p>
+            <p className={`${cardColors.textMuted} text-sm mt-4`}>Verified</p>
+            <p className={`text-3xl font-bold ${cardColors.text}`}>{stats.verified}</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-lg ${cardColors.border} ${cardColors.hover} transition-all group`}>
             <div className="flex items-start justify-between">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
+              <div className={`w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-outlined text-white text-xl">check_circle</span>
               </div>
-              <span className="bg-teal-100 text-teal-700 text-xs font-bold px-2 py-1 rounded-full">Active</span>
+              <span className={`${isDark ? 'bg-teal-900/50 text-teal-400' : 'bg-teal-100 text-teal-700'} text-xs font-bold px-2 py-1 rounded-full`}>Active</span>
             </div>
-            <p className="text-gray-500 text-sm mt-4">Active</p>
-            <p className="text-3xl font-bold text-gray-800">{stats.active}</p>
+            <p className={`${cardColors.textMuted} text-sm mt-4`}>Active</p>
+            <p className={`text-3xl font-bold ${cardColors.text}`}>{stats.active}</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-lg border border-white/40 hover:shadow-xl transition-all group">
+          <div className={`${cardColors.bg} rounded-2xl p-5 shadow-lg ${cardColors.border} ${cardColors.hover} transition-all group`}>
             <div className="flex items-start justify-between">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform">
+              <div className={`w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-outlined text-white text-xl">person_off</span>
               </div>
-              <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">Inactive</span>
+              <span className={`${isDark ? 'bg-orange-900/50 text-orange-400' : 'bg-orange-100 text-orange-700'} text-xs font-bold px-2 py-1 rounded-full`}>Inactive</span>
             </div>
-            <p className="text-gray-500 text-sm mt-4">Inactive</p>
-            <p className="text-3xl font-bold text-gray-800">{stats.inactive}</p>
+            <p className={`${cardColors.textMuted} text-sm mt-4`}>Inactive</p>
+            <p className={`text-3xl font-bold ${cardColors.text}`}>{stats.inactive}</p>
           </div>
         </div>
 
         {/* Operation Selection */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/40 mb-6 overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-b border-gray-100">
+        <div className={`${cardColors.bg} rounded-2xl shadow-lg ${cardColors.border} mb-6 overflow-hidden`}>
+          <div className={`px-6 py-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-violet-600 text-xl">bolt</span>
-                <h3 className="text-lg font-bold text-gray-800">Select Operation</h3>
+                <h3 className={`text-lg font-bold ${cardColors.text}`}>Select Operation</h3>
               </div>
               <button
                 onClick={() => setOperation('')}
-                className="text-violet-600 hover:text-violet-800 text-sm font-semibold flex items-center gap-1 hover:bg-violet-50 px-3 py-1.5 rounded-lg transition-all"
+                className={`text-violet-600 hover:text-violet-800 text-sm font-semibold flex items-center gap-1 ${isDark ? 'hover:bg-violet-900/30' : 'hover:bg-violet-50'} px-3 py-1.5 rounded-lg transition-all`}
               >
                 <span className="material-symbols-outlined text-sm">refresh</span>
                 Clear
@@ -248,22 +274,22 @@ const BulkOperations = () => {
                   className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
                     operation === op.id 
                       ? `border-${op.color.split(' ')[0].replace('from-', '')} bg-gradient-to-br ${op.color} text-white shadow-xl` 
-                      : `border-gray-200 hover:border-${op.color.split(' ')[0].replace('from-', '')} hover:shadow-lg bg-white`
+                      : `${isDark ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200'} hover:border-${op.color.split(' ')[0].replace('from-', '')} hover:shadow-lg ${isDark ? '' : 'bg-white'}`
                   }`}
                 >
                   <div className="flex flex-col items-center text-center">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-3 ${
-                      operation === op.id ? 'bg-white/20' : op.iconBg
+                      operation === op.id ? 'bg-white/20' : isDark ? 'bg-gray-600' : op.iconBg
                     }`}>
                       <span className={`material-symbols-outlined text-3xl ${
-                        operation === op.id ? 'text-white' : op.iconColor
+                        operation === op.id ? 'text-white' : isDark ? 'text-gray-300' : op.iconColor
                       }`}>{op.icon}</span>
                     </div>
                     <div className={`text-base font-bold mb-1 ${
-                      operation === op.id ? 'text-white' : 'text-gray-900'
+                      operation === op.id ? 'text-white' : cardColors.text
                     }`}>{op.name}</div>
                     <div className={`text-xs ${
-                      operation === op.id ? 'text-white/80' : 'text-gray-500'
+                      operation === op.id ? 'text-white/80' : cardColors.textMuted
                     }`}>{op.description}</div>
                   </div>
                 </button>
@@ -274,8 +300,8 @@ const BulkOperations = () => {
 
         {/* Employee Selection */}
         {operation && (
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/40 mb-6 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r from-gray-50 to-white">
+          <div className={`${cardColors.bg} rounded-2xl shadow-lg ${cardColors.border} mb-6 overflow-hidden`}>
+            <div className={`px-6 py-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-100'} flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${isDark ? 'bg-gray-800/50' : 'bg-gradient-to-r from-gray-50 to-white'}`}>
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${
                   operation === 'verify' ? 'bg-gradient-to-br from-violet-500 to-purple-600' :
@@ -287,14 +313,16 @@ const BulkOperations = () => {
                   </span>
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-800">Select Employees</h2>
-                  <p className="text-gray-500 text-sm">{selectedEmployees.length} of {employees.length} selected</p>
+                  <h2 className={`text-lg font-bold ${cardColors.text}`}>Select Employees</h2>
+                  <p className={`${cardColors.textMuted} text-sm`}>{selectedEmployees.length} of {employees.length} selected</p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={handleSelectAll}
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 font-semibold transition-all"
+                  className={`inline-flex items-center gap-2 px-4 py-2 border rounded-xl font-semibold transition-all ${
+                    isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   <span className="material-symbols-outlined text-sm">
                     {selectedEmployees.length === employees.length ? 'deselect' : 'select_all'}
@@ -317,8 +345,8 @@ const BulkOperations = () => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className={`min-w-full divide-y ${cardColors.divider}`}>
+                <thead className={isDark ? 'bg-gray-700/50' : 'bg-gray-50'}>
                   <tr>
                     <th className="px-6 py-4 text-left">
                       <input
@@ -328,26 +356,26 @@ const BulkOperations = () => {
                         className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
                       />
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-4 text-left text-xs font-bold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Employee
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-4 text-left text-xs font-bold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Department
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-4 text-left text-xs font-bold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Position
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-4 text-left text-xs font-bold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Status
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-4 text-left text-xs font-bold ${isDark ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Verification
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className={isDark ? 'bg-gray-800/50' : 'bg-white'}>
                   {employees.map((employee) => (
-                    <tr key={employee.id} className="hover:bg-violet-50/30 transition-all">
+                    <tr key={employee.id} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-violet-50/30'} transition-all`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
@@ -362,19 +390,19 @@ const BulkOperations = () => {
                             {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </div>
                           <div>
-                            <div className="text-sm font-bold text-gray-900">{employee.name}</div>
-                            <div className="text-xs text-gray-400 font-mono">{employee.employeeId}</div>
+                            <div className={`text-sm font-bold ${cardColors.text}`}>{employee.name}</div>
+                            <div className={`text-xs ${cardColors.textMuted} font-mono`}>{employee.employeeId}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-gray-400 text-lg">business</span>
-                          <span className="text-sm text-gray-800">{employee.department}</span>
+                          <span className={`material-symbols-outlined ${cardColors.textMuted} text-lg`}>business</span>
+                          <span className={`text-sm ${cardColors.textSecondary}`}>{employee.department}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-800">{employee.position}</span>
+                        <span className={`text-sm ${cardColors.textSecondary}`}>{employee.position}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1.5 text-xs font-bold rounded-full shadow-md ${getStatusColor(employee.status)}`}>
@@ -398,8 +426,8 @@ const BulkOperations = () => {
         {operationResult && (
           <div className={`rounded-2xl p-6 mb-6 shadow-lg border ${
             operationResult.success 
-              ? 'bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-teal-200' 
-              : 'bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-200'
+              ? isDark ? 'bg-teal-900/20 border-teal-700/50' : 'bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-teal-200' 
+              : isDark ? 'bg-orange-900/20 border-orange-700/50' : 'bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-200'
           }`}>
             <div className="flex items-center gap-4">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
@@ -411,21 +439,21 @@ const BulkOperations = () => {
               </div>
               <div>
                 <h3 className={`text-lg font-bold ${
-                  operationResult.success ? 'text-teal-800' : 'text-orange-800'
+                  operationResult.success ? isDark ? 'text-teal-300' : 'text-teal-800' : isDark ? 'text-orange-300' : 'text-orange-800'
                 }`}>
                   {operationResult.success ? 'Operation Successful' : 'Operation Failed'}
                 </h3>
                 <p className={`text-sm ${
-                  operationResult.success ? 'text-teal-700' : 'text-orange-700'
+                  operationResult.success ? isDark ? 'text-teal-400' : 'text-teal-700' : isDark ? 'text-orange-400' : 'text-orange-700'
                 }`}>
                   {operationResult.message}
                 </p>
               </div>
               <button
                 onClick={() => setOperationResult(null)}
-                className="ml-auto p-2 hover:bg-gray-100 rounded-lg transition-all"
+                className={`ml-auto p-2 ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} rounded-lg transition-all`}
               >
-                <span className="material-symbols-outlined text-gray-500">close</span>
+                <span className={`material-symbols-outlined ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>close</span>
               </button>
             </div>
           </div>
@@ -435,7 +463,7 @@ const BulkOperations = () => {
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl w-full max-w-md shadow-2xl`}>
             <div className={`px-6 py-4 rounded-t-2xl ${
               operation === 'verify' ? 'bg-gradient-to-r from-violet-500 to-purple-600' :
               operation === 'activate' ? 'bg-gradient-to-r from-teal-500 to-cyan-600' :
@@ -459,30 +487,32 @@ const BulkOperations = () => {
             <div className="p-6">
               <div className="flex items-center justify-center mb-6">
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                  operation === 'verify' ? 'bg-gradient-to-br from-violet-100 to-purple-100' :
-                  operation === 'activate' ? 'bg-gradient-to-br from-teal-100 to-cyan-100' :
-                  'bg-gradient-to-br from-orange-100 to-red-100'
+                  operation === 'verify' ? isDark ? 'bg-violet-900/50' : 'bg-gradient-to-br from-violet-100 to-purple-100' :
+                  operation === 'activate' ? isDark ? 'bg-teal-900/50' : 'bg-gradient-to-br from-teal-100 to-cyan-100' :
+                  isDark ? 'bg-orange-900/50' : 'bg-gradient-to-br from-orange-100 to-red-100'
                 }`}>
                   <span className={`material-symbols-outlined text-3xl ${
-                    operation === 'verify' ? 'text-violet-600' :
-                    operation === 'activate' ? 'text-teal-600' :
-                    'text-orange-600'
+                    operation === 'verify' ? 'text-violet-500' :
+                    operation === 'activate' ? 'text-teal-500' :
+                    'text-orange-500'
                   }`}>group</span>
                 </div>
               </div>
-              <p className="text-gray-600 text-center text-lg mb-2">
+              <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-center text-lg mb-2`}>
                 Are you sure you want to <span className="font-bold">{
                   operation === 'verify' ? 'verify' : operation === 'activate' ? 'activate' : 'deactivate'
-                }</span> <span className="font-bold text-violet-600">{selectedEmployees.length}</span> employees?
+                }</span> <span className="font-bold text-violet-500">{selectedEmployees.length}</span> employees?
               </p>
-              <p className="text-gray-400 text-center text-sm">
+              <p className={`${isDark ? 'text-gray-500' : 'text-gray-400'} text-center text-sm`}>
                 This action cannot be undone.
               </p>
             </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+            <div className={`px-6 py-4 ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-b-2xl flex justify-end gap-3`}>
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 font-semibold transition-all"
+                className={`px-4 py-2 border rounded-xl font-semibold transition-all ${
+                  isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-600' : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                }`}
               >
                 Cancel
               </button>

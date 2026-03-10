@@ -57,7 +57,7 @@ class User {
   
   static async findById(userId) {
     const selectQuery = `
-      SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
+      SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status, ep.profile_picture
       FROM users u
       LEFT JOIN employee_profiles ep ON u.id = ep.user_id
       WHERE u.id = ? AND u.is_active = true
@@ -125,15 +125,34 @@ class User {
   }
   
   static async updateProfile(userId, profileData) {
-    const { first_name, last_name, phone, address } = profileData;
+    const { first_name, last_name, phone, address, profile_picture } = profileData;
     
     const updateQuery = `
       UPDATE employee_profiles 
-      SET first_name = ?, last_name = ?, phone = ?, address = ?, updated_at = NOW()
+      SET first_name = ?, last_name = ?, phone = ?, address = ?, profile_picture = ?, updated_at = NOW()
       WHERE user_id = ?
     `;
     
-    await query(updateQuery, [first_name, last_name, phone, address, userId]);
+    await query(updateQuery, [first_name, last_name, phone, address, profile_picture, userId]);
+  }
+  
+  static async updateProfilePicture(userId, profilePicturePath) {
+    const updateQuery = `
+      UPDATE employee_profiles 
+      SET profile_picture = ?, updated_at = NOW()
+      WHERE user_id = ?
+    `;
+    
+    await query(updateQuery, [profilePicturePath, userId]);
+  }
+  
+  static async getProfilePicture(userId) {
+    const selectQuery = `
+      SELECT profile_picture FROM employee_profiles WHERE user_id = ?
+    `;
+    
+    const result = await query(selectQuery, [userId]);
+    return result[0]?.profile_picture || null;
   }
   
   static async getAllUsers(page = 1, limit = 10, filters = {}) {
