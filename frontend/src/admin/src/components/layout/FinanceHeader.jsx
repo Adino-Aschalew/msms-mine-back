@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from '../contexts/ThemeContext2';
+import { useTheme } from '../../contexts/ThemeContext2';
 import { 
   Menu, 
   Search, 

@@ -1,4 +1,4 @@
-const { query } = require('../../config/database');
+const { query, pool } = require('../../config/database');
 const bcrypt = require('bcryptjs');
 const { generateEmployeeId } = require('../../utils/helpers');
 
@@ -19,11 +19,17 @@ class AdminController {
       try {
         recentActivity = await query(`
           SELECT 
-            audit_logs.action,
-            audit_logs.table_name,
-            audit_logs.created_at
-          FROM audit_logs
-          ORDER BY audit_logs.created_at DESC
+            al.action,
+            al.table_name,
+            al.created_at,
+            u.first_name,
+            u.last_name,
+            u.employee_id,
+            u.email,
+            u.role
+          FROM audit_logs al
+          LEFT JOIN users u ON al.user_id = u.id
+          ORDER BY al.created_at DESC
           LIMIT 10
         `);
       } catch (activityError) {
@@ -77,15 +83,15 @@ class AdminController {
           SELECT 
             status,
             COUNT(*) as count,
-            SUM(CASE WHEN status = 'approved' THEN loan_amount ELSE 0 END) as totalAmount
+            SUM(CASE WHEN status = 'APPROVED' THEN requested_amount ELSE 0 END) as totalAmount
           FROM loan_applications
           GROUP BY status
         `),
         pool.execute(`
           SELECT 
             COUNT(*) as totalAccounts,
-            SUM(balance) as totalBalance,
-            AVG(balance) as avgBalance
+            SUM(current_balance) as totalBalance,
+            AVG(current_balance) as avgBalance
           FROM savings_accounts
           WHERE is_active = 1
         `),
@@ -133,7 +139,7 @@ class AdminController {
     try {
       const [admins] = await pool.execute(`
         SELECT 
-          u.user_id,
+          u.id,
           u.employee_id,
           u.first_name,
           u.last_name,
@@ -148,8 +154,8 @@ class AdminController {
           ep.committee_level,
           ep.max_loan_amount
         FROM users u
-        LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id
-        WHERE u.role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'LOAN_COMMITTEE')
+        LEFT JOIN employee_profiles ep ON u.id = ep.user_id
+        WHERE u.role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'LOAN_COMMITTEE', 'FINANCE_ADMIN')
         ORDER BY u.created_at DESC
       `);
 

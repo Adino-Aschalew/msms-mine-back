@@ -519,7 +519,7 @@ INSERT INTO system_configuration (config_key, config_value, config_type, descrip
 --   'password'   => $2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW
 -- -----------------------------------------------------------------------
 
--- 1. Hardcoded ADMIN (login: admin@msms.com / Admin@2026)
+-- 1. Hardcoded ADMIN (login: Admin@2026 / Admin@2026)
 INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified, first_name, last_name)
 VALUES ('ADMIN001', 'admin@msms.com', 'admin@msms.com',
         '$2a$12$3vrgkj5a6NA8J44HJ5H1AeG5JzQKUlaAEdGxSK2pVXPTfB32AghWm',

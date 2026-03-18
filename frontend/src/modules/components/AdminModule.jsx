@@ -14,11 +14,14 @@ import Preferences from '../../admin/src/account/pages/Preferences';
 import DangerZone from '../../admin/src/account/pages/DangerZone';
 import Reports from '../../admin/src/pages/Reports';
 
+import { ThemeProvider } from '../../admin/src/contexts/ThemeContext2';
+
 const AdminModule = () => {
   const { user } = useAuth();
 
   return (
-    <Routes>
+    <ThemeProvider>
+      <Routes>
       <Route element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
@@ -36,6 +39,7 @@ const AdminModule = () => {
 
       <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
     </Routes>
+    </ThemeProvider>
   );
 };
 

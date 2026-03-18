@@ -106,162 +106,162 @@ export const adminAPI = {
 
   // Admin Management - Get All Admins
   getAllAdmins: async () => {
-    const response = await apiClient.get('/admin/admins');
+    const response = await apiClient.get('/api/admin/admins');
     return response.data;
   },
 
   getAdminStatistics: async () => {
-    const response = await apiClient.get('/admin/statistics');
+    const response = await apiClient.get('/api/admin/statistics');
     return response.data;
   },
 
   // HR Admin Management
   getHRAdmins: async () => {
-    const response = await apiClient.get('/admin/hr-admins');
+    const response = await apiClient.get('/api/admin/hr-admins');
     return response.data;
   },
 
   createHRAdmin: async (adminData) => {
-    const response = await apiClient.post('/admin/hr-admins', adminData);
+    const response = await apiClient.post('/api/admin/hr-admins', adminData);
     return response.data;
   },
 
   updateHRAdmin: async (adminId, updateData) => {
-    const response = await apiClient.put(`/admin/hr-admins/${adminId}`, updateData);
+    const response = await apiClient.put(`/api/admin/hr-admins/${adminId}`, updateData);
     return response.data;
   },
 
   activateHRAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/hr-admins/${adminId}/activate`);
+    const response = await apiClient.put(`/api/admin/hr-admins/${adminId}/activate`);
     return response.data;
   },
 
   deactivateHRAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/hr-admins/${adminId}/deactivate`);
+    const response = await apiClient.put(`/api/admin/hr-admins/${adminId}/deactivate`);
     return response.data;
   },
 
   deleteHRAdmin: async (adminId) => {
-    const response = await apiClient.delete(`/admin/hr-admins/${adminId}`);
+    const response = await apiClient.delete(`/api/admin/hr-admins/${adminId}`);
     return response.data;
   },
 
   // Finance Admin Management
   getFinanceAdmins: async () => {
-    const response = await apiClient.get('/admin/finance-admins');
+    const response = await apiClient.get('/api/admin/finance-admins');
     return response.data;
   },
 
   createFinanceAdmin: async (adminData) => {
-    const response = await apiClient.post('/admin/finance-admins', adminData);
+    const response = await apiClient.post('/api/admin/finance-admins', adminData);
     return response.data;
   },
 
   updateFinanceAdmin: async (adminId, updateData) => {
-    const response = await apiClient.put(`/admin/finance-admins/${adminId}`, updateData);
+    const response = await apiClient.put(`/api/admin/finance-admins/${adminId}`, updateData);
     return response.data;
   },
 
   activateFinanceAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/finance-admins/${adminId}/activate`);
+    const response = await apiClient.put(`/api/admin/finance-admins/${adminId}/activate`);
     return response.data;
   },
 
   deactivateFinanceAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/finance-admins/${adminId}/deactivate`);
+    const response = await apiClient.put(`/api/admin/finance-admins/${adminId}/deactivate`);
     return response.data;
   },
 
   deleteFinanceAdmin: async (adminId) => {
-    const response = await apiClient.delete(`/admin/finance-admins/${adminId}`);
+    const response = await apiClient.delete(`/api/admin/finance-admins/${adminId}`);
     return response.data;
   },
 
   // Regular Admin Management
   getRegularAdmins: async () => {
-    const response = await apiClient.get('/admin/regular-admins');
+    const response = await apiClient.get('/api/admin/regular-admins');
     return response.data;
   },
 
   createRegularAdmin: async (adminData) => {
-    const response = await apiClient.post('/admin/regular-admins', adminData);
+    const response = await apiClient.post('/api/admin/regular-admins', adminData);
     return response.data;
   },
 
   updateRegularAdmin: async (adminId, updateData) => {
-    const response = await apiClient.put(`/admin/regular-admins/${adminId}`, updateData);
+    const response = await apiClient.put(`/api/admin/regular-admins/${adminId}`, updateData);
     return response.data;
   },
 
   activateRegularAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/regular-admins/${adminId}/activate`);
+    const response = await apiClient.put(`/api/admin/regular-admins/${adminId}/activate`);
     return response.data;
   },
 
   deactivateRegularAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/regular-admins/${adminId}/deactivate`);
+    const response = await apiClient.put(`/api/admin/regular-admins/${adminId}/deactivate`);
     return response.data;
   },
 
   deleteRegularAdmin: async (adminId) => {
-    const response = await apiClient.delete(`/admin/regular-admins/${adminId}`);
+    const response = await apiClient.delete(`/api/admin/regular-admins/${adminId}`);
     return response.data;
   },
 
   // Loan Committee Admin Management
   getLoanCommitteeAdmins: async () => {
-    const response = await apiClient.get('/admin/loan-committee-admins');
+    const response = await apiClient.get('/api/admin/loan-committee-admins');
     return response.data;
   },
 
   createLoanCommitteeAdmin: async (adminData) => {
-    const response = await apiClient.post('/admin/loan-committee-admins', adminData);
+    const response = await apiClient.post('/api/admin/loan-committee-admins', adminData);
     return response.data;
   },
 
   updateLoanCommitteeAdmin: async (adminId, updateData) => {
-    const response = await apiClient.put(`/admin/loan-committee-admins/${adminId}`, updateData);
+    const response = await apiClient.put(`/api/admin/loan-committee-admins/${adminId}`, updateData);
     return response.data;
   },
 
   activateLoanCommitteeAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/loan-committee-admins/${adminId}/activate`);
+    const response = await apiClient.put(`/api/admin/loan-committee-admins/${adminId}/activate`);
     return response.data;
   },
 
   deactivateLoanCommitteeAdmin: async (adminId) => {
-    const response = await apiClient.put(`/admin/loan-committee-admins/${adminId}/deactivate`);
+    const response = await apiClient.put(`/api/admin/loan-committee-admins/${adminId}/deactivate`);
     return response.data;
   },
 
   deleteLoanCommitteeAdmin: async (adminId) => {
-    const response = await apiClient.delete(`/admin/loan-committee-admins/${adminId}`);
+    const response = await apiClient.delete(`/api/admin/loan-committee-admins/${adminId}`);
     return response.data;
   },
 
   // Dashboard and System Stats
   getDashboard: async () => {
-    const response = await apiClient.get('/admin/dashboard');
+    const response = await apiClient.get('/api/admin/dashboard');
     return response.data;
   },
 
   getSystemActivity: async (params = {}) => {
-    const response = await apiClient.get('/admin/activity', { params });
+    const response = await apiClient.get('/api/admin/activity', { params });
     return response.data;
   },
 
   getSystemHealth: async () => {
-    const response = await apiClient.get('/admin/system/health');
+    const response = await apiClient.get('/api/admin/system/health');
     return response.data;
   },
 
   getSystemLogs: async (params = {}) => {
-    const response = await apiClient.get('/admin/system/logs', { params });
+    const response = await apiClient.get('/api/admin/system/logs', { params });
     return response.data;
   },
 
   toggleMaintenanceMode: async (enabled) => {
-    const response = await apiClient.post('/admin/system/maintenance', { enabled });
+    const response = await apiClient.post('/api/admin/system/maintenance', { enabled });
     return response.data;
   }
 };

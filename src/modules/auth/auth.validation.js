@@ -1,3 +1,13 @@
+const isPasswordStrong = (password) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  return password.length >= minLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+};
+
 const validateLogin = (req, res, next) => {
   const { identifier, password, role } = req.body;
   
@@ -23,21 +33,26 @@ const validateLogin = (req, res, next) => {
   }
   
   // Validate role
-  const validRoles = ['ADMIN', 'HR', 'FINANCE', 'LOAN_COMMITTEE', 'EMPLOYEE'];
-  if (!validRoles.includes(role)) {
+  const normalizedRole = role.toUpperCase();
+  const validRoles = ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE', 'LOAN_COMMITTEE', 'EMPLOYEE'];
+  
+  if (!validRoles.includes(normalizedRole)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid role'
     });
   }
   
-  // For non-employee roles, validate email format
-  if (role !== 'EMPLOYEE') {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(identifier)) {
+  // Update req.body.role to the normalized version so downstream uses it correctly
+  req.body.role = normalizedRole;
+  
+  // For non-employee roles, validate format. Allow standard usernames with @ like Admin@2026
+  if (normalizedRole !== 'EMPLOYEE') {
+    // Relaxed regex: must contain @ but doesn't need to be a strict email (allows Admin@2026)
+    if (!identifier.includes('@')) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid email address'
+        message: 'Staff and administrators must log in with their email or identifier containing @'
       });
     }
   }
@@ -55,10 +70,10 @@ const validateChangePassword = (req, res, next) => {
     });
   }
   
-  if (typeof newPassword !== 'string' || newPassword.length < 8) {
+  if (!isPasswordStrong(newPassword)) {
     return res.status(400).json({
       success: false,
-      message: 'New password must be at least 8 characters long'
+      message: 'New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
     });
   }
   
@@ -136,11 +151,11 @@ const validateForgotPassword = (req, res, next) => {
     });
   }
   
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  // Relaxed for forgot password as well to correspond with login
+  if (!email.includes('@')) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide a valid email address'
+      message: 'Please provide a valid identifier containing @'
     });
   }
   
@@ -157,10 +172,10 @@ const validateResetPassword = (req, res, next) => {
     });
   }
   
-  if (typeof newPassword !== 'string' || newPassword.length < 8) {
+  if (!isPasswordStrong(newPassword)) {
     return res.status(400).json({
       success: false,
-      message: 'New password must be at least 8 characters long'
+      message: 'New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
     });
   }
   

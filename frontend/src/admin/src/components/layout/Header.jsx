@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTheme } from '../contexts/ThemeContext2';
+import { useTheme } from '../../contexts/ThemeContext2';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
 import { 
   FiMenu, 

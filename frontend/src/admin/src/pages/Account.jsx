@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 
 const Account = () => {
-  const { theme } = ThemeContext();
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
