@@ -103,22 +103,39 @@ class AuthService {
     }
   }
 
-  static async login(employee_id, password, ip, userAgent) {
+  static async login(identifier, password, role, ip, userAgent) {
     try {
-      console.log('Login attempt for employee_id:', employee_id);
+      console.log('Login attempt - identifier:', identifier);
       
-      if (!employee_id || !password) {
-        throw new Error('Employee ID and password are required');
+      if (!identifier || !password) {
+        throw new Error('Username/ID and password are required');
       }
 
-      const user = await this.findByEmployeeId(employee_id);
-      console.log('Found user:', user ? 'YES' : 'NO');
-      console.log('User is_active:', user?.is_active);
+      let user;
+      
+      // Auto-detect login mode: email => admin/staff, employee_id => employee
+      if (identifier.includes('@')) {
+        // Email login: HR, ADMIN, FINANCE_ADMIN, LOAN_COMMITTEE
+        user = await this.findByEmail(identifier);
+        console.log('Email-based login, found user:', user ? `YES (role: ${user.role})` : 'NO');
+        
+        if (user && user.role === 'EMPLOYEE') {
+          throw new Error('Employees must log in with their Employee ID, not email');
+        }
+      } else {
+        // Employee ID login
+        user = await this.findByEmployeeId(identifier.toUpperCase());
+        console.log('Employee ID login, found user:', user ? `YES (role: ${user.role})` : 'NO');
+        
+        if (user && user.role !== 'EMPLOYEE') {
+          throw new Error('Staff and administrators must log in with their email address');
+        }
+      }
       
       if (!user || !user.is_active) {
         console.log('Login failed: User not found or not active');
-        await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { employee_id: employee_id }, ip, userAgent);
-        throw new Error('Invalid credentials');
+        await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
+        throw new Error('Invalid credentials. Please check your username/ID and password.');
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
@@ -126,8 +143,8 @@ class AuthService {
       
       if (!isValidPassword) {
         console.log('Login failed: Invalid password');
-        await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { employee_id: employee_id }, ip, userAgent);
-        throw new Error('Invalid credentials');
+        await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
+        throw new Error('Invalid credentials. Please check your username/ID and password.');
       }
 
       await this.updateLastLogin(user.id);
@@ -156,78 +173,11 @@ class AuthService {
           first_name: user.first_name,
           last_name: user.last_name,
           department: user.department,
-          job_grade: user.job_grade
+          job_grade: user.job_grade,
+          password_change_required: user.password_change_required || false
         },
         token,
         refreshToken
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async register(userData, ip, userAgent) {
-    try {
-      const { employee_id, email, password, confirm_password } = userData;
-      
-      // Only validate fields that are actually provided
-      if (!employee_id || (email && !password) || !confirm_password) {
-        throw new Error('Employee ID, email, password, and confirm password are required');
-      }
-      
-      if (password && password !== confirm_password) {
-        throw new Error('Passwords do not match');
-      }
-      
-      if (password && password.length < 8) {
-        throw new Error('Password must be at least 8 characters long');
-      }
-
-      // First validate employee with HR database
-      const hrEmployee = await HrService.validateEmployee(employee_id);
-      
-      // Check if user already exists in our system
-      const existingUser = await this.findByEmployeeId(employee_id);
-      if (existingUser) {
-        throw new Error('Employee already registered in the system');
-      }
-
-      // Create user with user-provided email and employee_id as username
-      const userId = await this.createUser({
-        employee_id,
-        username: employee_id, // Use employee_id as username
-        email: email, // Use the email provided by user
-        password
-      });
-
-      // Create employee profile with HR data
-      await this.createEmployeeProfile(userId, {
-        employee_id,
-        first_name: hrEmployee.first_name,
-        last_name: hrEmployee.last_name,
-        department: hrEmployee.department,
-        job_grade: hrEmployee.job_grade,
-        employment_status: hrEmployee.employment_status,
-        hire_date: hrEmployee.hire_date,
-        phone: hrEmployee.phone,
-        hr_verified: true,
-        hr_verification_date: new Date()
-      });
-
-      await auditLog(userId, 'USER_REGISTER', 'users', userId, null, { employee_id, username: employee_id, email: email }, ip, userAgent);
-      
-      return { 
-        userId,
-        employee_info: {
-          employee_id: hrEmployee.employee_id,
-          first_name: hrEmployee.first_name,
-          last_name: hrEmployee.last_name,
-          department: hrEmployee.department,
-          job_grade: hrEmployee.job_grade,
-          email: hrEmployee.email,
-          phone: hrEmployee.phone,
-          hire_date: hrEmployee.hire_date
-        }
       };
     } catch (error) {
       throw error;
@@ -464,6 +414,111 @@ class AuthService {
     `;
     
     await query(updateQuery, [first_name, last_name, phone, address, userId]);
+  }
+
+  static async changePassword(userId, currentPassword, newPassword, ip, userAgent) {
+    try {
+      if (!currentPassword || !newPassword) {
+        throw new Error('Current password and new password are required');
+      }
+
+      if (newPassword.length < 8) {
+        throw new Error('New password must be at least 8 characters long');
+      }
+
+      // Get user with current password
+      const users = await query(`
+        SELECT id, password_hash, password_change_required
+        FROM users 
+        WHERE id = ? AND is_active = TRUE
+      `, [userId]);
+
+      if (users.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const user = users[0];
+
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!isValidPassword) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // Hash new password
+      const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+      const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password and remove password change requirement
+      await query(`
+        UPDATE users 
+        SET password_hash = ?, password_change_required = FALSE, updated_at = NOW()
+        WHERE id = ?
+      `, [newPasswordHash, userId]);
+
+      // Log the password change
+      await auditLog(userId, 'PASSWORD_CHANGED', 'users', userId, null, { 
+        password_change_required: false 
+      }, ip, userAgent);
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
+
+    } catch (error) {
+      console.error('Change password error:', error);
+      throw error;
+    }
+  }
+
+  static async forceChangePassword(userId, newPassword, ip, userAgent) {
+    try {
+      if (!newPassword) {
+        throw new Error('New password is required');
+      }
+
+      if (newPassword.length < 8) {
+        throw new Error('New password must be at least 8 characters long');
+      }
+
+      // Get user
+      const users = await query(`
+        SELECT id, password_change_required
+        FROM users 
+        WHERE id = ? AND is_active = TRUE
+      `, [userId]);
+
+      if (users.length === 0) {
+        throw new Error('User not found');
+      }
+
+      // Hash new password
+      const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+      const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password and remove password change requirement
+      await query(`
+        UPDATE users 
+        SET password_hash = ?, password_change_required = FALSE, updated_at = NOW()
+        WHERE id = ?
+      `, [newPasswordHash, userId]);
+
+      // Log the password change
+      await auditLog(userId, 'PASSWORD_CHANGED', 'users', userId, null, { 
+        password_change_required: false,
+        forced_change: true
+      }, ip, userAgent);
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
+
+    } catch (error) {
+      console.error('Force change password error:', error);
+      throw error;
+    }
   }
 }
 

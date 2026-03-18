@@ -4,7 +4,6 @@ const { authMiddleware } = require('../../middleware/auth');
 const { auditMiddleware } = require('../../middleware/audit');
 const {
   validateLogin,
-  validateRegister,
   validateChangePassword,
   validateUpdateProfile,
   validateRefreshToken,
@@ -15,9 +14,9 @@ const {
 const router = express.Router();
 
 router.post('/login', validateLogin, auditMiddleware('LOGIN_ATTEMPT'), AuthController.login);
-router.post('/register', validateRegister, auditMiddleware('USER_REGISTER'), AuthController.register);
 router.post('/refresh-token', validateRefreshToken, AuthController.refreshToken);
 router.post('/change-password', authMiddleware, validateChangePassword, auditMiddleware('PASSWORD_CHANGE'), AuthController.changePassword);
+router.post('/force-change-password', authMiddleware, auditMiddleware('PASSWORD_CHANGE'), AuthController.forceChangePassword);
 router.post('/forgot-password', validateForgotPassword, auditMiddleware('PASSWORD_RESET_REQUEST'), AuthController.forgotPassword);
 router.post('/reset-password', validateResetPassword, auditMiddleware('PASSWORD_RESET'), AuthController.resetPassword);
 router.get('/profile', authMiddleware, AuthController.getProfile);

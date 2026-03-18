@@ -144,7 +144,7 @@ microfinance-system/
 ```bash
 # Database
 DB_HOST=localhost
-DB_PORT=3307
+DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=microfinance_system

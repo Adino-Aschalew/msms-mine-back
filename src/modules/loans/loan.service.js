@@ -1,6 +1,7 @@
 const LoanModel = require('./loan.model');
 const { auditLog } = require('../../middleware/audit');
 const NotificationService = require('../../services/notification.service');
+const CommitteeService = require('../loanCommittee/committee.service');
 
 class LoanService {
   static async applyForLoan(applicationData, userId, ip, userAgent) {
@@ -38,12 +39,16 @@ class LoanService {
       );
       
       // Send notification to loan committee
-      await NotificationService.createNotification(
-        null, // System notification
-        'New Loan Application',
-        `New loan application submitted for ${loan_amount}.`,
-        'INFO'
-      );
+      const committeeMembers = await CommitteeService.getCommitteeMembers();
+      for (const member of committeeMembers) {
+        await NotificationService.createNotification(
+          member.user_id,
+          'New Loan Application',
+          `New loan application submitted for ${loan_amount}.`,
+          'INFO',
+          { employee_id: employee_id }
+        );
+      }
       
       return {
         applicationId,

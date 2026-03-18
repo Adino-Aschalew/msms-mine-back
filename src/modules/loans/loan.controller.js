@@ -1,5 +1,6 @@
 const LoanService = require('./loan.service');
 const LoanModel = require('./loan.model');
+const { query } = require('../../config/database');
 const { auditMiddleware } = require('../../middleware/audit');
 
 class LoanController {
@@ -574,6 +575,74 @@ class LoanController {
       res.status(500).json({
         success: false,
         message: 'Failed to calculate eligibility score'
+      });
+    }
+  }
+
+  static async getEmployeeDashboard(req, res) {
+    try {
+      const userId = req.userId;
+      
+      const [loanStats] = await query(`
+        SELECT 
+          COUNT(*) as active_loans,
+          COALESCE(SUM(outstanding_balance), 0) as outstanding_balance
+        FROM loans 
+        WHERE user_id = ? AND status = 'ACTIVE'
+      `, [userId]);
+
+      const [deductions] = await query(`
+        SELECT COALESCE(SUM(amount), 0) as sum_deductions
+        FROM loan_repayments
+        WHERE loan_id IN (SELECT id FROM loans WHERE user_id = ?)
+          AND status = 'PENDING'
+          AND MONTH(due_date) = MONTH(CURRENT_DATE())
+      `, [userId]);
+
+      const [recentActivity] = await query(`
+        SELECT 
+          id,
+          'loan_request' as type,
+          CONCAT(purpose, ' Loan Request') as title,
+          CONCAT('Requested amount: $', requested_amount) as description,
+          created_at as date,
+          status
+        FROM loan_applications
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 5
+      `, [userId]);
+
+      const [loanBalanceGrowth] = await query(`
+        SELECT 
+          DATE_FORMAT(created_at, '%b') as label,
+          MONTH(created_at) as m,
+          SUM(loan_amount) as total
+        FROM loans
+        WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%b'), MONTH(created_at)
+        ORDER BY m ASC
+      `, [userId]);
+
+      res.json({
+        success: true,
+        data: {
+          stats: {
+            savingsBalance: 0, // Mock savings as it belongs to another module
+            currentSavingRate: 0,
+            activeLoans: loanStats[0].active_loans,
+            outstandingLoanBalance: loanStats[0].outstanding_balance,
+            monthlyPayrollDeduction: deductions[0].sum_deductions
+          },
+          recentActivity,
+          loanBalanceGrowth
+        }
+      });
+    } catch (error) {
+      console.error('Get employee dashboard error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch employee dashboard'
       });
     }
   }

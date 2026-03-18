@@ -58,7 +58,7 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=microfinance_system
-DB_PORT=3307
+DB_PORT=3306
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key

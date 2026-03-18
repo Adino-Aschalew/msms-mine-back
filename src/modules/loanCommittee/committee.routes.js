@@ -20,6 +20,10 @@ router.get('/applications/risk-analysis', CommitteeController.getRiskAnalysis);
 router.get('/applications/trends', CommitteeController.getApprovalTrends);
 router.get('/applications/export', CommitteeController.exportApplications);
 
+// Dashboard & Reports
+router.get('/dashboard', CommitteeController.getDashboardData);
+router.get('/reports', CommitteeController.getReportsData);
+
 // Committee meetings
 router.get('/meetings', CommitteeController.getCommitteeMeetings);
 router.post('/meetings', auditMiddleware('COMMITTEE_MEETING_CREATED'), CommitteeController.createMeeting);

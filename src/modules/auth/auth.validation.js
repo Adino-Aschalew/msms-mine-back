@@ -1,17 +1,17 @@
 const validateLogin = (req, res, next) => {
-  const { employee_id, password } = req.body;
+  const { identifier, password, role } = req.body;
   
-  if (!employee_id || !password) {
+  if (!identifier || !password || !role) {
     return res.status(400).json({
       success: false,
-      message: 'Employee ID and password are required'
+      message: 'Identifier, password, and role are required'
     });
   }
   
-  if (typeof employee_id !== 'string' || employee_id.trim().length === 0) {
+  if (typeof identifier !== 'string' || identifier.trim().length === 0) {
     return res.status(400).json({
       success: false,
-      message: 'Employee ID must be a non-empty string'
+      message: 'Identifier must be a non-empty string'
     });
   }
   
@@ -22,91 +22,50 @@ const validateLogin = (req, res, next) => {
     });
   }
   
-  next();
-};
-
-const validateRegister = (req, res, next) => {
-  const { employee_id, email, password, confirm_password } = req.body;
-  
-  // Check required fields
-  if (!employee_id || !email || !password || !confirm_password) {
+  // Validate role
+  const validRoles = ['ADMIN', 'HR', 'FINANCE', 'LOAN_COMMITTEE', 'EMPLOYEE'];
+  if (!validRoles.includes(role)) {
     return res.status(400).json({
       success: false,
-      message: 'Employee ID, email, password, and confirm password are required'
+      message: 'Invalid role'
     });
   }
   
-  // Validate employee_id
-  if (typeof employee_id !== 'string' || employee_id.trim().length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Employee ID must be a non-empty string'
-    });
-  }
-  
-  // Validate email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide a valid email address'
-    });
-  }
-  
-  // Validate password
-  if (password.length < 8) {
-    return res.status(400).json({
-      success: false,
-      message: 'Password must be at least 8 characters long'
-    });
-  }
-  
-  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    });
-  }
-  
-  // Check password confirmation
-  if (password !== confirm_password) {
-    return res.status(400).json({
-      success: false,
-      message: 'Passwords do not match'
-    });
+  // For non-employee roles, validate email format
+  if (role !== 'EMPLOYEE') {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(identifier)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address'
+      });
+    }
   }
   
   next();
 };
 
 const validateChangePassword = (req, res, next) => {
-  const { current_password, new_password, confirm_password } = req.body;
+  const { currentPassword, newPassword, confirmPassword } = req.body;
   
-  if (!current_password || !new_password || !confirm_password) {
+  if (!currentPassword || !newPassword || !confirmPassword) {
     return res.status(400).json({
       success: false,
-      message: 'All password fields are required'
+      message: 'Current password, new password, and confirm password are required'
     });
   }
   
-  if (new_password.length < 8) {
+  if (typeof newPassword !== 'string' || newPassword.length < 8) {
     return res.status(400).json({
       success: false,
       message: 'New password must be at least 8 characters long'
     });
   }
   
-  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(new_password)) {
+  if (newPassword !== confirmPassword) {
     return res.status(400).json({
       success: false,
-      message: 'New password must contain at least one uppercase letter, one lowercase letter, and one number'
-    });
-  }
-  
-  if (new_password !== confirm_password) {
-    return res.status(400).json({
-      success: false,
-      message: 'New passwords do not match'
+      message: 'New password and confirm password do not match'
     });
   }
   
@@ -114,9 +73,8 @@ const validateChangePassword = (req, res, next) => {
 };
 
 const validateUpdateProfile = (req, res, next) => {
-  const { first_name, last_name, phone, address } = req.body;
+  const { first_name, last_name, phone_number, address } = req.body;
   
-  // All fields are optional, but validate if provided
   if (first_name && (typeof first_name !== 'string' || first_name.trim().length === 0)) {
     return res.status(400).json({
       success: false,
@@ -131,10 +89,10 @@ const validateUpdateProfile = (req, res, next) => {
     });
   }
   
-  if (phone && !/^[+]?[\d\s\-\(\)]+$/.test(phone)) {
+  if (phone_number && (typeof phone_number !== 'string' || phone_number.trim().length === 0)) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide a valid phone number'
+      message: 'Phone number must be a non-empty string'
     });
   }
   
@@ -171,15 +129,13 @@ const validateRefreshToken = (req, res, next) => {
 const validateForgotPassword = (req, res, next) => {
   const { email } = req.body;
   
-  // Check required fields
   if (!email) {
     return res.status(400).json({
       success: false,
-      message: 'Email address is required'
+      message: 'Email is required'
     });
   }
   
-  // Validate email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({
@@ -192,28 +148,26 @@ const validateForgotPassword = (req, res, next) => {
 };
 
 const validateResetPassword = (req, res, next) => {
-  const { token, newPassword } = req.body;
+  const { token, newPassword, confirmPassword } = req.body;
   
-  // Check required fields
-  if (!token || !newPassword) {
+  if (!token || !newPassword || !confirmPassword) {
     return res.status(400).json({
       success: false,
-      message: 'Reset token and new password are required'
+      message: 'Token, new password, and confirm password are required'
     });
   }
   
-  // Validate password
-  if (newPassword.length < 8) {
+  if (typeof newPassword !== 'string' || newPassword.length < 8) {
     return res.status(400).json({
       success: false,
-      message: 'Password must be at least 8 characters long'
+      message: 'New password must be at least 8 characters long'
     });
   }
   
-  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+  if (newPassword !== confirmPassword) {
     return res.status(400).json({
       success: false,
-      message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+      message: 'New password and confirm password do not match'
     });
   }
   
@@ -222,7 +176,6 @@ const validateResetPassword = (req, res, next) => {
 
 module.exports = {
   validateLogin,
-  validateRegister,
   validateChangePassword,
   validateUpdateProfile,
   validateRefreshToken,

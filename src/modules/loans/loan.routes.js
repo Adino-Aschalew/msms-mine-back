@@ -9,6 +9,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // User routes (authenticated users)
+router.get('/dashboard', LoanController.getEmployeeDashboard);
 router.post('/apply', auditMiddleware('LOAN_APPLICATION_CREATED'), LoanController.applyForLoan);
 router.get('/my-applications', LoanController.getUserLoanApplications);
 router.get('/my-loans', LoanController.getUserLoans);

@@ -6,11 +6,11 @@ const dbConfig = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'microfinance_system',
-  port: process.env.DB_PORT || 3307, // XAMPP typically uses 3307
+  port: process.env.DB_PORT || 3306, // Standard MySQL port
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // Additional options for XAMPP compatibility
+  // Additional options for MySQL compatibility
   acquireTimeout: 60000,
   timeout: 60000,
   reconnect: true,

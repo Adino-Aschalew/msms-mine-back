@@ -1,0 +1,240 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  
+  body {
+    @apply bg-black text-white;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+.dark body {
+  @apply bg-black text-white;
+}
+
+.dark * {
+  @apply border-gray-900;
+}
+
+/* Component dark mode overrides */
+.dark .btn-outline {
+  @apply border-gray-600 bg-black text-gray-300 hover:bg-gray-800;
+}
+
+.dark .card {
+  @apply bg-black text-white border-gray-800;
+}
+
+.dark .input {
+  @apply border-gray-600 bg-black text-white placeholder:text-gray-500;
+}
+
+.dark .sidebar-item-active {
+  @apply bg-primary-900 text-primary-300;
+}
+
+.dark .sidebar-item-inactive {
+  @apply text-gray-300 hover:bg-gray-800 hover:text-white;
+}
+
+/* Dark mode hover states */
+.dark .hover\:bg-gray-50:hover {
+  @apply bg-gray-800;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  @apply bg-gray-800;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  @apply bg-gray-700;
+}
+
+.dark .hover\:text-gray-700:hover {
+  @apply text-gray-200;
+}
+
+.dark .hover\:text-gray-800:hover {
+  @apply text-white;
+}
+
+.dark .hover\:bg-blue-50:hover {
+  @apply bg-blue-900;
+}
+
+.dark .hover\:bg-white:hover {
+  @apply bg-black;
+}
+
+.dark .hover\:bg-black:hover {
+  @apply bg-black;
+}
+
+/* Additional dark mode background overrides */
+.dark .bg-white {
+  @apply bg-black;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-black;
+}
+
+.dark .bg-gray-100 {
+  @apply bg-black;
+}
+
+.dark .bg-gray-200 {
+  @apply bg-gray-800;
+}
+
+.dark .bg-gray-300 {
+  @apply bg-gray-700;
+}
+
+.dark .text-gray-900 {
+  @apply text-white;
+}
+
+.dark .text-gray-800 {
+  @apply text-white;
+}
+
+.dark .text-gray-700 {
+  @apply text-gray-200;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-800;
+}
+
+.dark .border-gray-300 {
+  @apply border-gray-700;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200;
+  }
+  
+  .btn-success {
+    @apply bg-success-600 text-white hover:bg-success-700;
+  }
+  
+  .btn-danger {
+    @apply bg-danger-600 text-white hover:bg-danger-700;
+  }
+  
+  .btn-outline {
+    @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50;
+  }
+  
+  .card {
+    @apply rounded-lg border bg-white text-gray-950 shadow-sm;
+  }
+  
+  .input {
+    @apply flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .sidebar-item {
+    @apply flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors;
+  }
+  
+  .sidebar-item-active {
+    @apply bg-primary-100 text-primary-700;
+  }
+  
+  .sidebar-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 hover:text-gray-900;
+  }
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark .card {
+  @apply bg-gray-800 text-gray-50 border-gray-700;
+}
+
+.dark .btn-secondary {
+  @apply bg-gray-700 text-gray-100 hover:bg-gray-600;
+}
+
+.dark .btn-outline {
+  @apply border-gray-600 bg-gray-700 text-gray-100 hover:bg-gray-600;
+}
+
+.dark .input {
+  @apply border-gray-600 bg-gray-700 text-gray-100 placeholder:text-gray-400;
+}
+
+.dark .sidebar-item-active {
+  @apply bg-primary-900 text-primary-300;
+}
+
+.dark .sidebar-item-inactive {
+  @apply text-gray-300 hover:bg-gray-700 hover:text-gray-100;
+}
+
+/* Additional dark mode styles for better visibility */
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+.dark .bg-gray-100 {
+  @apply bg-gray-800;
+}
+
+.dark .bg-gray-200 {
+  @apply bg-gray-700;
+}
+
+.dark .text-gray-900 {
+  @apply text-gray-100;
+}
+
+.dark .text-gray-800 {
+  @apply text-gray-200;
+}
+
+.dark .text-gray-700 {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-400;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700;
+}
+
+.dark .border-gray-300 {
+  @apply border-gray-600;
+}

@@ -3,33 +3,38 @@ const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
 const ExcelJS = require('exceljs');
+const axios = require('axios');
 
 class Payroll {
   static async createPayrollBatch(batchData, uploadUserId) {
-    const { batch_name, payroll_date, total_employees, total_amount, file_path } = batchData;
+    const { batch_name, payroll_date, total_employees, total_amount, file_path, cloudinary_url, public_id } = batchData;
     
     const insertQuery = `
       INSERT INTO payroll_batches 
-      (batch_name, upload_user_id, total_employees, total_amount, payroll_date, file_path, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'UPLOADED')
+      (batch_name, upload_user_id, total_employees, total_amount, payroll_date, file_path, cloudinary_url, public_id, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UPLOADED')
     `;
     
     const result = await query(insertQuery, [
-      batch_name, uploadUserId, total_employees, total_amount, payroll_date, file_path
+      batch_name, uploadUserId, total_employees, total_amount, payroll_date, file_path, cloudinary_url, public_id
     ]);
     
     return result.insertId;
   }
   
-  static async processPayrollFile(filePath, uploadUserId) {
-    const fileExtension = path.extname(filePath).toLowerCase();
+  static async processPayrollFile(filePath, uploadUserId, cloudinaryInfo = {}) {
+    const { cloudinaryUrl, originalName, publicId } = cloudinaryInfo;
+    const fileExtension = path.extname(originalName || filePath).toLowerCase();
     let payrollData = [];
     
     try {
+      // Download file from Cloudinary for processing
+      const fileBuffer = await this.downloadFromCloudinary(cloudinaryUrl || filePath);
+      
       if (fileExtension === '.csv') {
-        payrollData = await this.parseCSVFile(filePath);
+        payrollData = await this.parseCSVBuffer(fileBuffer);
       } else if (fileExtension === '.xlsx' || fileExtension === '.xls') {
-        payrollData = await this.parseExcelFile(filePath);
+        payrollData = await this.parseExcelBuffer(fileBuffer);
       } else {
         throw new Error('Unsupported file format. Only CSV and Excel files are allowed.');
       }
@@ -55,7 +60,9 @@ class Payroll {
         payroll_date: payrollDate,
         total_employees: totalEmployees,
         total_amount: totalAmount,
-        file_path: filePath
+        file_path: originalName || filePath,
+        cloudinary_url: cloudinaryUrl,
+        public_id: publicId
       }, uploadUserId);
       
       await this.insertPayrollDetails(batchId, validationResults.validRecords);
@@ -76,6 +83,54 @@ class Payroll {
     }
   }
   
+  static async downloadFromCloudinary(url) {
+    try {
+      const response = await axios.get(url, { responseType: 'arraybuffer' });
+      return Buffer.from(response.data);
+    } catch (error) {
+      throw new Error(`Failed to download file from Cloudinary: ${error.message}`);
+    }
+  }
+
+  static async parseCSVBuffer(buffer) {
+    return new Promise((resolve, reject) => {
+      const results = [];
+      const stream = require('stream');
+      const readable = new stream.Readable();
+      readable.push(buffer);
+      readable.push(null);
+      
+      readable
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', () => resolve(results))
+        .on('error', (error) => reject(error));
+    });
+  }
+
+  static async parseExcelBuffer(buffer) {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    
+    const worksheet = workbook.getWorksheet(1);
+    const results = [];
+    
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+      
+      const data = {
+        employee_id: row.getCell(1).value,
+        gross_salary: parseFloat(row.getCell(2).value) || 0,
+        net_salary: parseFloat(row.getCell(3).value) || 0,
+        payroll_date: row.getCell(4).value ? new Date(row.getCell(4).value).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+      };
+      
+      results.push(data);
+    });
+    
+    return results;
+  }
+
   static async parseCSVFile(filePath) {
     return new Promise((resolve, reject) => {
       const results = [];
@@ -335,18 +390,30 @@ class Payroll {
       
       for (const detail of details.details) {
         if (detail.savings_deduction > 0) {
-          const savingsAccountQuery = 'SELECT id FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"';
+          const savingsAccountQuery = 'SELECT id, current_balance FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"';
           const [savingsAccount] = await connection.execute(savingsAccountQuery, [detail.user_id]);
           
           if (savingsAccount[0]) {
+            const balanceBefore = savingsAccount[0].current_balance || 0;
+            const balanceAfter = balanceBefore + detail.savings_deduction;
+            
+            // Insert transaction with proper balance tracking
             await connection.execute(`
               INSERT INTO savings_transactions 
               (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, payroll_batch_id)
               VALUES (?, ?, 'CONTRIBUTION', ?, ?, ?, ?, ?, ?)
             `, [
-              savingsAccount[0].id, detail.user_id, detail.savings_deduction, 0, 0,
+              savingsAccount[0].id, detail.user_id, detail.savings_deduction, 
+              balanceBefore, balanceAfter,
               `PAYROLL-${batchId}`, 'Automatic savings deduction from payroll', batchId
             ]);
+            
+            // Update savings account balance
+            await connection.execute(`
+              UPDATE savings_accounts 
+              SET current_balance = ?, last_contribution_date = NOW(), updated_at = NOW()
+              WHERE id = ?
+            `, [balanceAfter, savingsAccount[0].id]);
           }
         }
         

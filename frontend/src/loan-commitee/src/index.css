@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+  
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+  }
+  
+  .btn-success {
+    @apply bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
+  }
+  
+  .btn-warning {
+    @apply bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500;
+  }
+  
+  .btn-danger {
+    @apply bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-md border border-gray-200;
+  }
+  
+  .dark .card {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  .sidebar-item {
+    @apply flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200;
+  }
+  
+  .sidebar-item.active {
+    @apply bg-primary-100 text-primary-700;
+  }
+  
+  .sidebar-item:not(.active):hover {
+    @apply bg-gray-100 text-gray-700;
+  }
+  
+  .dark .sidebar-item.active {
+    @apply bg-primary-900 text-primary-300;
+  }
+  
+  .dark .sidebar-item:not(.active):hover {
+    @apply bg-gray-700 text-gray-300;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-pending {
+    @apply bg-warning-100 text-warning-800;
+  }
+  
+  .status-approved {
+    @apply bg-success-100 text-success-800;
+  }
+  
+  .status-rejected {
+    @apply bg-danger-100 text-danger-800;
+  }
+  
+  .status-suspended {
+    @apply bg-gray-100 text-gray-800;
+  }
+  
+  .stat-card {
+    @apply bg-white rounded-xl p-6 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200;
+  }
+  
+  .dark .stat-card {
+    @apply bg-gray-800 border-gray-700;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+  }
+  
+  .dark .scrollbar-thin {
+    scrollbar-color: #4b5563 #1f2937;
+  }
+  
+  .dark .scrollbar-thin::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+  
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+  }
+}

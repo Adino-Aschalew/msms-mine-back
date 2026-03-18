@@ -247,11 +247,11 @@ class HrService {
 
   static async createEmployee(employeeData, profileData, createdBy, ip, userAgent) {
     try {
-      const { employee_id, username, email, password, role = 'EMPLOYEE' } = employeeData;
+      const { employee_id, username, email, role = 'EMPLOYEE' } = employeeData;
       
-      // Validate required fields
-      if (!employee_id || !username || !email || !password) {
-        throw new Error('Employee ID, username, email, and password are required');
+      // Validate required fields (password is no longer required)
+      if (!employee_id || !username || !email) {
+        throw new Error('Employee ID, username, and email are required');
       }
       
       // Check if employee_id already exists
@@ -260,15 +260,18 @@ class HrService {
         throw new Error('Employee ID already exists');
       }
       
-      // Hash password
+      // Use default password for all new employees
+      const defaultPassword = 'BIT##123';
+      
+      // Hash default password
       const bcrypt = require('bcryptjs');
       const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-      const password_hash = await bcrypt.hash(password, saltRounds);
+      const password_hash = await bcrypt.hash(defaultPassword, saltRounds);
       
-      // Create user
+      // Create user with password change required
       const userResult = await query(`
-        INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified, created_at)
-        VALUES (?, ?, ?, ?, ?, TRUE, TRUE, NOW())
+        INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified, password_change_required, created_at)
+        VALUES (?, ?, ?, ?, ?, TRUE, TRUE, TRUE, NOW())
       `, [employee_id, username, email, password_hash, role]);
       
       const userId = userResult.insertId;

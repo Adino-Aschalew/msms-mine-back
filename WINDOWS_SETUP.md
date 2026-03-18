@@ -12,13 +12,13 @@
 - Open XAMPP Control Panel
 - Click on MySQL → Config
 - Set root password (remember it for .env file)
-- Note the port (usually 3307)
+- Note the port (usually 3306)
 - Start/Stop MySQL as needed
 
 ### 3. Update .env
 ```bash
 DB_HOST=localhost
-DB_PORT=3307
+DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=microfinance_system
@@ -52,7 +52,7 @@ FLUSH PRIVILEGES;
 ### 3. Update .env
 ```bash
 DB_HOST=localhost
-DB_PORT=3307
+DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=microfinance_system
@@ -76,7 +76,7 @@ docker run --name mysql -e MYSQL_ROOT_PASSWORD=your_password -p 3306:3306 -v mys
 ### 3. Update .env
 ```bash
 DB_HOST=localhost
-DB_PORT=3307
+DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=microfinance_system
@@ -102,10 +102,10 @@ net start mysql
 # Reset password with: ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';
 ```
 
-### Port 3307 Already in Use
+### Port 3306 Already in Use
 ```bash
-# Check what's using port 3307
-netstat -ano | findstr :3307
+# Check what's using port 3306
+netstat -ano | findstr :3306
 
 # Kill the process if needed
 taskkill /PID <PID> /F
@@ -162,7 +162,7 @@ mysql.createConnection({
 
 ### "Can't connect to MySQL server"
 - Check if MySQL service is running
-- Verify port 3307 is available
+- Verify port 3306 is available
 - Check firewall settings
 - Verify credentials in .env file
 

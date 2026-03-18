@@ -3,11 +3,11 @@ const AuthService = require('./auth.service');
 class AuthController {
   static async login(req, res) {
     try {
-      const { employee_id, password } = req.body;
+      const { identifier, password, role } = req.body;
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
       
-      const result = await AuthService.login(employee_id, password, ip, userAgent);
+      const result = await AuthService.login(identifier, password, role, ip, userAgent);
       
       res.json({
         success: true,
@@ -27,29 +27,6 @@ class AuthController {
       res.status(500).json({
         success: false,
         message: 'Internal server error'
-      });
-    }
-  }
-  
-  static async register(req, res) {
-    try {
-      const userData = req.body;
-      const ip = req.ip;
-      const userAgent = req.get('User-Agent');
-      
-      const result = await AuthService.register(userData, ip, userAgent);
-      
-      res.status(201).json({
-        success: true,
-        message: 'Registration successful. Employee verified and profile created.',
-        data: result
-      });
-    } catch (error) {
-      console.error('Registration error:', error);
-      
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Registration failed'
       });
     }
   }
@@ -192,6 +169,66 @@ class AuthController {
       });
     } catch (error) {
       console.error('Update profile error:', error);
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  static async changePassword(req, res) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const result = await AuthService.changePassword(userId, currentPassword, newPassword, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error('Change password error:', error);
+      
+      if (error.message.includes('incorrect') || error.message.includes('required')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  static async forceChangePassword(req, res) {
+    try {
+      const { newPassword } = req.body;
+      const userId = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const result = await AuthService.forceChangePassword(userId, newPassword, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error('Force change password error:', error);
+      
+      if (error.message.includes('required')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
       
       res.status(500).json({
         success: false,

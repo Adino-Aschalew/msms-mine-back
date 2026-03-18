@@ -2,6 +2,7 @@ const express = require('express');
 const FinanceController = require('./finance.controller');
 const { authMiddleware, roleMiddleware } = require('../../middleware/auth');
 const { auditMiddleware } = require('../../middleware/audit');
+const { cloudinary, storage } = require('../../config/cloudinary');
 const multer = require('multer');
 
 const router = express.Router();
@@ -10,17 +11,17 @@ const router = express.Router();
 router.use(authMiddleware);
 router.use(roleMiddleware(['ADMIN', 'FINANCE', 'SUPER_ADMIN']));
 
-// File upload configuration
+// File upload configuration using Cloudinary
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: storage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel') {
+    if (file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel' || file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
       cb(null, true);
     } else {
-      cb(new Error('Only CSV files are allowed'), false);
+      cb(new Error('Only CSV and Excel files are allowed'), false);
     }
   }
 });

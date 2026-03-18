@@ -1,4 +1,5 @@
 const CommitteeService = require('./committee.service');
+const { query } = require('../../config/database');
 const { auditMiddleware } = require('../../middleware/audit');
 
 class CommitteeController {
@@ -341,6 +342,203 @@ class CommitteeController {
         success: false,
         message: 'Failed to fetch approval trends'
       });
+    }
+  }
+
+  static async getDashboardData(req, res) {
+    try {
+      // 1. Stats
+      const [stats] = await query(`
+        SELECT 
+          COUNT(*) as total_requests,
+          SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending_reviews,
+          SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) as approved_loans,
+          SUM(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_loans,
+          SUM(CASE WHEN status = 'SUSPENDED' THEN 1 ELSE 0 END) as suspended_requests
+        FROM loan_applications
+      `);
+      
+      const [portfolio] = await query(`
+        SELECT COALESCE(SUM(outstanding_balance), 0) as total_portfolio 
+        FROM loans WHERE status = 'ACTIVE'
+      `);
+
+      // 2. Monthly Distribution (Trends)
+      const [trends] = await query(`
+        SELECT 
+          DATE_FORMAT(created_at, '%b') as label,
+          COUNT(*) as total_requests,
+          SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) as approved_loans
+        FROM loan_applications
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%b'), MONTH(created_at)
+        ORDER BY MONTH(created_at) ASC
+      `);
+
+      // 3. Loan Growth Data
+      const [growth] = await query(`
+        SELECT 
+          DATE_FORMAT(created_at, '%b') as label,
+          SUM(loan_amount) as amount
+        FROM loans
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%b'), MONTH(created_at)
+        ORDER BY MONTH(created_at) ASC
+      `);
+
+      // 4. Recent Requests
+      const [recentRequests] = await query(`
+        SELECT 
+          la.id,
+          CONCAT(ep.first_name, ' ', ep.last_name) as employee,
+          ep.department,
+          la.purpose as loanType,
+          la.requested_amount as amount,
+          la.created_at as submissionDate,
+          la.status
+        FROM loan_applications la
+        LEFT JOIN users u ON la.user_id = u.id
+        LEFT JOIN employee_profiles ep ON u.id = ep.user_id
+        ORDER BY la.created_at DESC
+        LIMIT 5
+      `);
+
+      // 5. Loan Size Distribution
+      const [sizeDistribution] = await query(`
+        SELECT 
+          CASE 
+            WHEN requested_amount < 5000 THEN '< $5K'
+            WHEN requested_amount >= 5000 AND requested_amount < 10000 THEN '$5K-$10K'
+            WHEN requested_amount >= 10000 AND requested_amount < 20000 THEN '$10K-$20K'
+            WHEN requested_amount >= 20000 AND requested_amount < 50000 THEN '$20K-$50K'
+            ELSE '> $50K'
+          END as category,
+          COUNT(*) as count
+        FROM loan_applications
+        GROUP BY category
+      `);
+
+      res.json({
+        success: true,
+        data: {
+          stats: {
+            ...stats[0],
+            total_portfolio: portfolio[0].total_portfolio
+          },
+          trends,
+          growth,
+          recentRequests,
+          sizeDistribution
+        }
+      });
+    } catch (error) {
+      console.error('Get dashboard data error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch dashboard data'
+      });
+    }
+  }
+
+  static async getReportsData(req, res) {
+    try {
+      const [approvalTrends] = await query(`
+        SELECT 
+          DATE_FORMAT(created_at, '%b') as label,
+          COUNT(*) as request_rate,
+          SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as approval_rate,
+          COUNT(*) as total_requests,
+          SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) as approved_loans
+        FROM loan_applications
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%b'), MONTH(created_at)
+        ORDER BY MONTH(created_at) ASC
+      `);
+
+      const [yearlyDistribution] = await query(`
+        SELECT 
+          YEAR(created_at) as label,
+          COUNT(*) as total_loans
+        FROM loan_applications
+        GROUP BY YEAR(created_at)
+        ORDER BY YEAR(created_at) ASC
+      `);
+
+      const [departmentDistribution] = await query(`
+        SELECT 
+          COALESCE(ep.department, 'Unknown') as department,
+          COUNT(*) as count
+        FROM loan_applications la
+        LEFT JOIN employee_profiles ep ON la.user_id = ep.user_id
+        GROUP BY ep.department
+      `);
+
+      const [summaryStats] = await query(`
+        SELECT 
+          COUNT(*) as total_loans_year,
+          (SELECT SUM(outstanding_balance) FROM loans) as total_portfolio,
+          AVG(requested_amount) as avg_loan_size,
+          SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as approval_rate
+        FROM loan_applications
+        WHERE YEAR(created_at) = YEAR(NOW())
+      `);
+
+      const [repaymentPerformanceData] = await query(`
+        SELECT 
+          CASE 
+            WHEN status = 'COMPLETED' THEN 'On Time'
+            WHEN status = 'ACTIVE' AND next_payment_date >= NOW() THEN 'On Time'
+            WHEN status = 'ACTIVE' AND DATEDIFF(NOW(), next_payment_date) BETWEEN 1 AND 7 THEN 'Late (1-7 days)'
+            WHEN status = 'ACTIVE' AND DATEDIFF(NOW(), next_payment_date) BETWEEN 8 AND 30 THEN 'Late (8-30 days)'
+            ELSE 'Default'
+          END as category,
+          COUNT(*) as count
+        FROM loans
+        GROUP BY category
+      `);
+
+      const [topBorrowers] = await query(`
+        SELECT 
+          CONCAT(ep.first_name, ' ', ep.last_name) as name,
+          ep.department,
+          COUNT(l.id) as totalLoans,
+          SUM(l.loan_amount) as totalAmount
+        FROM loans l
+        JOIN employee_profiles ep ON l.user_id = ep.user_id
+        GROUP BY l.user_id
+        ORDER BY totalAmount DESC
+        LIMIT 5
+      `);
+
+      const [sizeDistribution] = await query(`
+        SELECT 
+          CASE 
+            WHEN requested_amount < 5000 THEN '< $5K'
+            WHEN requested_amount >= 5000 AND requested_amount < 10000 THEN '$5K-$10K'
+            WHEN requested_amount >= 10000 AND requested_amount < 20000 THEN '$10K-$20K'
+            WHEN requested_amount >= 20000 AND requested_amount < 50000 THEN '$20K-$50K'
+            ELSE '> $50K'
+          END as category,
+          COUNT(*) as count
+        FROM loan_applications
+        GROUP BY category
+      `);
+
+      res.json({
+        success: true,
+        data: {
+          trends: approvalTrends,
+          yearlyDistribution,
+          departmentDistribution,
+          summaryStats: summaryStats[0],
+          repaymentPerformanceData,
+          topBorrowers,
+          sizeDistribution
+        }
+      });
+    } catch (error) {
+      console.error('Get reports error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch reports' });
     }
   }
 

@@ -1,22 +1,8 @@
 const Payroll = require('../models/Payroll');
 const { auditLog } = require('../middleware/audit');
 const multer = require('multer');
+const { cloudinary, storage } = require('../config/cloudinary');
 const path = require('path');
-const fs = require('fs');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads/payroll');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `payroll-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
-});
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['.csv', '.xlsx', '.xls'];
@@ -51,14 +37,21 @@ class PayrollController {
         });
       }
       
-      const result = await Payroll.processPayrollFile(req.file.path, uploadUserId);
+      // Process payroll file from Cloudinary URL
+      const result = await Payroll.processPayrollFile(req.file.path, uploadUserId, {
+        cloudinaryUrl: req.file.path,
+        originalName: req.file.originalname,
+        publicId: req.file.filename
+      });
       
       if (result.success) {
         await auditLog(uploadUserId, 'PAYROLL_UPLOAD', 'payroll_batches', result.batchId, null, { 
           batchName: result.batchName, 
           totalEmployees: result.totalEmployees,
           totalAmount: result.totalAmount,
-          fileName: req.file.originalname
+          fileName: req.file.originalname,
+          cloudinaryUrl: req.file.path,
+          publicId: req.file.filename
         }, req.ip, req.get('User-Agent'));
         
         res.json({
@@ -69,10 +62,16 @@ class PayrollController {
       } else {
         await auditLog(uploadUserId, 'PAYROLL_UPLOAD_FAILED', 'payroll_batches', null, null, { 
           fileName: req.file.originalname,
-          errors: result.errors
+          errors: result.errors,
+          cloudinaryUrl: req.file.path
         }, req.ip, req.get('User-Agent'));
         
-        fs.unlinkSync(req.file.path);
+        // Delete failed file from Cloudinary
+        try {
+          await cloudinary.uploader.destroy(req.file.filename, { resource_type: 'raw' });
+        } catch (deleteError) {
+          console.error('Failed to delete file from Cloudinary:', deleteError);
+        }
         
         res.status(400).json({
           success: false,
@@ -83,8 +82,13 @@ class PayrollController {
     } catch (error) {
       console.error('Upload payroll error:', error);
       
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
+      // Delete failed file from Cloudinary
+      if (req.file) {
+        try {
+          await cloudinary.uploader.destroy(req.file.filename, { resource_type: 'raw' });
+        } catch (deleteError) {
+          console.error('Failed to delete file from Cloudinary:', deleteError);
+        }
       }
       
       res.status(500).json({

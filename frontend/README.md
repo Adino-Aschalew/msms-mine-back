@@ -1,145 +1,16 @@
-# Microfinance Frontend
+# React + Vite
 
-A modern React frontend for the Microfinance System backend.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
+Currently, two official plugins are available:
 
-- 🔐 Authentication & Authorization
-- 📊 Dashboard with real-time stats
-- 💰 Savings management
-- 💳 Loan applications and management
-- 📄 Payroll processing
-- 📈 Reports and analytics
-- 🤖 AI-powered risk assessment
-- 📱 Responsive design
-- 🎨 Modern UI with Tailwind CSS
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Tech Stack
+## React Compiler
 
-- **Frontend**: React 18 + Vite
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **HTTP Client**: Axios
-- **Routing**: React Router
-- **State Management**: React Context + useReducer
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Getting Started
+## Expanding the ESLint configuration
 
-### Prerequisites
-- Node.js 16+
-- npm or yarn
-
-### Installation
-
-```bash
-cd frontend
-npm install
-```
-
-### Development
-
-```bash
-npm run dev
-```
-
-The app will be available at `http://localhost:3000`
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-### Project Structure
-
-```
-src/
-├── components/
-│   ├── common/
-│   │   ├── Layout.jsx
-│   │   └── ...
-│   └── auth/
-│       └── ProtectedRoute.jsx
-├── context/
-│   ├── AuthContext.jsx
-│   └── ThemeContext.jsx
-├── pages/
-│   ├── Dashboard.jsx
-│   ├── Login.jsx
-│   ├── Loans.jsx
-│   ├── Savings.jsx
-│   ├── Payroll.jsx
-│   ├── Reports.jsx
-│   └── AI.jsx
-├── services/
-│   └── api.js
-└── utils/
-    └── helpers.js
-```
-
-## API Integration
-
-The frontend is configured to proxy API requests to:
-- Backend: `http://localhost:9999/api`
-- Authentication: JWT Bearer tokens
-- Auto-redirect on 401 responses
-
-## Environment Variables
-
-Create a `.env` file in the frontend root:
-
-```env
-VITE_API_URL=http://localhost:9999/api
-```
-
-## Features Overview
-
-### Authentication
-- Login/logout functionality
-- JWT token management
-- Protected routes
-- Auto token refresh
-
-### Dashboard
-- Real-time statistics
-- Recent activity feed
-- Quick action cards
-- Responsive layout
-
-### Loans Module
-- Apply for new loans
-- View existing loans
-- Track loan status
-- Make payments
-
-### Savings Module
-- View account balance
-- Transaction history
-- Deposit funds
-- Interest calculations
-
-### Payroll Module
-- Upload payroll files
-- View payroll history
-- Process employee salaries
-- Generate reports
-
-### Reports Module
-- Generate various reports
-- Filter by date range
-- Export functionality
-- Visual charts
-
-### AI Module
-- Risk assessment
-- Loan predictions
-- Recommendations
-- Anomaly detection
-
-## Contributing
-
-1. Follow the existing code style
-2. Use semantic HTML
-3. Ensure responsive design
-4. Test thoroughly
-5. Document changes
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

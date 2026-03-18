@@ -941,6 +941,680 @@ class AdminController {
     }
   }
 
+  // Create Finance Admin
+  static async createFinanceAdmin(req, res) {
+    try {
+      const {
+        employee_id,
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        department,
+        job_title,
+        password
+      } = req.body;
+
+      // Check if employee ID already exists
+      const [existingUser] = await pool.execute(
+        'SELECT user_id FROM users WHERE employee_id = ?',
+        [employee_id]
+      );
+
+      if (existingUser.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Employee ID already exists'
+        });
+      }
+
+      // Check if email already exists
+      const [existingEmail] = await pool.execute(
+        'SELECT user_id FROM users WHERE email = ?',
+        [email]
+      );
+
+      if (existingEmail.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already exists'
+        });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Create user
+      const [result] = await pool.execute(`
+        INSERT INTO users (
+          employee_id, first_name, last_name, email, phone_number,
+          role, is_active, password_hash, created_at
+        ) VALUES (?, ?, ?, ?, ?, 'FINANCE_ADMIN', 1, ?, NOW())
+      `, [employee_id, first_name, last_name, email, phone_number, hashedPassword]);
+
+      const userId = result.insertId;
+
+      // Create employee profile
+      await pool.execute(`
+        INSERT INTO employee_profiles (
+          user_id, employee_id, first_name, last_name, email,
+          phone_number, department, job_title, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
+      `, [userId, employee_id, first_name, last_name, email, phone_number, department, job_title]);
+
+      res.status(201).json({
+        success: true,
+        message: 'Finance Admin created successfully',
+        data: {
+          user_id: userId,
+          employee_id,
+          first_name,
+          last_name,
+          email,
+          role: 'FINANCE_ADMIN'
+        }
+      });
+    } catch (error) {
+      console.error('Error creating finance admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create finance admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Create Admin (Regular Admin)
+  static async createAdmin(req, res) {
+    try {
+      const {
+        employee_id,
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        department,
+        job_title,
+        password
+      } = req.body;
+
+      // Check if employee ID already exists
+      const [existingUser] = await pool.execute(
+        'SELECT user_id FROM users WHERE employee_id = ?',
+        [employee_id]
+      );
+
+      if (existingUser.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Employee ID already exists'
+        });
+      }
+
+      // Check if email already exists
+      const [existingEmail] = await pool.execute(
+        'SELECT user_id FROM users WHERE email = ?',
+        [email]
+      );
+
+      if (existingEmail.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already exists'
+        });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Create user
+      const [result] = await pool.execute(`
+        INSERT INTO users (
+          employee_id, first_name, last_name, email, phone_number,
+          role, is_active, password_hash, created_at
+        ) VALUES (?, ?, ?, ?, ?, 'ADMIN', 1, ?, NOW())
+      `, [employee_id, first_name, last_name, email, phone_number, hashedPassword]);
+
+      const userId = result.insertId;
+
+      // Create employee profile
+      await pool.execute(`
+        INSERT INTO employee_profiles (
+          user_id, employee_id, first_name, last_name, email,
+          phone_number, department, job_title, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
+      `, [userId, employee_id, first_name, last_name, email, phone_number, department, job_title]);
+
+      res.status(201).json({
+        success: true,
+        message: 'Admin created successfully',
+        data: {
+          user_id: userId,
+          employee_id,
+          first_name,
+          last_name,
+          email,
+          role: 'ADMIN'
+        }
+      });
+    } catch (error) {
+      console.error('Error creating admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Get Finance Admins
+  static async getFinanceAdmins(req, res) {
+    try {
+      const [financeAdmins] = await pool.execute(`
+        SELECT 
+          u.user_id,
+          u.employee_id,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.phone_number,
+          u.is_active,
+          u.created_at,
+          u.last_login,
+          ep.department,
+          ep.job_title
+        FROM users u
+        JOIN employee_profiles ep ON u.user_id = ep.user_id
+        WHERE u.role = 'FINANCE_ADMIN'
+        ORDER BY u.created_at DESC
+      `);
+
+      res.json({
+        success: true,
+        data: financeAdmins
+      });
+    } catch (error) {
+      console.error('Error getting finance admins:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch finance admins',
+        error: error.message
+      });
+    }
+  }
+
+  // Get Regular Admins
+  static async getRegularAdmins(req, res) {
+    try {
+      const [admins] = await pool.execute(`
+        SELECT 
+          u.user_id,
+          u.employee_id,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.phone_number,
+          u.is_active,
+          u.created_at,
+          u.last_login,
+          ep.department,
+          ep.job_title
+        FROM users u
+        JOIN employee_profiles ep ON u.user_id = ep.user_id
+        WHERE u.role = 'ADMIN'
+        ORDER BY u.created_at DESC
+      `);
+
+      res.json({
+        success: true,
+        data: admins
+      });
+    } catch (error) {
+      console.error('Error getting regular admins:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch regular admins',
+        error: error.message
+      });
+    }
+  }
+
+  // Update Finance Admin
+  static async updateFinanceAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+      const updates = req.body;
+
+      // Check if admin exists and is FINANCE_ADMIN
+      const [admin] = await pool.execute(
+        'SELECT user_id FROM users WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+        [adminId]
+      );
+
+      if (admin.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Finance Admin not found'
+        });
+      }
+
+      // Update user table
+      const userFields = [];
+      const userValues = [];
+      
+      if (updates.first_name) {
+        userFields.push('first_name = ?');
+        userValues.push(updates.first_name);
+      }
+      if (updates.last_name) {
+        userFields.push('last_name = ?');
+        userValues.push(updates.last_name);
+      }
+      if (updates.email) {
+        userFields.push('email = ?');
+        userValues.push(updates.email);
+      }
+      if (updates.phone_number) {
+        userFields.push('phone_number = ?');
+        userValues.push(updates.phone_number);
+      }
+
+      if (userFields.length > 0) {
+        userValues.push(adminId);
+        await pool.execute(
+          `UPDATE users SET ${userFields.join(', ')} WHERE user_id = ?`,
+          userValues
+        );
+      }
+
+      // Update employee profile
+      const profileFields = [];
+      const profileValues = [];
+      
+      if (updates.department) {
+        profileFields.push('department = ?');
+        profileValues.push(updates.department);
+      }
+      if (updates.job_title) {
+        profileFields.push('job_title = ?');
+        profileValues.push(updates.job_title);
+      }
+
+      if (profileFields.length > 0) {
+        profileValues.push(adminId);
+        await pool.execute(
+          `UPDATE employee_profiles SET ${profileFields.join(', ')} WHERE user_id = ?`,
+          profileValues
+        );
+      }
+
+      res.json({
+        success: true,
+        message: 'Finance Admin updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating finance admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update finance admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Update Regular Admin
+  static async updateRegularAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+      const updates = req.body;
+
+      // Check if admin exists and is ADMIN
+      const [admin] = await pool.execute(
+        'SELECT user_id FROM users WHERE user_id = ? AND role = "ADMIN"',
+        [adminId]
+      );
+
+      if (admin.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Admin not found'
+        });
+      }
+
+      // Update user table
+      const userFields = [];
+      const userValues = [];
+      
+      if (updates.first_name) {
+        userFields.push('first_name = ?');
+        userValues.push(updates.first_name);
+      }
+      if (updates.last_name) {
+        userFields.push('last_name = ?');
+        userValues.push(updates.last_name);
+      }
+      if (updates.email) {
+        userFields.push('email = ?');
+        userValues.push(updates.email);
+      }
+      if (updates.phone_number) {
+        userFields.push('phone_number = ?');
+        userValues.push(updates.phone_number);
+      }
+
+      if (userFields.length > 0) {
+        userValues.push(adminId);
+        await pool.execute(
+          `UPDATE users SET ${userFields.join(', ')} WHERE user_id = ?`,
+          userValues
+        );
+      }
+
+      // Update employee profile
+      const profileFields = [];
+      const profileValues = [];
+      
+      if (updates.department) {
+        profileFields.push('department = ?');
+        profileValues.push(updates.department);
+      }
+      if (updates.job_title) {
+        profileFields.push('job_title = ?');
+        profileValues.push(updates.job_title);
+      }
+
+      if (profileFields.length > 0) {
+        profileValues.push(adminId);
+        await pool.execute(
+          `UPDATE employee_profiles SET ${profileFields.join(', ')} WHERE user_id = ?`,
+          profileValues
+        );
+      }
+
+      res.json({
+        success: true,
+        message: 'Admin updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating regular admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Deactivate Finance Admin
+  static async deactivateFinanceAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+
+      const [result] = await pool.execute(
+        'UPDATE users SET is_active = 0 WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+        [adminId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Finance Admin not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Finance Admin deactivated successfully'
+      });
+    } catch (error) {
+      console.error('Error deactivating finance admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to deactivate finance admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Activate Finance Admin
+  static async activateFinanceAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+
+      const [result] = await pool.execute(
+        'UPDATE users SET is_active = 1 WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+        [adminId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Finance Admin not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Finance Admin activated successfully'
+      });
+    } catch (error) {
+      console.error('Error activating finance admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to activate finance admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Deactivate Regular Admin
+  static async deactivateRegularAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+
+      const [result] = await pool.execute(
+        'UPDATE users SET is_active = 0 WHERE user_id = ? AND role = "ADMIN"',
+        [adminId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Admin not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Admin deactivated successfully'
+      });
+    } catch (error) {
+      console.error('Error deactivating admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to deactivate admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Activate Regular Admin
+  static async activateRegularAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+
+      const [result] = await pool.execute(
+        'UPDATE users SET is_active = 1 WHERE user_id = ? AND role = "ADMIN"',
+        [adminId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Admin not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Admin activated successfully'
+      });
+    } catch (error) {
+      console.error('Error activating admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to activate admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Delete Finance Admin
+  static async deleteFinanceAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+
+      // Start transaction
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Delete from employee_profiles
+        await connection.execute(
+          'DELETE FROM employee_profiles WHERE user_id = ?',
+          [adminId]
+        );
+
+        // Delete from users
+        const [result] = await connection.execute(
+          'DELETE FROM users WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+          [adminId]
+        );
+
+        if (result.affectedRows === 0) {
+          await connection.rollback();
+          return res.status(404).json({
+            success: false,
+            message: 'Finance Admin not found'
+          });
+        }
+
+        await connection.commit();
+
+        res.json({
+          success: true,
+          message: 'Finance Admin deleted successfully'
+        });
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('Error deleting finance admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete finance admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Delete Regular Admin
+  static async deleteRegularAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+
+      // Start transaction
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Delete from employee_profiles
+        await connection.execute(
+          'DELETE FROM employee_profiles WHERE user_id = ?',
+          [adminId]
+        );
+
+        // Delete from users
+        const [result] = await connection.execute(
+          'DELETE FROM users WHERE user_id = ? AND role = "ADMIN"',
+          [adminId]
+        );
+
+        if (result.affectedRows === 0) {
+          await connection.rollback();
+          return res.status(404).json({
+            success: false,
+            message: 'Admin not found'
+          });
+        }
+
+        await connection.commit();
+
+        res.json({
+          success: true,
+          message: 'Admin deleted successfully'
+        });
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete admin',
+        error: error.message
+      });
+    }
+  }
+
+  // Get Admin Statistics
+  static async getAdminStatistics(req, res) {
+    try {
+      const [stats] = await pool.execute(`
+        SELECT 
+          COUNT(*) as total_admins,
+          SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_admins,
+          SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive_admins
+        FROM users 
+        WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE')
+      `);
+
+      const [roleStats] = await pool.execute(`
+        SELECT 
+          role,
+          COUNT(*) as count,
+          SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_count
+        FROM users 
+        WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE')
+        GROUP BY role
+        ORDER BY count DESC
+      `);
+
+      res.json({
+        success: true,
+        data: {
+          total: stats[0].total_admins,
+          active: stats[0].active_admins,
+          inactive: stats[0].inactive_admins,
+          byRole: roleStats
+        }
+      });
+    } catch (error) {
+      console.error('Error getting admin statistics:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch admin statistics',
+        error: error.message
+      });
+    }
+  }
+
   // Toggle Maintenance Mode
   static async toggleMaintenanceMode(req, res) {
     try {

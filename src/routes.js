@@ -12,6 +12,7 @@ const loanCommitteeRoutes = require('./modules/loanCommittee/committee.routes');
 const reportRoutes = require('./modules/reports/report.routes');
 const aiRoutes = require('./modules/ai/ai.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
+const notificationRoutes = require('./modules/notifications/notification.routes');
 
 const router = express.Router();
 
@@ -37,5 +38,6 @@ router.use('/loan-committee', loanCommitteeRoutes);
 router.use('/reports', reportRoutes);
 router.use('/ai', aiRoutes);
 router.use('/admin', adminRoutes);
+router.use('/notifications', notificationRoutes);
 
 module.exports = router;

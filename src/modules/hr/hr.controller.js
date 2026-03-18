@@ -102,7 +102,6 @@ class HrController {
         employee_id: req.body.employee_id,
         username: req.body.username,
         email: req.body.email,
-        password: req.body.password,
         role: req.body.role || 'EMPLOYEE'
       };
       
