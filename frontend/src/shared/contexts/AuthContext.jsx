@@ -90,11 +90,19 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await authAPI.updateProfile(updates);
       
-      // Update local user state
-      const updatedUser = { ...user, ...response };
-      setUser(updatedUser);
+      // The API client returns the data directly, not wrapped in a response object
+      if (response && response.data) {
+        // If response has data property, use it
+        setUser(response.data);
+      } else if (response) {
+        // If response is the user data directly, use it
+        setUser(response);
+      } else {
+        // Fallback: refresh the user profile from server
+        await refreshUserProfile();
+      }
       
-      return updatedUser;
+      return response;
     } catch (err) {
       const errorMessage = err.message || 'Profile update failed';
       setError(errorMessage);

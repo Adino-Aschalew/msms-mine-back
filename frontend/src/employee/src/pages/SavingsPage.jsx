@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiTrendingUp, FiDollarSign, FiCalendar, FiDownload, FiUpload, FiEdit2, FiAlertCircle } from 'react-icons/fi';
 import StatCard from '../components/Shared/StatCard';
 import { LineChart } from '../components/Shared/Chart';
-import { savingsAPI } from '../../../services/savingsAPI';
-import { useNotifications } from '../../../contexts/NotificationContext';
+import { savingsAPI } from '../../../shared/services/savingsAPI';
 
 const SavingsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');

@@ -24,6 +24,7 @@ const Account = () => {
     last_name: '',
     email: '',
     phone_number: '',
+    address: '',
     department: '',
     job_title: '',
     role: '',
@@ -32,21 +33,22 @@ const Account = () => {
     confirmPassword: ''
   });
 
-  // Load user data on mount
+  // Load user data on mount and when user changes
   useEffect(() => {
-    if (user && !isEditing) {
+    if (user) {
       setFormData(prev => ({
         ...prev,
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
         phone_number: user.phone_number || '',
+        address: user.address || '',
         department: user.department || '',
         job_title: user.job_title || '',
         role: user.role || 'Admin'
       }));
     }
-  }, [user, isEditing]);
+  }, [user]);
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -74,10 +76,14 @@ const Account = () => {
       await updateProfile({
         first_name: formData.first_name,
         last_name: formData.last_name,
-        phone: formData.phone_number
+        phone_number: formData.phone_number,
+        address: formData.address || ''
       });
       setIsEditing(false);
       showStatus('success', 'Your profile has been updated successfully.');
+      
+      // The user context will automatically refresh and update the form data
+      // through the useEffect that depends on user changes
     } catch (error) {
       showStatus('error', error.message || 'Failed to update profile');
     } finally {
@@ -202,10 +208,12 @@ const Account = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  disabled={!isEditing}
-                  className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                  disabled={true}
+                  className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  title="Email cannot be edited"
                 />
               </div>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Email cannot be changed</p>
             </div>
             
             <div>
@@ -221,6 +229,21 @@ const Account = () => {
                 />
               </div>
             </div>
+            
+            <div>
+              <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-3">Address</label>
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <textarea
+                  value={formData.address || ''}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  disabled={!isEditing}
+                  rows={3}
+                  className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50 resize-none"
+                  placeholder="Enter your address"
+                />
+              </div>
+            </div>
           </div>
           
           <div className="space-y-6">
@@ -230,9 +253,11 @@ const Account = () => {
                 type="text"
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                disabled={!isEditing}
-                className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                disabled={true}
+                className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                title="Role cannot be edited"
               />
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Role cannot be changed</p>
             </div>
           </div>
         </div>

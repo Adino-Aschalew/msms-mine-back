@@ -48,8 +48,6 @@ const MyLoansPage = () => {
       setLoading(false);
     }
   };
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':

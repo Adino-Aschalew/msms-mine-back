@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext2';
 import { 
   FileText, 
@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
+import { reportsAPI } from '../../../shared/services/reportsAPI';
 
 const Reports = () => {
   const { theme } = useTheme();
@@ -30,43 +31,96 @@ const Reports = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [reports, setReports] = useState([]);
+  const [reportStats, setReportStats] = useState({
+    totalReports: 0,
+    thisMonthReports: 0,
+    totalDownloads: 0,
+    activeUsers: 0,
+    reportsChange: '+0%',
+    thisMonthChange: '+0%',
+    downloadsChange: '+0%',
+    activeUsersChange: '+0%'
+  });
 
-  const handleGenerateReport = () => {
-    setIsGenerating(true);
-    setNotification({ type: 'info', message: 'Generating report...' });
-    
-    // Simulate report generation
-    setTimeout(() => {
-      const newReport = {
-        id: reports.length + 1,
-        title: `${selectedReport === 'all' ? 'General' : selectedReport.charAt(0).toUpperCase() + selectedReport.slice(1)} Report - ${new Date().toLocaleDateString()}`,
-        type: selectedReport === 'all' ? 'general' : selectedReport,
-        date: new Date().toISOString().split('T')[0],
-        status: 'completed',
-        generatedBy: 'Current User',
-        size: '2.1 MB',
-        downloads: 0
+  // Fetch report statistics
+  const fetchReportStats = async () => {
+    try {
+      const stats = await reportsAPI.getStats();
+      setReportStats(stats);
+    } catch (error) {
+      console.error('Error fetching report stats:', error);
+      setNotification({ type: 'error', message: 'Failed to fetch report statistics' });
+    }
+  };
+
+  // Fetch reports
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const filters = {
+        type: selectedReport,
+        period: selectedPeriod,
+        search: searchQuery
       };
+      const reportsData = await reportsAPI.getReports(filters);
+      setReports(reportsData);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      setNotification({ type: 'error', message: 'Failed to fetch reports' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchReportStats();
+    fetchReports();
+  }, []);
+
+  // Refetch data when filters change
+  useEffect(() => {
+    fetchReports();
+  }, [selectedReport, selectedPeriod, searchQuery]);
+
+  const handleGenerateReport = async () => {
+    if (selectedReport === 'all') {
+      setNotification({ type: 'error', message: 'Please select a specific report type' });
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setNotification({ type: 'info', message: 'Generating report...' });
       
-      setReports([newReport, ...reports]);
+      await reportsAPI.generateReport(selectedReport, 'json');
+      
+      // Refresh data after generation
+      await fetchReports();
+      await fetchReportStats();
+      
       setIsGenerating(false);
       setNotification({ type: 'success', message: 'Report generated successfully!' });
       
-      // Clear notification after 3 seconds
       setTimeout(() => setNotification(null), 3000);
-    }, 2000);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setIsGenerating(false);
+      setNotification({ type: 'error', message: 'Failed to generate report' });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
   const handleExportAll = () => {
     setIsExporting(true);
     setNotification({ type: 'info', message: 'Exporting all reports...' });
     
-    // Simulate export process
     setTimeout(() => {
-      const filteredReports = getFilteredReports();
-      // Create CSV data
-      const csvContent = filteredReports.map(report => 
-        `${report.title},${report.type},${report.date},${report.status},${report.generatedBy},${report.size},${report.downloads}`
+      // Create CSV data from real reports
+      const csvContent = reports.map(report => 
+        `${report.title},${report.type},${report.date},${report.status},${report.generated_by},${report.size},${report.downloads}`
       ).join('\n');
       
       // Create and download file
@@ -80,17 +134,9 @@ const Reports = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      // Update download counts for all exported reports
-      setReports(reports.map(report => 
-        filteredReports.find(fr => fr.id === report.id) 
-          ? { ...report, downloads: report.downloads + 1 }
-          : report
-      ));
-      
       setIsExporting(false);
       setNotification({ type: 'success', message: 'Reports exported successfully!' });
       
-      // Clear notification after 3 seconds
       setTimeout(() => setNotification(null), 3000);
     }, 1500);
   };
@@ -99,7 +145,7 @@ const Reports = () => {
     setNotification({ type: 'info', message: `Exporting ${report.title}...` });
     
     setTimeout(() => {
-      const csvContent = `${report.title},${report.type},${report.date},${report.status},${report.generatedBy},${report.size},${report.downloads}`;
+      const csvContent = `${report.title},${report.type},${report.date},${report.status},${report.generated_by},${report.size},${report.downloads}`;
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -110,145 +156,51 @@ const Reports = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      // Update download count for the exported report
-      setReports(reports.map(r => 
-        r.id === report.id 
-          ? { ...r, downloads: r.downloads + 1 }
-          : r
-      ));
-      
       setNotification({ type: 'success', message: 'Report exported successfully!' });
       setTimeout(() => setNotification(null), 3000);
     }, 1000);
   };
 
-  const getFilteredReports = () => {
-    let filtered = reports;
-    
-    // Apply report type filter
-    if (selectedReport !== 'all') {
-      filtered = filtered.filter(report => report.type === selectedReport);
+  const handleDeleteReport = async (reportId) => {
+    try {
+      await reportsAPI.deleteReport(reportId);
+      setReports(reports.filter(r => r.id !== reportId));
+      await fetchReportStats();
+      setNotification({ type: 'success', message: 'Report deleted successfully!' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      setNotification({ type: 'error', message: 'Failed to delete report' });
+      setTimeout(() => setNotification(null), 3000);
     }
-    
-    // Apply period filter
-    const now = new Date();
-    let cutoffDate;
-    
-    switch (selectedPeriod) {
-      case '7days':
-        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '30days':
-        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case '90days':
-        cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      case 'year':
-        cutoffDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        cutoffDate = null;
-    }
-    
-    if (cutoffDate) {
-      filtered = filtered.filter(report => new Date(report.date) >= cutoffDate);
-    }
-    
-    // Apply search filter
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(report => 
-        report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.generatedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.status.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    return filtered;
   };
 
-  const [reports, setReports] = useState([
-    {
-      id: 1,
-      title: 'User Activity Report',
-      type: 'user-activity',
-      date: '2024-03-10',
-      status: 'completed',
-      generatedBy: 'Admin',
-      size: '2.4 MB',
-      downloads: 45
-    },
-    {
-      id: 2,
-      title: 'Security Audit Report',
-      type: 'security',
-      date: '2024-03-09',
-      status: 'completed',
-      generatedBy: 'System',
-      size: '1.8 MB',
-      downloads: 23
-    },
-    {
-      id: 3,
-      title: 'Performance Metrics Report',
-      type: 'performance',
-      date: '2024-03-08',
-      status: 'processing',
-      generatedBy: 'Admin',
-      size: '3.1 MB',
-      downloads: 12
-    },
-    {
-      id: 4,
-      title: 'Admin Access Log',
-      type: 'access',
-      date: '2024-03-07',
-      status: 'completed',
-      generatedBy: 'System',
-      size: '1.2 MB',
-      downloads: 67
-    },
-    {
-      id: 5,
-      title: 'System Health Report',
-      type: 'health',
-      date: '2024-03-05',
-      status: 'completed',
-      generatedBy: 'System',
-      size: '2.7 MB',
-      downloads: 34
-    }
-  ]);
-
-  const filteredReports = getFilteredReports();
-
-  const reportStats = [
+  const statsData = [
     {
       title: 'Total Reports',
-      value: filteredReports.length.toString(),
-      change: '+12%',
+      value: reportStats.totalReports.toString(),
+      change: reportStats.reportsChange,
       icon: <FileText className="h-6 w-6" />,
       color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
     },
     {
       title: 'This Month',
-      value: filteredReports.filter(r => new Date(r.date) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length.toString(),
-      change: '+8%',
+      value: reportStats.thisMonthReports.toString(),
+      change: reportStats.thisMonthChange,
       icon: <Calendar className="h-6 w-6" />,
       color: 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
     },
     {
       title: 'Downloads',
-      value: filteredReports.reduce((sum, r) => sum + r.downloads, 0).toString(),
-      change: '+18%',
+      value: reportStats.totalDownloads.toString(),
+      change: reportStats.downloadsChange,
       icon: <Download className="h-6 w-6" />,
       color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
     },
     {
       title: 'Active Users',
-      value: '89',
-      change: '+5%',
+      value: reportStats.activeUsers.toString(),
+      change: reportStats.activeUsersChange,
       icon: <Users className="h-6 w-6" />,
       color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
     }
@@ -295,7 +247,7 @@ const Reports = () => {
 
         {/* Stats Cards */}
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          {reportStats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <div key={index} className="card p-6 transition-all hover:shadow-lg w-full">
               <div className="flex items-center justify-between">
                 <div>
@@ -356,10 +308,13 @@ const Reports = () => {
                   className="appearance-none pl-10 pr-10 py-2 border border-gray-300 rounded-lg  focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white w-50"
                 >
                   <option value="all">All Reports</option>
-                  <option value="user-activity">User Activity</option>
-                  <option value="security">Security</option>
-                  <option value="performance">Performance</option>
-                  <option value="access">Access Logs</option>
+                  <option value="loan_portfolio">Loan Portfolio</option>
+                  <option value="savings_summary">Savings Summary</option>
+                  <option value="financial_overview">Financial Overview</option>
+                  <option value="employee_summary">Employee Summary</option>
+                  <option value="transaction_history">Transaction History</option>
+                  <option value="audit_trail">Audit Trail</option>
+                  <option value="risk_assessment">Risk Assessment</option>
                 </select>
                 <Filter className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <ChevronDown className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -420,11 +375,15 @@ const Reports = () => {
           <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border transition-all duration-300 transform ${
             notification.type === 'success' 
               ? 'bg-green-100 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
+              : notification.type === 'error'
+              ? 'bg-red-100 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
               : 'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200'
           }`}>
             <div className="flex items-center gap-3">
               {notification.type === 'success' ? (
                 <CheckCircle className="h-5 w-5" />
+              ) : notification.type === 'error' ? (
+                <AlertCircle className="h-5 w-5" />
               ) : (
                 <AlertCircle className="h-5 w-5" />
               )}
@@ -435,95 +394,108 @@ const Reports = () => {
 
         {/* Reports Table */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Report Name</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Type</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Generated By</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Size</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Downloads</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        {getReportTypeIcon(report.type)}
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{report.title}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">ID: #{report.id}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white capitalize">{report.type.replace('-', ' ')}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">{report.date}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(report.status)}`}>
-                        {report.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">{report.generatedBy}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">{report.size}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">{report.downloads}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => console.log('View report:', report.title)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                          title="View Report"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleExportSingle(report)}
-                          className="p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                          title="Export Report"
-                        >
-                          <FileDown className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => console.log('Edit report:', report.title)}
-                          className="p-2 text-yellow-600 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                          title="Edit Report"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => {
-                            if (window.confirm(`Are you sure you want to delete "${report.title}"?`)) {
-                              setReports(reports.filter(r => r.id !== report.id));
-                              setNotification({ type: 'success', message: 'Report deleted successfully!' });
-                              setTimeout(() => setNotification(null), 3000);
-                            }
-                          }}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                          title="Delete Report"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-2 text-gray-600 dark:text-gray-400">Loading reports...</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Report Name</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Type</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Generated By</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Size</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Downloads</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {reports.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        No reports found. Generate your first report to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    reports.map((report) => (
+                      <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            {getReportTypeIcon(report.type)}
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{report.title}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">ID: #{report.id}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900 dark:text-white capitalize">{report.type.replace('-', ' ')}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900 dark:text-white">{report.date}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(report.status)}`}>
+                            {report.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900 dark:text-white">{report.generated_by}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900 dark:text-white">{report.size}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900 dark:text-white">{report.downloads}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => console.log('View report:', report.title)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-105"
+                              title="View Report"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleExportSingle(report)}
+                              className="p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded-lg transition-all duration-200 hover:scale-105"
+                              title="Export Report"
+                            >
+                              <FileDown className="h-4 w-4" />
+                            </button>
+                            <button 
+                              onClick={() => console.log('Edit report:', report.title)}
+                              className="p-2 text-yellow-600 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-200 hover:scale-105"
+                              title="Edit Report"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to delete "${report.title}"?`)) {
+                                  handleDeleteReport(report.id);
+                                }
+                              }}
+                              className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 hover:scale-105"
+                              title="Delete Report"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

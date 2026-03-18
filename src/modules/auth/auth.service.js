@@ -215,11 +215,21 @@ class AuthService {
 
   static async getProfile(userId) {
     try {
+      // Get user data from users table
       const user = await this.findById(userId);
       
       if (!user) {
         throw new Error('User not found');
       }
+
+      // Get employee profile data from employee_profiles table
+      const employeeProfile = await query(`
+        SELECT phone_number, address, department, job_title
+        FROM employee_profiles 
+        WHERE user_id = ?
+      `, [userId]);
+
+      const profile = employeeProfile.length > 0 ? employeeProfile[0] : {};
 
       return {
         id: user.id,
@@ -229,7 +239,10 @@ class AuthService {
         role: user.role,
         first_name: user.first_name,
         last_name: user.last_name,
-        department: user.department,
+        phone_number: profile.phone_number || '',
+        address: profile.address || '',
+        department: profile.department || user.department || '',
+        job_title: profile.job_title || '',
         job_grade: user.job_grade,
         employment_status: user.employment_status,
         created_at: user.created_at,
@@ -378,35 +391,34 @@ class AuthService {
     const { 
       first_name, 
       last_name, 
-      email, 
-      phone_number, 
-      role 
+      phone_number,
+      address
     } = profileData;
 
     try {
-      // 1. Update the users table (email, role, names)
+      // 1. Update the users table (only names - email and role are not editable)
       await query(`
         UPDATE users 
-        SET first_name = ?, last_name = ?, email = ?, role = ?, updated_at = NOW()
+        SET first_name = ?, last_name = ?, updated_at = NOW()
         WHERE id = ?
-      `, [first_name, last_name, email, role, userId]);
+      `, [first_name, last_name, userId]);
 
-      // 2. Update the employee_profiles table (phone, names)
+      // 2. Update the employee_profiles table (phone, names, address)
       // Check if profile exists first
       const profiles = await query('SELECT user_id FROM employee_profiles WHERE user_id = ?', [userId]);
       
       if (profiles.length > 0) {
         await query(`
           UPDATE employee_profiles 
-          SET first_name = ?, last_name = ?, phone = ?, updated_at = NOW()
+          SET first_name = ?, last_name = ?, phone_number = ?, address = ?, updated_at = NOW()
           WHERE user_id = ?
-        `, [first_name, last_name, phone_number, userId]);
+        `, [first_name, last_name, phone_number, address || null, userId]);
       } else {
         // If profile doesn't exist, create it (should not happen if user is an employee)
         await query(`
-          INSERT INTO employee_profiles (user_id, first_name, last_name, phone)
-          VALUES (?, ?, ?, ?)
-        `, [userId, first_name, last_name, phone_number]);
+          INSERT INTO employee_profiles (user_id, first_name, last_name, phone_number, address)
+          VALUES (?, ?, ?, ?, ?)
+        `, [userId, first_name, last_name, phone_number, address || null]);
       }
 
       // 3. Log the change
@@ -414,9 +426,13 @@ class AuthService {
         updated_fields: Object.keys(profileData) 
       }, ip, userAgent);
 
+      // 4. Get the updated user data
+      const updatedUserData = await this.getProfile(userId);
+
       return {
         success: true,
-        message: 'Profile updated successfully'
+        message: 'Profile updated successfully',
+        data: updatedUserData
       };
     } catch (error) {
       console.error('Update profile service error:', error);

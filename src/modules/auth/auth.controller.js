@@ -165,7 +165,8 @@ class AuthController {
       
       res.json({
         success: true,
-        message: result.message
+        message: result.message,
+        data: result.data || null
       });
     } catch (error) {
       console.error('Update profile error:', error);
