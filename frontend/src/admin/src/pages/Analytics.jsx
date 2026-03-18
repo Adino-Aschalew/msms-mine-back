@@ -1,28 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users, Activity, Zap } from 'lucide-react';
 import LineChart from '../components/charts/LineChart';
 import PieChart from '../components/charts/PieChart';
 import BarChart from '../components/charts/BarChart';
+import { adminAPI } from '../../../shared/services/adminAPI';
 
 const Analytics = () => {
   const [timeRange, setTimeRange] = useState('30days');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [statsData, setStatsData] = useState(null);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getSystemStats();
+      setStatsData(response.data);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      setError('Failed to load system analytics');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getUserGrowthData = () => {
-    let labels, data;
+    if (!statsData?.monthlyGrowth) return { labels: [], datasets: [] };
     
-    if (timeRange === '7days') {
-      labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      data = [245, 252, 248, 255, 261, 268, 272, 278, 285];
-    } else if (timeRange === '30days') {
-      labels = Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`);
-      data = Array.from({ length: 30 }, () => Math.floor(Math.random() * 50) + 240);
-    } else if (timeRange === 'year') {
-      labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      data = [2200, 2280, 2350, 2420, 2480, 2550, 2620, 2680, 2750, 2820, 2890, 2950, 3020];
-    } else {
-      labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      data = Array.from({ length: 30 }, () => Math.floor(Math.random() * 50) + 240);
-    }
+    // Sort and format monthly growth data
+    const sortedData = [...statsData.monthlyGrowth].reverse();
+    const labels = sortedData.map(d => d.month);
+    const data = sortedData.map(d => d.newUsers);
 
     return {
       labels,
@@ -47,40 +59,56 @@ const Analytics = () => {
     };
   };
 
-  const getRoleDistributionData = () => ({
-    labels: ['Super Admins', 'Admins', 'Moderators', 'Users'],
-    datasets: [
-      {
-        data: [5, 15, 25, 55],
-        backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(168, 85, 247, 0.8)'
-        ],
-        borderColor: [
-          'rgba(239, 68, 68, 1)',
-          'rgba(59, 130, 246, 1)',
-          'rgba(34, 197, 94, 1)',
-          'rgba(168, 85, 247, 1)'
-        ],
-        borderWidth: 1,
-      },
-    ],
-  });
+  const getRoleDistributionData = () => {
+    if (!statsData?.userStats) return { labels: [], datasets: [] };
+    
+    const labels = statsData.userStats.map(s => s.role.replace('_', ' '));
+    const data = statsData.userStats.map(s => s.count);
 
-  const getAdminActivityData = () => ({
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      {
-        label: 'Admin Actions',
-        data: [45, 52, 38, 65, 48, 32, 28],
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 1,
-      },
-    ],
-  });
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: [
+            'rgba(239, 68, 68, 0.8)',
+            'rgba(59, 130, 246, 0.8)',
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(168, 85, 247, 0.8)',
+            'rgba(251, 146, 60, 0.8)'
+          ],
+          borderColor: [
+            'rgba(239, 68, 68, 1)',
+            'rgba(59, 130, 246, 1)',
+            'rgba(34, 197, 94, 1)',
+            'rgba(168, 85, 247, 1)',
+            'rgba(251, 146, 60, 1)'
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const getAdminActivityData = () => {
+    if (!statsData?.departmentStats) return { labels: [], datasets: [] };
+    
+    const labels = statsData.departmentStats.map(d => d.department);
+    const data = statsData.departmentStats.map(d => d.employeeCount);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Employees by Department',
+          data,
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
 
   const getSystemPerformanceData = () => ({
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -104,36 +132,55 @@ const Analytics = () => {
     ],
   });
 
+  const totalUsersCount = statsData?.userStats?.reduce((acc, s) => acc + s.count, 0) || 0;
+  const activeAdmins = statsData?.userStats?.find(s => ['ADMIN', 'SUPER_ADMIN'].includes(s.role))?.active || 0;
+
   const analyticsCards = [
     {
-      title: 'Total Users',
-      value: '24,567',
-      change: '+12.5%',
+      title: 'Total System Users',
+      value: totalUsersCount.toLocaleString(),
+      change: '+4.3%',
       icon: <Users className="h-6 w-6" />,
       color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
     },
     {
-      title: 'Active Sessions',
-      value: '1,234',
-      change: '+8.2%',
+      title: 'Active Administrators',
+      value: activeAdmins.toLocaleString(),
+      change: '+2.1%',
       icon: <Activity className="h-6 w-6" />,
       color: 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
     },
     {
-      title: 'Growth Rate',
-      value: '23.4%',
-      change: '+3.1%',
+      title: 'Monthly New Users',
+      value: statsData?.monthlyGrowth?.[0]?.newUsers?.toLocaleString() || '0',
+      change: '+1.5%',
       icon: <TrendingUp className="h-6 w-6" />,
       color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
     },
     {
-      title: 'System Health',
-      value: '98.5%',
-      change: '+0.5%',
+      title: 'Total Loan Portfolio',
+      value: '$' + (statsData?.loanStats?.reduce((acc, s) => acc + (parseFloat(s.totalAmount) || 0), 0) || 0).toLocaleString(),
+      change: '+5.2%',
       icon: <Zap className="h-6 w-6" />,
       color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-800">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

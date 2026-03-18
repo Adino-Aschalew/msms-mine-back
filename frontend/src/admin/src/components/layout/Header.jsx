@@ -3,27 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext2';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
 import { 
-  FiMenu, 
-  FiSearch, 
-  FiBell, 
-  FiChevronDown,
-  FiSun,
-  FiMoon,
-  FiMonitor,
-  FiUser,
-  FiShield,
-  FiSettings, 
-  FiLogOut,
-  FiHelpCircle,
-  FiCheck,
-  FiX,
-  FiChevronRight,
-  FiAlertCircle,
-  FiFileText,
-  FiAlertTriangle,
-  FiInfo,
-  FiExternalLink
+  FiMenu, FiSearch, FiBell, FiChevronDown, FiSun, FiMoon, FiMonitor,
+  FiUser, FiShield, FiSettings, FiLogOut, FiHelpCircle, FiCheck, FiX,
+  FiChevronRight, FiAlertCircle, FiFileText, FiAlertTriangle, FiInfo, FiExternalLink
 } from 'react-icons/fi';
+import { adminAPI } from '../../../../shared/services/adminAPI';
+import { formatDistanceToNow } from 'date-fns';
 
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
@@ -38,38 +23,81 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const profileDropdownRef = useRef(null);
   const themeDropdownRef = useRef(null);
 
-  // Enhanced notifications data
-  const [notifications, setNotifications] = useState([
-    { 
-      id: 1, 
-      title: 'Admin John added new admin', 
-      message: 'A new administrator has been added to the system with full permissions.',
-      time: '5 min ago', 
-      isRead: false,
-      type: 'request',
-      detail: 'John Smith has been granted Super Admin access to all system modules.'
-    },
-    { 
-      id: 2, 
-      title: 'User Michael registered', 
-      message: 'New user registration completed successfully with email verification.',
-      time: '1 hour ago', 
-      isRead: false,
-      type: 'system',
-      detail: 'Michael Johnson joined from IP address 192.168.1.1 and completed email verification.'
-    },
-    { 
-      id: 3, 
-      title: 'Settings updated', 
-      message: 'System configuration has been modified by administrator.',
-      time: '3 hours ago', 
-      isRead: true,
-      type: 'alert',
-      detail: 'Security settings were updated to require two-factor authentication for all admin accounts.'
-    },
-  ]);
-
+  const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await adminAPI.getSystemActivity({ limit: 10 });
+      if (response.success && response.data?.activities) {
+        const readLogs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+        
+        const mapped = response.data.activities.map((act, index) => {
+          let type = 'system';
+          if (act.action.includes('CREATED') || act.action.includes('REGISTERED')) type = 'request';
+          if (act.action.includes('UPDATED')) type = 'alert';
+          
+          return {
+            id: act.created_at + index, // Using timestamp + index as ID
+            log_id: act.created_at,
+            title: act.action.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' '),
+            message: `${act.first_name || 'System'} ${act.last_name || ''}: ${act.action.toLowerCase().replace(/_/g, ' ')}`,
+            time: formatDistanceToNow(new Date(act.created_at), { addSuffix: true }),
+            detail: act.description || `Action performed by ${act.first_name || 'Admin'} (${act.employee_id || 'N/A'}) from IP ${act.ip_address || 'Unknown'}.`,
+            isRead: readLogs.includes(act.created_at),
+            type: type
+          };
+        });
+        
+        // Add a special growth notification if we have many new users
+        const newUsers = response.data.activities.filter(a => a.action === 'USER_REGISTERED').length;
+        if (newUsers > 3) {
+          mapped.unshift({
+            id: 'growth-alert',
+            log_id: 'growth-alert',
+            title: 'Growth Rate Up',
+            message: `User registration surge: ${newUsers} new accounts in the last batch!`,
+            time: 'Just now',
+            detail: 'The system has detected a significant increase in user registrations. Marketing campaigns or organic growth may be driving this traffic.',
+            isRead: readLogs.includes('growth-alert'),
+            type: 'alert'
+          });
+        }
+
+        setNotifications(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to fetch activities:', err);
+    }
+  };
+
+  const handleMarkRead = (id) => {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
+    
+    const readLogs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+    if (!readLogs.includes(notif.log_id)) {
+      readLogs.push(notif.log_id);
+      localStorage.setItem('read_notifications', JSON.stringify(readLogs));
+    }
+    
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleMarkAllRead = () => {
+    const readLogs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+    notifications.forEach(n => {
+      if (!readLogs.includes(n.log_id)) readLogs.push(n.log_id);
+    });
+    localStorage.setItem('read_notifications', JSON.stringify(readLogs));
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
 
   const NotificationItem = ({ notification, onMarkRead, onViewDetail }) => {
     const getIcon = () => {
@@ -192,14 +220,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
   const handleThemeChange = (newTheme) => {
     toggleTheme(newTheme);
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  };
-
-  const handleMarkRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
   };
 
   const handleViewDetail = (notif) => {

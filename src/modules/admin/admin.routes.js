@@ -22,6 +22,11 @@ router.get('/admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.
 router.get('/activity', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemActivity);
 router.get('/statistics', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getAdminStatistics);
 
+// Generic Admin Management
+router.put('/admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.updateAdmin);
+router.put('/admins/:adminId/status', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.toggleAdminStatus);
+router.delete('/admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.deleteAdmin);
+
 // HR Admin Management
 router.post('/hr-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateCreateHRAdmin, auditMiddleware('HR_ADMIN_CREATED'), AdminController.createHRAdmin);
 router.get('/hr-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getHRAdmins);

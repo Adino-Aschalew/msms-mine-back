@@ -829,10 +829,10 @@ class AdminController {
           u.last_name,
           u.role
         FROM audit_logs al
-        LEFT JOIN users u ON al.user_id = u.user_id
+        LEFT JOIN users u ON al.user_id = u.id
         ORDER BY al.created_at DESC
         LIMIT ? OFFSET ?
-      `, [parseInt(limit), offset]);
+      `, [Number(limit), Number(offset)]);
 
       const [totalCount] = await pool.execute(
         'SELECT COUNT(*) as count FROM audit_logs'
@@ -1618,6 +1618,82 @@ class AdminController {
         message: 'Failed to fetch admin statistics',
         error: error.message
       });
+    }
+  }
+
+  // Update Admin (Generic)
+  static async updateAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+      const { first_name, last_name, email, phone_number, role } = req.body;
+
+      const [user] = await pool.execute('SELECT id FROM users WHERE id = ?', [adminId]);
+      if (user.length === 0) {
+        return res.status(404).json({ success: false, message: 'Admin not found' });
+      }
+
+      await pool.execute(
+        'UPDATE users SET first_name = ?, last_name = ?, email = ?, phone_number = ?, role = ? WHERE id = ?',
+        [first_name, last_name, email, phone_number, role, adminId]
+      );
+
+      res.json({ success: true, message: 'Admin updated successfully' });
+    } catch (error) {
+      console.error('Error updating admin:', error);
+      res.status(500).json({ success: false, message: 'Failed to update admin', error: error.message });
+    }
+  }
+
+  // Toggle Admin Status (Generic)
+  static async toggleAdminStatus(req, res) {
+    try {
+      const { adminId } = req.params;
+      const { is_active } = req.body;
+
+      const [result] = await pool.execute(
+        'UPDATE users SET is_active = ? WHERE id = ?',
+        [is_active ? 1 : 0, adminId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: 'Admin not found' });
+      }
+
+      res.json({ success: true, message: `Admin ${is_active ? 'activated' : 'deactivated'} successfully` });
+    } catch (error) {
+      console.error('Error toggling admin status:', error);
+      res.status(500).json({ success: false, message: 'Failed to toggle status', error: error.message });
+    }
+  }
+
+  // Delete Admin (Generic)
+  static async deleteAdmin(req, res) {
+    try {
+      const { adminId } = req.params;
+      
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        await connection.execute('DELETE FROM employee_profiles WHERE user_id = ?', [adminId]);
+        const [result] = await connection.execute('DELETE FROM users WHERE id = ?', [adminId]);
+
+        if (result.affectedRows === 0) {
+          await connection.rollback();
+          return res.status(404).json({ success: false, message: 'Admin not found' });
+        }
+
+        await connection.commit();
+        res.json({ success: true, message: 'Admin deleted successfully' });
+      } catch (err) {
+        await connection.rollback();
+        throw err;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete admin', error: error.message });
     }
   }
 

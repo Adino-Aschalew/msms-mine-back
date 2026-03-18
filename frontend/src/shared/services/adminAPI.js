@@ -115,6 +115,27 @@ export const adminAPI = {
     return response.data;
   },
 
+  getSystemActivity: async (params = {}) => {
+    const response = await apiClient.get('/api/admin/activity', { params });
+    return response.data;
+  },
+
+  // Generic Admin Actions
+  updateAdminStatus: async (adminId, isActive) => {
+    const response = await apiClient.put(`/api/admin/admins/${adminId}/status`, { is_active: isActive });
+    return response.data;
+  },
+
+  updateAdmin: async (adminId, adminData) => {
+    const response = await apiClient.put(`/api/admin/admins/${adminId}`, adminData);
+    return response.data;
+  },
+
+  deleteAdmin: async (adminId) => {
+    const response = await apiClient.delete(`/api/admin/admins/${adminId}`);
+    return response.data;
+  },
+
   // HR Admin Management
   getHRAdmins: async () => {
     const response = await apiClient.get('/api/admin/hr-admins');

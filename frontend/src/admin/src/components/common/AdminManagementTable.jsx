@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { Search, Filter, Eye, Edit, Ban, Trash2, Download, Plus, ChevronLeft, ChevronRight, ChevronDown, X, User, Mail, Calendar, Shield } from 'lucide-react';
+import { adminAPI } from '../../../../shared/services/adminAPI';
 
-const AdminManagementTable = ({ admins, onAddAdmin, setAdmins }) => {
+const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [activeModal, setActiveModal] = useState(null); // 'view', 'edit', 'delete', 'suspend'
   const [editFormData, setEditFormData] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const itemsPerPage = 10;
 
-  const filteredAdmins = admins.filter(admin => {
-    const matchesSearch = admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         admin.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredAdmins = (admins || []).filter(admin => {
+    const adminName = admin.name || '';
+    const adminEmail = admin.email || '';
+    const matchesSearch = adminName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         adminEmail.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || admin.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -26,7 +30,8 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins }) => {
     setActiveModal(modalType);
     if (modalType === 'edit') {
       setEditFormData({
-        name: admin.name,
+        first_name: admin.first_name || admin.name.split(' ')[0],
+        last_name: admin.last_name || admin.name.split(' ').slice(1).join(' '),
         email: admin.email,
         role: admin.role,
         status: admin.status
@@ -40,32 +45,36 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins }) => {
     setEditFormData({});
   };
 
-  const handleAction = () => {
-    switch (activeModal) {
-      case 'delete':
-        // Remove admin from the list
-        setAdmins(prev => prev.filter(admin => admin.id !== selectedAdmin.id));
-        break;
-      case 'suspend':
-        // Update admin status to suspended
-        setAdmins(prev => prev.map(admin => 
-          admin.id === selectedAdmin.id 
-            ? { ...admin, status: 'suspended' }
-            : admin
-        ));
-        break;
-      case 'edit':
-        // Update admin information
-        setAdmins(prev => prev.map(admin => 
-          admin.id === selectedAdmin.id 
-            ? { ...admin, ...editFormData }
-            : admin
-        ));
-        break;
-      default:
-        break;
+  const handleAction = async () => {
+    try {
+      setIsLoading(true);
+      switch (activeModal) {
+        case 'delete':
+          await adminAPI.deleteAdmin(selectedAdmin.id);
+          break;
+        case 'suspend':
+          const newStatus = selectedAdmin.status === 'active' ? false : true;
+          await adminAPI.updateAdminStatus(selectedAdmin.id, newStatus);
+          break;
+        case 'edit':
+          await adminAPI.updateAdmin(selectedAdmin.id, {
+            first_name: editFormData.first_name,
+            last_name: editFormData.last_name,
+            email: editFormData.email,
+            role: editFormData.role
+          });
+          break;
+        default:
+          break;
+      }
+      if (refreshData) await refreshData();
+      closeModal();
+    } catch (err) {
+      console.error('Action failed:', err);
+      alert('Operation failed: ' + (err.message || 'Server error'));
+    } finally {
+      setIsLoading(false);
     }
-    closeModal();
   };
 
   const handleEditFormChange = (field, value) => {
@@ -271,11 +280,15 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins }) => {
                       </button>
                       <button 
                         onClick={() => openModal(admin, 'suspend')}
-                        className="group relative p-2.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                        className={`group relative p-2.5 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                          admin.status === 'active' 
+                            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                            : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30'
+                        }`}
                       >
-                        <Ban className="h-4 w-4" />
+                        {admin.status === 'active' ? <Ban className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                          Suspend Admin
+                          {admin.status === 'active' ? 'Suspend Admin' : 'Activate Admin'}
                         </span>
                       </button>
                       <button 
@@ -372,7 +385,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins }) => {
                   {activeModal === 'view' && 'View Admin Details'}
                   {activeModal === 'edit' && 'Edit Admin'}
                   {activeModal === 'delete' && 'Delete Admin'}
-                  {activeModal === 'suspend' && 'Suspend Admin'}
+                  {activeModal === 'suspend' && (selectedAdmin.status === 'active' ? 'Suspend Admin' : 'Activate Admin')}
                 </h3>
                 <button
                   onClick={closeModal}
@@ -436,10 +449,10 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins }) => {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {activeModal === 'delete' ? 'Delete Admin Account' : 'Suspend Admin Account'}
+                      {activeModal === 'delete' ? 'Delete Admin Account' : (selectedAdmin.status === 'active' ? 'Suspend Admin Account' : 'Activate Admin Account')}
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      Are you sure you want to {activeModal === 'delete' ? 'permanently delete' : 'suspend'} the admin account for <strong>{selectedAdmin.name}</strong>?
+                      Are you sure you want to {activeModal === 'delete' ? 'permanently delete' : (selectedAdmin.status === 'active' ? 'suspend' : 'activate')} the admin account for <strong>{selectedAdmin.name}</strong>?
                     </p>
                     {activeModal === 'delete' && (
                       <p className="text-sm text-red-600 dark:text-red-400">
@@ -522,7 +535,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins }) => {
                     }`}
                   >
                     {activeModal === 'delete' && 'Delete'}
-                    {activeModal === 'suspend' && 'Suspend'}
+                    {activeModal === 'suspend' && (selectedAdmin.status === 'active' ? 'Suspend' : 'Activate')}
                     {activeModal === 'edit' && 'Save Changes'}
                   </button>
                 )}
