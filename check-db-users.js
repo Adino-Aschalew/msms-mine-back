@@ -2,9 +2,9 @@ const { query } = require('./src/config/database');
 
 async function checkUsers() {
   try {
-    const users = await query('SELECT id, employee_id, username, email, role FROM users');
-    console.log('Current Users in DB:');
-    console.table(users);
+    const result = await query('SELECT COUNT(*) as count FROM users');
+    console.log('COUNT result:', result[0].count);
+    console.log('Type of COUNT result:', typeof result[0].count);
   } catch (error) {
     console.error('Error querying database:', error);
   } finally {

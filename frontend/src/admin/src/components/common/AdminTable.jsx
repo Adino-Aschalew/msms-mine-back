@@ -7,6 +7,8 @@ const AdminTable = ({ admins }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+
   const filteredAdmins = admins.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          admin.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -20,9 +22,79 @@ const AdminTable = ({ admins }) => {
 
   return (
     <div className="card">
+      {/* Detail Modal */}
+      {selectedAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gradient-to-r from-blue-500 to-blue-600">
+              <h3 className="text-xl font-bold text-white">Admin Details</h3>
+              <button 
+                onClick={() => setSelectedAdmin(null)}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+              >
+                <ChevronRight className="h-6 w-6 rotate-90" />
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex flex-col items-center mb-8">
+                <div className="h-20 w-20 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {selectedAdmin.name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <h4 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
+                  {selectedAdmin.name}
+                </h4>
+                <p className="text-sm font-black text-blue-500 uppercase tracking-[0.2em] mt-1">
+                  {selectedAdmin.role}
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600/50">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Employee ID</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedAdmin.employeeId || 'N/A'}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600/50">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                    <span className="px-2 py-0.5 rounded-full bg-green-500 text-[10px] font-black text-white uppercase tracking-widest">
+                      {selectedAdmin.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600/50">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Email Address</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedAdmin.email}</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600/50">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Phone Number</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedAdmin.phone || 'N/A'}</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600/50">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Joined Date</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedAdmin.addDate}</p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setSelectedAdmin(null)}
+                className="w-full mt-10 py-4 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Close View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Admins</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Admin Management</h2>
           <div className="flex gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
@@ -31,13 +103,13 @@ const AdminTable = ({ admins }) => {
                 placeholder="Search admins..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input pl-10"
+                className="input pl-10 h-10 border-gray-200 dark:border-gray-700"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="input"
+              className="input h-10 border-gray-200 dark:border-gray-700"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -68,9 +140,6 @@ const AdminTable = ({ admins }) => {
                 Add Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -83,7 +152,7 @@ const AdminTable = ({ admins }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                       <span className="text-xs font-medium text-white">
                         {admin.name.split(' ').map(n => n[0]).join('')}
                       </span>
@@ -104,27 +173,14 @@ const AdminTable = ({ admins }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {admin.addDate}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    admin.status === 'active'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : admin.status === 'inactive'
-                      ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                  }`}>
-                    {admin.status}
-                  </span>
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   <div className="flex gap-2">
-                    <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                    <button 
+                      onClick={() => setSelectedAdmin(admin)}
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                      title="View Details"
+                    >
                       <Eye className="h-4 w-4" />
-                    </button>
-                    <button className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </td>

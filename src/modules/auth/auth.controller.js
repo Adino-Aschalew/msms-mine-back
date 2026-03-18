@@ -56,12 +56,12 @@ class AuthController {
   
   static async changePassword(req, res) {
     try {
-      const passwordData = req.body;
+      const { currentPassword, newPassword } = req.body;
       const userId = req.userId;
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
       
-      const result = await AuthService.changePassword(userId, passwordData, ip, userAgent);
+      const result = await AuthService.changePassword(userId, currentPassword, newPassword, ip, userAgent);
       
       res.json({
         success: true,
@@ -70,7 +70,7 @@ class AuthController {
     } catch (error) {
       console.error('Password change error:', error);
       
-      if (error.message.includes('required') || error.message.includes('password')) {
+      if (error.message.includes('incorrect') || error.message.includes('required')) {
         return res.status(400).json({
           success: false,
           message: error.message
@@ -177,35 +177,7 @@ class AuthController {
     }
   }
 
-  static async changePassword(req, res) {
-    try {
-      const { currentPassword, newPassword } = req.body;
-      const userId = req.userId;
-      const ip = req.ip;
-      const userAgent = req.get('User-Agent');
-      
-      const result = await AuthService.changePassword(userId, currentPassword, newPassword, ip, userAgent);
-      
-      res.json({
-        success: true,
-        message: result.message
-      });
-    } catch (error) {
-      console.error('Change password error:', error);
-      
-      if (error.message.includes('incorrect') || error.message.includes('required')) {
-        return res.status(400).json({
-          success: false,
-          message: error.message
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
-    }
-  }
+
 
   static async forceChangePassword(req, res) {
     try {

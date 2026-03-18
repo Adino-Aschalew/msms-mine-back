@@ -6,15 +6,39 @@ class AdminController {
   // Dashboard Overview
   static async getDashboard(req, res) {
     try {
-      // Get basic counts one by one to isolate any issues
-      const totalUsers = await query('SELECT COUNT(*) as count FROM users WHERE is_active = 1');
-      const totalLoans = await query('SELECT COUNT(*) as count FROM loan_applications');
-      const totalSavings = await query('SELECT COUNT(*) as count FROM savings_accounts WHERE is_active = 1');
-      const pendingApplications = await query('SELECT COUNT(*) as count FROM loan_applications WHERE status = "pending"');
-      const activeHRAdmins = await query('SELECT COUNT(*) as count FROM users WHERE role = "HR" AND is_active = 1');
-      const activeLoanCommitteeAdmins = await query('SELECT COUNT(*) as count FROM users WHERE role = "LOAN_COMMITTEE" AND is_active = 1');
+      // Get basic counts
+      const totalUsersResult = await query('SELECT COUNT(*) as count FROM users');
+      const totalAdminsResult = await query("SELECT COUNT(*) as count FROM users WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE')");
+      const totalLoansResult = await query('SELECT COUNT(*) as count FROM loan_applications');
+      const totalSavingsResult = await query('SELECT COUNT(*) as count FROM savings_accounts WHERE is_active = 1');
+      const pendingApplicationsResult = await query('SELECT COUNT(*) as count FROM loan_applications WHERE status = "pending"');
       
-      // Get recent activity separately
+      // Calculate growth (comparing current 30 days vs previous 30 days)
+      const userGrowthResult = await query(`
+        SELECT 
+          (SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as current_30,
+          (SELECT COUNT(*) FROM users WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)) as previous_30
+      `);
+
+      const adminGrowthResult = await query(`
+        SELECT 
+          (SELECT COUNT(*) FROM users WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE') AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as current_30,
+          (SELECT COUNT(*) FROM users WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE') AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)) as previous_30
+      `);
+
+      const loanGrowthResult = await query(`
+        SELECT 
+          (SELECT COUNT(*) FROM loan_applications WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as current_30,
+          (SELECT COUNT(*) FROM loan_applications WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)) as previous_30
+      `);
+
+      const calculateGrowth = (current, previous) => {
+        if (!previous || previous === 0) return current > 0 ? '+100%' : '0%';
+        const growth = ((current - previous) / previous) * 100;
+        return (growth >= 0 ? '+' : '') + growth.toFixed(1) + '%';
+      };
+
+      // Get recent activity
       let recentActivity = [];
       try {
         recentActivity = await query(`
@@ -34,19 +58,20 @@ class AdminController {
         `);
       } catch (activityError) {
         console.error('Error fetching recent activity:', activityError);
-        // Continue without recent activity if it fails
       }
 
       res.json({
         success: true,
         data: {
           overview: {
-            totalUsers: totalUsers[0].count,
-            totalLoans: totalLoans[0].count,
-            totalSavings: totalSavings[0].count,
-            pendingApplications: pendingApplications[0].count,
-            activeHRAdmins: activeHRAdmins[0].count,
-            activeLoanCommitteeAdmins: activeLoanCommitteeAdmins[0].count
+            totalUsers: Number(totalUsersResult[0].count),
+            totalAdmins: Number(totalAdminsResult[0].count),
+            totalLoans: Number(totalLoansResult[0].count),
+            totalSavings: Number(totalSavingsResult[0].count),
+            pendingApplications: Number(pendingApplicationsResult[0].count),
+            userGrowth: calculateGrowth(userGrowthResult[0].current_30, userGrowthResult[0].previous_30),
+            adminGrowth: calculateGrowth(adminGrowthResult[0].current_30, adminGrowthResult[0].previous_30),
+            loanGrowth: calculateGrowth(loanGrowthResult[0].current_30, loanGrowthResult[0].previous_30)
           },
           recentActivity: recentActivity
         }
@@ -189,7 +214,7 @@ class AdminController {
 
       // Check if employee ID already exists
       const [existingUser] = await pool.execute(
-        'SELECT user_id FROM users WHERE employee_id = ?',
+        'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
       );
 
@@ -202,7 +227,7 @@ class AdminController {
 
       // Check if email already exists
       const [existingEmail] = await pool.execute(
-        'SELECT user_id FROM users WHERE email = ?',
+        'SELECT id FROM users WHERE email = ?',
         [email]
       );
 
@@ -219,20 +244,20 @@ class AdminController {
       // Create user
       const [result] = await pool.execute(`
         INSERT INTO users (
-          employee_id, first_name, last_name, email, phone_number,
+          employee_id, username, first_name, last_name, email, phone_number,
           role, is_active, password_hash, created_at
-        ) VALUES (?, ?, ?, ?, ?, 'HR', 1, ?, NOW())
-      `, [employee_id, first_name, last_name, email, phone_number, hashedPassword]);
+        ) VALUES (?, ?, ?, ?, ?, ?, 'HR', 1, ?, NOW())
+      `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
 
       // Create employee profile
       await pool.execute(`
         INSERT INTO employee_profiles (
-          user_id, employee_id, first_name, last_name, email,
-          phone_number, department, job_title, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
-      `, [userId, employee_id, first_name, last_name, email, phone_number, department, job_title]);
+          user_id, employee_id, first_name, last_name,
+          phone_number, department, job_grade, job_title, status, hire_date, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, 'active', CURDATE(), NOW())
+      `, [userId, employee_id, first_name, last_name, phone_number, department, job_title]);
 
       res.status(201).json({
         success: true,
@@ -274,7 +299,7 @@ class AdminController {
 
       // Check if employee ID already exists
       const [existingUser] = await pool.execute(
-        'SELECT user_id FROM users WHERE employee_id = ?',
+        'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
       );
 
@@ -287,7 +312,7 @@ class AdminController {
 
       // Check if email already exists
       const [existingEmail] = await pool.execute(
-        'SELECT user_id FROM users WHERE email = ?',
+        'SELECT id FROM users WHERE email = ?',
         [email]
       );
 
@@ -304,21 +329,21 @@ class AdminController {
       // Create user
       const [result] = await pool.execute(`
         INSERT INTO users (
-          employee_id, first_name, last_name, email, phone_number,
+          employee_id, username, first_name, last_name, email, phone_number,
           role, is_active, password_hash, created_at
-        ) VALUES (?, ?, ?, ?, ?, 'LOAN_COMMITTEE', 1, ?, NOW())
-      `, [employee_id, first_name, last_name, email, phone_number, hashedPassword]);
+        ) VALUES (?, ?, ?, ?, ?, ?, 'LOAN_COMMITTEE', 1, ?, NOW())
+      `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
 
       // Create employee profile
       await pool.execute(`
         INSERT INTO employee_profiles (
-          user_id, employee_id, first_name, last_name, email,
-          phone_number, department, job_title, committee_level,
-          max_loan_amount, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
-      `, [userId, employee_id, first_name, last_name, email, phone_number, department, job_title, committee_level, max_loan_amount]);
+          user_id, employee_id, first_name, last_name,
+          phone_number, department, job_grade, job_title, committee_level,
+          max_loan_amount, status, hire_date, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, ?, ?, 'active', CURDATE(), NOW())
+      `, [userId, employee_id, first_name, last_name, phone_number, department, job_title, committee_level, max_loan_amount || 100000]);
 
       res.status(201).json({
         success: true,
@@ -349,7 +374,7 @@ class AdminController {
     try {
       const [hrAdmins] = await pool.execute(`
         SELECT 
-          u.user_id,
+          u.id,
           u.employee_id,
           u.first_name,
           u.last_name,
@@ -361,7 +386,7 @@ class AdminController {
           ep.department,
           ep.job_title
         FROM users u
-        JOIN employee_profiles ep ON u.user_id = ep.user_id
+        JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.role = 'HR'
         ORDER BY u.created_at DESC
       `);
@@ -590,7 +615,7 @@ class AdminController {
       const { adminId } = req.params;
 
       const [result] = await pool.execute(
-        'UPDATE users SET is_active = 0 WHERE user_id = ? AND role = "HR"',
+        'UPDATE users SET is_active = 0 WHERE id = ? AND role = "HR"',
         [adminId]
       );
 
@@ -621,7 +646,7 @@ class AdminController {
       const { adminId } = req.params;
 
       const [result] = await pool.execute(
-        'UPDATE users SET is_active = 1 WHERE user_id = ? AND role = "HR"',
+        'UPDATE users SET is_active = 1 WHERE id = ? AND role = "HR"',
         [adminId]
       );
 
@@ -652,7 +677,7 @@ class AdminController {
       const { adminId } = req.params;
 
       const [result] = await pool.execute(
-        'UPDATE users SET is_active = 0 WHERE user_id = ? AND role = "LOAN_COMMITTEE"',
+        'UPDATE users SET is_active = 0 WHERE id = ? AND role = "LOAN_COMMITTEE"',
         [adminId]
       );
 
@@ -683,7 +708,7 @@ class AdminController {
       const { adminId } = req.params;
 
       const [result] = await pool.execute(
-        'UPDATE users SET is_active = 1 WHERE user_id = ? AND role = "LOAN_COMMITTEE"',
+        'UPDATE users SET is_active = 1 WHERE id = ? AND role = "LOAN_COMMITTEE"',
         [adminId]
       );
 
@@ -726,7 +751,7 @@ class AdminController {
 
         // Delete from users
         const [result] = await connection.execute(
-          'DELETE FROM users WHERE user_id = ? AND role = "HR"',
+          'DELETE FROM users WHERE id = ? AND role = "HR"',
           [adminId]
         );
 
@@ -778,7 +803,7 @@ class AdminController {
 
         // Delete from users
         const [result] = await connection.execute(
-          'DELETE FROM users WHERE user_id = ? AND role = "LOAN_COMMITTEE"',
+          'DELETE FROM users WHERE id = ? AND role = "LOAN_COMMITTEE"',
           [adminId]
         );
 
@@ -821,7 +846,6 @@ class AdminController {
       const [activities] = await pool.execute(`
         SELECT 
           al.action,
-          al.description,
           al.created_at,
           al.ip_address,
           u.employee_id,
@@ -920,14 +944,13 @@ class AdminController {
       const [logs] = await pool.execute(`
         SELECT 
           al.action,
-          al.description,
           al.created_at,
           al.ip_address,
           u.employee_id,
           u.first_name,
           u.last_name
         FROM audit_logs al
-        LEFT JOIN users u ON al.user_id = u.user_id
+        LEFT JOIN users u ON al.user_id = u.id
         ${whereClause}
         ORDER BY al.created_at DESC
         LIMIT ? OFFSET ?
@@ -963,7 +986,7 @@ class AdminController {
 
       // Check if employee ID already exists
       const [existingUser] = await pool.execute(
-        'SELECT user_id FROM users WHERE employee_id = ?',
+        'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
       );
 
@@ -976,7 +999,7 @@ class AdminController {
 
       // Check if email already exists
       const [existingEmail] = await pool.execute(
-        'SELECT user_id FROM users WHERE email = ?',
+        'SELECT id FROM users WHERE email = ?',
         [email]
       );
 
@@ -993,20 +1016,20 @@ class AdminController {
       // Create user
       const [result] = await pool.execute(`
         INSERT INTO users (
-          employee_id, first_name, last_name, email, phone_number,
+          employee_id, username, first_name, last_name, email, phone_number,
           role, is_active, password_hash, created_at
-        ) VALUES (?, ?, ?, ?, ?, 'FINANCE_ADMIN', 1, ?, NOW())
-      `, [employee_id, first_name, last_name, email, phone_number, hashedPassword]);
+        ) VALUES (?, ?, ?, ?, ?, ?, 'FINANCE_ADMIN', 1, ?, NOW())
+      `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
 
       // Create employee profile
       await pool.execute(`
         INSERT INTO employee_profiles (
-          user_id, employee_id, first_name, last_name, email,
-          phone_number, department, job_title, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
-      `, [userId, employee_id, first_name, last_name, email, phone_number, department, job_title]);
+          user_id, employee_id, first_name, last_name,
+          phone_number, department, job_grade, job_title, status, hire_date, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, 'active', CURDATE(), NOW())
+      `, [userId, employee_id, first_name, last_name, phone_number, department, job_title]);
 
       res.status(201).json({
         success: true,
@@ -1046,7 +1069,7 @@ class AdminController {
 
       // Check if employee ID already exists
       const [existingUser] = await pool.execute(
-        'SELECT user_id FROM users WHERE employee_id = ?',
+        'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
       );
 
@@ -1059,7 +1082,7 @@ class AdminController {
 
       // Check if email already exists
       const [existingEmail] = await pool.execute(
-        'SELECT user_id FROM users WHERE email = ?',
+        'SELECT id FROM users WHERE email = ?',
         [email]
       );
 
@@ -1076,20 +1099,20 @@ class AdminController {
       // Create user
       const [result] = await pool.execute(`
         INSERT INTO users (
-          employee_id, first_name, last_name, email, phone_number,
+          employee_id, username, first_name, last_name, email, phone_number,
           role, is_active, password_hash, created_at
-        ) VALUES (?, ?, ?, ?, ?, 'ADMIN', 1, ?, NOW())
-      `, [employee_id, first_name, last_name, email, phone_number, hashedPassword]);
+        ) VALUES (?, ?, ?, ?, ?, ?, 'ADMIN', 1, ?, NOW())
+      `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
 
       // Create employee profile
       await pool.execute(`
         INSERT INTO employee_profiles (
-          user_id, employee_id, first_name, last_name, email,
-          phone_number, department, job_title, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
-      `, [userId, employee_id, first_name, last_name, email, phone_number, department, job_title]);
+          user_id, employee_id, first_name, last_name,
+          phone_number, department, job_grade, job_title, status, hire_date, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, 'active', CURDATE(), NOW())
+      `, [userId, employee_id, first_name, last_name, phone_number, department, job_title]);
 
       res.status(201).json({
         success: true,
@@ -1118,7 +1141,7 @@ class AdminController {
     try {
       const [financeAdmins] = await pool.execute(`
         SELECT 
-          u.user_id,
+          u.id,
           u.employee_id,
           u.first_name,
           u.last_name,
@@ -1130,7 +1153,7 @@ class AdminController {
           ep.department,
           ep.job_title
         FROM users u
-        JOIN employee_profiles ep ON u.user_id = ep.user_id
+        JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.role = 'FINANCE_ADMIN'
         ORDER BY u.created_at DESC
       `);
@@ -1154,7 +1177,7 @@ class AdminController {
     try {
       const [admins] = await pool.execute(`
         SELECT 
-          u.user_id,
+          u.id,
           u.employee_id,
           u.first_name,
           u.last_name,
@@ -1166,7 +1189,7 @@ class AdminController {
           ep.department,
           ep.job_title
         FROM users u
-        JOIN employee_profiles ep ON u.user_id = ep.user_id
+        JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.role = 'ADMIN'
         ORDER BY u.created_at DESC
       `);
@@ -1193,7 +1216,7 @@ class AdminController {
 
       // Check if admin exists and is FINANCE_ADMIN
       const [admin] = await pool.execute(
-        'SELECT user_id FROM users WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+        'SELECT id FROM users WHERE id = ? AND role = "FINANCE_ADMIN"',
         [adminId]
       );
 
@@ -1228,7 +1251,7 @@ class AdminController {
       if (userFields.length > 0) {
         userValues.push(adminId);
         await pool.execute(
-          `UPDATE users SET ${userFields.join(', ')} WHERE user_id = ?`,
+          `UPDATE users SET ${userFields.join(', ')} WHERE id = ?`,
           userValues
         );
       }
@@ -1276,7 +1299,7 @@ class AdminController {
 
       // Check if admin exists and is ADMIN
       const [admin] = await pool.execute(
-        'SELECT user_id FROM users WHERE user_id = ? AND role = "ADMIN"',
+        'SELECT id FROM users WHERE id = ? AND role = "ADMIN"',
         [adminId]
       );
 
@@ -1311,7 +1334,7 @@ class AdminController {
       if (userFields.length > 0) {
         userValues.push(adminId);
         await pool.execute(
-          `UPDATE users SET ${userFields.join(', ')} WHERE user_id = ?`,
+          `UPDATE users SET ${userFields.join(', ')} WHERE id = ?`,
           userValues
         );
       }
@@ -1357,7 +1380,7 @@ class AdminController {
       const { adminId } = req.params;
 
       const [result] = await pool.execute(
-        'UPDATE users SET is_active = 0 WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+        'UPDATE users SET is_active = 0 WHERE id = ? AND role = "FINANCE_ADMIN"',
         [adminId]
       );
 
@@ -1388,7 +1411,7 @@ class AdminController {
       const { adminId } = req.params;
 
       const [result] = await pool.execute(
-        'UPDATE users SET is_active = 1 WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+        'UPDATE users SET is_active = 1 WHERE id = ? AND role = "FINANCE_ADMIN"',
         [adminId]
       );
 
@@ -1419,7 +1442,7 @@ class AdminController {
       const { adminId } = req.params;
 
       const [result] = await pool.execute(
-        'UPDATE users SET is_active = 0 WHERE user_id = ? AND role = "ADMIN"',
+        'UPDATE users SET is_active = 0 WHERE id = ? AND role = "ADMIN"',
         [adminId]
       );
 
@@ -1493,7 +1516,7 @@ class AdminController {
 
         // Delete from users
         const [result] = await connection.execute(
-          'DELETE FROM users WHERE user_id = ? AND role = "FINANCE_ADMIN"',
+          'DELETE FROM users WHERE id = ? AND role = "FINANCE_ADMIN"',
           [adminId]
         );
 
@@ -1545,7 +1568,7 @@ class AdminController {
 
         // Delete from users
         const [result] = await connection.execute(
-          'DELETE FROM users WHERE user_id = ? AND role = "ADMIN"',
+          'DELETE FROM users WHERE id = ? AND role = "ADMIN"',
           [adminId]
         );
 
@@ -1605,10 +1628,14 @@ class AdminController {
       res.json({
         success: true,
         data: {
-          total: stats[0].total_admins,
-          active: stats[0].active_admins,
-          inactive: stats[0].inactive_admins,
-          byRole: roleStats
+          total: Number(stats[0].total_admins),
+          active: Number(stats[0].active_admins),
+          inactive: Number(stats[0].inactive_admins),
+          byRole: roleStats.map(rs => ({
+            ...rs,
+            count: Number(rs.count),
+            active_count: Number(rs.active_count)
+          }))
         }
       });
     } catch (error) {

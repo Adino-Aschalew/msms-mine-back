@@ -175,7 +175,7 @@ const validateCreateLoanCommitteeAdmin = (req, res, next) => {
   }
 
   // Committee level validation
-  if (committee_level && !['Junior', 'Senior', 'Lead', 'Chair'].includes(committee_level)) {
+  if (committee_level && !['Junior', 'Senior', 'Lead', 'Chair', 'LEVEL_1', 'LEVEL_2', 'LEVEL_3', 'LEVEL_4'].includes(committee_level)) {
     errors.push('Invalid committee level');
   }
 

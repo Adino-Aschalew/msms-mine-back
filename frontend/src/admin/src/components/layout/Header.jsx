@@ -13,7 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -264,7 +264,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
             </button>
 
             {notificationsOpen && (
-              <div className="absolute right-0 mt-4 w-96 bg-white rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-gray-200 dark:border-gray-700 dark:bg-gray-800 overflow-hidden animate-in slide-in-from-top-2 duration-300 z-[60]">
+              <div className="fixed sm:absolute right-4 sm:right-0 top-16 sm:top-auto mt-0 sm:mt-4 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-3xl sm:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-gray-200 dark:border-gray-700 dark:bg-gray-800 overflow-hidden animate-in slide-in-from-top-2 duration-300 z-[60]">
                 {/* Header */}
                 <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <div>
@@ -393,7 +393,9 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                   }}
                 />
               </div>
-              <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">John Doe</span>
+              <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {user?.first_name} {user?.last_name}
+              </span>
               <FiChevronDown className="h-4 w-4 text-gray-700 dark:text-gray-300" />
             </button>
 
@@ -419,15 +421,17 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                       />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">John Doe</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">john.doe@example.com</p>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        {user?.first_name} {user?.last_name}
+                      </h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
                     </div>
                   </div>
 
                   {/* FiMenu Items */}
                   <div className="space-y-2">
                     <Link 
-                      to="/account" 
+                      to="/admin/account/profile" 
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
@@ -435,17 +439,13 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                       View Profile
                     </Link>
                     <Link 
-                      to="/account/profile" 
+                      to="/admin/settings" 
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
                       <FiSettings className="h-4 w-4" />
                       Account Settings
                     </Link>
-                    <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 w-full text-left">
-                      <FiHelpCircle className="h-4 w-4" />
-                      Help & Support
-                    </button>
                     <button 
                       onClick={() => {
                         logout();

@@ -40,8 +40,9 @@ const PieChart = ({ data, options = {} }) => {
             if (label) {
               label += ': ';
             }
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : '0';
+            const value = context.raw || 0;
+            const total = context.dataset.data.reduce((a, b) => a + Number(b), 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
             label += percentage + '%';
             return label;
           }

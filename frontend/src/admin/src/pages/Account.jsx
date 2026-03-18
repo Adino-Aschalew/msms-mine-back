@@ -1,50 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext2';
 import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Shield, 
-  Bell, 
-  Settings, 
-  LogOut, 
-  Edit, 
-  Camera, 
-  Key,
-  CreditCard,
-  HelpCircle,
-  ChevronRight,
-  Lock,
-  Eye,
-  EyeOff,
-  Save,
-  X,
-  Activity,
-  Clock,
-  Globe,
-  Users
+  User, Mail, Phone, MapPin, Shield, Bell, Settings, LogOut, Edit, Camera, Key,
+  CreditCard, HelpCircle, ChevronRight, Lock, Eye, EyeOff, Save, X, Activity, Clock, Globe, Users, CheckCircle
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../shared/contexts/AuthContext';
 
 const Account = () => {
   const { theme } = useTheme();
+  const { user, updateProfile, changePassword, refreshUserProfile } = useAuth();
+  
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
   const [profileImage, setProfileImage] = useState('https://images.unsplash.com/photo-1472099645785?auto=compress&cs=tinysrgb&dpr=2&w=150&h=150&fit=crop&face=face&auto=format&fit=face-area');
+  
   const [formData, setFormData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    department: 'IT Administration',
-    role: 'Super Admin',
-    bio: 'Experienced system administrator with expertise in user management and system security.',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    department: '',
+    job_title: '',
+    role: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Load user data on mount
+  useEffect(() => {
+    if (user && !isEditing) {
+      setFormData(prev => ({
+        ...prev,
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        phone_number: user.phone_number || '',
+        department: user.department || '',
+        job_title: user.job_title || '',
+        role: user.role || 'Admin'
+      }));
+    }
+  }, [user, isEditing]);
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -53,30 +55,70 @@ const Account = () => {
       reader.onloadend = () => {
         const imageUrl = reader.result;
         setProfileImage(imageUrl);
-        // Store in localStorage to persist across pages
         localStorage.setItem('userProfileImage', imageUrl);
-        // Dispatch storage event to notify Header component
         window.dispatchEvent(new Event('storage'));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Load profile image from localStorage on component mount
-  useEffect(() => {
-    const savedImage = localStorage.getItem('userProfileImage');
-    if (savedImage) {
-      setProfileImage(savedImage);
-    }
-  }, []);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, type: 'success', message: '' });
 
-  const handleSave = () => {
-    setIsEditing(false);
+  const showStatus = (type, message) => {
+    setStatusModal({ isOpen: true, type, message });
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      await updateProfile({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone: formData.phone_number
+      });
+      setIsEditing(false);
+      showStatus('success', 'Your profile has been updated successfully.');
+    } catch (error) {
+      showStatus('error', error.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (formData.newPassword !== formData.confirmPassword) {
+      showStatus('error', 'New passwords do not match');
+      return;
+    }
+    try {
+      setLoading(true);
+      await changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword
+      });
+      setFormData({...formData, currentPassword: '', newPassword: '', confirmPassword: ''});
+      showStatus('success', 'Your password has been changed successfully.');
+    } catch (error) {
+      showStatus('error', error.message || 'Failed to change password');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    if (user) {
+      setFormData({
+        ...formData,
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        phone_number: user.phone_number || ''
+      });
+    }
   };
+
+
 
   const renderProfileTab = () => (
     <div className="space-y-6">
@@ -98,22 +140,17 @@ const Account = () => {
             />
           </div>
           <div className="flex-1">
-            <h2 className="text-3xl font-bold mb-3">{formData.name}</h2>
-            <p className="text-blue-100 mb-6 text-lg">{formData.role}</p>
+            <h2 className="text-3xl font-bold mb-3">{formData.first_name} {formData.last_name}</h2>
+            <p className="text-blue-100 mb-6 text-lg tracking-wider uppercase font-black">{formData.role}</p>
             <div className="flex items-center gap-6 mb-6">
               <div>
                 <p className="text-base text-blue-100">Member Since</p>
-                <p className="text-xl font-medium">2024-01-15</p>
+                <p className="text-xl font-medium">
+                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                </p>
               </div>
             </div>
             <div className="flex gap-4">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-3 px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg transition-colors duration-200 text-base font-medium"
-              >
-                <Edit className="h-5 w-5" />
-                Edit Profile
-              </button>
               <label
                 htmlFor="profile-image-upload"
                 className="flex items-center gap-3 px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg transition-colors duration-200 cursor-pointer text-base font-medium"
@@ -132,15 +169,29 @@ const Account = () => {
         
         <div className="grid gap-8 md:grid-cols-2">
           <div className="space-y-6">
-            <div>
-              <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-3">Full Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                disabled={!isEditing}
-                className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-3">First Name</label>
+                <input
+                  type="text"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                  disabled={!isEditing}
+                  className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                  placeholder="First Name"
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-3">Last Name</label>
+                <input
+                  type="text"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                  disabled={!isEditing}
+                  className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                  placeholder="Last Name"
+                />
+              </div>
             </div>
             
             <div>
@@ -163,8 +214,8 @@ const Account = () => {
                 <Phone className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input
                   type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  value={formData.phone_number}
+                  onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
                   disabled={!isEditing}
                   className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50"
                 />
@@ -236,7 +287,8 @@ const Account = () => {
           </div>
           
           <div>
-            <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-3">New Password</label>
+            <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+            <p className="text-xs text-gray-500 mb-3 italic">Must be at least 8 characters with uppercase, lowercase, number, and special character.</p>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
@@ -272,9 +324,12 @@ const Account = () => {
         </div>
 
         <div className="mt-8 flex gap-4">
-          <button className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-base font-medium">
-            <Lock className="h-5 w-5" />
-            Update Password
+          <button 
+            onClick={handlePasswordChange}
+            disabled={loading}
+            className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-base font-medium disabled:opacity-50"
+          >
+            {loading ? 'Changing...' : <><Lock className="h-5 w-5" /> Update Password</>}
           </button>
         </div>
       </div>
@@ -421,12 +476,91 @@ const Account = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full relative">
+      <AnimatePresence>
+        {statusModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" 
+              onClick={() => setStatusModal({ ...statusModal, isOpen: false })} 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 max-w-sm w-full relative z-10 border border-gray-100 dark:border-gray-700"
+            >
+              <div className={`h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+                statusModal.type === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+              }`}>
+                {statusModal.type === 'success' ? (
+                  <CheckCircle className="h-10 w-10 font-bold" />
+                ) : (
+                  <X className="h-10 w-10" />
+                )}
+              </div>
+              <h3 className="text-2xl font-black text-center text-gray-900 dark:text-white mb-2 leading-tight uppercase">
+                {statusModal.type === 'success' ? 'Success!' : 'Oops!'}
+              </h3>
+              <p className="text-center text-gray-500 dark:text-gray-400 mb-8 font-medium">
+                {statusModal.message}
+              </p>
+              <button
+                onClick={() => setStatusModal({ ...statusModal, isOpen: false })}
+                className={`w-full py-4 rounded-xl text-white font-black uppercase tracking-widest shadow-lg ${
+                  statusModal.type === 'success' ? 'bg-green-600 hover:bg-green-700 shadow-green-500/20' : 'bg-red-600 hover:bg-red-700 shadow-red-500/20'
+                }`}
+              >
+                Got it
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {statusModal.isOpen && statusModal.type === 'success' && (
+          <motion.div
+            initial={{ opacity: 0, x: 50, y: -20 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: 50, y: -20 }}
+            className="fixed top-8 right-8 z-[200] bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-4 pr-12 border-l-4 border-green-500 flex items-center gap-4 min-w-[320px] shadow-green-500/10"
+          >
+            <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+              <CheckCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">System Message</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{statusModal.message}</p>
+            </div>
+            <button 
+              onClick={() => setStatusModal({ ...statusModal, isOpen: false })}
+              className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="w-full max-w-full px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Account Settings</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage your account settings and preferences</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-tight">Account Settings</h1>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">Manage your digital identity and security</p>
+          </div>
+          {activeTab === 'profile' && !isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 font-black uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit Profile
+            </button>
+          )}
         </div>
 
         {/* Navigation Tabs */}

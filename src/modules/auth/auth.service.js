@@ -211,37 +211,7 @@ class AuthService {
     }
   }
 
-  static async changePassword(userId, passwordData, ip, userAgent) {
-    try {
-      const { current_password, new_password, confirm_password } = passwordData;
-      
-      if (!current_password || !new_password || !confirm_password) {
-        throw new Error('All password fields are required');
-      }
-      
-      if (new_password !== confirm_password) {
-        throw new Error('New passwords do not match');
-      }
-      
-      if (new_password.length < 8) {
-        throw new Error('New password must be at least 8 characters long');
-      }
 
-      const user = await this.findById(userId);
-      const isValidPassword = await bcrypt.compare(current_password, user.password_hash);
-
-      if (!isValidPassword) {
-        throw new Error('Current password is incorrect');
-      }
-
-      await this.updateUserPassword(userId, new_password);
-      await auditLog(userId, 'PASSWORD_CHANGE', 'users', userId, null, null, ip, userAgent);
-
-      return { message: 'Password changed successfully' };
-    } catch (error) {
-      throw error;
-    }
-  }
 
   static async getProfile(userId) {
     try {
@@ -404,16 +374,54 @@ class AuthService {
     }
   }
 
-  static async updateUserProfile(userId, profileData) {
-    const { first_name, last_name, phone, address } = profileData;
-    
-    const updateQuery = `
-      UPDATE employee_profiles 
-      SET first_name = ?, last_name = ?, phone = ?, address = ?, updated_at = NOW()
-      WHERE user_id = ?
-    `;
-    
-    await query(updateQuery, [first_name, last_name, phone, address, userId]);
+  static async updateProfile(userId, profileData, ip, userAgent) {
+    const { 
+      first_name, 
+      last_name, 
+      email, 
+      phone_number, 
+      role 
+    } = profileData;
+
+    try {
+      // 1. Update the users table (email, role, names)
+      await query(`
+        UPDATE users 
+        SET first_name = ?, last_name = ?, email = ?, role = ?, updated_at = NOW()
+        WHERE id = ?
+      `, [first_name, last_name, email, role, userId]);
+
+      // 2. Update the employee_profiles table (phone, names)
+      // Check if profile exists first
+      const profiles = await query('SELECT user_id FROM employee_profiles WHERE user_id = ?', [userId]);
+      
+      if (profiles.length > 0) {
+        await query(`
+          UPDATE employee_profiles 
+          SET first_name = ?, last_name = ?, phone = ?, updated_at = NOW()
+          WHERE user_id = ?
+        `, [first_name, last_name, phone_number, userId]);
+      } else {
+        // If profile doesn't exist, create it (should not happen if user is an employee)
+        await query(`
+          INSERT INTO employee_profiles (user_id, first_name, last_name, phone)
+          VALUES (?, ?, ?, ?)
+        `, [userId, first_name, last_name, phone_number]);
+      }
+
+      // 3. Log the change
+      await auditLog(userId, 'PROFILE_UPDATED', 'users', userId, null, { 
+        updated_fields: Object.keys(profileData) 
+      }, ip, userAgent);
+
+      return {
+        success: true,
+        message: 'Profile updated successfully'
+      };
+    } catch (error) {
+      console.error('Update profile service error:', error);
+      throw error;
+    }
   }
 
   static async changePassword(userId, currentPassword, newPassword, ip, userAgent) {

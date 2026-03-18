@@ -48,25 +48,25 @@ const Dashboard = () => {
   const statsData = [
     {
       title: 'Total Users',
-      value: dashboardData?.overview?.totalUsers?.toLocaleString() || '0',
-      change: '+12.5%',
-      changeType: 'increase',
+      value: (dashboardData?.overview?.totalUsers || 0).toLocaleString(),
+      change: dashboardData?.overview?.userGrowth || '+0%',
+      changeType: (dashboardData?.overview?.userGrowth || '').startsWith('+') ? 'increase' : 'decrease',
       icon: <Users className="h-6 w-6" />,
       color: 'blue'
     },
     {
       title: 'Total Admins',
-      value: adminStats?.total?.toLocaleString() || '0',
-      change: '+5.2%',
-      changeType: 'increase',
+      value: (dashboardData?.overview?.totalAdmins || adminStats?.total || 0).toLocaleString(),
+      change: dashboardData?.overview?.adminGrowth || '+0%',
+      changeType: (dashboardData?.overview?.adminGrowth || '').startsWith('+') ? 'increase' : 'decrease',
       icon: <UserPlus className="h-6 w-6" />,
       color: 'green'
     },
     {
       title: 'Pending Applications',
-      value: dashboardData?.overview?.pendingApplications?.toLocaleString() || '0',
-      change: '-2.1%',
-      changeType: 'decrease',
+      value: (dashboardData?.overview?.pendingApplications || 0).toLocaleString(),
+      change: dashboardData?.overview?.loanGrowth || '+0%',
+      changeType: (dashboardData?.overview?.loanGrowth || '').startsWith('+') ? 'increase' : 'decrease',
       icon: <TrendingUp className="h-6 w-6" />,
       color: 'purple'
     }
@@ -78,9 +78,9 @@ const Dashboard = () => {
     datasets: [
       {
         data: [
-          dashboardData?.overview?.totalUsers || 0,
-          adminStats?.total || 0,
-          Math.max(0, (dashboardData?.overview?.totalUsers || 0) - (adminStats?.total || 0))
+          Math.max(0, (dashboardData?.overview?.totalUsers || 0) - (dashboardData?.overview?.totalAdmins || adminStats?.total || 0)), // Non-admin active
+          (dashboardData?.overview?.totalAdmins || adminStats?.total || 0), // Admins
+          0 // Inactive (we don't have this count easily yet, but let's keep 0 to avoid crash)
         ],
         backgroundColor: [
           'rgba(59, 130, 246, 0.9)',
@@ -100,9 +100,9 @@ const Dashboard = () => {
 
   // Real progress data from backend
   const progressData = [
-    { label: 'Active HR Admins', value: dashboardData?.overview?.activeHRAdmins || 0, color: 'blue' },
-    { label: 'Active Loan Committee', value: dashboardData?.overview?.activeLoanCommitteeAdmins || 0, color: 'green' },
-    { label: 'Active Admins', value: adminStats?.active || 0, color: 'purple' },
+    { label: 'Active Admins', value: dashboardData?.overview?.totalAdmins || adminStats?.active || 0, color: 'purple' },
+    { label: 'Total Loans', value: dashboardData?.overview?.totalLoans || 0, color: 'blue' },
+    { label: 'Pending Apps', value: dashboardData?.overview?.pendingApplications || 0, color: 'green' },
     { label: 'System Health', value: 95, color: 'orange' }
   ];
 
@@ -138,13 +138,13 @@ const Dashboard = () => {
       {
         label: 'Activity Level',
         data: [
-          dashboardData?.overview?.totalUsers * 0.08 || 78,
-          dashboardData?.overview?.totalUsers * 0.09 || 82,
-          dashboardData?.overview?.totalUsers * 0.07 || 65,
-          dashboardData?.overview?.totalUsers * 0.09 || 89,
-          dashboardData?.overview?.totalUsers * 0.10 || 92,
-          dashboardData?.overview?.totalUsers * 0.05 || 45,
-          dashboardData?.overview?.totalUsers * 0.04 || 38
+          (dashboardData?.overview?.totalUsers || 100) * 0.08,
+          (dashboardData?.overview?.totalUsers || 100) * 0.09,
+          (dashboardData?.overview?.totalUsers || 100) * 0.07,
+          (dashboardData?.overview?.totalUsers || 100) * 0.09,
+          (dashboardData?.overview?.totalUsers || 100) * 0.10,
+          (dashboardData?.overview?.totalUsers || 100) * 0.05,
+          (dashboardData?.overview?.totalUsers || 100) * 0.04
         ],
         backgroundColor: [
           'rgba(59, 130, 246, 0.8)',
@@ -174,10 +174,12 @@ const Dashboard = () => {
   // Real admin data from backend
   const admins = dashboardData?.recentActivity?.map((activity, index) => ({
     id: index + 1,
+    employeeId: activity.employee_id,
     name: activity.first_name && activity.last_name 
       ? `${activity.first_name} ${activity.last_name}`
       : activity.employee_id || 'Unknown',
     email: activity.email || 'unknown@example.com',
+    phone: activity.phone_number || 'N/A',
     role: activity.role || 'Admin',
     addDate: activity.created_at ? new Date(activity.created_at).toLocaleDateString() : 'Unknown',
     status: 'active'
