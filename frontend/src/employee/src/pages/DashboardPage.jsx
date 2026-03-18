@@ -7,110 +7,159 @@ import { loansAPI } from '../services/api';
 const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState({
     stats: {
-      savingsBalance: 45000,
-      currentSavingRate: 25,
-      activeLoans: 2,
-      outstandingLoanBalance: 15000,
-      monthlyPayrollDeduction: 2500,
+      savingsBalance: 0,
+      currentSavingRate: 0,
+      activeLoans: 0,
+      outstandingLoanBalance: 0,
+      monthlyPayrollDeduction: 0,
     },
     savingsGrowthData: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      datasets: [
-        {
-          label: 'Savings Balance',
-          data: [35000, 36500, 38000, 39500, 41000, 42500, 43500, 44000, 44500, 45000, 45500, 46000],
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.4,
-          fill: true,
-        },
-      ],
+      labels: [],
+      datasets: [],
     },
     loanBalanceData: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      datasets: [
-        {
-          label: 'Loan Balance',
-          data: [25000, 23500, 22000, 20500, 19000, 17500, 16000, 15000, 14000, 13000, 12000, 11000],
-          borderColor: 'rgb(239, 68, 68)',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          tension: 0.4,
-          fill: true,
-        },
-      ],
+      labels: [],
+      datasets: [],
     },
-    recentActivity: [
-      {
-        id: 1,
-        type: 'loan_request',
-        title: 'Loan Request Submitted',
-        description: 'Emergency loan request of $5,000',
-        date: '2024-03-15',
-        status: 'pending',
-      },
-      {
-        id: 2,
-        type: 'savings_deduction',
-        title: 'Monthly Savings Deduction',
-        description: '$1,250 deducted from March payroll',
-        date: '2024-03-01',
-        status: 'completed',
-      },
-      {
-        id: 3,
-        type: 'loan_approval',
-        title: 'Loan Approved',
-        description: 'Personal loan of $10,000 approved',
-        date: '2024-02-28',
-        status: 'completed',
-      },
-      {
-        id: 4,
-        type: 'repayment',
-        title: 'Loan Repayment',
-        description: '$500 loan repayment processed',
-        date: '2024-03-01',
-        status: 'completed',
-      },
-    ],
-    recentTransactions: [
-      {
-        id: 1,
-        date: '2024-03-15',
-        type: 'Loan Request',
-        amount: '$5,000',
-        status: 'Pending',
-      },
-      {
-        id: 2,
-        date: '2024-03-01',
-        type: 'Savings Deduction',
-        amount: '$1,250',
-        status: 'Completed',
-      },
-      {
-        id: 3,
-        date: '2024-03-01',
-        type: 'Loan Repayment',
-        amount: '$500',
-        status: 'Completed',
-      },
-      {
-        id: 4,
-        date: '2024-02-28',
-        type: 'Loan Approval',
-        amount: '$10,000',
-        status: 'Completed',
-      },
-      {
-        id: 5,
-        date: '2024-02-01',
-        type: 'Savings Deduction',
-        amount: '$1,250',
-        status: 'Completed',
-      },
-    ],
+    recentActivity: [],
+    recentTransactions: [],
+    loading: true,
+    error: null
   });
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setDashboardData(prev => ({ ...prev, loading: true, error: null }));
+      
+      // Fetch loans data
+      const loansRes = await loansAPI.getMyLoans();
+      const applicationsRes = await loansAPI.getMyApplications();
+      
+      const loans = loansRes?.data || [];
+      const applications = applicationsRes?.data || [];
+      
+      // Calculate stats from real data
+      const activeLoans = loans.filter(loan => loan.status === 'ACTIVE').length;
+      const totalLoanBalance = loans.reduce((sum, loan) => sum + parseFloat(loan.outstanding_balance || 0), 0);
+      const monthlyDeduction = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_deduction || 0), 0);
+      
+      // Generate chart data
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      
+      const savingsGrowthData = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [
+          {
+            label: 'Savings Balance',
+            data: Array(12).fill(45000 + Math.random() * 5000), // Simulated growth data
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+          },
+        ],
+      };
+
+      const loanBalanceData = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [
+          {
+            label: 'Loan Balance',
+            data: Array(12).fill(15000 - Math.random() * 2000), // Simulated repayment data
+            borderColor: 'rgb(239, 68, 68)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.4,
+            fill: true,
+          },
+        ],
+      };
+
+      // Create recent activity from real data
+      const recentActivity = [
+        ...(applications.slice(0, 2).map(app => ({
+          id: app.id,
+          type: 'loan_request',
+          title: 'Loan Request Submitted',
+          description: `Loan request of $${app.requested_amount}`,
+          date: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          status: app.status.toLowerCase(),
+        }))),
+        ...(loans.slice(0, 2).map(loan => ({
+          id: loan.id,
+          type: 'loan_approval',
+          title: 'Loan Status Update',
+          description: `Loan ${loan.status}`,
+          date: loan.start_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+          status: loan.status.toLowerCase(),
+        }))),
+      ];
+
+      const recentTransactions = [
+        ...(applications.slice(0, 3).map(app => ({
+          id: app.id,
+          date: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          type: 'Loan Request',
+          amount: `$${app.requested_amount}`,
+          status: app.status,
+        }))),
+        ...(loans.slice(0, 3).map(loan => ({
+          id: loan.id,
+          date: loan.start_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+          type: 'Loan Disbursement',
+          amount: `$${loan.loan_amount}`,
+          status: 'Completed',
+        }))),
+      ];
+
+      setDashboardData({
+        stats: {
+          savingsBalance: 45000, // This would come from savings API
+          currentSavingRate: 25,
+          activeLoans,
+          outstandingLoanBalance: totalLoanBalance,
+          monthlyPayrollDeduction: monthlyDeduction,
+        },
+        savingsGrowthData: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [{
+            label: 'Savings Balance',
+            data: Array(12).fill(45000 + Math.random() * 5000), // Simulated growth data
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+          }]
+        },
+        loanBalanceData: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [{
+            label: 'Loan Balance',
+            data: Array(12).fill(15000 - Math.random() * 2000), // Simulated repayment data
+            borderColor: 'rgb(239, 68, 68)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.4,
+            fill: true,
+          }]
+        },
+        recentActivity,
+        recentTransactions,
+        loading: false,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setDashboardData(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: 'Failed to load dashboard data' 
+      }));
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -125,52 +174,21 @@ const DashboardPage = () => {
     }
   };
 
-  const [loading, setLoading] = useState(true);
+  if (dashboardData.loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const res = await loansAPI.getDashboardData();
-      if (res && res.data) {
-        setDashboardData(prev => ({
-          ...prev,
-          stats: {
-            ...prev.stats,
-            activeLoans: res.data.stats.activeLoans,
-            outstandingLoanBalance: res.data.stats.outstandingLoanBalance,
-            monthlyPayrollDeduction: res.data.stats.monthlyPayrollDeduction
-          },
-          loanBalanceData: {
-            labels: res.data.loanBalanceGrowth?.map(l => l.label) || ['Jan', 'Feb', 'Mar'],
-            datasets: [{
-              label: 'Loan Balance',
-              data: res.data.loanBalanceGrowth?.map(l => l.total) || [0, 0, 0],
-              borderColor: 'rgb(239, 68, 68)',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              tension: 0.4,
-              fill: true,
-            }]
-          },
-          recentActivity: res.data.recentActivity?.map(act => ({
-            id: act.id,
-            type: act.type,
-            title: act.title,
-            description: act.description,
-            date: act.date?.split('T')[0],
-            status: act.status?.toLowerCase()
-          })) || []
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (dashboardData.error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">{dashboardData.error}</p>
+      </div>
+    );
+  }
 
   const getActivityIcon = (type) => {
     switch (type) {
@@ -187,7 +205,7 @@ const DashboardPage = () => {
     }
   };
 
-  if (loading) return <div className="p-6">Loading dashboard...</div>;
+  if (dashboardData.loading) return <div className="p-6">Loading dashboard...</div>;
 
   return (
     <div className="space-y-6">

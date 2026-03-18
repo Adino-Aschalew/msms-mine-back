@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FiEye, FiEyeOff, FiLock, FiUser, FiAlertCircle, FiShield } from 'react-icons/fi';
 
 const LoginPage = () => {
-  const { login, getRoleRedirectPath } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -17,6 +17,26 @@ const LoginPage = () => {
   });
 
   const from = location.state?.from?.pathname || '/';
+
+  const getRoleRedirectPathFromUser = (user) => {
+    const role = user?.role ? String(user.role).toUpperCase().trim() : '';
+    switch (role) {
+      case 'ADMIN':
+      case 'SUPER_ADMIN':
+        return '/admin';
+      case 'HR':
+        return '/hr';
+      case 'FINANCE_ADMIN':
+      case 'FINANCE':
+        return '/finance';
+      case 'LOAN_COMMITTEE':
+        return '/loan-committee';
+      case 'EMPLOYEE':
+        return '/employee';
+      default:
+        return '/login';
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,13 +61,16 @@ const LoginPage = () => {
     setError('');
 
     try {
+      console.log('[login] submit', { identifier: formData.identifier, isEmailMode, from });
       // Pass the identifier and let the backend figure out the role
       // We hint the role based on identifier format: email => admin roles, text => employee
       const inferredRole = isEmailMode ? 'admin' : 'employee';
-      await login(formData, inferredRole);
-      const redirectPath = from !== '/' ? from : getRoleRedirectPath();
+      const loggedInUser = await login(formData, inferredRole);
+      const redirectPath = from !== '/' ? from : getRoleRedirectPathFromUser(loggedInUser);
+      console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role });
       navigate(redirectPath, { replace: true });
     } catch (err) {
+      console.log('[login] error', err);
       setError(err.message || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);

@@ -5,6 +5,7 @@ const path = require('path');
 const { query } = require('../../config/database');
 const { auditLog } = require('../../middleware/audit');
 const HrService = require('../hr/hr.service');
+const NotificationService = require('../../services/notification.service');
 
 // Load environment variables from project root
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
@@ -485,6 +486,13 @@ class AuthService {
         password_change_required: false 
       }, ip, userAgent);
 
+      await NotificationService.createNotification(
+        userId,
+        'Password Changed',
+        'Your password was changed successfully. If this wasn’t you, please contact support immediately.',
+        'SUCCESS'
+      );
+
       return {
         success: true,
         message: 'Password changed successfully'
@@ -533,6 +541,13 @@ class AuthService {
         password_change_required: false,
         forced_change: true
       }, ip, userAgent);
+
+      await NotificationService.createNotification(
+        userId,
+        'Password Updated',
+        'Your password was updated successfully.',
+        'SUCCESS'
+      );
 
       return {
         success: true,

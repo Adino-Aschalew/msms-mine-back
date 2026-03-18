@@ -77,6 +77,21 @@ class SavingsService {
 
   static async getTransactions(userId, page = 1, limit = 10, filters = {}) {
     try {
+      // First check if user has a savings account
+      const account = await SavingsModel.getSavingsAccount(userId);
+      if (!account) {
+        // Return empty result if no account exists
+        return {
+          transactions: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            pages: 0
+          }
+        };
+      }
+      
       const result = await SavingsModel.getSavingsTransactions(userId, page, limit, filters);
       return result;
     } catch (error) {

@@ -14,6 +14,7 @@ class ApiClient {
     this.refreshToken = refreshToken;
     localStorage.setItem('authToken', token);
     localStorage.setItem('refreshToken', refreshToken);
+    console.log('[api] setTokens', { hasToken: !!token, hasRefreshToken: !!refreshToken });
   }
 
   // Clear tokens
@@ -22,6 +23,7 @@ class ApiClient {
     this.refreshToken = null;
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
+    console.log('[api] clearTokens');
   }
 
   // Make HTTP request with authentication
@@ -46,6 +48,11 @@ class ApiClient {
 
       // Handle token expiration
       if (response.status === 401 && data.message?.includes('token')) {
+        console.log('[api] 401 token-related, attempting refresh', {
+          endpoint,
+          message: data?.message,
+          hasRefreshToken: !!this.refreshToken,
+        });
         await this.refreshAccessToken();
         // Retry the original request
         config.headers.Authorization = `Bearer ${this.token}`;
@@ -54,6 +61,7 @@ class ApiClient {
       }
 
       if (!response.ok) {
+        console.log('[api] request failed', { endpoint, status: response.status, message: data?.message });
         throw new Error(data.message || 'Request failed');
       }
 
@@ -67,6 +75,7 @@ class ApiClient {
   // Refresh access token
   async refreshAccessToken() {
     if (!this.refreshToken) {
+      console.log('[api] refreshAccessToken: missing refreshToken');
       throw new Error('No refresh token available');
     }
 
@@ -82,12 +91,15 @@ class ApiClient {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        console.log('[api] refreshAccessToken: success');
         this.setTokens(data.data.token, this.refreshToken);
       } else {
+        console.log('[api] refreshAccessToken: failed', { status: response.status, message: data?.message });
         this.clearTokens();
         throw new Error('Token refresh failed');
       }
     } catch (error) {
+      console.log('[api] refreshAccessToken: error', error);
       this.clearTokens();
       throw error;
     }

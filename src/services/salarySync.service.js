@@ -110,7 +110,7 @@ class SalarySyncService {
       userId,
       'Salary Processed',
       `Your salary of ${net_salary} has been processed and deposited to your account.`,
-      'PAYROLL'
+      'INFO'
     );
     
     return {
@@ -156,6 +156,14 @@ class SalarySyncService {
       await connection.execute(
         'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
         [account.current_balance + contributionAmount, account.id]
+      );
+
+      await NotificationService.createNotification(
+        userId,
+        'Savings Contribution Added',
+        `A savings contribution of ${contributionAmount} was added to your savings from payroll for ${payPeriod}.`,
+        'SUCCESS',
+        { reference_id: `PAYROLL_${payPeriod}` }
       );
     }
   }

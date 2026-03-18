@@ -108,7 +108,7 @@ class SavingsModel {
 
   static async getSavingsTransactions(userId, page = 1, limit = 10, filters = {}) {
     const offset = (page - 1) * limit;
-    let whereClause = 'WHERE st.savings_account_id = sa.id AND sa.user_id = ?';
+    let whereClause = 'WHERE sa.user_id = ?';
     const params = [userId];
     
     if (filters.transaction_type) {

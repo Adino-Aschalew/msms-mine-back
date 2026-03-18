@@ -90,16 +90,67 @@ class UserModel {
   }
 
   static async findByIdWithProfile(userId) {
-    const selectQuery = `
-      SELECT u.*, ep.*
-      FROM users u
-      LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-      WHERE u.id = ? AND u.is_active = true
-    `;
-    
-    const users = await query(selectQuery, [userId]);
-    return users[0] || null;
-  }
+    try {
+      console.log('findByIdWithProfile - Starting query for userId:', userId);
+      
+      const query = `
+        SELECT 
+          u.id, u.username, u.email, u.password_hash, u.role, u.created_at, u.is_active,
+          ep.employee_id, ep.first_name, ep.last_name, ep.department, ep.position, 
+          ep.hire_date, ep.phone, ep.address, ep.date_of_birth, ep.emergency_contact, 
+          ep.bio, ep.employment_type
+        FROM users u 
+        LEFT JOIN employee_profiles ep ON u.id = ep.user_id 
+        WHERE u.id = ? AND u.is_active = true
+      `;
+      
+      console.log('findByIdWithProfile - Executing query:', query);
+      console.log('findByIdWithProfile - Query params:', [userId]);
+      
+      const result = await query(query, [userId]);
+      console.log('findByIdWithProfile - Query result:', result);
+      console.log('findByIdWithProfile - Result length:', result.length);
+      
+      if (result.length === 0) {
+        console.log('findByIdWithProfile - No user found');
+        return null;
+      }
+
+      const user = result[0];
+      console.log('findByIdWithProfile - Raw user data:', user);
+      
+      // Transform the data structure
+      const transformedUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        password_hash: user.password_hash,
+        role: user.role,
+        created_at: user.created_at,
+        employee_profile: user.employee_id ? {
+          employee_id: user.employee_id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          department: user.department,
+          position: user.position,
+          hire_date: user.hire_date,
+          phone: user.phone,
+          address: user.address,
+          date_of_birth: user.date_of_birth,
+          emergency_contact: user.emergency_contact,
+          bio: user.bio,
+          employment_type: user.employment_type
+        } : null
+      };
+      
+      console.log('findByIdWithProfile - Transformed user data:', transformedUser);
+      return transformedUser;
+      
+    } catch (error) {
+      console.error('findByIdWithProfile - Database error:', error);
+      console.error('findByIdWithProfile - Error stack:', error.stack);
+      throw error;
+    }
   
   static async updateLastLogin(userId) {
     const updateQuery = `UPDATE users SET last_login = NOW() WHERE id = ?`;

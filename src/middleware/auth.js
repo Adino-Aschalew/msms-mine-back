@@ -74,6 +74,11 @@ const roleMiddleware = (allowedRoles) => {
 
 const selfOrRoleCheck = (allowedRoles) => {
   return (req, res, next) => {
+    console.log('SelfOrRoleCheck middleware - allowedRoles:', allowedRoles);
+    console.log('SelfOrRoleCheck middleware - allowedRoles type:', typeof allowedRoles);
+    console.log('SelfOrRoleCheck middleware - req.user:', req.user);
+    console.log('SelfOrRoleCheck middleware - req.user.id:', req.user?.id);
+    
     if (!req.user) {
       return res.status(401).json({ 
         success: false, 
@@ -82,10 +87,17 @@ const selfOrRoleCheck = (allowedRoles) => {
     }
 
     const targetUserId = req.params.userId || req.params.id || req.body.user_id;
+    console.log('SelfOrRoleCheck middleware - targetUserId:', targetUserId);
     
-    if (req.user.id == targetUserId || allowedRoles.includes(req.user.role)) {
+    // If targetUserId is undefined, this means user is accessing their own profile
+    const isOwnProfile = !targetUserId;
+    console.log('SelfOrRoleCheck middleware - isOwnProfile:', isOwnProfile);
+    
+    if (isOwnProfile || req.user.id == targetUserId || (allowedRoles && allowedRoles.includes(req.user.role))) {
+      console.log('SelfOrRoleCheck middleware - ACCESS GRANTED');
       next();
     } else {
+      console.log('SelfOrRoleCheck middleware - ACCESS DENIED');
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied. You can only access your own data.' 

@@ -586,20 +586,21 @@ class LoanController {
       const [loanStats] = await query(`
         SELECT 
           COUNT(*) as active_loans,
-          COALESCE(SUM(outstanding_balance), 0) as outstanding_balance
+          COALESCE(SUM(remaining_balance), 0) as outstanding_balance
         FROM loans 
         WHERE user_id = ? AND status = 'ACTIVE'
       `, [userId]);
 
+      // We don't currently store a "due_date" + "PENDING" payroll deduction schedule
+      // in `loan_repayments`. Approximate the monthly payroll deduction as the sum
+      // of `monthly_repayment` for active loans.
       const [deductions] = await query(`
-        SELECT COALESCE(SUM(amount), 0) as sum_deductions
-        FROM loan_repayments
-        WHERE loan_id IN (SELECT id FROM loans WHERE user_id = ?)
-          AND status = 'PENDING'
-          AND MONTH(due_date) = MONTH(CURRENT_DATE())
+        SELECT COALESCE(SUM(monthly_repayment), 0) as sum_deductions
+        FROM loans
+        WHERE user_id = ? AND status = 'ACTIVE'
       `, [userId]);
 
-      const [recentActivity] = await query(`
+      const recentActivity = await query(`
         SELECT 
           id,
           'loan_request' as type,
@@ -613,15 +614,14 @@ class LoanController {
         LIMIT 5
       `, [userId]);
 
-      const [loanBalanceGrowth] = await query(`
+      const loanBalanceGrowth = await query(`
         SELECT 
-          DATE_FORMAT(created_at, '%b') as label,
-          MONTH(created_at) as m,
-          SUM(loan_amount) as total
+          DATE_FORMAT(COALESCE(disbursement_date, created_at), '%b') as label,
+          SUM(principal_amount) as total
         FROM loans
-        WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-        GROUP BY DATE_FORMAT(created_at, '%b'), MONTH(created_at)
-        ORDER BY m ASC
+        WHERE user_id = ? AND COALESCE(disbursement_date, created_at) >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(COALESCE(disbursement_date, created_at), '%b')
+        ORDER BY label ASC
       `, [userId]);
 
       res.json({
@@ -630,9 +630,9 @@ class LoanController {
           stats: {
             savingsBalance: 0, // Mock savings as it belongs to another module
             currentSavingRate: 0,
-            activeLoans: loanStats[0].active_loans,
-            outstandingLoanBalance: loanStats[0].outstanding_balance,
-            monthlyPayrollDeduction: deductions[0].sum_deductions
+            activeLoans: loanStats?.active_loans ?? 0,
+            outstandingLoanBalance: loanStats?.outstanding_balance ?? 0,
+            monthlyPayrollDeduction: deductions?.sum_deductions ?? 0
           },
           recentActivity,
           loanBalanceGrowth

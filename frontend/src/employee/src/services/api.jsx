@@ -12,7 +12,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Use the same token key as the host app (shared auth)
+    const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -27,8 +28,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Keep storage keys consistent with shared auth
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('authUser');
+      // Send user back to login (host route)
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -202,6 +206,11 @@ export const notificationsAPI = {
     const response = await api.get('/notifications', { params });
     return response.data;
   },
+
+  getUnreadCount: async () => {
+    const response = await api.get('/notifications/unread-count');
+    return response.data;
+  },
   
   markAsRead: async (id) => {
     const response = await api.put(`/notifications/${id}/read`);
@@ -209,22 +218,12 @@ export const notificationsAPI = {
   },
   
   markAllAsRead: async () => {
-    const response = await api.put('/notifications/read-all');
+    const response = await api.put('/notifications/mark-all-read');
     return response.data;
   },
   
   deleteNotification: async (id) => {
     const response = await api.delete(`/notifications/${id}`);
-    return response.data;
-  },
-  
-  deleteAllNotifications: async () => {
-    const response = await api.delete('/notifications');
-    return response.data;
-  },
-  
-  updateNotificationPreferences: async (preferences) => {
-    const response = await api.put('/notifications/preferences', preferences);
     return response.data;
   },
 };

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
+import { notificationsAPI } from '../../services/api';
 import {
   FiMenu,
   FiX,
@@ -69,76 +70,31 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
     }
   };
 
-  const unreadNotifications = 3;
-
-  // Mock notifications for demonstration
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'loan_approval',
-      title: 'Loan Approved',
-      message: 'Your emergency loan of $5,000 has been approved',
-      time: '2 hours ago',
-      read: false,
-      icon: FiCheckCircle,
-      color: 'green',
-      action: 'View Loan Details'
-    },
-    {
-      id: 2,
-      type: 'savings_deduction',
-      title: 'Savings Deduction',
-      message: 'Monthly savings of $2,500 deducted from salary',
-      time: '1 day ago',
-      read: false,
-      icon: FiDollarSign,
-      color: 'blue',
-      action: 'View Payroll'
-    },
-    {
-      id: 3,
-      type: 'payment_reminder',
-      title: 'Loan Payment Due',
-      message: 'Your loan payment of $916.67 is due in 3 days',
-      time: '2 days ago',
-      read: false,
-      icon: FiClock,
-      color: 'orange',
-      action: 'Make Payment'
-    },
-    {
-      id: 4,
-      type: 'system_update',
-      title: 'System Update',
-      message: 'New features have been added to your dashboard',
-      time: '3 days ago',
-      read: true,
-      icon: FiInfo,
-      color: 'purple',
-      action: 'Learn More'
-    },
-    {
-      id: 5,
-      type: 'guarantor_request',
-      title: 'Guarantor Request',
-      message: 'John Doe has requested you to be a guarantor',
-      time: '1 week ago',
-      read: true,
-      icon: FiMessageSquare,
-      color: 'indigo',
-      action: 'Review Request'
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const [filterType, setFilterType] = useState('all');
+
+  const typeToIconAndColor = (notificationType) => {
+    const t = String(notificationType || '').toUpperCase();
+    switch (t) {
+      case 'SUCCESS':
+        return { Icon: FiCheckCircle, color: 'green' };
+      case 'WARNING':
+        return { Icon: FiAlertCircle, color: 'orange' };
+      case 'ERROR':
+        return { Icon: FiX, color: 'red' };
+      default:
+        return { Icon: FiInfo, color: 'blue' };
+    }
+  };
 
   const getNotificationIcon = (color) => {
     switch (color) {
       case 'green': return 'text-green-500';
       case 'blue': return 'text-blue-500';
       case 'orange': return 'text-orange-500';
-      case 'purple': return 'text-purple-500';
-      case 'indigo': return 'text-indigo-500';
+      case 'red': return 'text-red-500';
       default: return 'text-gray-500';
     }
   };
@@ -148,27 +104,70 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
       case 'green': return 'bg-green-100 dark:bg-green-900';
       case 'blue': return 'bg-blue-100 dark:bg-blue-900';
       case 'orange': return 'bg-orange-100 dark:bg-orange-900';
-      case 'purple': return 'bg-purple-100 dark:bg-purple-900';
-      case 'indigo': return 'bg-indigo-100 dark:bg-indigo-900';
+      case 'red': return 'bg-red-100 dark:bg-red-900';
       default: return 'bg-gray-100 dark:bg-gray-900';
     }
   };
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(notif =>
-      notif.id === id ? { ...notif, read: true } : notif
-    ));
+  const toTimeLabel = (iso) => {
+    if (!iso) return '';
+    const ts = new Date(iso).getTime();
+    if (Number.isNaN(ts)) return '';
+    const diffMs = Date.now() - ts;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notif => ({ ...notif, read: true })));
+  const fetchNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const res = await notificationsAPI.getNotifications({ page: 1, limit: 20 });
+      const items = res?.data?.notifications || res?.data?.notifications?.notifications || res?.data?.notifications || res?.data || [];
+      // backend returns { success, data: { notifications, pagination } }
+      const normalized = (res?.data?.notifications ? res.data.notifications : res?.data?.notifications?.notifications) || res?.data?.notifications || res?.data?.data?.notifications || res?.data?.data || [];
+      const list = Array.isArray(normalized) ? normalized : items;
+      setNotifications(list);
+    } catch (e) {
+      console.log('[employee] fetchNotifications failed', e);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const markAsRead = async (id) => {
+    try {
+      await notificationsAPI.markAsRead(id);
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n)));
+    } catch (e) {
+      console.log('[employee] markAsRead failed', e);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await notificationsAPI.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at || new Date().toISOString() })));
+    } catch (e) {
+      console.log('[employee] markAllAsRead failed', e);
+    }
   };
 
   const filteredNotifications = filterType === 'all'
     ? notifications
-    : notifications.filter(notif => notif.type === filterType);
+    : notifications.filter((notif) => String(notif.notification_type || '').toUpperCase() === String(filterType || '').toUpperCase());
 
-  const unreadCount = notifications.filter(notif => !notif.read).length;
+  const unreadCount = notifications.filter((notif) => !notif.is_read).length;
 
   // Mock user stats for demonstration
   const userStats = {
@@ -260,36 +259,40 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                       All ({notifications.length})
                     </button>
                     <button
-                      onClick={() => setFilterType('loan_approval')}
-                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'loan_approval'
+                      onClick={() => setFilterType('SUCCESS')}
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'SUCCESS'
                           ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                      Loans
+                      Success
                     </button>
                     <button
-                      onClick={() => setFilterType('savings_deduction')}
-                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'savings_deduction'
+                      onClick={() => setFilterType('ERROR')}
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'ERROR'
                           ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                      Savings
+                      Errors
                     </button>
                   </div>
                 </div>
 
                 {/* Notifications List */}
                 <div className="max-h-96 overflow-y-auto">
-                  {filteredNotifications.length === 0 ? (
+                  {notificationsLoading ? (
+                    <div className="p-8 text-center">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
+                    </div>
+                  ) : filteredNotifications.length === 0 ? (
                     <div className="p-8 text-center">
                       <FiBell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                       <p className="text-gray-500 dark:text-gray-400 text-sm">No notifications to show</p>
                     </div>
                   ) : (
                     filteredNotifications.map((notification) => {
-                      const Icon = notification.icon;
+                      const { Icon, color } = typeToIconAndColor(notification.notification_type);
                       return (
                         <div
                           key={notification.id}
@@ -297,8 +300,8 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                             }`}
                         >
                           <div className="flex items-start space-x-3">
-                            <div className={`w-10 h-10 ${getNotificationBg(notification.color)} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                              <Icon className={`w-5 h-5 ${getNotificationIcon(notification.color)}`} />
+                            <div className={`w-10 h-10 ${getNotificationBg(color)} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                              <Icon className={`w-5 h-5 ${getNotificationIcon(color)}`} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between">
@@ -311,17 +314,17 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                                   </p>
                                   <div className="flex items-center justify-between mt-2">
                                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                                      {notification.time}
+                                      {toTimeLabel(notification.created_at)}
                                     </span>
                                     <button
                                       onClick={() => markAsRead(notification.id)}
                                       className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
                                     >
-                                      {notification.action}
+                                      Mark as read
                                     </button>
                                   </div>
                                 </div>
-                                {!notification.read && (
+                                {!notification.is_read && (
                                   <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
                                 )}
                               </div>

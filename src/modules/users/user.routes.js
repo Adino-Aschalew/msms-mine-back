@@ -1,6 +1,6 @@
 const express = require('express');
 const UserController = require('./user.controller');
-const { authMiddleware, roleMiddleware } = require('../../middleware/auth');
+const { authMiddleware, roleMiddleware, selfOrRoleCheck } = require('../../middleware/auth');
 const { auditMiddleware } = require('../../middleware/audit');
 
 const router = express.Router();
@@ -17,11 +17,8 @@ router.delete('/:userId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddlew
 router.put('/:userId/reset-password', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), auditMiddleware('PASSWORD_RESET'), UserController.resetPassword);
 router.get('/stats', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.getUserStats);
 
-// General user management routes (Admin/HR)
-router.get('/', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.getAllUsers);
-router.get('/:userId', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.getUserById);
-router.put('/:userId', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), auditMiddleware('USER_UPDATED'), UserController.updateUser);
-router.put('/:userId/profile', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), auditMiddleware('PROFILE_UPDATED'), UserController.updateUserProfile);
+// Current user profile route (authenticated users)
+router.get('/profile', selfOrRoleCheck([]), UserController.getProfile);
 
 // Search users (Admin/HR)
 router.get('/search', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.searchUsers);

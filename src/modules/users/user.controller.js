@@ -313,6 +313,51 @@ class UserController {
     }
   }
 
+  static async getProfile(req, res) {
+    try {
+      console.log('getProfile - Request received for userId:', req.userId);
+      const userId = req.userId;
+      const user = await UserModel.findByIdWithProfile(userId);
+      console.log('getProfile - User data:', user);
+      
+      if (!user) {
+        console.log('getProfile - User not found');
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      // Remove sensitive data
+      delete user.password_hash;
+      
+      const responseData = {
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          created_at: user.created_at
+        },
+        employeeProfile: user.employee_profile
+      };
+      
+      console.log('getProfile - Response data:', responseData);
+      
+      res.json({
+        success: true,
+        data: responseData
+      });
+    } catch (error) {
+      console.error('Get profile error:', error);
+      console.error('Get profile error stack:', error.stack);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch profile'
+      });
+    }
+  }
+
   static async getUserStats(req, res) {
     try {
       const stats = await UserService.getUserStats();

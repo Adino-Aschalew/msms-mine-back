@@ -17,12 +17,23 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   const location = useLocation();
 
   if (!isAuthenticated) {
+    console.log('[route] blocked: not authenticated', {
+      pathname: location.pathname,
+      requiredRole,
+      user: user ? { id: user?.id, role: user?.role } : null,
+    });
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const userRole = normalizeRole(user?.role);
 
   if (requiredRole && userRole !== requiredRole.toLowerCase()) {
+    console.log('[route] blocked: role mismatch', {
+      pathname: location.pathname,
+      requiredRole,
+      userRole,
+      rawRole: user?.role,
+    });
     return <Navigate to="/unauthorized" replace />;
   }
 

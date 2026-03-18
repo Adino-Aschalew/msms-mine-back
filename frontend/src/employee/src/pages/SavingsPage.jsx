@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiTrendingUp, FiDollarSign, FiCalendar, FiDownload, FiUpload, FiEdit2, FiAlertCircle } from 'react-icons/fi';
+import { FiTrendingUp, FiDollarSign, FiCalendar, FiDownload, FiUpload, FiEdit2, FiAlertCircle, FiInfo } from 'react-icons/fi';
 import StatCard from '../components/Shared/StatCard';
 import { LineChart } from '../components/Shared/Chart';
 import { savingsAPI } from '../../../shared/services/savingsAPI';
@@ -31,8 +31,6 @@ const SavingsPage = () => {
     datasets: []
   });
   
-  const { addNotification } = useNotifications();
-
   const parsedRate = parseInt(savingInput);
   const isRateValid = !isNaN(parsedRate) && parsedRate >= 15 && parsedRate <= 65;
   const estimatedDeduction = isRateValid ? (savingsData.salary * parsedRate / 100) : 0;
@@ -45,31 +43,57 @@ const SavingsPage = () => {
     try {
       setLoading(true);
       
-      // Get savings account data
-      const accountData = await savingsAPI.getSavingsAccount();
-      if (accountData) {
+      try {
+        // Get savings account data
+        const accountData = await savingsAPI.getSavingsAccount();
+        if (accountData) {
+          setSavingsData({
+            totalBalance: accountData.total_balance || 0,
+            currentRate: accountData.saving_percentage || 25,
+            monthlyDeduction: accountData.monthly_deduction || 0,
+            totalContributions: accountData.total_contributions || 0,
+            salary: accountData.salary || 0,
+          });
+          setSavingRate(accountData.saving_percentage || 25);
+          setSavingInput(String(accountData.saving_percentage || 25));
+        }
+      } catch (accountError) {
+        console.log('No savings account found, using defaults');
+        // User doesn't have a savings account yet, use defaults
         setSavingsData({
-          totalBalance: accountData.total_balance || 0,
-          currentRate: accountData.saving_percentage || 25,
-          monthlyDeduction: accountData.monthly_deduction || 0,
-          totalContributions: accountData.total_contributions || 0,
-          salary: accountData.salary || 0,
+          totalBalance: 0,
+          currentRate: 25,
+          monthlyDeduction: 0,
+          totalContributions: 0,
+          salary: 0,
         });
-        setSavingRate(accountData.saving_percentage || 25);
-        setSavingInput(String(accountData.saving_percentage || 25));
+        setSavingRate(25);
+        setSavingInput('25');
       }
 
-      // Get payroll history
-      const historyData = await savingsAPI.getSavingsTransactions(1, 10);
-      setPayrollHistory(historyData.transactions || []);
+      try {
+        // Get payroll history
+        const historyData = await savingsAPI.getSavingsTransactions(1, 10);
+        setPayrollHistory(historyData.transactions || []);
+      } catch (historyError) {
+        console.log('No transaction history found');
+        setPayrollHistory([]);
+      }
 
-      // Get withdrawal requests
-      const withdrawalData = await savingsAPI.getSavingsTransactions(1, 10, { type: 'withdrawal' });
-      setWithdrawalRequests(withdrawalData.transactions || []);
+      try {
+        // Get withdrawal requests
+        console.log('Fetching withdrawal requests...');
+        const withdrawalData = await savingsAPI.getSavingsTransactions(1, 10, { transaction_type: 'withdrawal' });
+        console.log('Withdrawal data received:', withdrawalData);
+        setWithdrawalRequests(withdrawalData.transactions || []);
+      } catch (withdrawalError) {
+        console.log('No withdrawal requests found, using empty array:', withdrawalError);
+        setWithdrawalRequests([]);
+      }
 
       // Generate growth data (mock for now)
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const currentBalance = accountData?.total_balance || 0;
+      const currentBalance = savingsData.totalBalance || 0;
       const growthData = months.map((month, index) => {
         const balance = currentBalance - (11 - index) * 1000;
         return Math.max(0, balance + Math.random() * 500);
@@ -90,11 +114,8 @@ const SavingsPage = () => {
       });
 
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Failed to Load Data',
-        message: error.message || 'Could not load savings data',
-      });
+      console.error('Failed to load savings data:', error);
+      // Could show error message in UI instead
     } finally {
       setLoading(false);
     }
@@ -123,18 +144,10 @@ const SavingsPage = () => {
         monthlyDeduction: (prev.salary * parsedRate / 100)
       }));
       
-      addNotification({
-        type: 'success',
-        title: 'Saving Rate Updated',
-        message: `Your saving rate has been set to ${parsedRate}%`,
-      });
+      console.log(`Saving rate updated to ${parsedRate}%`);
       
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Update Failed',
-        message: error.message || 'Could not update saving rate',
-      });
+      console.error('Failed to update saving rate:', error);
     } finally {
       setLoading(false);
     }
@@ -156,21 +169,12 @@ const SavingsPage = () => {
       setWithdrawalForm({ reason: '', supportingDocument: null, confirmation: false });
       setShowWithdrawalSuccess(true);
       
-      addNotification({
-        type: 'success',
-        title: 'Withdrawal Request Submitted',
-        message: 'Your withdrawal request has been submitted for approval',
-      });
+      console.log('Withdrawal request submitted successfully');
       
-      // Reload data
       await loadSavingsData();
       
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Withdrawal Failed',
-        message: error.message || 'Could not submit withdrawal request',
-      });
+      console.error('Failed to submit withdrawal request:', error);
     } finally {
       setLoading(false);
     }
@@ -204,12 +208,27 @@ const SavingsPage = () => {
         <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your payroll-deducted savings</p>
       </div>
 
+      {/* Show message if no savings account exists */}
+      {savingsData.totalBalance === 0 && savingsData.salary === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-center space-x-3">
+            <FiInfo className="w-6 h-6 text-blue-600" />
+            <div>
+              <h3 className="text-lg font-medium text-blue-900">No Savings Account Found</h3>
+              <p className="text-blue-700 mt-1">
+                You don't have a savings account yet. Contact HR to set up your payroll-deducted savings account.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Savings Balance"
           value={`$${savingsData.totalBalance.toLocaleString()}`}
-          change="+$2,500 this month"
-          changeType="positive"
+          change={savingsData.totalBalance > 0 ? "+$2,500 this month" : "No activity yet"}
+          changeType={savingsData.totalBalance > 0 ? "positive" : "neutral"}
           icon={<FiTrendingUp className="w-6 h-6" />}
           color="success"
         />
@@ -224,7 +243,7 @@ const SavingsPage = () => {
         <StatCard
           title="Monthly Deduction"
           value={`$${savingsData.monthlyDeduction.toLocaleString()}`}
-          change="Next: March 31"
+          change={savingsData.monthlyDeduction > 0 ? "Next: March 31" : "No deductions yet"}
           changeType="neutral"
           icon={<FiCalendar className="w-6 h-6" />}
           color="warning"
@@ -232,7 +251,7 @@ const SavingsPage = () => {
         <StatCard
           title="Total Contributions"
           value={`$${savingsData.totalContributions.toLocaleString()}`}
-          change="Since joining"
+          change={savingsData.totalContributions > 0 ? "Since joining" : "No contributions yet"}
           changeType="neutral"
           icon={<FiDownload className="w-6 h-6" />}
           color="primary"

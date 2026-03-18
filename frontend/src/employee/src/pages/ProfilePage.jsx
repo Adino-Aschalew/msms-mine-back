@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   FiUser,
   FiMail,
@@ -27,6 +27,7 @@ import {
   FiCheck
 } from 'react-icons/fi';
 import { useAuth } from '../../../shared/contexts/AuthContext';
+import { employeeAPI } from '../../../shared/services/employeeAPI';
 import Button from '../components/Shared/Button';
 import Input from '../components/Shared/Input';
 import Modal from '../components/Shared/Modal';
@@ -36,6 +37,8 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const avatarInputRef = useRef(null);
 
   const handleAvatarUpload = (e) => {
@@ -58,18 +61,18 @@ const ProfilePage = () => {
     confirmPassword: '',
   });
   const [formData, setFormData] = useState({
-    fullName: user?.name || 'John Doe',
-    email: user?.email || 'employee@company.com',
-    phone: '+1234567890',
-    address: '123 Main St, City, State 12345',
-    dateOfBirth: '1990-01-01',
-    emergencyContact: 'Jane Doe - +1234567891',
-    bio: 'Senior software developer with 5+ years of experience in full-stack development.',
-    department: user?.department || 'Engineering',
-    position: user?.position || 'Senior Developer',
-    employeeId: user?.employeeId || 'EMP001',
-    startDate: 'January 15, 2022',
-    employmentType: 'Full-time',
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    dateOfBirth: '',
+    emergencyContact: '',
+    bio: '',
+    department: '',
+    position: '',
+    employeeId: '',
+    startDate: '',
+    employmentType: '',
   });
 
   const handleSave = async () => {
@@ -141,18 +144,51 @@ const ProfilePage = () => {
     { id: 'security', label: 'Security', icon: FiShield },
   ];
 
-  const stats = [
-    { label: 'Years of Service', value: '3', icon: FiClock, color: 'blue' },
-    { label: 'Projects Completed', value: '47', icon: FiTarget, color: 'green' },
-    { label: 'Performance Score', value: '4.8', icon: FiTrendingUp, color: 'purple' },
-    { label: 'Team Size', value: '12', icon: FiUsers, color: 'orange' },
-  ];
+  const [stats, setStats] = useState([]);
 
-  const achievements = [
-    { title: 'Employee of the Year', date: '2023', icon: FiAward, color: 'yellow' },
-    { title: 'Innovation Award', date: '2022', icon: FiZap, color: 'blue' },
-    { title: 'Team Excellence', date: '2023', icon: FiUsers, color: 'green' },
-  ];
+  const [achievements, setAchievements] = useState([]);
+
+  const loadProfileData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const profileResponse = await employeeAPI.getProfile();
+      const profileData = profileResponse.data || profileResponse;
+      
+      // Update form data with real backend data
+      setFormData({
+        fullName: profileData.employeeProfile?.first_name && profileData.employeeProfile?.last_name 
+          ? `${profileData.employeeProfile.first_name} ${profileData.employeeProfile.last_name}`
+          : profileData.user?.name || user?.name || 'N/A',
+        email: profileData.user?.email || user?.email || 'N/A',
+        phone: profileData.employeeProfile?.phone || 'N/A',
+        address: profileData.employeeProfile?.address || 'N/A',
+        dateOfBirth: profileData.employeeProfile?.date_of_birth ? 
+          new Date(profileData.employeeProfile.date_of_birth).toISOString().split('T')[0] : 'N/A',
+        emergencyContact: profileData.employeeProfile?.emergency_contact || 'N/A',
+        bio: profileData.employeeProfile?.bio || 'N/A',
+        department: profileData.employeeProfile?.department || 'N/A',
+        position: profileData.employeeProfile?.position || 'N/A',
+        employeeId: profileData.employeeProfile?.employee_id || 'N/A',
+        startDate: profileData.employeeProfile?.hire_date ? 
+          new Date(profileData.employeeProfile.hire_date).toLocaleDateString() : 'N/A',
+        employmentType: profileData.employeeProfile?.employment_type || 'N/A',
+      });
+
+      // Update achievements with real data (if available)
+      setAchievements([]); // No achievements in user profile yet
+
+    } catch (error) {
+      console.error('Failed to load profile data:', error);
+      setError('Failed to load profile data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">

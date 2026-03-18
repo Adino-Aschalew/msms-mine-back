@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FiUsers, FiPlus, FiSearch, FiEdit, FiTrash2, FiHome, FiUser, FiFile, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { guarantorsAPI } from '../../../shared/services/guarantorsAPI';
 
 const mockEmployees = [
   { id: 'EMP001', fullName: 'John Doe', email: 'john.doe@company.com', department: 'Engineering', position: 'Senior Developer' },
@@ -56,54 +57,64 @@ const GuarantorsPage = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const [internalGuarantors, setInternalGuarantors] = useState([
-    {
-      id: 1,
-      employeeId: 'EMP002',
-      fullName: 'Jane Smith',
-      email: 'jane.smith@company.com',
-      department: 'Marketing',
-      position: 'Marketing Manager',
-      phoneNumber: '+1234567890',
-      relationship: 'Colleague',
-      status: 'active',
-      addedDate: '2024-01-15',
-      loansGuaranteed: 2,
-    },
-    {
-      id: 2,
-      employeeId: 'EMP003',
-      fullName: 'Mike Johnson',
-      email: 'mike.johnson@company.com',
-      department: 'Finance',
-      position: 'Senior Accountant',
-      phoneNumber: '+1234567891',
-      relationship: 'Friend',
-      status: 'active',
-      addedDate: '2023-12-10',
-      loansGuaranteed: 1,
-    },
-  ]);
+  useEffect(() => {
+    loadGuarantors();
+  }, []);
 
-  const [externalGuarantors, setExternalGuarantors] = useState([
-    {
-      id: 3,
-      fullName: 'Robert Brown',
-      email: 'robert.brown@email.com',
-      phoneNumber: '+1234567892',
-      employer: 'Tech Solutions Inc.',
-      jobPosition: 'Software Engineer',
-      monthlySalary: 8000,
-      workAddress: '456 Tech Ave, Silicon Valley, CA',
-      homeAddress: '789 Home St, San Francisco, CA',
-      relationship: 'Family Friend',
-      status: 'active',
-      addedDate: '2024-02-01',
-      loansGuaranteed: 1,
-      idDocument: 'ID_Doc_001.pdf',
-      employmentProof: 'Emp_Proof_001.pdf',
-    },
-  ]);
+  const loadGuarantors = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [internalData, externalData] = await Promise.all([
+        guarantorsAPI.getGuarantors({ type: 'internal' }),
+        guarantorsAPI.getGuarantors({ type: 'external' })
+      ]);
+      
+      setInternalGuarantors(internalData?.data || []);
+      setExternalGuarantors(externalData?.data || []);
+    } catch (err) {
+      console.error('Failed to load guarantors:', err);
+      setError('Failed to load guarantors. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const results = await Promise.all([
+        guarantorsAPI.getGuarantors({ type: 'internal', search: searchTerm }),
+        guarantorsAPI.getGuarantors({ type: 'external', search: searchTerm })
+      ]);
+      
+      setInternalGuarantors(results[0]?.data || []);
+      setExternalGuarantors(results[1]?.data || []);
+    } catch (err) {
+      console.error('Failed to search guarantors:', err);
+      setError('Failed to search guarantors. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (guarantorId, guarantorName) => {
+    try {
+      await guarantorsAPI.deleteGuarantor(guarantorId);
+      setDeleteModal({ isOpen: false, guarantorId: null, guarantorName: '' });
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+      
+      // Reload data
+      await loadGuarantors();
+    } catch (err) {
+      console.error('Failed to delete guarantor:', err);
+      setError('Failed to delete guarantor. Please try again.');
+    }
+  };
 
   const [formData, setFormData] = useState({
     type: 'internal',
@@ -113,18 +124,9 @@ const GuarantorsPage = () => {
     department: '',
     position: '',
     phoneNumber: '',
-    workPhone: '',
     relationship: '',
-    employer: '',
-    jobPosition: '',
-    monthlySalary: '',
-    workAddress: '',
-    homeAddress: '',
-    city: '',
-    kebele: '',
-    nationality: 'Ethiopian',
-    idDocument: null,
-    employmentProof: null,
+    status: 'active',
+    addedDate: ''
   });
 
   const handleInputChange = (field, value) => {
@@ -275,19 +277,15 @@ const GuarantorsPage = () => {
     setShowAddForm(true);
   };
 
-  const handleDelete = (id, name) => {
-    setDeleteModal({ isOpen: true, guarantorId: id, guarantorName: name });
-  };
-
   const confirmDelete = () => {
     setInternalGuarantors(prev => prev.filter(g => g.id !== deleteModal.guarantorId));
     setExternalGuarantors(prev => prev.filter(g => g.id !== deleteModal.guarantorId));
     setDeleteModal({ isOpen: false, guarantorId: null, guarantorName: '' });
   };
 
-  const filteredInternalGuarantors = internalGuarantors.filter(g =>
-    g.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    g.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInternalGuarantors = internalGuarantors.filter(guarantor =>
+    guarantor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    guarantor.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredExternalGuarantors = externalGuarantors.filter(g =>

@@ -46,14 +46,23 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
+      console.log('[auth] login start', { identifier, role });
       const response = await authAPI.login(identifier, password, role);
+      console.log('[auth] login success', {
+        hasToken: !!response?.token,
+        hasRefreshToken: !!response?.refreshToken,
+        userRole: response?.user?.role,
+        userId: response?.user?.id,
+      });
       
       // Set tokens in API client
       const apiClient = (await import('../services/api')).default;
       apiClient.setTokens(response.token, response.refreshToken);
+      console.log('[auth] tokens saved to api client + localStorage');
       
       // Set user data
       setUser(response.user);
+      console.log('[auth] user state scheduled', { role: response?.user?.role });
       
       // Check if password change is required
       if (response.user.password_change_required) {
@@ -63,6 +72,7 @@ export const AuthProvider = ({ children }) => {
       
       return response.user;
     } catch (err) {
+      console.log('[auth] login error', err);
       const errorMessage = err.message || 'Login failed';
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -73,9 +83,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      console.log('[auth] logout called');
       // Clear tokens from API client
       const apiClient = (await import('../services/api')).default;
       apiClient.clearTokens();
+      console.log('[auth] tokens cleared');
       
       // Clear user state
       setUser(null);
@@ -127,11 +139,14 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUserProfile = async () => {
     try {
+      console.log('[auth] refreshUserProfile start');
       const response = await authAPI.getProfile();
+      console.log('[auth] refreshUserProfile success', { role: response?.role, id: response?.id });
       setUser(response);
       return response;
     } catch (err) {
       console.error('Profile refresh error:', err);
+      console.log('[auth] refreshUserProfile failed -> logout', err);
       // If token refresh fails, logout user
       await logout();
     }
