@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, Lock, Key, Smartphone, Mail, Eye, EyeOff, AlertTriangle, CheckCircle, Clock, User, Save } from 'lucide-react';
+import { authAPI } from '../../../shared/services/authAPI';
 
 const AccountSecurity = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -8,6 +9,9 @@ const AccountSecurity = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
 
@@ -46,17 +50,53 @@ const AccountSecurity = () => {
     }
   ];
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      alert('Passwords do not match!');
+    setError('');
+    setSuccess('');
+    
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('All password fields are required');
       return;
     }
-    // Password change logic here
-    console.log('Password changed');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      setError('New password must be at least 8 characters long');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const response = await authAPI.changePassword({
+        currentPassword,
+        newPassword
+      });
+      
+      if (response.success) {
+        setSuccess('Password changed successfully! You will need to use your new password next time you login.');
+        // Clear form
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        
+        // Update last password change date
+        const today = new Date().toISOString().split('T')[0];
+        securitySettings.lastPasswordChange = today;
+      } else {
+        setError(response.message || 'Failed to change password');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to change password. Please check your current password and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTwoFactorToggle = () => {
@@ -123,6 +163,27 @@ const AccountSecurity = () => {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Change Password
           </h3>
+          
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <div className="flex">
+                <AlertTriangle className="h-5 w-5 text-red-400 mr-2" />
+                <p className="text-sm text-red-800">{error}</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <div className="flex">
+                <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+                <p className="text-sm text-green-800">{success}</p>
+              </div>
+            </div>
+          )}
+          
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -216,9 +277,22 @@ const AccountSecurity = () => {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary">
-              <Save className="h-4 w-4 mr-2" />
-              Update Password
+            <button 
+              type="submit" 
+              className="btn btn-primary w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Updating Password...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Update Password
+                </>
+              )}
             </button>
           </form>
         </div>

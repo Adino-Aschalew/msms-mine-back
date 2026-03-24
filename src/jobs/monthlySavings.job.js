@@ -92,9 +92,9 @@ class MonthlySavingsJob {
       const { query } = require('../config/database');
       const [payroll] = await query(`
         SELECT net_salary 
-        FROM payroll_records 
+        FROM payroll_details 
         WHERE user_id = ? 
-        ORDER BY pay_period DESC 
+        ORDER BY created_at DESC 
         LIMIT 1
       `, [account.user_id]);
       

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search,
   Filter,
@@ -17,88 +17,48 @@ import {
   MoreHorizontal,
   UserPlus,
   Download,
-  ChevronRight
+  ChevronRight,
+  X,
+  Loader2
 } from 'lucide-react';
+import { financeAPI } from '../../../shared/services/financeAPI';
 
 const FinanceEmployees = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [departments, setDepartments] = useState(['Engineering', 'Marketing', 'Sales', 'Finance', 'HR', 'Operations']);
 
-  // Mock employees data
-  const employees = [
-    {
-      id: 'EMP001',
-      name: 'John Smith',
-      email: 'john.smith@company.com',
-      phone: '+1 (555) 123-4567',
-      department: 'Engineering',
-      position: 'Senior Software Engineer',
-      salary: 95000,
-      savingsBalance: 12500,
-      joinDate: '2022-03-15',
-      status: 'active',
-      payrollHistory: [
-        { date: '2024-03-15', contribution: 950, balance: 12500 },
-        { date: '2024-02-15', contribution: 950, balance: 11550 },
-        { date: '2024-01-15', contribution: 950, balance: 10600 },
-        { date: '2023-12-15', contribution: 950, balance: 9650 }
-      ]
-    },
-    {
-      id: 'EMP002',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      phone: '+1 (555) 234-5678',
-      department: 'Marketing',
-      position: 'Marketing Manager',
-      salary: 85000,
-      savingsBalance: 18750,
-      joinDate: '2021-07-20',
-      status: 'active',
-      payrollHistory: [
-        { date: '2024-03-15', contribution: 850, balance: 18750 },
-        { date: '2024-02-15', contribution: 850, balance: 17900 },
-        { date: '2024-01-15', contribution: 850, balance: 17050 },
-        { date: '2023-12-15', contribution: 850, balance: 16200 }
-      ]
-    },
-    {
-      id: 'EMP003',
-      name: 'Mike Davis',
-      email: 'mike.davis@company.com',
-      phone: '+1 (555) 345-6789',
-      department: 'Sales',
-      position: 'Sales Representative',
-      salary: 65000,
-      savingsBalance: 8900,
-      joinDate: '2023-01-10',
-      status: 'active',
-      payrollHistory: [
-        { date: '2024-03-15', contribution: 650, balance: 8900 },
-        { date: '2024-02-15', contribution: 650, balance: 8250 },
-        { date: '2024-01-15', contribution: 650, balance: 7600 },
-        { date: '2023-12-15', contribution: 650, balance: 6950 }
-      ]
+  useEffect(() => {
+    fetchEmployees();
+  }, [searchQuery, filterDepartment]);
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const response = await financeAPI.getEmployees({
+        search: searchQuery,
+        department: filterDepartment === 'all' ? '' : filterDepartment
+      });
+      
+      if (response.success) {
+        setEmployees(response.data.employees || []);
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+      setError('Failed to load employees.');
+      setLoading(false);
     }
-  ];
+  };
 
-  const departments = ['Engineering', 'Marketing', 'Sales', 'Finance', 'HR', 'Operations'];
-
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         employee.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesDepartment = filterDepartment === 'all' || employee.department === filterDepartment;
-    
-    return matchesSearch && matchesDepartment;
-  });
-
-  const totalSavings = filteredEmployees.reduce((sum, emp) => sum + emp.savingsBalance, 0);
-  const totalPayroll = filteredEmployees.reduce((sum, emp) => sum + emp.salary, 0);
-  const averageSavings = filteredEmployees.length > 0 ? totalSavings / filteredEmployees.length : 0;
+  const totalSavings = employees.reduce((sum, emp) => sum + (parseFloat(emp.savingsBalance) || 0), 0);
+  const totalPayroll = employees.reduce((sum, emp) => sum + (parseFloat(emp.salary) || 0), 0);
+  const averageSavings = employees.length > 0 ? totalSavings / employees.length : 0;
 
   const EmployeeCard = ({ employee }) => {
     const contributionRate = ((employee.savingsBalance / (employee.salary * 2)) * 100).toFixed(1);
@@ -199,7 +159,7 @@ const FinanceEmployees = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Employees</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredEmployees.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{employees.length}</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-lg dark:bg-blue-900/20">
               <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -281,11 +241,24 @@ const FinanceEmployees = () => {
       </div>
 
       {/* Employee Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEmployees.map((employee) => (
-          <EmployeeCard key={employee.id} employee={employee} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-2" />
+          <p className="text-gray-500">Loading employees...</p>
+        </div>
+      ) : employees.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {employees.map((employee) => (
+            <EmployeeCard key={employee.id} employee={employee} />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center dark:bg-gray-800 dark:border-gray-700">
+          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No employees found</h3>
+          <p className="text-gray-500">Try adjusting your search or filters.</p>
+        </div>
+      )}
 
       {/* Employee Details Modal */}
       {showDetails && selectedEmployee && (

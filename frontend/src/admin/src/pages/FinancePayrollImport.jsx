@@ -15,8 +15,10 @@ import {
   ChevronDown,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
+import { financeAPI } from '../../../shared/services/financeAPI';
 
 const FinancePayrollImport = () => {
   const [dragActive, setDragActive] = useState(false);
@@ -24,23 +26,13 @@ const FinancePayrollImport = () => {
   const [uploadStatus, setUploadStatus] = useState('idle'); // idle, uploading, success, error
   const [validationResults, setValidationResults] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef(null);
 
-  // Mock payroll data template
+  // Mock payroll data template (real CSV would be better)
   const payrollTemplate = [
     ['Employee ID', 'Employee Name', 'Salary', 'Savings Contribution', 'Tax', 'Net Pay', 'Payroll Date'],
     ['EMP001', 'John Smith', '5000', '500', '750', '3750', '2024-03-15'],
-    ['EMP002', 'Sarah Johnson', '6000', '600', '900', '4500', '2024-03-15'],
-    ['EMP003', 'Mike Davis', '4500', '450', '675', '3375', '2024-03-15']
-  ];
-
-  // Mock employee database
-  const employeeDatabase = [
-    { id: 'EMP001', name: 'John Smith', currentSavings: 12500 },
-    { id: 'EMP002', name: 'Sarah Johnson', currentSavings: 18750 },
-    { id: 'EMP003', name: 'Mike Davis', currentSavings: 8900 },
-    { id: 'EMP004', name: 'Emily Chen', currentSavings: 15600 },
-    { id: 'EMP005', name: 'David Wilson', currentSavings: 22100 }
   ];
 
   const handleDrag = (e) => {
@@ -64,10 +56,11 @@ const FinancePayrollImport = () => {
   };
 
   const handleFile = (file) => {
-    if (file && file.type === 'text/csv') {
+    if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
       setSelectedFile(file);
       setUploadStatus('idle');
       setValidationResults(null);
+      setErrorMessage('');
     } else {
       alert('Please upload a CSV file');
     }
@@ -83,29 +76,31 @@ const FinancePayrollImport = () => {
     if (!selectedFile) return;
 
     setUploadStatus('uploading');
+    setErrorMessage('');
 
-    // Simulate file processing
-    setTimeout(() => {
-      // Mock validation results
-      const mockValidationResults = {
-        totalRecords: 150,
-        successful: 147,
-        failed: 3,
-        failedRecords: [
-          { row: 45, error: 'Employee ID not found', data: { employeeId: 'EMP999', name: 'Invalid Employee' } },
-          { row: 89, error: 'Invalid salary amount', data: { employeeId: 'EMP002', salary: 'invalid' } },
-          { row: 123, error: 'Invalid payroll date', data: { employeeId: 'EMP003', date: '2024-13-45' } }
-        ],
-        processedRecords: [
-          { employeeId: 'EMP001', name: 'John Smith', previousSavings: 12500, newSavings: 13000, contribution: 500 },
-          { employeeId: 'EMP002', name: 'Sarah Johnson', previousSavings: 18750, newSavings: 19350, contribution: 600 },
-          { employeeId: 'EMP003', name: 'Mike Davis', previousSavings: 8900, newSavings: 9350, contribution: 450 }
-        ]
-      };
-
-      setValidationResults(mockValidationResults);
-      setUploadStatus('success');
-    }, 2000);
+    try {
+      const response = await financeAPI.uploadPayroll(selectedFile);
+      
+      if (response.success) {
+        // Backend returns result in data
+        const result = response.data;
+        setValidationResults({
+          totalRecords: result.totalProcessed || result.processedCount || 0,
+          successful: result.successCount || result.processedCount || 0,
+          failed: result.failedCount || 0,
+          failedRecords: result.errors || [],
+          processedRecords: result.processedRows || []
+        });
+        setUploadStatus('success');
+      } else {
+        setUploadStatus('error');
+        setErrorMessage(response.message || 'Failed to process payroll file');
+      }
+    } catch (err) {
+      console.error('Payroll upload error:', err);
+      setUploadStatus('error');
+      setErrorMessage(err.message || 'An unexpected error occurred during upload');
+    }
   };
 
   const downloadTemplate = () => {
@@ -150,6 +145,7 @@ const FinancePayrollImport = () => {
     setUploadStatus('idle');
     setValidationResults(null);
     setShowDetails(false);
+    setErrorMessage('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -212,9 +208,12 @@ const FinancePayrollImport = () => {
                         </div>
                       )}
                       {uploadStatus === 'error' && (
-                        <div className="flex items-center gap-1 text-red-600">
-                          <XCircle className="h-4 w-4" />
-                          <span className="text-sm">Upload failed</span>
+                        <div className="flex flex-col items-center gap-1 text-red-600">
+                          <div className="flex items-center gap-1">
+                            <XCircle className="h-4 w-4" />
+                            <span className="text-sm">Upload failed</span>
+                          </div>
+                          {errorMessage && <p className="text-xs mt-1 max-w-xs">{errorMessage}</p>}
                         </div>
                       )}
                     </div>

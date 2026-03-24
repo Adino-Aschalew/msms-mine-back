@@ -151,7 +151,8 @@ class UserModel {
       console.error('findByIdWithProfile - Error stack:', error.stack);
       throw error;
     }
-  
+  }
+
   static async updateLastLogin(userId) {
     const updateQuery = `UPDATE users SET last_login = NOW() WHERE id = ?`;
     await query(updateQuery, [userId]);

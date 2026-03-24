@@ -3,7 +3,8 @@ import {
   Users, 
   UserMinus, 
   Briefcase, 
-  Clock 
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -28,6 +29,7 @@ import StatCard from '../components/Dashboard/StatCard';
 import ActivityFeed from '../components/Dashboard/ActivityFeed';
 import { DepartmentChart, AttendanceChart, DiversityChart } from '../components/Dashboard/AnalyticsCharts';
 import SortableWidget from '../components/Dashboard/SortableWidget';
+import SuccessModal from '../components/Dashboard/SuccessModal';
 
 // Initial Widgets State
 const initialTopWidgets = [
@@ -62,7 +64,17 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [updating, setUpdating] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { user } = useAuth();
+
+  // Move hooks to the top before any conditional returns
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchDashboardData();
@@ -71,13 +83,58 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await hrAPI.getDashboardStats();
-      setDashboardData(response.data);
+      setDashboardData(response.data?.data || response.data || {});
     } catch (err) {
-      setError('Failed to fetch HR dashboard data');
       console.error('HR Dashboard error:', err);
+      setError('Failed to fetch HR dashboard data. Please try again.');
+      // Set default data to prevent UI crashes
+      setDashboardData({
+        totalEmployees: 0,
+        activeEmployees: 0,
+        employeesOnLeave: 0,
+        openPositions: 0,
+        pendingApprovals: 0,
+        employeeGrowthRate: 0,
+        leaveRate: 0,
+        departmentData: [],
+        attendanceData: [],
+        diversityData: []
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateDashboard = async () => {
+    try {
+      setUpdating(true);
+      
+      // Create stats object to update
+      const statsToUpdate = {
+        totalEmployees: dashboardData?.totalEmployees || 0,
+        activeEmployees: dashboardData?.activeEmployees || 0,
+        employeeGrowthRate: dashboardData?.employeeGrowthRate || 0,
+        leaveRate: dashboardData?.leaveRate || 0,
+        openPositions: dashboardData?.openPositions || 0,
+        pendingApprovals: dashboardData?.pendingApprovals || 0,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      const response = await hrAPI.updateDashboardStats(statsToUpdate);
+      
+      // Refresh dashboard data
+      await fetchDashboardData();
+      
+      // Show success modal
+      setShowSuccessModal(true);
+      
+    } catch (err) {
+      console.error('Update dashboard error:', err);
+      setError('Failed to update dashboard');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -128,13 +185,6 @@ export default function DashboardPage() {
     );
   }
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
   const handleDragEndTop = (event) => {
     const { active, over } = event;
     if (active.id !== over.id) {
@@ -164,6 +214,15 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard Overview</h1>
           <p className="text-muted-foreground text-sm">Welcome back, {user?.first_name || 'HR Admin'}. Here is what is happening today.</p>
         </div>
+        
+        <button 
+          onClick={updateDashboard}
+          disabled={updating || !dashboardData}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors shadow-sm font-medium text-sm w-full sm:w-auto justify-center"
+        >
+          <RefreshCw className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`} />
+          <span>{updating ? 'Updating...' : 'Update Dashboard'}</span>
+        </button>
       </div>
       
       {/* Top STATS Row Editable via Drag-and-Drop */}
@@ -207,6 +266,14 @@ export default function DashboardPage() {
           </SortableContext>
         </div>
       </DndContext>
+
+      {/* Success Modal */}
+      <SuccessModal 
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Dashboard Updated Successfully!"
+        message="Your dashboard statistics have been updated and saved to the database. The latest data is now displayed."
+      />
     </div>
   );
 }

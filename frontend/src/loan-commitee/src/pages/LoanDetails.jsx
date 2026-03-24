@@ -25,6 +25,7 @@ const LoanDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [user] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [error, setError] = useState(null);
   const [loanData, setLoanData] = useState(null);
   const [decision, setDecision] = useState('');
@@ -37,41 +38,41 @@ const LoanDetails = () => {
     const fetchLoanDetails = async () => {
       try {
         setLoading(true);
-        // Assuming the ID from LoanRequests is passed here
-        const data = await loansAPI.getLoanApplication(id);
+        const data = await loanCommitteeAPI.getApplicationById(id);
+        const app = data.data;
         const mappedData = {
-          id: data.data.id,
+          id: app.id,
           employee: {
-            employeeId: data.data.employee_id,
-            fullName: `${data.data.first_name} ${data.data.last_name}`,
-            department: data.data.department || 'Not specified',
-            position: data.data.job_grade || 'Not specified',
-            employmentDate: data.data.hire_date?.split('T')[0] || '2020-01-01'
+            employeeId: app.employee_id,
+            fullName: `${app.first_name} ${app.last_name}`,
+            department: app.department || 'Not specified',
+            position: app.job_grade || 'Not specified',
+            employmentDate: app.hire_date?.split('T')[0] || 'N/A'
           },
           salary: {
-            monthlySalary: data.data.monthly_payment ? data.data.monthly_payment * 3 : 8000,
-            existingDeductions: 0,
-            availableSalary: data.data.monthly_payment ? data.data.monthly_payment * 3 : 6800
+            monthlySalary: parseFloat(app.monthly_income || 0),
+            existingDeductions: parseFloat(app.avg_balance || 0), // Using avg balance as proxy for debt
+            availableSalary: parseFloat(app.monthly_income || 0) * 0.7 // Proxy
           },
           savings: {
-            savingsBalance: 25000,
-            monthlyContribution: 1500
+            savingsBalance: parseFloat(app.savings_balance || 0),
+            monthlyContribution: (parseFloat(app.total_savings_contributions || 0) / 12) || 0 // Proxy
           },
           loanRequest: {
-            loanType: data.data.purpose || 'Personal',
-            requestedAmount: data.data.requested_amount || 0,
-            loanPurpose: data.data.purpose || 'Not specified',
-            loanDuration: data.data.repayment_duration_months || 24
+            loanType: app.purpose || 'Personal',
+            requestedAmount: parseFloat(app.requested_amount || 0),
+            loanPurpose: app.purpose || 'Not specified',
+            loanDuration: app.repayment_duration_months || 24
           },
           guarantor: {
-            name: data.data.guarantor_details ? JSON.parse(data.data.guarantor_details)?.fullName : 'Jane Smith',
-            department: 'Marketing',
-            salary: 6500,
-            savingsBalance: 18000,
-            existingGuarantees: 1
+            name: app.guarantor_name || 'Not specified',
+            department: 'Not specified',
+            salary: parseFloat(app.guarantor_monthly_income || 0),
+            savingsBalance: parseFloat(app.guarantor_savings_balance || 0),
+            existingGuarantees: 0
           },
-          submissionDate: data.data.created_at?.split('T')[0] || '2024-03-15',
-          status: data.data.status?.toLowerCase() || 'pending'
+          submissionDate: app.created_at?.split('T')[0] || 'N/A',
+          status: app.status?.toLowerCase() || 'pending'
         };
         
         setLoanData(mappedData);

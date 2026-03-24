@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -32,6 +32,8 @@ import {
   RefreshCw,
   Info
 } from 'lucide-react';
+import { loanCommitteeAPI } from '../../../shared/services/loansAPI';
+import { useAuth } from '../../../shared/contexts/AuthContext';
 
 const Disbursements = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,63 +45,28 @@ const Disbursements = () => {
   const [selectedDisbursements, setSelectedDisbursements] = useState(new Set());
   const [processingActions, setProcessingActions] = useState(new Set());
   const [modal, setModal] = useState({ show: false, type: '', data: null });
-  const [disbursements, setDisbursements] = useState([
-    {
-      id: 'LN-2024-001',
-      employee: 'John Doe',
-      department: 'Engineering',
-      approvedAmount: 15000,
-      disbursementDate: '2024-03-20',
-      paymentMethod: 'bank_transfer',
-      installmentAmount: 625,
-      repaymentPeriod: 24,
-      status: 'pending'
-    },
-    {
-      id: 'LN-2024-002',
-      employee: 'Jane Smith',
-      department: 'Marketing',
-      approvedAmount: 8000,
-      disbursementDate: '2024-03-18',
-      paymentMethod: 'mobile_money',
-      installmentAmount: 400,
-      repaymentPeriod: 20,
-      status: 'disbursed'
-    },
-    {
-      id: 'LN-2024-003',
-      employee: 'Mike Johnson',
-      department: 'Sales',
-      approvedAmount: 25000,
-      disbursementDate: '2024-03-22',
-      paymentMethod: 'bank_transfer',
-      installmentAmount: 1042,
-      repaymentPeriod: 24,
-      status: 'pending'
-    },
-    {
-      id: 'LN-2024-004',
-      employee: 'David Brown',
-      department: 'Finance',
-      approvedAmount: 18000,
-      disbursementDate: '2024-03-15',
-      paymentMethod: 'check',
-      installmentAmount: 750,
-      repaymentPeriod: 24,
-      status: 'failed'
-    },
-    {
-      id: 'LN-2024-005',
-      employee: 'Emily Davis',
-      department: 'Operations',
-      approvedAmount: 45000,
-      disbursementDate: '2024-03-25',
-      paymentMethod: 'bank_transfer',
-      installmentAmount: 1875,
-      repaymentPeriod: 24,
-      status: 'pending'
+  const [disbursements, setDisbursements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDisbursements = async () => {
+    try {
+      setLoading(true);
+      const res = await loanCommitteeAPI.getApprovedApplications();
+      if (res && res.data) {
+        setDisbursements(res.data);
+      }
+    } catch (err) {
+      console.error('Error fetching disbursements:', err);
+      setError('Failed to load disbursements data');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchDisbursements();
+  }, []);
 
   const statuses = [
     { value: 'all', label: 'All Statuses' },
@@ -162,7 +129,9 @@ const Disbursements = () => {
     setProcessingActions(prev => new Set(prev).add(`${id}-disburse`));
     
     try {
-      // Update disbursement status to disbursed using state setter
+      await loanCommitteeAPI.disburseLoan(id);
+      
+      // Update local state
       setDisbursements(prev => prev.map(d => 
         d.id === id 
           ? { ...d, status: 'disbursed', disbursementDate: new Date().toISOString().split('T')[0] }

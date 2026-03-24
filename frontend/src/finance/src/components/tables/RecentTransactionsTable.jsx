@@ -1,71 +1,43 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, ArrowRightLeft, MoreHorizontal } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isValid, parseISO } from 'date-fns';
+import { financeAPI } from '../../../../shared/services/financeAPI';
 
 const RecentTransactionsTable = ({ limit = 10 }) => {
-  const transactions = [
-    {
-      id: 'TRX001',
-      date: new Date(Date.now() - 1000 * 60 * 30),
-      type: 'income',
-      category: 'Salary',
-      account: 'Business Account',
-      amount: 45000,
-      status: 'completed',
-      description: 'Monthly salary payment',
-    },
-    {
-      id: 'TRX002',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      type: 'expense',
-      category: 'Office Rent',
-      account: 'Business Account',
-      amount: 5000,
-      status: 'completed',
-      description: 'Monthly office rent',
-    },
-    {
-      id: 'TRX003',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 4),
-      type: 'expense',
-      category: 'Software',
-      account: 'Credit Card',
-      amount: 1200,
-      status: 'completed',
-      description: 'Annual software license',
-    },
-    {
-      id: 'TRX004',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 6),
-      type: 'income',
-      category: 'Client Payment',
-      account: 'Business Account',
-      amount: 15000,
-      status: 'completed',
-      description: 'Project payment - ABC Corp',
-    },
-    {
-      id: 'TRX005',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 8),
-      type: 'transfer',
-      category: 'Transfer',
-      account: 'Business Account',
-      amount: 3000,
-      status: 'pending',
-      description: 'Transfer to savings account',
-    },
-  ].slice(0, limit);
+  const [transactions, setTransactions] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        const data = await financeAPI.getRecentTransactions(limit);
+        setTransactions(data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch transactions:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, [limit]);
+
+  if (loading) return <div className="p-4 text-center">Loading transactions...</div>;
 
   const getTypeIcon = (type) => {
-    switch (type) {
+    const normalizedType = String(type).toLowerCase();
+    switch (normalizedType) {
       case 'income':
+      case 'contribution':
         return <ArrowUpRight className="h-4 w-4 text-green-500" />;
       case 'expense':
+      case 'withdrawal':
+      case 'payment':
         return <ArrowDownRight className="h-4 w-4 text-red-500" />;
       case 'transfer':
         return <ArrowRightLeft className="h-4 w-4 text-blue-500" />;
       default:
-        return null;
+        return <ArrowRightLeft className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -107,7 +79,7 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
                       {transaction.id}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDistanceToNow(transaction.date, { addSuffix: true })}
+                      {transaction.date ? formatDistanceToNow(new Date(transaction.date), { addSuffix: true }) : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -127,14 +99,14 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
               </td>
               <td className="py-3 text-right">
                 <p className={`text-sm font-medium ${
-                  transaction.type === 'income' 
+                  ['income', 'contribution'].includes(String(transaction.type).toLowerCase())
                     ? 'text-green-600 dark:text-green-400' 
-                    : transaction.type === 'expense'
+                    : ['expense', 'withdrawal', 'payment'].includes(String(transaction.type).toLowerCase())
                     ? 'text-red-600 dark:text-red-400'
                     : 'text-blue-600 dark:text-blue-400'
                 }`}>
-                  {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : ''}
-                  ${transaction.amount.toLocaleString()}
+                  {['income', 'contribution'].includes(String(transaction.type).toLowerCase()) ? '+' : ['expense', 'withdrawal', 'payment'].includes(String(transaction.type).toLowerCase()) ? '-' : ''}
+                  ${parseFloat(transaction.amount || 0).toLocaleString()}
                 </p>
               </td>
               <td className="py-3">

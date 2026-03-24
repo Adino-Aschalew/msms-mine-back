@@ -20,14 +20,20 @@ ChartJS.register(
   Legend
 );
 
-const ExpenseChart = ({ dateRange }) => {
+const ExpenseChart = ({ dateRange, dashboardData }) => {
   const { theme } = useTheme();
 
+  const expenseBreakdown = dashboardData?.expenseBreakdown || [];
+
   const data = {
-    labels: ['Salaries', 'Office Rent', 'Marketing', 'Software', 'Utilities', 'Other'],
+    labels: expenseBreakdown.length > 0 
+      ? expenseBreakdown.map(e => e.category)
+      : ['Salaries', 'Office Rent', 'Marketing', 'Software', 'Utilities', 'Other'],
     datasets: [
       {
-        data: [45000, 12000, 8000, 6000, 3500, 4500],
+        data: expenseBreakdown.length > 0
+          ? expenseBreakdown.map(e => parseFloat(e.value || 0))
+          : [45000, 12000, 8000, 6000, 3500, 4500],
         backgroundColor: [
           'rgb(59, 130, 246)',
           'rgb(34, 197, 94)',

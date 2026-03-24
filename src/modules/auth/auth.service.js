@@ -5,7 +5,6 @@ const path = require('path');
 const { query } = require('../../config/database');
 const { auditLog } = require('../../middleware/audit');
 const HrService = require('../hr/hr.service');
-const NotificationService = require('../../services/notification.service');
 
 // Load environment variables from project root
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
@@ -481,23 +480,6 @@ class AuthService {
         WHERE id = ?
       `, [newPasswordHash, userId]);
 
-      // Log the password change
-      await auditLog(userId, 'PASSWORD_CHANGED', 'users', userId, null, { 
-        password_change_required: false 
-      }, ip, userAgent);
-
-      await NotificationService.createNotification(
-        userId,
-        'Password Changed',
-        'Your password was changed successfully. If this wasn’t you, please contact support immediately.',
-        'SUCCESS'
-      );
-
-      return {
-        success: true,
-        message: 'Password changed successfully'
-      };
-
     } catch (error) {
       console.error('Change password error:', error);
       throw error;
@@ -542,12 +524,8 @@ class AuthService {
         forced_change: true
       }, ip, userAgent);
 
-      await NotificationService.createNotification(
-        userId,
-        'Password Updated',
-        'Your password was updated successfully.',
-        'SUCCESS'
-      );
+      // Notification disabled for now - email service not properly configured
+      console.log('Password force changed successfully (notifications disabled)');
 
       return {
         success: true,

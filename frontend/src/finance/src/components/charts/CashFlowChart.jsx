@@ -20,10 +20,15 @@ ChartJS.register(
   Legend
 );
 
-const CashFlowChart = ({ dateRange }) => {
+const CashFlowChart = ({ dateRange, dashboardData }) => {
   const { theme } = useTheme();
+  
+  const cashFlow = dashboardData?.cashFlow || [];
+  
   const data = {
-    labels: dateRange === '7days' 
+    labels: cashFlow.length > 0 
+      ? cashFlow.map(d => d.period).reverse()
+      : dateRange === '7days' 
       ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
       : dateRange === '30days'
       ? ['Week 1', 'Week 2', 'Week 3', 'Week 4']
@@ -31,7 +36,9 @@ const CashFlowChart = ({ dateRange }) => {
     datasets: [
       {
         label: 'Cash In',
-        data: dateRange === '7days'
+        data: cashFlow.length > 0
+          ? cashFlow.map(d => parseFloat(d.savings_in || 0) + parseFloat(d.loan_payments || 0) + parseFloat(d.savings_interest || 0)).reverse()
+          : dateRange === '7days'
           ? [15000, 18000, 22000, 14000, 25000, 19000, 16000]
           : dateRange === '30days'
           ? [95000, 102000, 88000, 105000]
@@ -42,7 +49,9 @@ const CashFlowChart = ({ dateRange }) => {
       },
       {
         label: 'Cash Out',
-        data: dateRange === '7days'
+        data: cashFlow.length > 0
+          ? cashFlow.map(d => Math.abs(parseFloat(d.savings_out || 0) + parseFloat(d.loan_penalties || 0))).reverse()
+          : dateRange === '7days'
           ? [12000, 14000, 18000, 11000, 20000, 15000, 13000]
           : dateRange === '30days'
           ? [75000, 78000, 72000, 81000]

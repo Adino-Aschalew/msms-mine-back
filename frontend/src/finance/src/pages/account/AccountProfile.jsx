@@ -1,36 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, Camera, Save, Edit2, Upload, Briefcase, Building, CheckCircle, Shield, Award } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Camera, Save, Edit2, Upload, Briefcase, Building, CheckCircle, Shield, Award, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useTheme } from '../../contexts/ThemeContext';
+import { authAPI } from '../../../shared/services/authAPI';
 
 const AccountProfile = () => {
   const { theme } = useTheme();
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [profile, setProfile] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@company.com',
-    phone: '+1 (555) 123-4567',
-    jobTitle: 'Finance Manager',
-    department: 'Finance',
-    location: 'New York, NY',
-    bio: 'Experienced finance professional with expertise in financial analysis, budgeting, and strategic planning.',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    joinDate: '2022-03-15',
-    lastLogin: '2024-03-15 09:30 AM'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    jobTitle: '',
+    department: '',
+    location: '',
+    bio: '',
+    avatar: '',
+    joinDate: '',
+    lastLogin: ''
   });
 
   useEffect(() => {
-    if (user) {
-      setProfile(prev => ({ ...prev, avatar: user.avatar }));
-    }
-  }, [user]);
+    fetchProfile();
+  }, []);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Save logic here
-    console.log('Profile saved:', profile);
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.getProfile();
+      const profileData = response.data;
+      
+      // Map backend data to frontend state
+      setProfile({
+        firstName: profileData.first_name || '',
+        lastName: profileData.last_name || '',
+        email: profileData.email || '',
+        phone: profileData.phone || profileData.phone_number || '',
+        jobTitle: profileData.job_grade || profileData.role || '',
+        department: profileData.department || '',
+        location: profileData.address || '',
+        bio: profileData.bio || '',
+        avatar: profileData.avatar || user?.avatar || '',
+        joinDate: profileData.created_at || '',
+        lastLogin: profileData.last_login || ''
+      });
+    } catch (err) {
+      setError('Failed to load profile data');
+      console.error('Profile fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError('');
+      
+      const updateData = {
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        phone: profile.phone,
+        address: profile.location,
+        bio: profile.bio
+      };
+      
+      const response = await authAPI.updateProfile(updateData);
+      
+      if (response.success) {
+        setSuccess('Profile updated successfully!');
+        setIsEditing(false);
+        // Refresh profile data
+        await fetchProfile();
+      } else {
+        setError(response.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -52,9 +107,39 @@ const AccountProfile = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="p-8 min-h-screen bg-gray-50 dark:bg-slate-900">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading profile data...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 min-h-screen bg-gray-50 dark:bg-slate-900">
       <div className="w-full">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex">
+              <AlertTriangle className="h-5 w-5 text-red-400 mr-2" />
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Success Message */}
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex">
+              <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+              <p className="text-sm text-green-800">{success}</p>
+            </div>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center justify-between">
@@ -100,10 +185,20 @@ const AccountProfile = () => {
                   </button>
                   <button
                     onClick={handleSave}
-                    className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                    disabled={saving}
+                    className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                   >
-                    <Save className="h-5 w-5 mr-2" />
-                    Save Changes
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-5 w-5 mr-2" />
+                        Save Changes
+                      </>
+                    )}
                   </button>
                 </>
               )}

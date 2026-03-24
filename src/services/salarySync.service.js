@@ -3,20 +3,23 @@ const NotificationService = require('./notification.service');
 
 class SalarySyncService {
   static async processPayrollUpload(payrollData, uploadedBy) {
-    const connection = await transaction();
-    
-    try {
+    return transaction(async (connection) => {
       // Create payroll batch
       const batchInsertQuery = `
         INSERT INTO payroll_batches (batch_name, upload_user_id, total_employees, total_amount, payroll_date, status, file_path, created_at)
         VALUES (?, ?, ?, ?, CURRENT_DATE(), 'UPLOADED', 'csv_upload', NOW())
       `;
       
+      const totalAmount = payrollData.reduce((sum, record) => {
+        const salary = record['Gross Salary'] || record.salary || record.gross_salary || 0;
+        return sum + parseFloat(salary);
+      }, 0);
+
       const [batchResult] = await connection.execute(batchInsertQuery, [
         `Payroll_${new Date().toISOString().split('T')[0]}`,
         uploadedBy,
         payrollData.length,
-        payrollData.reduce((sum, record) => sum + parseFloat(record.salary || 0), 0)
+        totalAmount
       ]);
       
       const batchId = batchResult.insertId;
@@ -30,14 +33,18 @@ class SalarySyncService {
           await this.processPayrollRecord(connection, record, batchId);
           processedCount++;
         } catch (error) {
-          console.error(`Error processing payroll record for employee ${record.employee_id}:`, error);
+          console.error(`Error processing payroll record for employee ${record['Employee ID'] || record.employee_id}:`, error);
           errorCount++;
           
-          // Log error
-          await connection.execute(`
-            INSERT INTO payroll_errors (batch_id, employee_id, error_message, record_data, created_at)
-            VALUES (?, ?, ?, ?, NOW())
-          `, [batchId, record.employee_id, error.message, JSON.stringify(record)]);
+          // Log error - assuming payroll_errors or similar exists or we skip for now
+          try {
+            await connection.execute(`
+              INSERT INTO audit_logs (user_id, action, table_name, record_id, new_values, ip_address, user_agent)
+              VALUES (?, 'PAYROLL_ERROR', 'payroll_batches', ?, ?, '127.0.0.1', 'System')
+            `, [uploadedBy, batchId, `Error processing ${record['Employee ID'] || record.employee_id}: ${error.message}`]);
+          } catch (logErr) {
+            console.error('Failed to log payroll error to audit_logs', logErr);
+          }
         }
       }
       
@@ -49,8 +56,6 @@ class SalarySyncService {
         WHERE id = ?
       `, [status, batchId]);
       
-      await connection.commit();
-      
       return {
         success: true,
         batchId,
@@ -58,58 +63,67 @@ class SalarySyncService {
         errorCount,
         status
       };
-      
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    }
+    });
   }
 
   static async processPayrollRecord(connection, record, batchId) {
-    const { employee_id, salary, bonus, deductions } = record;
+    const employee_id = record['Employee ID'] || record.employee_id;
+    const gross_salary = parseFloat(record['Gross Salary'] || record.salary || record.gross_salary || 0);
+    const savings_deduction = parseFloat(record['Savings Deduction'] || record.savings || 0);
+    const loan_deduction = parseFloat(record['Loan Deduction'] || record.loan_payment || 0);
+    const net_salary = parseFloat(record['Net Salary'] || record.net_pay || (gross_salary - savings_deduction - loan_deduction));
     
     // Validate employee exists
-    const [employee] = await connection.execute(
-      'SELECT id, first_name, email FROM users u LEFT JOIN employee_profiles ep ON u.id = ep.user_id WHERE u.employee_id = ?',
+    const [employees] = await connection.execute(
+      'SELECT id, username FROM users WHERE employee_id = ?',
       [employee_id]
     );
     
-    if (!employee || !employee[0]) {
-      throw new Error(`Employee ${employee_id} not found`);
+    if (!employees || employees.length === 0) {
+      throw new Error(`Employee with ID ${employee_id} not found in system`);
     }
     
-    const userId = employee[0].id;
-    const gross_salary = parseFloat(salary) + parseFloat(bonus || 0);
-    const net_salary = gross_salary - parseFloat(deductions || 0);
+    const userId = employees[0].id;
     
-    // Insert payroll record
+    // Insert payroll detail
     const payrollInsertQuery = `
-      INSERT INTO payroll_records (user_id, employee_id, batch_id, gross_salary, net_salary, deductions, allowances, pay_period, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      INSERT INTO payroll_details (
+        payroll_batch_id, user_id, employee_id, gross_salary, net_salary, 
+        savings_deduction, loan_repayment_deduction, total_deductions, 
+        final_amount, payment_status, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PAID', NOW())
     `;
     
+    const total_deductions = savings_deduction + loan_deduction;
+    
     await connection.execute(payrollInsertQuery, [
+      batchId,
       userId,
       employee_id,
-      batchId,
       gross_salary,
       net_salary,
-      JSON.stringify({ total: deductions || 0 }),
-      JSON.stringify({ bonus: bonus || 0 }),
-      new Date().toISOString().split('T')[0] // Current month as pay period
+      savings_deduction,
+      loan_deduction,
+      total_deductions,
+      net_salary, // Final amount paid to bank
     ]);
     
     // Process automatic savings contribution
-    await this.processSavingsContribution(connection, userId, net_salary, new Date().toISOString().split('T')[0]);
+    if (savings_deduction > 0) {
+      await this.processSavingsContribution(connection, userId, savings_deduction, `PAYROLL_BATCH_${batchId}`);
+    }
     
-    // Process automatic loan deductions
-    await this.processLoanDeductions(connection, userId, new Date().toISOString().split('T')[0]);
+    // Process loan deductions
+    if (loan_deduction > 0) {
+      await this.processLoanDeductionFromPayroll(connection, userId, loan_deduction, `PAYROLL_BATCH_${batchId}`);
+    }
     
     // Send notification to employee
     await NotificationService.createNotification(
       userId,
-      'Salary Processed',
-      `Your salary of ${net_salary} has been processed and deposited to your account.`,
+      'Payroll Processed',
+      `Your payroll for this period has been processed. Net amount: ${net_salary}. Savings deduction: ${savings_deduction} has been deposited to your account.`,
       'INFO'
     );
     
@@ -122,7 +136,7 @@ class SalarySyncService {
     };
   }
 
-  static async processSavingsContribution(connection, userId, netSalary, payPeriod) {
+  static async processSavingsContribution(connection, userId, contributionAmount, batchId) {
     // Get user's savings account
     const [savingsAccount] = await connection.execute(
       'SELECT * FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"',
@@ -130,102 +144,88 @@ class SalarySyncService {
     );
     
     if (!savingsAccount || !savingsAccount[0]) {
-      return; // No active savings account
+      console.warn(`No active savings account found for user ${userId}. Skipping contribution.`);
+      return;
     }
     
     const account = savingsAccount[0];
-    const savingPercentage = account.saving_percentage;
-    const contributionAmount = (netSalary * savingPercentage) / 100;
     
-    if (contributionAmount > 0) {
-      // Add savings transaction
-      await connection.execute(`
-        INSERT INTO savings_transactions (account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
-        VALUES (?, ?, 'CONTRIBUTION', ?, ?, ?, ?, ?, NOW())
-      `, [
-        account.id,
-        userId,
-        contributionAmount,
-        account.current_balance,
-        account.current_balance + contributionAmount,
-        `PAYROLL_${payPeriod}`,
-        `Automatic savings contribution for ${payPeriod}`
-      ]);
-      
-      // Update account balance
-      await connection.execute(
-        'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
-        [account.current_balance + contributionAmount, account.id]
-      );
+    // Add savings transaction
+    await connection.execute(`
+      INSERT INTO savings_transactions (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, payroll_batch_id, description, transaction_date)
+      VALUES (?, ?, 'CONTRIBUTION', ?, ?, ?, ?, ?, NOW())
+    `, [
+      account.id,
+      userId,
+      contributionAmount,
+      account.current_balance,
+      account.current_balance + contributionAmount,
+      batchId,
+      `Automatic savings contribution from payroll batch ${batchId}`
+    ]);
+    
+    // Update account balance
+    await connection.execute(
+      'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
+      [account.current_balance + contributionAmount, account.id]
+    );
 
-      await NotificationService.createNotification(
-        userId,
-        'Savings Contribution Added',
-        `A savings contribution of ${contributionAmount} was added to your savings from payroll for ${payPeriod}.`,
-        'SUCCESS',
-        { reference_id: `PAYROLL_${payPeriod}` }
-      );
-    }
+    await NotificationService.createNotification(
+      userId,
+      'Savings Updated',
+      `A savings contribution of ${contributionAmount} was added to your account from payroll.`,
+      'SUCCESS'
+    );
   }
 
-  static async processLoanDeductions(connection, userId, payPeriod) {
-    // Get active loans with automatic deductions
+  static async processLoanDeductionFromPayroll(connection, userId, totalDeduction, batchId) {
+    // Get active loans for this user
     const [loans] = await connection.execute(`
       SELECT * FROM loans 
-      WHERE user_id = ? AND status = 'ACTIVE' AND auto_deduct = true
+      WHERE user_id = ? AND status = 'ACTIVE' 
       ORDER BY next_payment_date ASC
     `, [userId]);
     
+    if (!loans || loans.length === 0) {
+      console.warn(`No active loans found for user ${userId} despite deduction.`);
+      return;
+    }
+
+    let remainingDeduction = totalDeduction;
+
     for (const loan of loans) {
-      if (loan.amount_due > 0 && loan.next_payment_date <= new Date()) {
-        try {
-          // Process loan payment
-          await this.processLoanPayment(connection, loan, payPeriod);
-        } catch (error) {
-          console.error(`Error processing loan payment for loan ${loan.id}:`, error);
-        }
-      }
+      if (remainingDeduction <= 0) break;
+
+      const paymentForThisLoan = Math.min(remainingDeduction, loan.outstanding_balance);
+      
+      // Process loan payment - Using loan_repayments table
+      await connection.execute(`
+        INSERT INTO loan_repayments (loan_id, user_id, amount, principal_amount, interest_amount, balance_before, balance_after, payroll_batch_id, status, repayment_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PAID', NOW())
+      `, [
+        loan.id,
+        userId,
+        paymentForThisLoan,
+        paymentForThisLoan, // Simplified principal allocation
+        0, // Simplified interest allocation
+        loan.outstanding_balance,
+        loan.outstanding_balance - paymentForThisLoan,
+        batchId
+      ]);
+      
+      const newBalance = loan.outstanding_balance - paymentForThisLoan;
+      const newStatus = newBalance <= 0 ? 'COMPLETED' : 'ACTIVE';
+      
+      await connection.execute(`
+        UPDATE loans 
+        SET outstanding_balance = ?, status = ?, last_payment_date = NOW(), updated_at = NOW()
+        WHERE id = ?
+      `, [newBalance, newStatus, loan.id]);
+
+      remainingDeduction -= paymentForThisLoan;
     }
   }
 
-  static async processLoanPayment(connection, loan, payPeriod) {
-    const paymentAmount = Math.min(loan.amount_due, loan.monthly_payment);
-    
-    // Add loan transaction
-    await connection.execute(`
-      INSERT INTO loan_transactions (loan_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
-      VALUES (?, ?, 'PAYMENT', ?, ?, ?, ?, ?, NOW())
-    `, [
-      loan.id,
-      loan.user_id,
-      paymentAmount,
-      loan.outstanding_balance,
-      loan.outstanding_balance - paymentAmount,
-      `PAYROLL_${payPeriod}`,
-      `Automatic loan payment for ${payPeriod}`
-    ]);
-    
-    // Update loan balance
-    const newBalance = loan.outstanding_balance - paymentAmount;
-    const newStatus = newBalance <= 0 ? 'COMPLETED' : 'ACTIVE';
-    
-    await connection.execute(`
-      UPDATE loans 
-      SET outstanding_balance = ?, amount_due = ?, status = ?, last_payment_date = NOW(), updated_at = NOW()
-      WHERE id = ?
-    `, [newBalance, 0, newStatus, loan.id]);
-    
-    // Update next payment date if not completed
-    if (newStatus !== 'COMPLETED') {
-      const nextPaymentDate = new Date(loan.next_payment_date);
-      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-      
-      await connection.execute(
-        'UPDATE loans SET next_payment_date = ? WHERE id = ?',
-        [nextPaymentDate, loan.id]
-      );
-    }
-  }
 
   static async getPayrollBatches(page = 1, limit = 10, filters = {}) {
     try {
@@ -294,12 +294,12 @@ class SalarySyncService {
       }
       
       const recordsQuery = `
-        SELECT pr.*, ep.first_name, ep.last_name, ep.department
-        FROM payroll_records pr
-        LEFT JOIN users u ON pr.user_id = u.id
+        SELECT pd.*, ep.first_name, ep.last_name, ep.department
+        FROM payroll_details pd
+        LEFT JOIN users u ON pd.user_id = u.id
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-        WHERE pr.batch_id = ?
-        ORDER BY pr.employee_id
+        WHERE pd.payroll_batch_id = ?
+        ORDER BY pd.employee_id
       `;
       
       const records = await query(recordsQuery, [batchId]);
@@ -331,14 +331,14 @@ class SalarySyncService {
       
       const countQuery = `
         SELECT COUNT(*) as total 
-        FROM payroll_records 
+        FROM payroll_details 
         WHERE user_id = ?
       `;
       
       const selectQuery = `
-        SELECT * FROM payroll_records 
+        SELECT * FROM payroll_details 
         WHERE user_id = ?
-        ORDER BY pay_period DESC
+        ORDER BY created_at DESC
         LIMIT ? OFFSET ?
       `;
       

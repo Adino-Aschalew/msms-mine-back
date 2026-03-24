@@ -275,6 +275,328 @@ class HrController {
       });
     }
   }
+
+  static async createEmployee(req, res) {
+    try {
+      const { employeeId, firstName, lastName, email, phone, department, role, type, salary, address, emergencyContact, joinDate, status } = req.body;
+      
+      const employeeData = {
+        employee_id: employeeId || `EMP${Date.now().toString().slice(-6)}`,
+        username: email,
+        email: email,
+        role: role || 'EMPLOYEE'
+      };
+      
+      const profileData = {
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone,
+        address: address,
+        department: department,
+        job_grade: type,
+        employment_status: status === 'Active' ? 'ACTIVE' : 'INACTIVE',
+        hire_date: joinDate
+      };
+      
+      // Validate required fields
+      if (!employeeData.employee_id || !employeeData.username || !employeeData.email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Employee ID, username, and email are required'
+        });
+      }
+      
+      const createdBy = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const result = await HrService.createEmployee(employeeData, profileData, createdBy, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: 'Employee created successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Create employee error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create employee: ' + error.message
+      });
+    }
+  }
+
+  static async getDashboardStats(req, res) {
+    try {
+      const stats = await HrService.getDashboardStats();
+      
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Get dashboard stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch dashboard statistics'
+      });
+    }
+  }
+
+  static async updateDashboardStats(req, res) {
+    try {
+      const { stats } = req.body;
+      const userId = req.user.id;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const updatedStats = await HrService.updateDashboardStats(stats, userId, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: 'Dashboard statistics updated successfully',
+        data: updatedStats
+      });
+    } catch (error) {
+      console.error('Update dashboard stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update dashboard statistics'
+      });
+    }
+  }
+
+  static async getAttendanceData(req, res) {
+    try {
+      const period = req.query.period || 'month';
+      const attendanceData = await HrService.getAttendanceData(period);
+      
+      res.json({
+        success: true,
+        data: attendanceData
+      });
+    } catch (error) {
+      console.error('Get attendance data error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch attendance data'
+      });
+    }
+  }
+
+  static async getDepartmentData(req, res) {
+    try {
+      const departmentData = await HrService.getDepartmentData();
+      
+      res.json({
+        success: true,
+        data: departmentData
+      });
+    } catch (error) {
+      console.error('Get department data error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch department data'
+      });
+    }
+  }
+
+  static async getDiversityData(req, res) {
+    try {
+      const diversityData = await HrService.getDiversityData();
+      
+      res.json({
+        success: true,
+        data: diversityData
+      });
+    } catch (error) {
+      console.error('Get diversity data error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch diversity data'
+      });
+    }
+  }
+
+  static async getRecentActivities(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 10;
+      const activities = await HrService.getRecentActivities(limit);
+      
+      res.json({
+        success: true,
+        data: activities
+      });
+    } catch (error) {
+      console.error('Get recent activities error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch recent activities'
+      });
+    }
+  }
+
+  static async getUnverifiedEmployees(req, res) {
+    try {
+      const unverifiedEmployees = await HrService.getUnverifiedEmployees();
+      
+      res.json({
+        success: true,
+        data: unverifiedEmployees
+      });
+    } catch (error) {
+      console.error('Get unverified employees error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch unverified employees'
+      });
+    }
+  }
+
+  static async syncWithHRDatabase(req, res) {
+    try {
+      const adminId = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const syncResult = await HrService.syncWithHRDatabase(adminId, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: 'HR database sync completed',
+        data: syncResult
+      });
+    } catch (error) {
+      console.error('Sync HR database error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to sync with HR database'
+      });
+    }
+  }
+
+  static async getPerformanceStats(req, res) {
+    try {
+      const stats = await HrService.getPerformanceStats();
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch performance statistics'
+      });
+    }
+  }
+
+  static async getPerformanceReviews(req, res) {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
+      
+      const reviews = await HrService.getPerformanceReviews(parseInt(limit), offset);
+      
+      res.json({
+        success: true,
+        data: reviews,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: reviews.length
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch performance reviews'
+      });
+    }
+  }
+
+  static async createPerformanceReview(req, res) {
+    try {
+      const review = await HrService.createPerformanceReview(req.body);
+      
+      res.status(201).json({
+        success: true,
+        data: review,
+        message: 'Performance review created successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create performance review'
+      });
+    }
+  }
+
+  static async getReportsData(req, res) {
+    try {
+      const { reportType = 'payroll' } = req.query;
+      const data = await HrService.getReportsData(reportType);
+      
+      res.json({
+        success: true,
+        data: data
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch reports data'
+      });
+    }
+  }
+
+  static async getUserProfile(req, res) {
+    try {
+      const userId = req.userId;
+      
+      // For now, return basic user info from auth middleware
+      // We can enhance this later once the profile service is debugged
+      res.json({
+        success: true,
+        data: {
+          user: {
+            id: userId,
+            username: req.user?.username || 'hr@msms.com',
+            email: req.user?.email || 'hr@msms.com',
+            role: req.user?.role || 'HR',
+            first_name: 'HR',
+            last_name: 'Manager',
+            department: 'Human Resources',
+            job_grade: 'MANAGER',
+            phone: null,
+            address: null
+          },
+          loginActivity: []
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user profile'
+      });
+    }
+  }
+
+  static async updateUserProfile(req, res) {
+    try {
+      const userId = req.userId;
+      const result = await HrService.updateUserProfile(userId, req.body);
+      
+      res.json({
+        success: true,
+        data: result,
+        message: 'Profile updated successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update profile'
+      });
+    }
+  }
 }
 
 module.exports = HrController;

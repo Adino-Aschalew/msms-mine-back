@@ -60,8 +60,11 @@ const roleMiddleware = (allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      console.log('Role middleware - Access denied. Role not in allowed list');
+    const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+    const uppercaseAllowedRoles = allowedRoles.map(r => r.toUpperCase());
+
+    if (!uppercaseAllowedRoles.includes(userRole)) {
+      console.log(`Role middleware - Access denied. User role '${userRole}' not in allowed list [${uppercaseAllowedRoles.join(', ')}]`);
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied. Insufficient permissions.' 

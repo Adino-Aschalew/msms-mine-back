@@ -1,39 +1,60 @@
-import React from 'react';
-import { Wallet, CreditCard, DollarSign, Smartphone, TrendingUp, TrendingDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wallet, CreditCard, DollarSign, Smartphone, TrendingUp, TrendingDown, Users, Briefcase } from 'lucide-react';
+import { financeAPI } from '../../../../shared/services/financeAPI';
 
 const AccountsOverview = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await financeAPI.getFinancialOverview('MONTHLY');
+        setData(response);
+      } catch (err) {
+        console.error('Failed to fetch accounts overview:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="p-4 text-center">Loading accounts...</div>;
+
   const accounts = [
     {
-      name: 'Business Checking',
-      type: 'bank',
-      balance: 45892,
-      change: 2.4,
-      icon: Wallet,
-      color: 'blue',
-    },
-    {
-      name: 'Business Savings',
+      name: 'Total Savings',
       type: 'savings',
-      balance: 125000,
-      change: 0.8,
+      balance: data?.savings?.total_savings || 0,
+      change: 0,
       icon: DollarSign,
       color: 'green',
     },
     {
-      name: 'Company Credit Card',
-      type: 'credit',
-      balance: -8500,
-      change: -5.2,
-      icon: CreditCard,
-      color: 'purple',
+      name: 'Total Loans',
+      type: 'loans',
+      balance: data?.loans?.total_loans || 0,
+      change: 0,
+      icon: Briefcase,
+      color: 'blue',
     },
     {
-      name: 'Digital Wallet',
-      type: 'wallet',
-      balance: 3200,
-      change: 12.5,
-      icon: Smartphone,
+      name: 'Active Members',
+      type: 'members',
+      balance: data?.savings?.active_accounts || 0,
+      change: 0,
+      icon: Users,
       color: 'orange',
+    },
+    {
+      name: 'Monthly Payroll',
+      type: 'payroll',
+      balance: data?.payroll?.total_amount || 0,
+      change: 0,
+      icon: Wallet,
+      color: 'purple',
     },
   ];
 
@@ -99,7 +120,7 @@ const AccountsOverview = () => {
             Total Balance
           </p>
           <p className="text-lg font-bold text-gray-900 dark:text-white">
-            ${(45892 + 125000 - 8500 + 3200).toLocaleString()}
+            ${((data?.savings?.total_savings || 0) - (data?.loans?.total_loans || 0)).toLocaleString()}
           </p>
         </div>
       </div>

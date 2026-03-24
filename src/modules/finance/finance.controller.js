@@ -20,6 +20,96 @@ class FinanceController {
     }
   }
 
+  static async getRecentTransactions(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 10;
+      const transactions = await FinanceService.getRecentTransactions(limit);
+      
+      res.json({
+        success: true,
+        data: transactions
+      });
+    } catch (error) {
+      console.error('Get recent transactions error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch recent transactions'
+      });
+    }
+  }
+
+  static async getEmployees(req, res) {
+    try {
+      const { page, limit, department, search } = req.query;
+      const result = await FinanceService.getEmployees(page, limit, { department, search });
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Get employees error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch employees'
+      });
+    }
+  }
+
+  static async getTransactionsList(req, res) {
+    try {
+      const { page, limit, type, search } = req.query;
+      const result = await FinanceService.getTransactionsList(page, limit, { type, search });
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Get transactions list error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch transactions'
+      });
+    }
+  }
+
+  static async getAnalytics(req, res) {
+    try {
+      const { period } = req.query;
+      const result = await FinanceService.getAnalytics(period);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Get analytics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch financial analytics'
+      });
+    }
+  }
+
+  static async getBudgetOverview(req, res) {
+    try {
+      // Mock for now until budgets table is defined
+      const budgets = [
+        { id: 1, department: 'Engineering', category: 'Salaries', allocated: 500000, spent: 425000, remaining: 75000, period: 'Q1 2024', status: 'on-track' },
+        { id: 2, department: 'Marketing', category: 'Advertising', allocated: 100000, spent: 115000, remaining: -15000, period: 'Q1 2024', status: 'over-budget' },
+        { id: 3, department: 'Sales', category: 'Travel', allocated: 75000, spent: 45000, remaining: 30000, period: 'Q1 2024', status: 'on-track' }
+      ];
+      
+      res.json({
+        success: true,
+        data: budgets
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch budget overview' });
+    }
+  }
+
   static async processPayroll(req, res) {
     try {
       const payrollData = req.body;

@@ -24,10 +24,15 @@ ChartJS.register(
   Filler
 );
 
-const RevenueChart = ({ dateRange }) => {
+const RevenueChart = ({ dateRange, dashboardData }) => {
   const { theme } = useTheme();
+  
+  const cashFlow = dashboardData?.cashFlow || [];
+  
   const data = {
-    labels: dateRange === '7days' 
+    labels: cashFlow.length > 0 
+      ? cashFlow.map(d => d.period).reverse()
+      : dateRange === '7days' 
       ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
       : dateRange === '30days'
       ? ['Week 1', 'Week 2', 'Week 3', 'Week 4']
@@ -35,7 +40,9 @@ const RevenueChart = ({ dateRange }) => {
     datasets: [
       {
         label: 'Revenue',
-        data: dateRange === '7days'
+        data: cashFlow.length > 0
+          ? cashFlow.map(d => parseFloat(d.savings_in || 0) + parseFloat(d.loan_payments || 0)).reverse()
+          : dateRange === '7days'
           ? [12000, 15000, 18000, 14000, 22000, 19000, 16000]
           : dateRange === '30days'
           ? [85000, 92000, 78000, 95000]
@@ -47,7 +54,9 @@ const RevenueChart = ({ dateRange }) => {
       },
       {
         label: 'Expenses',
-        data: dateRange === '7days'
+        data: cashFlow.length > 0
+          ? cashFlow.map(d => parseFloat(d.savings_out || 0)).reverse() // Simplified expenses
+          : dateRange === '7days'
           ? [8000, 9000, 11000, 8500, 13000, 11500, 10000]
           : dateRange === '30days'
           ? [55000, 58000, 52000, 61000]

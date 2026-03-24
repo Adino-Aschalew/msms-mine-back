@@ -77,6 +77,19 @@ export const loanCommitteeAPI = {
     const response = await apiClient.put(`/api/loan-committee/applications/${applicationId}/review`, reviewData);
     return response.data;
   },
+  
+  // Get approved applications for disbursement
+  getApprovedApplications: async (page = 1, limit = 10) => {
+    const params = { page, limit };
+    const response = await apiClient.get('/api/loan-committee/applications/approved', params);
+    return response.data;
+  },
+
+  // Disburse loan
+  disburseLoan: async (applicationId) => {
+    const response = await apiClient.post(`/api/loan-committee/applications/${applicationId}/disburse`);
+    return response.data;
+  },
 
   // Approve loan (wraps reviewApplication)
   approveLoan: async (applicationId, approvalData = {}) => {

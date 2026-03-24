@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Target,
   TrendingUp,
@@ -8,48 +8,36 @@ import {
   Calendar,
   Plus,
   Filter,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
+import { financeAPI } from '../../../shared/services/financeAPI';
 
 const FinanceBudgets = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('current');
+  const [budgets, setBudgets] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock budget data
-  const budgets = [
-    {
-      id: 1,
-      department: 'Engineering',
-      category: 'Salaries',
-      allocated: 500000,
-      spent: 425000,
-      remaining: 75000,
-      period: 'Q1 2024',
-      status: 'on-track'
-    },
-    {
-      id: 2,
-      department: 'Marketing',
-      category: 'Advertising',
-      allocated: 100000,
-      spent: 115000,
-      remaining: -15000,
-      period: 'Q1 2024',
-      status: 'over-budget'
-    },
-    {
-      id: 3,
-      department: 'Sales',
-      category: 'Travel & Expenses',
-      allocated: 75000,
-      spent: 45000,
-      remaining: 30000,
-      period: 'Q1 2024',
-      status: 'on-track'
+  useEffect(() => {
+    fetchBudgets();
+  }, []);
+
+  const fetchBudgets = async () => {
+    try {
+      setLoading(true);
+      const response = await financeAPI.getBudgets();
+      if (response.success) {
+        setBudgets(response.data || []);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching budgets:', error);
+      setLoading(false);
     }
-  ];
+  };
 
-  const totalAllocated = budgets.reduce((sum, budget) => sum + budget.allocated, 0);
-  const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent, 0);
+  const totalAllocated = budgets.reduce((sum, budget) => sum + parseFloat(budget.allocated || 0), 0);
+  const totalSpent = budgets.reduce((sum, budget) => sum + parseFloat(budget.spent || 0), 0);
   const totalRemaining = totalAllocated - totalSpent;
 
   const getBudgetStatus = (budget) => {
@@ -192,7 +180,7 @@ const FinanceBudgets = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Usage Rate</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {((totalSpent / totalAllocated) * 100).toFixed(1)}%
+                {totalAllocated > 0 ? ((totalSpent / totalAllocated) * 100).toFixed(1) : 0}%
               </p>
             </div>
             <div className="bg-purple-100 p-3 rounded-lg dark:bg-purple-900/20">
@@ -203,11 +191,24 @@ const FinanceBudgets = () => {
       </div>
 
       {/* Budget Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {budgets.map((budget) => (
-          <BudgetCard key={budget.id} budget={budget} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-500 mb-4" />
+          <p className="text-gray-500">Loading budgets...</p>
+        </div>
+      ) : budgets.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {budgets.map((budget) => (
+            <BudgetCard key={budget.id} budget={budget} />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center dark:bg-gray-800 dark:border-gray-700">
+          <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No budgets found</h3>
+          <p className="text-gray-500">Departmental budgets haven't been defined yet.</p>
+        </div>
+      )}
     </div>
   );
 };

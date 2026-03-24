@@ -30,12 +30,16 @@ class ApiClient {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     const config = {
+      ...options,
       headers: {
-        'Content-Type': 'application/json',
         ...options.headers,
       },
-      ...options,
     };
+
+    // Only set Content-Type if it's not FormData and not already set
+    if (!(config.body instanceof FormData) && !config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
 
     // Add authorization header if token exists
     if (this.token) {
@@ -113,9 +117,10 @@ class ApiClient {
   }
 
   async post(endpoint, data = {}) {
+    const body = data instanceof FormData ? data : JSON.stringify(data);
     return this.request(endpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body,
     });
   }
 

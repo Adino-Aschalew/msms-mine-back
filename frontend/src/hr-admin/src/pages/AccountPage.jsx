@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   User, 
   ShieldCheck, 
@@ -16,10 +16,142 @@ import {
   Monitor
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { hrAPI } from '../../../shared/services/hrAPI';
+import { authAPI } from '../../../shared/services/authAPI';
 
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    address: ''
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.getProfile();
+      setProfileData(response.data);
+      
+      // Set form data from profile with better field mapping
+      setFormData({
+        first_name: response.data.first_name || '',
+        last_name: response.data.last_name || '',
+        phone: response.data.phone || response.data.phone_number || '',
+        address: response.data.address || ''
+      });
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      await authAPI.updateProfile(formData);
+      setIsEditing(false);
+      await fetchUserProfile(); // Refresh data
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handlePasswordInputChange = (field, value) => {
+    setPasswordData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+    
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordError('All password fields are required');
+      return;
+    }
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+    
+    try {
+      setPasswordLoading(true);
+      
+      const response = await authAPI.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      
+      if (response.success) {
+        setPasswordSuccess('Password changed successfully! You will need to use your new password next time you login.');
+        // Clear form
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        setPasswordError(response.message || 'Failed to change password');
+      }
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to change password. Please check your current password and try again.');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto pb-12">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-slate-500">Loading profile data...</div>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'profile', label: 'Profile Settings', icon: User, desc: 'Personal info & avatar' },
@@ -99,17 +231,31 @@ export default function AccountPage() {
                     <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-end -mt-16 mb-10">
                       <div className="relative group">
                         <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border-[6px] border-card shadow-2xl group-hover:border-primary-500 transition-all duration-300">
-                          <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
+                          <img 
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent((profileData?.user?.first_name || profileData?.user?.username || 'User'))}&background=3b82f6&color=fff&size=180`} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" 
+                          />
                         </div>
                         <button className="absolute bottom-1 right-1 p-2.5 bg-primary-600 text-white rounded-2xl shadow-xl border-4 border-card hover:bg-primary-500 transition-all active:scale-95">
                           <Camera size={16} />
                         </button>
                       </div>
                       <div className="flex-1 pb-2">
-                        <h2 className="text-3xl font-bold text-foreground">Alex Admin</h2>
+                        <h2 className="text-3xl font-bold text-foreground">
+                          {profileData ? 
+                            `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 
+                            profileData.username || 
+                            'User Profile'
+                          : 'Loading...'}
+                        </h2>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="px-2 py-0.5 bg-primary-500/10 text-primary-500 text-[10px] font-bold uppercase tracking-widest rounded-md border border-primary-500/20">Administrator</span>
-                          <span className="text-sm text-muted-foreground font-medium">Product Design Lead · San Francisco, CA</span>
+                          <span className="px-2 py-0.5 bg-primary-500/10 text-primary-500 text-[10px] font-bold uppercase tracking-widest rounded-md border border-primary-500/20">
+                            {profileData?.role || 'User'}
+                          </span>
+                          <span className="text-sm text-muted-foreground font-medium">
+                            {profileData?.department || 'Department'} · {profileData?.job_grade || 'Grade'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -117,11 +263,31 @@ export default function AccountPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1 block ml-1">First Name</label>
-                        <input type="text" defaultValue="Alex" className="w-full px-4 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary-500 transition-all font-semibold text-sm shadow-sm" />
+                        <input 
+                          type="text" 
+                          value={isEditing ? formData.first_name : (profileData?.user?.first_name || '')}
+                          onChange={(e) => handleInputChange('first_name', e.target.value)}
+                          disabled={!isEditing}
+                          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all font-semibold text-sm shadow-sm ${
+                            isEditing 
+                              ? 'bg-background border-border focus:border-primary-500' 
+                              : 'bg-slate-50 dark:bg-slate-800/50 border-border text-muted-foreground cursor-not-allowed opacity-70'
+                          }`} 
+                        />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1 block ml-1">Last Name</label>
-                        <input type="text" defaultValue="Admin" className="w-full px-4 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary-500 transition-all font-semibold text-sm shadow-sm" />
+                        <input 
+                          type="text" 
+                          value={isEditing ? formData.last_name : (profileData?.user?.last_name || '')}
+                          onChange={(e) => handleInputChange('last_name', e.target.value)}
+                          disabled={!isEditing}
+                          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all font-semibold text-sm shadow-sm ${
+                            isEditing 
+                              ? 'bg-background border-border focus:border-primary-500' 
+                              : 'bg-slate-50 dark:bg-slate-800/50 border-border text-muted-foreground cursor-not-allowed opacity-70'
+                          }`} 
+                        />
                       </div>
                       <div className="md:col-span-2 space-y-1.5">
                         <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1 block ml-1">Work Email</label>
@@ -129,27 +295,98 @@ export default function AccountPage() {
                           <span className="inline-flex items-center px-4 border border-r-0 border-border bg-slate-50 dark:bg-slate-800/80 text-muted-foreground rounded-l-xl transition-colors">
                             <Mail size={16} />
                           </span>
-                          <input type="email" defaultValue="alex.admin@hrsystem.com" disabled className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-border rounded-r-xl text-sm font-bold text-muted-foreground cursor-not-allowed opacity-70" />
+                          <input type="email" value={profileData?.user?.email || user?.email || ''} disabled className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-border rounded-r-xl text-sm font-bold text-muted-foreground cursor-not-allowed opacity-70" />
                         </div>
                         <p className="text-[10px] text-muted-foreground font-bold mt-2 ml-1 uppercase tracking-tighter italic">Contact IT Support to change your organizational identifier.</p>
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1 block ml-1">Direct Phone</label>
-                        <input type="tel" defaultValue="+1 (555) 000-0000" className="w-full px-4 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary-500 transition-all font-semibold text-sm shadow-sm" />
+                        <input 
+                          type="tel" 
+                          value={isEditing ? formData.phone : (profileData?.user?.phone || '')}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          disabled={!isEditing}
+                          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all font-semibold text-sm shadow-sm ${
+                            isEditing 
+                              ? 'bg-background border-border focus:border-primary-500' 
+                              : 'bg-slate-50 dark:bg-slate-800/50 border-border text-muted-foreground cursor-not-allowed opacity-70'
+                          }`} 
+                        />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1 block ml-1">Internal Job Title</label>
-                        <input type="text" defaultValue="Product Design Lead" disabled className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-border rounded-xl text-sm font-bold text-muted-foreground cursor-not-allowed opacity-70 transition-all" />
+                        <input 
+                          type="text" 
+                          value={profileData?.user?.role || ''} 
+                          disabled 
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-border rounded-xl text-sm font-bold text-muted-foreground cursor-not-allowed opacity-70 transition-all" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1 block ml-1">Department</label>
+                        <input 
+                          type="text" 
+                          value={profileData?.user?.department || ''} 
+                          disabled 
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-border rounded-xl text-sm font-bold text-muted-foreground cursor-not-allowed opacity-70 transition-all" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1 block ml-1">Address</label>
+                        <input 
+                          type="text" 
+                          value={isEditing ? formData.address : (profileData?.user?.address || '')}
+                          onChange={(e) => handleInputChange('address', e.target.value)}
+                          disabled={!isEditing}
+                          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all font-semibold text-sm shadow-sm ${
+                            isEditing 
+                              ? 'bg-background border-border focus:border-primary-500' 
+                              : 'bg-slate-50 dark:bg-slate-800/50 border-border text-muted-foreground cursor-not-allowed opacity-70'
+                          }`} 
+                        />
                       </div>
                     </div>
-                 </div>
-                 <div className="px-6 py-5 sm:px-10 border-t border-border bg-slate-50/30 dark:bg-slate-800/20 flex justify-end">
-                   <button className="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary-600/20 active:scale-95">
-                     Save Profile Changes
-                   </button>
-                 </div>
+
+                    <div className="flex justify-end gap-4 pt-6 border-t border-border">
+                      {isEditing ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsEditing(false);
+                              // Reset form data
+                              if (profileData) {
+                                setFormData({
+                                  first_name: profileData.first_name || '',
+                                  last_name: profileData.last_name || '',
+                                  phone: profileData.phone || profileData.phone_number || '',
+                                  address: profileData.address || ''
+                                });
+                              }
+                            }}
+                            className="px-6 py-3 border border-border bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-all font-medium text-sm"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSaveProfile}
+                            disabled={saving}
+                            className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {saving ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl transition-all font-medium text-sm"
+                        >
+                          Edit Profile
+                        </button>
+                      )}
+                    </div>
+                    </div>
+                  </div>
               </div>
-            </div>
           )}
 
           {/* SECURITY TAB */}
@@ -162,21 +399,72 @@ export default function AccountPage() {
                 </div>
                 <div className="p-6 flex flex-col md:flex-row gap-8">
                   <div className="flex-1 space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground block mb-1.5">Current Password</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-3 py-2 bg-background border border-border rounded-lg outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm transition" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground block mb-1.5">New Password</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-3 py-2 bg-background border border-border rounded-lg outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm transition" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground block mb-1.5">Confirm New Password</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-3 py-2 bg-background border border-border rounded-lg outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm transition" />
-                    </div>
-                    <button className="px-5 py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium rounded-lg transition-colors shadow-sm mt-2">
-                       Update Password
-                    </button>
+                    {/* Error Message */}
+                    {passwordError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                        <div className="flex">
+                          <AlertTriangle className="h-5 w-5 text-red-400 mr-2" />
+                          <p className="text-sm text-red-800">{passwordError}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Success Message */}
+                    {passwordSuccess && (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex">
+                          <CheckCircle2 className="h-5 w-5 text-green-400 mr-2" />
+                          <p className="text-sm text-green-800">{passwordSuccess}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <form onSubmit={handlePasswordChange}>
+                      <div>
+                        <label className="text-sm font-medium text-foreground block mb-1.5">Current Password</label>
+                        <input 
+                          type="password" 
+                          placeholder="••••••••" 
+                          value={passwordData.currentPassword}
+                          onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm transition" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground block mb-1.5">New Password</label>
+                        <input 
+                          type="password" 
+                          placeholder="••••••••" 
+                          value={passwordData.newPassword}
+                          onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm transition" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground block mb-1.5">Confirm New Password</label>
+                        <input 
+                          type="password" 
+                          placeholder="••••••••" 
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm transition" 
+                        />
+                      </div>
+                      <button 
+                        type="submit"
+                        disabled={passwordLoading}
+                        className="px-5 py-2 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors shadow-sm mt-2"
+                      >
+                        {passwordLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+                            Updating Password...
+                          </>
+                        ) : (
+                          'Update Password'
+                        )}
+                      </button>
+                    </form>
                   </div>
                   <div className="w-full md:w-64 shrink-0 bg-slate-50 dark:bg-slate-800/30 p-5 rounded-xl border border-border self-start">
                     <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-4">Password Requirements</h4>

@@ -11,8 +11,10 @@ router.use(roleMiddleware(['ADMIN', 'LOAN_COMMITTEE']));
 
 // Application management
 router.get('/applications/pending', CommitteeController.getPendingApplications);
+router.get('/applications/approved', CommitteeController.getApprovedApplications);
 router.get('/applications/:applicationId', CommitteeController.getApplicationById);
 router.put('/applications/:applicationId/review', auditMiddleware('LOAN_APPLICATION_REVIEWED'), CommitteeController.reviewApplication);
+router.post('/applications/:applicationId/disburse', auditMiddleware('LOAN_DISBURSED'), CommitteeController.disburseLoan);
 router.post('/applications/bulk-review', auditMiddleware('BULK_APPLICATION_REVIEW'), CommitteeController.bulkReviewApplications);
 
 // Application analysis

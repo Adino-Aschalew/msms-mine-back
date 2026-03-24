@@ -2,6 +2,11 @@ import apiClient from '../services/api';
 
 // Finance API
 export const financeAPI = {
+  // Get dashboard data
+  getDashboardData: async (params = {}) => {
+    return apiClient.get('/api/finance/analytics', params);
+  },
+
   // Get financial overview
   getFinancialOverview: async (period = 'MONTHLY') => {
     const response = await apiClient.get('/api/finance/overview', { period });
@@ -10,7 +15,11 @@ export const financeAPI = {
 
   // Payroll Management
   uploadPayroll: async (file) => {
-    const response = await apiClient.upload('/api/finance/payroll/upload', file);
+    const formData = new FormData();
+    formData.append('payroll', file);
+    const response = await apiClient.post('/api/finance/payroll/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
   },
 
@@ -19,8 +28,7 @@ export const financeAPI = {
     return response.data;
   },
 
-  getPayrollBatches: async (page = 1, limit = 10, filters = {}) => {
-    const params = { page, limit, ...filters };
+  getPayrollBatches: async (params = {}) => {
     const response = await apiClient.get('/api/finance/payroll/batches', params);
     return response.data;
   },
@@ -30,51 +38,44 @@ export const financeAPI = {
     return response.data;
   },
 
-  // Get dashboard data
-  getDashboardData: async (params = {}) => {
-    const response = await apiClient.get('/api/finance/dashboard', params);
-    return response.data;
-  },
-
-  // Get revenue data
-  getRevenueData: async (period = 'month') => {
-    const response = await apiClient.get(`/api/finance/revenue?period=${period}`);
-    return response.data;
-  },
-
-  // Get expense data
-  getExpenseData: async (period = 'month') => {
-    const response = await apiClient.get(`/api/finance/expenses?period=${period}`);
-    return response.data;
-  },
-
-  // Get cash flow data
-  getCashFlowData: async (period = 'month') => {
-    const response = await apiClient.get(`/api/finance/cash-flow?period=${period}`);
-    return response.data;
-  },
-
   // Get recent transactions
   getRecentTransactions: async (limit = 10) => {
-    const response = await apiClient.get(`/api/finance/transactions?limit=${limit}`);
+    const response = await apiClient.get('/api/finance/transactions', { limit });
     return response.data;
   },
 
-  // Get accounts overview
-  getAccountsOverview: async () => {
-    const response = await apiClient.get('/api/finance/accounts');
+  getEmployees: async (params = {}) => {
+    const response = await apiClient.get('/api/finance/employees', params);
     return response.data;
   },
 
-  getPayrollHistory: async (userId, page = 1, limit = 10) => {
-    const params = { page, limit };
+  getTransactionsList: async (params = {}) => {
+    const response = await apiClient.get('/api/finance/transactions-list', params);
+    return response.data;
+  },
+
+  getAnalytics: async (params = {}) => {
+    const response = await apiClient.get('/api/finance/analytics', params);
+    return response.data;
+  },
+
+  getBudgets: async () => {
+    const response = await apiClient.get('/api/finance/budgets/overview');
+    return response.data;
+  },
+
+  getDepartments: async () => {
+    const response = await apiClient.get('/api/hr/departments'); // Assuming this exists or used by finance too
+    return response.data;
+  },
+
+  getPayrollHistory: async (userId, params = {}) => {
     const response = await apiClient.get(`/api/finance/payroll/history/${userId}`, params);
     return response.data;
   },
 
   // Financial Reports
-  getFinancialReports: async (reportType, period = 'MONTHLY', filters = {}) => {
-    const params = { period, ...filters };
+  getFinancialReports: async (reportType, params = {}) => {
     const response = await apiClient.get(`/api/finance/reports/${reportType}`, params);
     return response.data;
   },
@@ -102,7 +103,9 @@ export const financeAPI = {
   // Export Reports
   exportFinancialReport: async (reportType, period = 'MONTHLY', format = 'json') => {
     const params = { period, format };
-    const response = await apiClient.get(`/api/finance/export/${reportType}`, params);
+    const response = await apiClient.get(`/api/finance/export/${reportType}`, params, {
+      responseType: format === 'json' ? 'json' : 'blob'
+    });
     return response;
   },
 

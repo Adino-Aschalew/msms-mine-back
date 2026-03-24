@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Download, Calendar, Filter, FileSpreadsheet, FileIcon as FilePdf, Users, Clock, TrendingUp, CheckCircle, AlertCircle, ChevronRight, Zap } from 'lucide-react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { useTheme } from '../contexts/ThemeContext';
+import { hrAPI } from '../../../shared/services/hrAPI';
 
 ChartJS.register(
   CategoryScale,
@@ -23,6 +24,103 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState('payroll');
   const [isGenerated, setIsGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [reportsData, setReportsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [reports, setReports] = useState([]);
+  const [reportStats, setReportStats] = useState({
+    total: 0,
+    thisMonth: 0,
+    processing: 0,
+    failed: 0
+  });
+
+  useEffect(() => {
+    fetchReportsData();
+    fetchReportsList();
+  }, [reportType]);
+
+  const fetchReportsData = async () => {
+    try {
+      setLoading(true);
+      const response = await hrAPI.getReportsData(reportType);
+      setReportsData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch reports data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReportsList = async () => {
+    try {
+      // Mock reports list for now - this can be enhanced later
+      const mockReports = [
+        {
+          id: 'RPT-001',
+          name: 'Monthly Performance Report',
+          type: 'Performance',
+          department: 'All',
+          generated: '2026-03-15',
+          status: 'Completed',
+          size: '2.4 MB'
+        },
+        {
+          id: 'RPT-002',
+          name: 'Employee Attendance Summary',
+          type: 'Attendance',
+          department: 'All',
+          generated: '2026-03-14',
+          status: 'Completed',
+          size: '1.8 MB'
+        },
+        {
+          id: 'RPT-003',
+          name: 'Q1 Department Analytics',
+          type: 'Analytics',
+          department: 'Engineering',
+          generated: '2026-03-13',
+          status: 'Processing',
+          size: '-'
+        },
+        {
+          id: 'RPT-004',
+          name: 'Salary Structure Analysis',
+          type: 'Finance',
+          department: 'All',
+          generated: '2026-03-12',
+          status: 'Completed',
+          size: '3.1 MB'
+        },
+        {
+          id: 'RPT-005',
+          name: 'Training Completion Report',
+          type: 'Training',
+          department: 'HR',
+          generated: '2026-03-11',
+          status: 'Completed',
+          size: '1.2 MB'
+        }
+      ];
+      
+      setReports(mockReports);
+      setReportStats({
+        total: mockReports.length,
+        thisMonth: mockReports.filter(r => r.status === 'Completed').length,
+        processing: mockReports.filter(r => r.status === 'Processing').length,
+        failed: mockReports.filter(r => r.status === 'Failed').length
+      });
+    } catch (error) {
+      console.error('Failed to fetch reports list:', error);
+    }
+  };
+
+  const handleGenerateReport = () => {
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+      setIsGenerated(true);
+    }, 2000);
+  };
 
   // Dynamic Chart Styles based on Theme
   const commonOptions = {
@@ -50,44 +148,100 @@ export default function ReportsPage() {
     }
   };
 
-  const payrollChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
+  // Prepare chart data from backend
+  const getPayrollExpensesData = () => {
+    if (!reportsData?.expenses || reportsData.expenses.length === 0) {
+      return {
+        labels: ['No Data'],
+        datasets: [{
+          label: 'Payroll Expenses ($)',
+          data: [0],
+          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.8)' : 'rgba(59, 130, 246, 0.9)',
+          borderRadius: 12,
+        }]
+      };
+    }
+
+    return {
+      labels: reportsData.expenses.map(e => e.month),
+      datasets: [{
         label: 'Payroll Expenses ($)',
-        data: [120000, 125000, 122000, 130000, 128000, 135000],
+        data: reportsData.expenses.map(e => e.amount),
         backgroundColor: isDark ? 'rgba(59, 130, 246, 0.8)' : 'rgba(59, 130, 246, 0.9)',
         borderRadius: 12,
-      }
-    ]
+      }]
+    };
   };
 
-  const attendanceChartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-    datasets: [
-      {
+  const getAttendanceData = () => {
+    if (!reportsData?.trends || reportsData.trends.length === 0) {
+      return {
+        labels: ['No Data'],
+        datasets: [{
+          label: 'Attendance Rate (%)',
+          data: [0],
+          borderColor: '#10b981',
+          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+          fill: true,
+          tension: 0.4,
+        }]
+      };
+    }
+
+    return {
+      labels: reportsData.trends.map(t => new Date(t.date).toLocaleDateString()),
+      datasets: [{
         label: 'Attendance Rate (%)',
-        data: [98, 97, 95, 96, 94],
+        data: reportsData.trends.map(t => 
+          t.totalEmployees > 0 ? Math.round((t.present / t.totalEmployees) * 100) : 0
+        ),
         borderColor: '#10b981',
         backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
         fill: true,
         tension: 0.4,
-        borderWidth: 3,
-      }
-    ]
+      }]
+    };
   };
 
-  const demographicsChartData = {
-    labels: ['Engineering', 'Sales', 'Marketing', 'HR', 'Support'],
-    datasets: [
-      {
-        data: [45, 25, 20, 15, 30],
-        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+  const getDepartmentData = () => {
+    if (!reportsData?.departmentBreakdown || reportsData.departmentBreakdown.length === 0) {
+      return {
+        labels: ['No Data'],
+        datasets: [{
+          data: [0],
+          backgroundColor: ['#3b82f6'],
+          borderWidth: isDark ? 4 : 0,
+          borderColor: isDark ? '#0b0e14' : 'transparent',
+        }]
+      };
+    }
+
+    return {
+      labels: reportsData.departmentBreakdown.map(d => d.department),
+      datasets: [{
+        data: reportsData.departmentBreakdown.map(d => d.amount),
+        backgroundColor: [
+          '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
+        ],
         borderWidth: isDark ? 4 : 0,
         borderColor: isDark ? '#0b0e14' : 'transparent',
-      }
-    ]
+      }]
+    };
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-slate-500">Loading reports data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const payrollChartData = getPayrollExpensesData();
+  const attendanceChartData = getAttendanceData();
+  const departmentChartData = getDepartmentData();
 
   const handleGenerate = () => {
     setIsGenerating(true);
@@ -111,15 +265,36 @@ export default function ReportsPage() {
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 font-bold">Total Operational Expense</p>
-                <p className="text-4xl font-black text-foreground tracking-tighter">$760,000</p>
+                <p className="text-4xl font-black text-foreground tracking-tighter">
+                  ${reportsData?.expenses?.reduce((sum, e) => sum + e.amount, 0) || 0}
+                </p>
               </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                {[
-                 { label: 'Highest Dept Expense', value: 'Engineering', trend: '4%', icon: TrendingUp, color: 'text-emerald-500' },
-                 { label: 'Average Salary', value: '$84,500', trend: 'Global', color: 'text-slate-400' },
-                 { label: 'Total Bonuses', value: '$42,000', trend: '12%', icon: TrendingUp, color: 'text-emerald-500' }
+                 { 
+                   label: 'Highest Dept Expense', 
+                   value: reportsData?.departmentBreakdown?.[0]?.department || 'N/A', 
+                   trend: '4%', 
+                   icon: TrendingUp, 
+                   color: 'text-emerald-500' 
+                 },
+                 { 
+                   label: 'Average Salary', 
+                   value: reportsData?.departmentBreakdown?.length > 0 
+                     ? `$${Math.round(reportsData.departmentBreakdown.reduce((sum, d) => sum + d.amount, 0) / reportsData.departmentBreakdown.reduce((sum, d) => sum + d.employeeCount, 0))}` 
+                     : '$0', 
+                   trend: 'Global', 
+                   color: 'text-slate-400' 
+                 },
+                 { 
+                   label: 'Total Employees', 
+                   value: reportsData?.departmentBreakdown?.reduce((sum, d) => sum + d.employeeCount, 0) || 0, 
+                   trend: '12%', 
+                   icon: TrendingUp, 
+                   color: 'text-emerald-500' 
+                 }
                ].map((card, i) => (
                  <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:border-primary-500/30 transition-all group shadow-xl">
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{card.label}</p>
@@ -149,17 +324,13 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {[
-                      { dept: 'Engineering', count: 45, total: '$380,000' },
-                      { dept: 'Sales', count: 25, total: '$150,000' },
-                      { dept: 'Marketing', count: 20, total: '$120,000' }
-                    ].map((row, i) => (
+                    {reportsData?.departmentBreakdown?.map((row, i) => (
                       <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-8 py-5 font-black text-foreground tracking-tight">{row.dept}</td>
-                        <td className="px-8 py-5 text-center font-bold text-slate-400">{row.count}</td>
-                        <td className="px-8 py-5 text-right font-black text-primary-500">{row.total}</td>
+                        <td className="px-8 py-5 font-black text-foreground tracking-tight">{row.department}</td>
+                        <td className="px-8 py-5 text-center font-bold text-slate-400">{row.employeeCount}</td>
+                        <td className="px-8 py-5 text-right font-black text-primary-500">${row.amount.toLocaleString()}</td>
                       </tr>
-                    ))}
+                    )) || <tr><td colSpan="3" className="px-8 py-5 text-center text-slate-400">No data available</td></tr>}
                   </tbody>
                </table>
             </div>

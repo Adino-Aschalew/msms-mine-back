@@ -15,12 +15,12 @@ class CommitteeService {
       }
       
       if (filters.min_amount) {
-        whereClause += ' AND la.loan_amount >= ?';
+        whereClause += ' AND la.requested_amount >= ?';
         params.push(filters.min_amount);
       }
       
       if (filters.max_amount) {
-        whereClause += ' AND la.loan_amount <= ?';
+        whereClause += ' AND la.requested_amount <= ?';
         params.push(filters.max_amount);
       }
       
@@ -30,7 +30,7 @@ class CommitteeService {
       }
       
       if (filters.search) {
-        whereClause += ' AND (la.loan_purpose LIKE ? OR ep.first_name LIKE ? OR ep.last_name LIKE ? OR la.employee_id LIKE ?)';
+        whereClause += ' AND (la.purpose LIKE ? OR ep.first_name LIKE ? OR ep.last_name LIKE ? OR la.employee_id LIKE ?)';
         const searchTerm = `%${filters.search}%`;
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
       }
@@ -52,10 +52,10 @@ class CommitteeService {
           ep.last_name,
           ep.department,
           ep.job_grade,
-          ep.salary_grade,
           ep.employment_status,
           ep.hire_date,
           DATEDIFF(NOW(), ep.hire_date) as days_employed,
+          (SELECT current_balance FROM savings_accounts WHERE user_id = la.user_id LIMIT 1) as savings_balance,
           (SELECT COUNT(*) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as existing_loans,
           (SELECT AVG(l.outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
           (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count
@@ -105,18 +105,25 @@ class CommitteeService {
           ep.last_name,
           ep.department,
           ep.job_grade,
-          ep.salary_grade,
           ep.employment_status,
           ep.hire_date,
           ep.phone,
           ep.address,
           DATEDIFF(NOW(), ep.hire_date) as days_employed,
+          (SELECT current_balance FROM savings_accounts WHERE user_id = la.user_id LIMIT 1) as savings_balance,
+          (SELECT SUM(amount) FROM savings_transactions WHERE user_id = la.user_id AND transaction_type = 'CONTRIBUTION') as total_savings_contributions,
+          (SELECT COUNT(*) FROM savings_transactions WHERE user_id = la.user_id AND transaction_type = 'WITHDRAWAL') as savings_withdrawals_count,
           (SELECT COUNT(*) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as existing_loans,
           (SELECT AVG(l.outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
-          (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count
+          (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count,
+          g.guarantor_name,
+          g.guarantor_id as guarantor_employee_id,
+          g.monthly_income as guarantor_monthly_income,
+          (SELECT current_balance FROM savings_accounts WHERE user_id = g.user_id LIMIT 1) as guarantor_savings_balance
         FROM loan_applications la
         LEFT JOIN users u ON la.user_id = u.id
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
+        LEFT JOIN guarantors g ON la.id = g.loan_application_id
         WHERE la.id = ?
       `;
       
@@ -168,31 +175,39 @@ class CommitteeService {
         deductions.push('Insufficient employment duration');
       }
       
-      // Salary grade (20 points)
-      if (application.salary_grade >= 5) {
+      // Salary/Income Grade mapping (20 points)
+      const monthlyIncome = parseFloat(application.monthly_income || 0);
+      let incomeGrade = 0;
+      if (monthlyIncome >= 20000) incomeGrade = 5;
+      else if (monthlyIncome >= 15000) incomeGrade = 4;
+      else if (monthlyIncome >= 10000) incomeGrade = 3;
+      else if (monthlyIncome >= 5000) incomeGrade = 2;
+      else if (monthlyIncome > 0) incomeGrade = 1;
+
+      if (incomeGrade >= 5) {
         score += 20;
-      } else if (application.salary_grade >= 3) {
+      } else if (incomeGrade >= 3) {
         score += 15;
-      } else if (application.salary_grade >= 2) {
+      } else if (incomeGrade >= 2) {
         score += 10;
-      } else if (application.salary_grade >= 1) {
+      } else if (incomeGrade >= 1) {
         score += 5;
       } else {
         deductions.push('Low salary grade');
       }
       
       // Loan amount ratio (15 points)
-      const maxLoanForSalary = application.salary_grade * 10000; // Simplified calculation
-      const loanRatio = application.loan_amount / maxLoanForSalary;
+      const monthlyIncomeForRisk = parseFloat(application.monthly_income || 1000);
+      const loanRatio = application.requested_amount / (monthlyIncomeForRisk * 12); // Ratio against annual income
       
-      if (loanRatio <= 0.5) {
+      if (loanRatio <= 0.3) {
         score += 15;
-      } else if (loanRatio <= 0.8) {
+      } else if (loanRatio <= 0.5) {
         score += 10;
-      } else if (loanRatio <= 1.0) {
+      } else if (loanRatio <= 0.8) {
         score += 5;
       } else {
-        deductions.push('Loan amount too high for salary grade');
+        deductions.push('Requested amount too high for income');
       }
       
       // Existing loans (10 points)
@@ -289,14 +304,13 @@ class CommitteeService {
         
         const [loanResult] = await connection.execute(`
           INSERT INTO loans (
-            application_id, user_id, employee_id, loan_amount, interest_rate,
-            loan_term_months, monthly_payment, outstanding_balance, amount_due,
+            loan_application_id, user_id, employee_id, principal_amount, loan_amount, interest_rate,
+            duration_months, monthly_repayment, remaining_balance, outstanding_balance, 
             next_payment_date, status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', NOW())
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 MONTH), 'ACTIVE', NOW())
         `, [
-          applicationId, application.user_id, application.employee_id, approvedAmount, approvedRate,
-          application.monthly_payment, approvedAmount, application.monthly_payment,
-          nextPaymentDate
+          applicationId, application.user_id, application.employee_id, approvedAmount, approvedAmount, approvedRate,
+          approvedTerm, (approvedAmount * (1 + approvedRate/100) / approvedTerm), approvedAmount, approvedAmount
         ]);
         
         await connection.commit();
@@ -629,6 +643,63 @@ class CommitteeService {
         applications_rejected: 0,
         info_requested: 0
       };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getApprovedApplications(page = 1, limit = 10, filters = {}) {
+    try {
+      const offset = (page - 1) * limit;
+      let whereClause = "WHERE la.status = 'APPROVED'";
+      const params = [];
+
+      const selectQuery = `
+        SELECT 
+          la.id,
+          CONCAT(ep.first_name, ' ', ep.last_name) as employee,
+          ep.department,
+          la.approved_amount as approvedAmount,
+          la.reviewed_at as approvedDate,
+          l.monthly_repayment as installmentAmount,
+          l.duration_months as repaymentPeriod,
+          la.status
+        FROM loan_applications la
+        LEFT JOIN employee_profiles ep ON la.user_id = ep.user_id
+        LEFT JOIN loans l ON la.id = l.loan_application_id
+        ${whereClause}
+        ORDER BY la.reviewed_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      const applications = await query(selectQuery, [...params, limit, offset]);
+      return applications;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async disburseLoan(applicationId, reviewedBy, ip, userAgent) {
+    try {
+      const connection = require('../../config/database').transaction();
+      try {
+        await connection.execute(`
+          UPDATE loan_applications SET status = 'DISBURSED' WHERE id = ?
+        `, [applicationId]);
+
+        await connection.execute(`
+          UPDATE loans SET disbursement_date = NOW() WHERE loan_application_id = ?
+        `, [applicationId]);
+
+        await connection.commit();
+
+        await auditLog(reviewedBy, 'LOAN_DISBURSED', 'loan_applications', applicationId, null, { action: 'DISBURSE' }, ip, userAgent);
+
+        return { message: 'Loan disbursed successfully' };
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      }
     } catch (error) {
       throw error;
     }

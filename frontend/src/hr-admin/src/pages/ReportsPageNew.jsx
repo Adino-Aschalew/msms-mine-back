@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FileText, 
   Download, 
@@ -18,65 +18,105 @@ import {
   Mail,
   Share2
 } from 'lucide-react';
+import { hrAPI } from '../../../shared/services/hrAPI';
 
 export default function ReportsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState('last30days');
   const [reportType, setReportType] = useState('all');
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [reportStats, setReportStats] = useState({
+    total: 0,
+    thisMonth: 0,
+    processing: 0,
+    failed: 0
+  });
 
-  // Mock data for reports
-  const reports = [
-    {
-      id: 'RPT-001',
-      name: 'Monthly Performance Report',
-      type: 'Performance',
-      department: 'All',
-      generatedDate: '2026-03-15',
-      status: 'Completed',
-      size: '2.4 MB',
-      format: 'PDF'
-    },
-    {
-      id: 'RPT-002',
-      name: 'Employee Attendance Summary',
-      type: 'Attendance',
-      department: 'All',
-      generatedDate: '2026-03-14',
-      status: 'Completed',
-      size: '1.8 MB',
-      format: 'Excel'
-    },
-    {
-      id: 'RPT-003',
-      name: 'Q1 Department Analytics',
-      type: 'Analytics',
-      department: 'Engineering',
-      generatedDate: '2026-03-13',
-      status: 'Processing',
-      size: '-',
-      format: 'PDF'
-    },
-    {
-      id: 'RPT-004',
-      name: 'Salary Structure Analysis',
-      type: 'Finance',
-      department: 'All',
-      generatedDate: '2026-03-12',
-      status: 'Completed',
-      size: '3.1 MB',
-      format: 'PDF'
-    },
-    {
-      id: 'RPT-005',
-      name: 'Training Completion Report',
-      type: 'Training',
-      department: 'HR',
-      generatedDate: '2026-03-11',
-      status: 'Completed',
-      size: '1.2 MB',
-      format: 'Excel'
+  useEffect(() => {
+    fetchReportsData();
+    fetchReportsList();
+  }, []);
+
+  const fetchReportsData = async () => {
+    try {
+      // Fetch real reports data from backend
+      const response = await hrAPI.getReportsData('payroll');
+      console.log('Reports data:', response.data);
+    } catch (error) {
+      console.error('Failed to fetch reports data:', error);
     }
-  ];
+  };
+
+  const fetchReportsList = async () => {
+    try {
+      // Mock reports list for now - this can be enhanced later with real backend data
+      const mockReports = [
+        {
+          id: 'RPT-001',
+          name: 'Monthly Performance Report',
+          type: 'Performance',
+          department: 'All',
+          generatedDate: '2026-03-15',
+          status: 'Completed',
+          size: '2.4 MB',
+          format: 'PDF'
+        },
+        {
+          id: 'RPT-002',
+          name: 'Employee Attendance Summary',
+          type: 'Attendance',
+          department: 'All',
+          generatedDate: '2026-03-14',
+          status: 'Completed',
+          size: '1.8 MB',
+          format: 'Excel'
+        },
+        {
+          id: 'RPT-003',
+          name: 'Q1 Department Analytics',
+          type: 'Analytics',
+          department: 'Engineering',
+          generatedDate: '2026-03-13',
+          status: 'Processing',
+          size: '-',
+          format: 'PDF'
+        },
+        {
+          id: 'RPT-004',
+          name: 'Salary Structure Analysis',
+          type: 'Finance',
+          department: 'All',
+          generatedDate: '2026-03-12',
+          status: 'Completed',
+          size: '3.1 MB',
+          format: 'PDF'
+        },
+        {
+          id: 'RPT-005',
+          name: 'Training Completion Report',
+          type: 'Training',
+          department: 'HR',
+          generatedDate: '2026-03-11',
+          status: 'Completed',
+          size: '1.2 MB',
+          format: 'Excel'
+        }
+      ];
+      
+      setReports(mockReports);
+      setReportStats({
+        total: mockReports.length,
+        thisMonth: mockReports.filter(r => r.status === 'Completed').length,
+        processing: mockReports.filter(r => r.status === 'Processing').length,
+        failed: mockReports.filter(r => r.status === 'Failed').length
+      });
+    } catch (error) {
+      console.error('Failed to fetch reports list:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -108,25 +148,25 @@ export default function ReportsPage() {
   const quickStats = [
     {
       title: 'Total Reports',
-      value: '156',
+      value: reportStats.total.toString(),
       icon: FileText,
       color: 'blue'
     },
     {
       title: 'This Month',
-      value: '23',
+      value: reportStats.thisMonth.toString(),
       icon: Calendar,
       color: 'green'
     },
     {
       title: 'Processing',
-      value: '3',
+      value: reportStats.processing.toString(),
       icon: Clock,
       color: 'yellow'
     },
     {
       title: 'Failed',
-      value: '2',
+      value: reportStats.failed.toString(),
       icon: AlertTriangle,
       color: 'red'
     }

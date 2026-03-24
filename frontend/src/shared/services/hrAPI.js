@@ -17,10 +17,7 @@ export const hrAPI = {
 
   // Verify employee
   verifyEmployee: async (employeeId, verificationData) => {
-    const response = await apiClient.post('/api/hr/verify-employee', {
-      employee_id: employeeId,
-      ...verificationData
-    });
+    const response = await apiClient.put(`/api/hr/employees/${employeeId}/verify`, verificationData);
     return response.data;
   },
 
@@ -33,6 +30,12 @@ export const hrAPI = {
   // Get dashboard statistics
   getDashboardStats: async () => {
     const response = await apiClient.get('/api/hr/dashboard-stats');
+    return response.data;
+  },
+
+  // Update dashboard statistics
+  updateDashboardStats: async (statsData) => {
+    const response = await apiClient.put('/api/hr/dashboard-stats', statsData);
     return response.data;
   },
 
@@ -60,9 +63,42 @@ export const hrAPI = {
     return response.data;
   },
 
+  // Performance Management
+  getPerformanceStats: async () => {
+    const response = await apiClient.get('/api/hr/performance-stats');
+    return response.data;
+  },
+
+  getPerformanceReviews: async (page = 1, limit = 10) => {
+    const response = await apiClient.get(`/api/hr/performance-reviews?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
+  createPerformanceReview: async (reviewData) => {
+    const response = await apiClient.post('/api/hr/performance-reviews', reviewData);
+    return response.data;
+  },
+
+  // Reports Management
+  getReportsData: async (reportType = 'payroll') => {
+    const response = await apiClient.get(`/api/hr/reports?reportType=${reportType}`);
+    return response.data;
+  },
+
+  // Account Management
+  getUserProfile: async () => {
+    const response = await apiClient.get('/api/hr/profile');
+    return response.data;
+  },
+
+  updateUserProfile: async (profileData) => {
+    const response = await apiClient.put('/api/hr/profile', profileData);
+    return response.data;
+  },
+
   // Update employee profile
   updateEmployeeProfile: async (employeeId, profileData) => {
-    const response = await apiClient.put(`/api/hr/employees/${employeeId}`, profileData);
+    const response = await apiClient.put(`/api/hr/employees/${employeeId}/profile`, profileData);
     return response.data;
   },
 
@@ -74,15 +110,15 @@ export const hrAPI = {
 
   // Bulk verify employees
   bulkVerifyEmployees: async (employeeIds) => {
-    const response = await apiClient.post('/api/hr/bulk-verify', {
-      employee_ids: employeeIds
+    const response = await apiClient.post('/api/hr/employees/bulk-verify', {
+      userIds: employeeIds
     });
     return response.data;
   },
 
   // Get employee statistics
   getEmployeeStats: async () => {
-    const response = await apiClient.get('/api/hr/stats');
+    const response = await apiClient.get('/api/hr/employees/stats');
     return response.data;
   },
 
@@ -94,7 +130,21 @@ export const hrAPI = {
 
   // Get department breakdown
   getDepartmentBreakdown: async () => {
-    const response = await apiClient.get('/api/hr/departments');
+    const response = await apiClient.get('/api/hr/employees/departments');
+    return response.data;
+  },
+
+  // Update employment status
+  updateEmploymentStatus: async (employeeId, status) => {
+    const response = await apiClient.put(`/api/hr/employees/${employeeId}/status`, {
+      employment_status: status
+    });
+    return response.data;
+  },
+
+  // Get job grades
+  getJobGrades: async () => {
+    const response = await apiClient.get('/api/hr/employees/job-grades');
     return response.data;
   }
 };

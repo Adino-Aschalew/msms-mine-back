@@ -4,7 +4,13 @@ const { query } = require('../config/database');
 class NotificationService {
   static async sendEmail(to, subject, message, options = {}) {
     try {
-      const transporter = nodemailer.createTransporter({
+      // Check if email configuration is available
+      if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        console.log('Email configuration not found, skipping email send');
+        return { success: false, message: 'Email not configured' };
+      }
+
+      const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         secure: process.env.SMTP_SECURE === 'true',
@@ -34,7 +40,8 @@ class NotificationService {
       // Log failed email
       await this.logNotification('EMAIL', to, subject, message, 'FAILED', error.message);
       
-      throw new Error(`Failed to send email: ${error.message}`);
+      // Don't throw error, just return failure
+      return { success: false, message: `Failed to send email: ${error.message}` };
     }
   }
 

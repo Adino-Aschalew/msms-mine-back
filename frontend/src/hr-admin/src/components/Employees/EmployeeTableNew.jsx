@@ -49,9 +49,9 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
 
     if (searchTerm) {
       filtered = filtered.filter(emp => 
-        emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.employee_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -62,12 +62,18 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
     }
 
     if (statusFilter !== 'All') {
-      filtered = filtered.filter(emp => emp.status === statusFilter);
+      filtered = filtered.filter(emp => emp.employment_status === statusFilter);
     }
 
     filtered.sort((a, b) => {
       let valA = a[sortConfig.key];
       let valB = b[sortConfig.key];
+      
+      // Handle special case for name field
+      if (sortConfig.key === 'name') {
+        valA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
+        valB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
+      }
       
       if (typeof valA === 'string') valA = valA.toLowerCase();
       if (typeof valB === 'string') valB = valB.toLowerCase();
@@ -88,6 +94,11 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case 'ACTIVE': return 'bg-green-100 text-green-800 border-green-200';
+      case 'ON_LEAVE': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'INACTIVE': return 'bg-red-100 text-red-800 border-red-200';
+      case 'PROBATION': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'TERMINATED': return 'bg-red-100 text-red-800 border-red-200';
       case 'Active': return 'bg-green-100 text-green-800 border-green-200';
       case 'On Leave': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'Inactive': return 'bg-red-100 text-red-800 border-red-200';
@@ -210,15 +221,15 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                          {emp.firstName?.charAt(0) || emp.name?.charAt(0) || 'E'}
+                          {emp.first_name?.charAt(0) || emp.last_name?.charAt(0) || 'E'}
                         </div>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {emp.name || `${emp.firstName} ${emp.lastName}`}
+                          {emp.first_name && emp.last_name ? `${emp.first_name} ${emp.last_name}` : emp.first_name || emp.last_name || 'Unknown'}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {emp.employeeId || emp.id}
+                          {emp.employee_id || emp.id}
                         </div>
                       </div>
                     </div>
@@ -229,7 +240,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                         {emp.role}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {emp.department} • {emp.type}
+                        {emp.department || 'N/A'} • {emp.type}
                       </div>
                     </div>
                   </td>
@@ -252,8 +263,8 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(emp.status)}`}>
-                      {emp.status}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(emp.employment_status)}`}>
+                      {emp.employment_status || 'Unknown'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -264,7 +275,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                   <td className="px-6 py-4">
                     <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                       <Calendar className="w-3 h-3 mr-1" />
-                      {emp.joinDate ? format(new Date(emp.joinDate), 'MMM dd, yyyy') : 'N/A'}
+                      {emp.hire_date ? format(new Date(emp.hire_date), 'MMM dd, yyyy') : 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">

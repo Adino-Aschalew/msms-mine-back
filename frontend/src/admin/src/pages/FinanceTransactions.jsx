@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search,
   Filter,
@@ -16,83 +16,53 @@ import {
   Car,
   Utensils,
   Briefcase,
-  MoreHorizontal
+  MoreHorizontal,
+  Loader2
 } from 'lucide-react';
+import { financeAPI } from '../../../shared/services/financeAPI';
 
 const FinanceTransactions = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [dateRange, setDateRange] = useState('30days');
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
 
-  // Mock transactions data
-  const transactions = [
-    { 
-      id: 'TXN001', 
-      date: '2024-03-15', 
-      description: 'Client Payment - Tech Solutions Inc',
-      type: 'Income', 
-      category: 'Sales', 
-      account: 'Business Checking', 
-      amount: 12500, 
-      status: 'completed',
-      reference: 'INV-2024-045'
-    },
-    { 
-      id: 'TXN002', 
-      date: '2024-03-15', 
-      description: 'Monthly Payroll - March 2024',
-      type: 'Expense', 
-      category: 'Payroll', 
-      account: 'Business Checking', 
-      amount: -8500, 
-      status: 'completed',
-      reference: 'PAY-2024-03'
-    },
-    { 
-      id: 'TXN003', 
-      date: '2024-03-14', 
-      description: 'Consulting Services - ABC Corp',
-      type: 'Income', 
-      category: 'Services', 
-      account: 'Business Checking', 
-      amount: 8750, 
-      status: 'completed',
-      reference: 'SRV-2024-012'
-    },
-    { 
-      id: 'TXN004', 
-      date: '2024-03-14', 
-      description: 'Office Supplies - Stationery Order',
-      type: 'Expense', 
-      category: 'Office Supplies', 
-      account: 'Business Credit Card', 
-      amount: -450, 
-      status: 'pending',
-      reference: 'ORD-2024-089'
-    },
-    { 
-      id: 'TXN005', 
-      date: '2024-03-13', 
-      description: 'Investment Returns - Q1 2024',
-      type: 'Income', 
-      category: 'Investments', 
-      account: 'Investment Account', 
-      amount: 15000, 
-      status: 'completed',
-      reference: 'INV-RET-2024-Q1'
+  useEffect(() => {
+    fetchTransactions();
+  }, [searchQuery, filterType, filterCategory, dateRange, pagination.page]);
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const response = await financeAPI.getTransactionsList({
+        search: searchQuery,
+        type: filterType,
+        category: filterCategory, // Added category filter
+        dateRange: dateRange, // Added dateRange filter
+        page: pagination.page,
+        limit: pagination.limit
+      });
+      
+      if (response.success) {
+        setTransactions(response.data.transactions || []);
+        if (response.data.pagination) {
+          setPagination(prev => ({ ...prev, ...response.data.pagination }));
+        }
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setLoading(false);
     }
-  ];
+  };
 
   const categories = [
-    { name: 'Sales', icon: ShoppingCart, color: 'blue' },
-    { name: 'Services', icon: Briefcase, color: 'green' },
-    { name: 'Payroll', icon: Users, color: 'purple' },
-    { name: 'Office Supplies', icon: Home, color: 'gray' },
-    { name: 'Software', icon: Monitor, color: 'indigo' },
-    { name: 'Marketing', icon: TrendingUp, color: 'pink' },
-    { name: 'Rent', icon: Building, color: 'yellow' },
-    { name: 'Investments', icon: DollarSign, color: 'emerald' }
+    { name: 'Savings', icon: DollarSign, color: 'blue' },
+    { name: 'Loan', icon: CreditCard, color: 'purple' },
+    { name: 'Payroll', icon: Briefcase, color: 'green' }
   ];
 
   const getCategoryIcon = (categoryName) => {
@@ -105,24 +75,13 @@ const FinanceTransactions = () => {
     return category ? category.color : 'gray';
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.reference.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesType = filterType === 'all' || transaction.type === filterType;
-    const matchesCategory = filterCategory === 'all' || transaction.category === filterCategory;
-    
-    return matchesSearch && matchesType && matchesCategory;
-  });
+  const totalIncome = transactions
+    .filter(t => t.amount > 0)
+    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-  const totalIncome = filteredTransactions
-    .filter(t => t.type === 'Income')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = Math.abs(filteredTransactions
-    .filter(t => t.type === 'Expense')
-    .reduce((sum, t) => sum + t.amount, 0));
+  const totalExpenses = Math.abs(transactions
+    .filter(t => t.amount < 0)
+    .reduce((sum, t) => sum + parseFloat(t.amount), 0));
 
   const netTotal = totalIncome - totalExpenses;
 
@@ -270,60 +229,75 @@ const FinanceTransactions = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredTransactions.map((transaction) => {
-                const CategoryIcon = getCategoryIcon(transaction.category);
-                const categoryColor = getCategoryColor(transaction.category);
-                
-                return (
-                  <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {transaction.description}
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-2" />
+                    <p className="text-gray-500">Loading transactions...</p>
+                  </td>
+                </tr>
+              ) : transactions.length > 0 ? (
+                transactions.map((transaction) => {
+                  const CategoryIcon = getCategoryIcon(transaction.category);
+                  const categoryColor = getCategoryColor(transaction.category);
+                  
+                  return (
+                    <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {transaction.user_name || 'System'}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            ID: {transaction.id.toString().substring(0, 8)}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {transaction.id} • {transaction.reference}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className={`bg-${categoryColor}-100 p-1 rounded dark:bg-${categoryColor}-900/20`}>
+                            <CategoryIcon className={`h-4 w-4 text-${categoryColor}-600 dark:text-${categoryColor}-400`} />
+                          </div>
+                          <span className="text-sm text-gray-900 dark:text-white">{transaction.category}</span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {transaction.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className={`bg-${categoryColor}-100 p-1 rounded dark:bg-${categoryColor}-900/20`}>
-                          <CategoryIcon className={`h-4 w-4 text-${categoryColor}-600 dark:text-${categoryColor}-400`} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        {transaction.account}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className={`text-sm font-bold ${
+                          transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
                         </div>
-                        <span className="text-sm text-gray-900 dark:text-white">{transaction.category}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {transaction.account}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className={`text-sm font-bold ${
-                        transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'Income' ? '+' : '-'}${Math.abs(transaction.amount).toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        transaction.status === 'completed' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                      }`}>
-                        {transaction.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          transaction.status === 'completed' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        }`}>
+                          {transaction.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                          <MoreHorizontal className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    No transactions found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -600,6 +600,32 @@ class CommitteeController {
       });
     }
   }
+
+  static async getApprovedApplications(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const result = await CommitteeService.getApprovedApplications(page, limit);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error('Get approved error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch approved applications' });
+    }
+  }
+
+  static async disburseLoan(req, res) {
+    try {
+      const { applicationId } = req.params;
+      const reviewedBy = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      const result = await CommitteeService.disburseLoan(applicationId, reviewedBy, ip, userAgent);
+      res.json({ success: true, message: result.message });
+    } catch (error) {
+      console.error('Disburse error:', error);
+      res.status(500).json({ success: false, message: 'Failed to disburse loan' });
+    }
+  }
 }
 
 module.exports = CommitteeController;

@@ -4,20 +4,23 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ArcElement,
   Title,
   Tooltip,
   Legend,
   Filler
 } from 'chart.js';
-import { Line, Pie, Doughnut } from 'react-chartjs-2';
+import { Line, Pie, Doughnut, Bar } from 'react-chartjs-2';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useRef, useEffect } from 'react';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ArcElement,
   Title,
   Tooltip,
@@ -25,15 +28,17 @@ ChartJS.register(
   Filler
 );
 
-export function DepartmentChart() {
+export function DepartmentChart({ data = [] }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const chartRef = useRef(null);
 
-  const data = {
-    labels: ['Engineering', 'Sales', 'Marketing', 'HR', 'Design'],
+  // Prepare chart data from props or use defaults
+  const chartData = {
+    labels: data && data.length > 0 ? data.map(d => d.name || d.department) : ['Engineering', 'Sales', 'Marketing', 'HR', 'Design'],
     datasets: [
       {
-        data: [45, 25, 15, 5, 10],
+        data: data && data.length > 0 ? data.map(d => d.value || d.count) : [45, 25, 15, 5, 10],
         backgroundColor: [
           '#3b82f6', 
           '#10b981', 
@@ -70,22 +75,32 @@ export function DepartmentChart() {
         Department Distribution
       </h3>
       <div className="flex-1 min-h-0 relative">
-        <Pie data={data} options={options} />
+        <Pie ref={chartRef} data={chartData} options={options} />
       </div>
     </div>
   );
 }
 
-export function AttendanceChart() {
+export function AttendanceChart({ data = [] }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const chartRef = useRef(null);
 
-  const data = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  // Prepare chart data from props or use defaults
+  const attendanceData = data && data.length > 0 ? data : [
+    { date: 'Mon', present: 98, absent: 2, late: 0 },
+    { date: 'Tue', present: 97, absent: 2, late: 1 },
+    { date: 'Wed', present: 95, absent: 3, late: 2 },
+    { date: 'Thu', present: 96, absent: 2, late: 2 },
+    { date: 'Fri', present: 92, absent: 5, late: 3 }
+  ];
+
+  const chartData = {
+    labels: attendanceData.map(d => d.date),
     datasets: [
       {
         label: 'Present (%)',
-        data: [98, 97, 95, 96, 92],
+        data: attendanceData.map(d => d.present),
         borderColor: '#3b82f6',
         backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
         borderWidth: 3,
@@ -99,7 +114,7 @@ export function AttendanceChart() {
       },
       {
         label: 'Expected (%)',
-        data: [99, 99, 99, 99, 99],
+        data: attendanceData.map(() => 99),
         borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#cbd5e1',
         borderDash: [6, 6],
         borderWidth: 2,
@@ -168,21 +183,29 @@ export function AttendanceChart() {
         Attendance Trends
       </h3>
       <div className="flex-1 min-h-0 relative">
-        <Line data={data} options={options} />
+        <Line ref={chartRef} data={chartData} options={options} />
       </div>
     </div>
   );
 }
 
-export function DiversityChart() {
+export function DiversityChart({ data = [] }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const chartRef = useRef(null);
 
-  const data = {
-    labels: ['Female', 'Male', 'Non-binary'],
+  // Find gender data from the diversity data array
+  const genderData = data.find(d => d.category === 'Gender') || {};
+  
+  const chartData = {
+    labels: ['Female', 'Male', 'Other'],
     datasets: [
       {
-        data: [45, 50, 5],
+        data: [
+          genderData.female || 45,
+          genderData.male || 50,
+          genderData.other || 5
+        ],
         backgroundColor: [
           '#ec4899', 
           '#3b82f6', 
@@ -221,7 +244,7 @@ export function DiversityChart() {
         Gender Diversity
       </h3>
       <div className="flex-1 min-h-0 relative">
-        <Doughnut data={data} options={options} />
+        <Doughnut ref={chartRef} data={chartData} options={options} />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, Download, FileText, CheckCircle, AlertCircle, X, Users, DollarSign, Calendar, Clock, FileSpreadsheet, Database, TrendingUp, Settings } from 'lucide-react';
-import { useNotifications } from '../../../contexts/NotificationContext';
-import { financeAPI } from '../../../services/financeAPI';
+import { useNotifications } from '../../contexts/NotificationContext';
+import { financeAPI } from '../../../../shared/services/financeAPI';
 import Papa from 'papaparse';
 
 const PayrollImport = () => {
@@ -76,10 +76,11 @@ const PayrollImport = () => {
   const downloadTemplate = () => {
     const template = [
       {
-        'Employee ID': 'EMP001',
-        'Gross Salary': '5000',
-        'Net Salary': '3750',
-        'Payroll Date': '2024-03-15'
+        'Employee ID': 'EMP034',
+        'Gross Salary': '50000',
+        'Savings Deduction': '5000',
+        'Loan Deduction': '2000',
+        'Net Salary': '43000'
       }
     ];
 

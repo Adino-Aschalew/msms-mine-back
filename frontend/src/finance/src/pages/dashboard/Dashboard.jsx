@@ -19,8 +19,8 @@ import CashFlowChart from '../../components/charts/CashFlowChart';
 import RecentTransactionsTable from '../../components/tables/RecentTransactionsTable';
 import AccountsOverview from '../../components/widgets/AccountsOverview';
 import DateFilter from '../../components/widgets/DateFilter';
-import { financeAPI } from '../../../shared/services/financeAPI';
-import { useAuth } from '../../../shared/contexts/AuthContext';
+import { financeAPI } from '../../../../shared/services/financeAPI';
+import { useAuth } from '../../../../shared/contexts/AuthContext';
 
 const Dashboard = () => {
   const [dateRange, setDateRange] = useState('30days');
@@ -175,7 +175,7 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="h-48 sm:h-64">
-            <RevenueChart dateRange={dateRange} />
+            <RevenueChart dateRange={dateRange} dashboardData={dashboardData} />
           </div>
         </motion.div>
 
@@ -194,7 +194,7 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="h-48 sm:h-64">
-            <ExpenseChart dateRange={dateRange}/>
+            <ExpenseChart dateRange={dateRange} dashboardData={dashboardData} />
           </div>
         </motion.div>
       </div>
@@ -215,7 +215,7 @@ const Dashboard = () => {
           </button>
         </div>
         <div className="h-48 sm:h-64">
-          <CashFlowChart dateRange={dateRange} />
+          <CashFlowChart dateRange={dateRange} dashboardData={dashboardData} />
         </div>
       </motion.div>
 

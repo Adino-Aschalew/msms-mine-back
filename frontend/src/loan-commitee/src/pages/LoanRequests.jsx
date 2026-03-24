@@ -65,11 +65,13 @@ const LoanRequests = () => {
           id: app.id,
           employeeName: `${app.first_name} ${app.last_name}`,
           department: app.department || 'Not specified',
-          loanType: app.loan_purpose || 'Personal',
-          requestedAmount: parseFloat(app.loan_amount),
-          monthlySalary: parseFloat(app.monthly_payment || 1000), // Assuming salary logic
-          savingsBalance: parseFloat(app.loan_amount) * 3, // Dummy
-          guarantor: app.guarantor_details?.fullName || 'Not specified',
+          loanType: app.purpose || 'Personal',
+          requestedAmount: parseFloat(app.requested_amount),
+          monthlySalary: parseFloat(app.monthly_income || 0),
+          savingsBalance: parseFloat(app.savings_balance || 0),
+          guarantor: (typeof app.guarantor_details === 'string') 
+            ? JSON.parse(app.guarantor_details).fullName 
+            : (app.guarantor_details?.fullName || 'Not specified'),
           eligibilityStatus: app.risk_level === 'CRITICAL' ? 'not-eligible' : 'eligible',
           submissionDate: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           status: app.status?.toLowerCase() || 'pending'
@@ -432,8 +434,13 @@ const LoanRequests = () => {
         if (!matchesSearch) return false;
       }
 
+      // Department filter
+      if (selectedDepartment !== 'all' && request.department.toLowerCase() !== selectedDepartment.toLowerCase()) {
+        return false;
+      }
+
       // Loan type filter
-      if (selectedLoanType !== 'all' && request.loanType !== selectedLoanType) {
+      if (selectedLoanType !== 'all' && request.loanType.toLowerCase() !== selectedLoanType.toLowerCase()) {
         return false;
       }
 
