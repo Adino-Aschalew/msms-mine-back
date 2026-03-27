@@ -93,21 +93,20 @@ class UserModel {
     try {
       console.log('findByIdWithProfile - Starting query for userId:', userId);
       
-      const query = `
+      const sql = `
         SELECT 
           u.id, u.username, u.email, u.password_hash, u.role, u.created_at, u.is_active,
-          ep.employee_id, ep.first_name, ep.last_name, ep.department, ep.position, 
-          ep.hire_date, ep.phone, ep.address, ep.date_of_birth, ep.emergency_contact, 
-          ep.bio, ep.employment_type
+          ep.employee_id, ep.first_name, ep.last_name, ep.grandfather_name, ep.department, 
+          ep.job_role as position, ep.hire_date, ep.phone, ep.address, 
+          ep.job_grade as employment_type, ep.salary, ep.employment_status
         FROM users u 
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id 
         WHERE u.id = ? AND u.is_active = true
       `;
       
-      console.log('findByIdWithProfile - Executing query:', query);
-      console.log('findByIdWithProfile - Query params:', [userId]);
+      console.log('findByIdWithProfile - Executing query for ID:', userId);
       
-      const result = await query(query, [userId]);
+      const result = await query(sql, [userId]);
       console.log('findByIdWithProfile - Query result:', result);
       console.log('findByIdWithProfile - Result length:', result.length);
       
@@ -131,15 +130,15 @@ class UserModel {
           employee_id: user.employee_id,
           first_name: user.first_name,
           last_name: user.last_name,
+          grandfather_name: user.grandfather_name,
           department: user.department,
           position: user.position,
           hire_date: user.hire_date,
           phone: user.phone,
           address: user.address,
-          date_of_birth: user.date_of_birth,
-          emergency_contact: user.emergency_contact,
-          bio: user.bio,
-          employment_type: user.employment_type
+          employment_type: user.employment_type,
+          salary: user.salary,
+          employment_status: user.employment_status
         } : null
       };
       

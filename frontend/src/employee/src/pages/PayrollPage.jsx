@@ -1,97 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiCalendar, FiDollarSign, FiDownload, FiSearch, FiFilter, FiTrendingUp, FiPieChart, FiActivity, FiCreditCard, FiShield, FiTarget, FiBarChart2 } from 'react-icons/fi';
+import { employeeAPI } from '../../../shared/services/employeeAPI';
+import { savingsAPI } from '../../../shared/services/savingsAPI';
+import { loansAPI } from '../../../shared/services/loansAPI';
 
 const PayrollPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
   const [yearFilter, setYearFilter] = useState('2024');
 
-  const payrollData = [
-    {
-      id: 1,
-      month: 'March 2024',
-      salary: 10000,
-      savingsDeduction: 2500,
-      loanDeduction: 916.67,
-      otherDeductions: 200,
-      netPay: 6383.33,
-      payDate: '2024-03-31',
-      status: 'processed',
-    },
-    {
-      id: 2,
-      month: 'February 2024',
-      salary: 10000,
-      savingsDeduction: 2500,
-      loanDeduction: 916.67,
-      otherDeductions: 200,
-      netPay: 6383.33,
-      payDate: '2024-02-29',
-      status: 'processed',
-    },
-    {
-      id: 3,
-      month: 'January 2024',
-      salary: 10000,
-      savingsDeduction: 2500,
-      loanDeduction: 916.67,
-      otherDeductions: 200,
-      netPay: 6383.33,
-      payDate: '2024-01-31',
-      status: 'processed',
-    },
-    {
-      id: 4,
-      month: 'December 2023',
-      salary: 10000,
-      savingsDeduction: 2500,
-      loanDeduction: 916.67,
-      otherDeductions: 200,
-      netPay: 6383.33,
-      payDate: '2023-12-31',
-      status: 'processed',
-    },
-    {
-      id: 5,
-      month: 'November 2023',
-      salary: 10000,
-      savingsDeduction: 2500,
-      loanDeduction: 916.67,
-      otherDeductions: 200,
-      netPay: 6383.33,
-      payDate: '2023-11-30',
-      status: 'processed',
-    },
-    {
-      id: 6,
-      month: 'April 2024',
-      salary: 10000,
-      savingsDeduction: 2500,
-      loanDeduction: 916.67,
-      otherDeductions: 200,
-      netPay: 6383.33,
-      payDate: '2024-04-30',
-      status: 'pending',
-    },
-  ];
+  const [salaryData, setSalaryData] = useState({
+    salary: 0,
+    savingsRate: 0,
+    loanDeduction: 0,
+    loading: true
+  });
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    const fetchPayrollData = async () => {
+      try {
+        const [profileRes, savingsRes, loansRes] = await Promise.all([
+          employeeAPI.getProfile(),
+          savingsAPI.getSavingsAccount().catch(() => null),
+          loansAPI.getUserLoans().catch(() => [])
+        ]);
+
+        const profileData = profileRes?.data || profileRes;
+        const eProfile = profileData?.employeeProfile || profileData?.employee_profile || {};
+        
+        const savingsData = savingsRes?.data || savingsRes;
+        const activeLoans = loansRes?.data || loansRes || [];
+
+        const salary = parseFloat(eProfile.salary || 0);
+        const savingsRate = parseFloat(savingsData?.saving_percentage || 0);
+        const loanDeduction = activeLoans.filter(l => l.status === 'ACTIVE').reduce((sum, l) => sum + parseFloat(l.monthly_repayment || l.monthly_payment || 0), 0);
+
+        setSalaryData({
+          salary,
+          savingsRate,
+          loanDeduction,
+          loading: false
+        });
+
+        // Simulate history based on real hire date if no real history exists
+        const hireDate = new Date(eProfile.hire_date || new Date());
+        const monthsSinceHire = Math.min(12, Math.floor((new Date() - hireDate) / (1000 * 60 * 60 * 24 * 30)));
+        
+        const simulatedHistory = [];
+        for (let i = 0; i < monthsSinceHire; i++) {
+          const date = new Date();
+          date.setMonth(date.getMonth() - i);
+          simulatedHistory.push({
+            id: i,
+            month: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
+            salary,
+            savingsDeduction: (salary * savingsRate) / 100,
+            loanDeduction: i === 0 ? loanDeduction : 0, // Assume loan started recently
+            otherDeductions: 0,
+            netPay: salary - ((salary * savingsRate) / 100) - (i === 0 ? loanDeduction : 0),
+            payDate: new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0],
+            status: 'processed'
+          });
+        }
+        setHistory(simulatedHistory);
+        
+      } catch (error) {
+        console.error('Error fetching payroll data:', error);
+        setSalaryData(prev => ({ ...prev, loading: false }));
+      }
+    };
+    fetchPayrollData();
+  }, []);
 
   const currentMonthStats = {
-    salary: 10000,
-    totalDeductions: 3616.67,
-    savingsDeduction: 2500,
-    loanDeduction: 916.67,
-    otherDeductions: 200,
-    netPay: 6383.33,
+    salary: salaryData.salary,
+    savingsDeduction: (salaryData.salary * salaryData.savingsRate) / 100,
+    loanDeduction: salaryData.loanDeduction,
+    otherDeductions: 0,
+    totalDeductions: ((salaryData.salary * salaryData.savingsRate) / 100) + salaryData.loanDeduction,
+    netPay: salaryData.salary - ((salaryData.salary * salaryData.savingsRate) / 100) - salaryData.loanDeduction,
   };
 
   const yearStats = {
-    totalSalary: 120000,
-    totalSavings: 30000,
-    totalLoanRepayments: 11000,
-    totalNetPay: 79000,
+    totalSalary: salaryData.salary * 12,
+    totalSavings: ((salaryData.salary * salaryData.savingsRate) / 100) * 12,
+    totalLoanRepayments: salaryData.loanDeduction * 12,
+    totalNetPay: (salaryData.salary - ((salaryData.salary * salaryData.savingsRate) / 100) - salaryData.loanDeduction) * 12,
   };
 
-  const filteredPayrollData = payrollData.filter(payroll => {
+  const filteredPayrollData = history.filter(payroll => {
     const matchesSearch = payroll.month.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesYear = payroll.month.includes(yearFilter);
     const matchesMonth = !monthFilter || payroll.month.toLowerCase().includes(monthFilter.toLowerCase());
@@ -150,7 +148,7 @@ const PayrollPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Monthly Salary</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  ${currentMonthStats.salary.toLocaleString()}
+                  {currentMonthStats.salary.toLocaleString()} ETB
                 </p>
                 <div className="flex items-center mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium">
                   <FiTrendingUp className="mr-1" />
@@ -168,11 +166,11 @@ const PayrollPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Deductions</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  ${currentMonthStats.totalDeductions.toLocaleString()}
+                  {currentMonthStats.totalDeductions.toLocaleString()} ETB
                 </p>
                 <div className="flex items-center mt-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
                   <FiActivity className="mr-1" />
-                  <span>{((currentMonthStats.totalDeductions / currentMonthStats.salary) * 100).toFixed(1)}% of salary</span>
+                  <span>{currentMonthStats.salary > 0 ? ((currentMonthStats.totalDeductions / currentMonthStats.salary) * 100).toFixed(1) : 0}% of salary</span>
                 </div>
               </div>
               <div className="p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
@@ -186,7 +184,7 @@ const PayrollPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Net Pay</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  ${currentMonthStats.netPay.toLocaleString()}
+                  {currentMonthStats.netPay.toLocaleString()} ETB
                 </p>
                 <div className="flex items-center mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
                   <FiTarget className="mr-1" />
@@ -291,17 +289,17 @@ const PayrollPage = () => {
                           <div className="text-xs text-gray-500 dark:text-gray-400">{new Date(payroll.payDate).toLocaleDateString()}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
-                          ${payroll.salary.toLocaleString()}
+                          {payroll.salary.toLocaleString()} ETB
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            <div>Savings: ${payroll.savingsDeduction.toLocaleString()}</div>
-                            <div>Loan: ${payroll.loanDeduction.toLocaleString()}</div>
+                            <div>Savings: {payroll.savingsDeduction.toLocaleString()} ETB</div>
+                            <div>Loan: {payroll.loanDeduction.toLocaleString()} ETB</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-green-600 dark:text-green-400">
-                            ${payroll.netPay.toLocaleString()}
+                            {payroll.netPay.toLocaleString()} ETB
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -329,47 +327,47 @@ const PayrollPage = () => {
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Gross Salary</span>
                   <span className="font-bold text-gray-900 dark:text-white">
-                    ${currentMonthStats.salary.toLocaleString()}
+                    {currentMonthStats.salary.toLocaleString()} ETB
                   </span>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Savings</span>
                     <span className="font-medium text-red-600 dark:text-red-400">
-                      -${currentMonthStats.savingsDeduction.toLocaleString()}
+                      -{currentMonthStats.savingsDeduction.toLocaleString()} ETB
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                    <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${(currentMonthStats.savingsDeduction / currentMonthStats.salary) * 100}%` }}></div>
+                    <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${salaryData.salary > 0 ? (currentMonthStats.savingsDeduction / salaryData.salary) * 100 : 0}%` }}></div>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Loan Repayment</span>
                     <span className="font-medium text-red-600 dark:text-red-400">
-                      -${currentMonthStats.loanDeduction.toLocaleString()}
+                      -{currentMonthStats.loanDeduction.toLocaleString()} ETB
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                    <div className="bg-orange-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${(currentMonthStats.loanDeduction / currentMonthStats.salary) * 100}%` }}></div>
+                    <div className="bg-orange-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${salaryData.salary > 0 ? (currentMonthStats.loanDeduction / salaryData.salary) * 100 : 0}%` }}></div>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Other Deductions</span>
                     <span className="font-medium text-red-600 dark:text-red-400">
-                      -${currentMonthStats.otherDeductions.toLocaleString()}
+                      -{currentMonthStats.otherDeductions.toLocaleString()} ETB
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${(currentMonthStats.otherDeductions / currentMonthStats.salary) * 100}%` }}></div>
+                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${salaryData.salary > 0 ? (currentMonthStats.otherDeductions / salaryData.salary) * 100 : 0}%` }}></div>
                   </div>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-900/50">
                     <span className="text-sm font-bold text-gray-900 dark:text-white">Net Pay</span>
                     <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                      ${currentMonthStats.netPay.toLocaleString()}
+                      {currentMonthStats.netPay.toLocaleString()} ETB
                     </span>
                   </div>
                 </div>
@@ -386,25 +384,25 @@ const PayrollPage = () => {
                 <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Salary</span>
                   <span className="font-bold text-blue-600 dark:text-blue-400">
-                    ${yearStats.totalSalary.toLocaleString()}
+                    {yearStats.totalSalary.toLocaleString()} ETB
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Savings</span>
                   <span className="font-bold text-green-600 dark:text-green-400">
-                    ${yearStats.totalSavings.toLocaleString()}
+                    {yearStats.totalSavings.toLocaleString()} ETB
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Loan Repayments</span>
                   <span className="font-bold text-orange-600 dark:text-orange-400">
-                    ${yearStats.totalLoanRepayments.toLocaleString()}
+                    {yearStats.totalLoanRepayments.toLocaleString()} ETB
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Net Pay</span>
                   <span className="font-bold text-purple-600 dark:text-purple-400">
-                    ${yearStats.totalNetPay.toLocaleString()}
+                    {yearStats.totalNetPay.toLocaleString()} ETB
                   </span>
                 </div>
               </div>

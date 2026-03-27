@@ -12,7 +12,7 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
       try {
         setLoading(true);
         const data = await financeAPI.getRecentTransactions(limit);
-        setTransactions(data.data || []);
+        setTransactions(data || []);
       } catch (err) {
         console.error('Failed to fetch transactions:', err);
       } finally {
@@ -76,7 +76,7 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
                   {getTypeIcon(transaction.type)}
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {transaction.id}
+                      TXN-{transaction.id}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {transaction.date ? formatDistanceToNow(new Date(transaction.date), { addSuffix: true }) : 'N/A'}
@@ -89,7 +89,7 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
                   {transaction.category}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {transaction.description}
+                  {transaction.user_name}
                 </p>
               </td>
               <td className="py-3">
@@ -106,7 +106,7 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
                     : 'text-blue-600 dark:text-blue-400'
                 }`}>
                   {['income', 'contribution'].includes(String(transaction.type).toLowerCase()) ? '+' : ['expense', 'withdrawal', 'payment'].includes(String(transaction.type).toLowerCase()) ? '-' : ''}
-                  ${parseFloat(transaction.amount || 0).toLocaleString()}
+                  {parseFloat(transaction.amount || 0).toLocaleString()} ETB
                 </p>
               </td>
               <td className="py-3">

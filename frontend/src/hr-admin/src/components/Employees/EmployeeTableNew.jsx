@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  ChevronLeft, 
+import {
+  Search,
+  Filter,
+  Download,
+  ChevronLeft,
   ChevronRight,
   Eye,
   Edit,
@@ -48,7 +48,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
     let filtered = [...employees];
 
     if (searchTerm) {
-      filtered = filtered.filter(emp => 
+      filtered = filtered.filter(emp =>
         `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.employee_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,13 +68,13 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
     filtered.sort((a, b) => {
       let valA = a[sortConfig.key];
       let valB = b[sortConfig.key];
-      
+
       // Handle special case for name field
       if (sortConfig.key === 'name') {
         valA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
         valB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
       }
-      
+
       if (typeof valA === 'string') valA = valA.toLowerCase();
       if (typeof valB === 'string') valB = valB.toLowerCase();
 
@@ -145,17 +145,17 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
         <div className="flex flex-col lg:flex-row gap-4 justify-between items-center">
           <div className="relative w-full lg:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input 
-              type="text" 
-              placeholder="Search employees..." 
+            <input
+              type="text"
+              placeholder="Search employees..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3">
-            <select 
+            <select
               value={departmentFilter}
               onChange={(e) => { setDepartmentFilter(e.target.value); setCurrentPage(1); }}
               className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -164,8 +164,8 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                 <option key={dept} value={dept}>{dept === 'All' ? 'All Departments' : dept}</option>
               ))}
             </select>
-            
-            <select 
+
+            <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
               className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -174,7 +174,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                 <option key={status} value={status}>{status === 'All' ? 'All Statuses' : status}</option>
               ))}
             </select>
-            
+
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
@@ -269,7 +269,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      ${emp.salary?.toLocaleString()}
+                      ETB {emp.salary?.toLocaleString()}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -280,21 +280,21 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button 
+                      <button
                         onClick={() => openView(emp)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         title="View"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => openEdit(emp)}
                         className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => openDelete(emp)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                         title="Delete"
@@ -331,27 +331,55 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
             <span className="font-medium">{filteredData.length}</span> results
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               className="p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            
+
             <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
+              {Array.from({ length: pageCount }).map((_, i) => {
                 const pageNum = i + 1;
                 const isActive = currentPage === pageNum;
+
+                // Show a limited range of pages if there are many
+                if (pageCount > 7) {
+                  if (
+                    pageNum === 1 ||
+                    pageNum === pageCount ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 text-sm rounded-lg transition-colors ${isActive
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  }
+
+                  if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                    return <span key={pageNum} className="px-1 text-gray-400">...</span>;
+                  }
+
+                  return null;
+                }
+
                 return (
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                      isActive 
-                        ? 'bg-blue-500 text-white' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                    }`}
+                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${isActive
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -359,7 +387,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
               })}
             </div>
 
-            <button 
+            <button
               disabled={currentPage === pageCount || pageCount === 0}
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageCount))}
               className="p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
@@ -371,22 +399,22 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
       )}
 
       {/* Modals */}
-      <ViewEmployeeModal 
-        isOpen={isViewOpen} 
-        onClose={() => setIsViewOpen(false)} 
-        employee={selectedEmployee} 
+      <ViewEmployeeModal
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
+        employee={selectedEmployee}
       />
-      
-      <EmployeeModalNew 
-        isOpen={isEditOpen} 
-        onClose={() => setIsEditOpen(false)} 
+
+      <EmployeeModalNew
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
         onSave={onUpdate}
         employee={selectedEmployee}
       />
-      
-      <DeleteConfirmationModal 
-        isOpen={isDeleteOpen} 
-        onClose={() => setIsDeleteOpen(false)} 
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
         onConfirm={confirmDelete}
         employeeName={selectedEmployee?.name}
       />

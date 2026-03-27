@@ -37,7 +37,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const response = await financeAPI.getDashboardData({ period: dateRange });
-      setDashboardData(response.data);
+      setDashboardData(response);
     } catch (err) {
       setError('Failed to fetch finance dashboard data');
       console.error('Finance Dashboard error:', err);
@@ -50,7 +50,7 @@ const Dashboard = () => {
   const kpiData = [
     {
       title: 'Revenue',
-      value: `$${(dashboardData?.revenue || 0).toLocaleString()}`,
+      value: `${(dashboardData?.revenue || 0).toLocaleString()} ETB`,
       change: `+${dashboardData?.revenueGrowth || '0'}%`,
       trend: dashboardData?.revenueGrowth >= 0 ? 'up' : 'down',
       icon: DollarSign,
@@ -58,7 +58,7 @@ const Dashboard = () => {
     },
     {
       title: 'Expenses',
-      value: `$${(dashboardData?.expenses || 0).toLocaleString()}`,
+      value: `${(dashboardData?.expenses || 0).toLocaleString()} ETB`,
       change: `+${dashboardData?.expensesGrowth || '0'}%`,
       trend: dashboardData?.expensesGrowth >= 0 ? 'up' : 'down',
       icon: CreditCard,
@@ -66,7 +66,7 @@ const Dashboard = () => {
     },
     {
       title: 'Net Profit',
-      value: `$${(dashboardData?.netProfit || 0).toLocaleString()}`,
+      value: `${(dashboardData?.netProfit || 0).toLocaleString()} ETB`,
       change: `+${dashboardData?.profitGrowth || '0'}%`,
       trend: dashboardData?.profitGrowth >= 0 ? 'up' : 'down',
       icon: TrendingUp,
@@ -74,7 +74,7 @@ const Dashboard = () => {
     },
     {
       title: 'Cash Balance',
-      value: `$${(dashboardData?.cashBalance || 0).toLocaleString()}`,
+      value: `${(dashboardData?.cashBalance || 0).toLocaleString()} ETB`,
       change: `${dashboardData?.cashChange >= 0 ? '+' : ''}${dashboardData?.cashChange || '0'}%`,
       trend: dashboardData?.cashChange >= 0 ? 'up' : 'down',
       icon: Wallet,
@@ -82,7 +82,7 @@ const Dashboard = () => {
     },
     {
       title: 'Accounts Receivable',
-      value: `$${(dashboardData?.accountsReceivable || 0).toLocaleString()}`,
+      value: `${(dashboardData?.accountsReceivable || 0).toLocaleString()} ETB`,
       change: `${dashboardData?.receivableChange >= 0 ? '+' : ''}${dashboardData?.receivableChange || '0'}%`,
       trend: dashboardData?.receivableChange >= 0 ? 'up' : 'down',
       icon: ArrowUpRight,
@@ -90,7 +90,7 @@ const Dashboard = () => {
     },
     {
       title: 'Accounts Payable',
-      value: `$${(dashboardData?.accountsPayable || 0).toLocaleString()}`,
+      value: `${(dashboardData?.accountsPayable || 0).toLocaleString()} ETB`,
       change: `+${dashboardData?.payableChange || '0'}%`,
       trend: dashboardData?.payableChange >= 0 ? 'up' : 'down',
       icon: ArrowDownRight,

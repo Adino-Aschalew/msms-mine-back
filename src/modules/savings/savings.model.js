@@ -20,7 +20,7 @@ class SavingsModel {
 
   static async getSavingsAccount(userId) {
     const selectQuery = `
-      SELECT sa.*, u.username, u.email, ep.first_name, ep.last_name, ep.department
+      SELECT sa.*, u.username, u.email, ep.first_name, ep.last_name, ep.department, ep.salary
       FROM savings_accounts sa
       JOIN users u ON sa.user_id = u.id
       LEFT JOIN employee_profiles ep ON sa.user_id = ep.user_id
@@ -33,11 +33,11 @@ class SavingsModel {
 
   static async getSavingsAccountById(accountId) {
     const selectQuery = `
-      SELECT sa.*, u.username, u.email, ep.first_name, ep.last_name, ep.department
+      SELECT sa.*, u.username, u.email, ep.first_name, ep.last_name, ep.department, ep.salary
       FROM savings_accounts sa
       JOIN users u ON sa.user_id = u.id
       LEFT JOIN employee_profiles ep ON sa.user_id = ep.user_id
-      WHERE sa.id = ?
+      WHERE sa.account_id = ?
     `;
     
     const accounts = await query(selectQuery, [accountId]);
@@ -61,7 +61,7 @@ class SavingsModel {
     return await transaction(async (connection) => {
       // Get current balance
       const [account] = await connection.execute(
-        'SELECT current_balance FROM savings_accounts WHERE id = ? FOR UPDATE',
+        'SELECT current_balance FROM savings_accounts WHERE account_id = ? FOR UPDATE',
         [accountId]
       );
       
@@ -95,7 +95,7 @@ class SavingsModel {
       
       // Update account balance
       await connection.execute(
-        'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
+        'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE account_id = ?',
         [newBalance, accountId]
       );
       
@@ -129,14 +129,14 @@ class SavingsModel {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM savings_transactions st
-      JOIN savings_accounts sa ON st.savings_account_id = sa.id
+      JOIN savings_accounts sa ON st.savings_account_id = sa.account_id
       ${whereClause}
     `;
     
     const selectQuery = `
       SELECT st.*, sa.account_status, sa.saving_percentage
       FROM savings_transactions st
-      JOIN savings_accounts sa ON st.savings_account_id = sa.id
+      JOIN savings_accounts sa ON st.savings_account_id = sa.account_id
       ${whereClause}
       ORDER BY st.transaction_date DESC
       LIMIT ? OFFSET ?
@@ -276,7 +276,7 @@ class SavingsModel {
           
           if (monthlyInterest > 0) {
             await this.addSavingsTransaction(
-              account.id,
+              account.account_id,
               account.user_id,
               'INTEREST',
               monthlyInterest,
@@ -323,7 +323,7 @@ class SavingsModel {
           const penaltyAmount = account.current_balance * penaltyRate;
           
           await this.addSavingsTransaction(
-            account.id,
+            account.account_id,
             account.user_id,
             'PENALTY',
             penaltyAmount,
@@ -350,11 +350,13 @@ class SavingsModel {
     const summaryQuery = `
       SELECT 
         sa.*,
-        (SELECT COUNT(*) FROM savings_transactions WHERE account_id = sa.id) as total_transactions,
-        (SELECT SUM(amount) FROM savings_transactions WHERE account_id = sa.id AND transaction_type = 'CONTRIBUTION') as total_contributions,
-        (SELECT SUM(amount) FROM savings_transactions WHERE account_id = sa.id AND transaction_type = 'WITHDRAWAL') as total_withdrawals,
-        (SELECT MAX(transaction_date) FROM savings_transactions WHERE account_id = sa.id) as last_transaction_date
+        ep.salary,
+        (SELECT COUNT(*) FROM savings_transactions WHERE savings_account_id = sa.account_id) as total_transactions,
+        (SELECT COALESCE(SUM(amount), 0) FROM savings_transactions WHERE savings_account_id = sa.account_id AND transaction_type = 'CONTRIBUTION') as total_contributions,
+        (SELECT COALESCE(SUM(amount), 0) FROM savings_transactions WHERE savings_account_id = sa.account_id AND transaction_type = 'WITHDRAWAL') as total_withdrawals,
+        (SELECT MAX(transaction_date) FROM savings_transactions WHERE savings_account_id = sa.account_id) as last_transaction_date
       FROM savings_accounts sa
+      LEFT JOIN employee_profiles ep ON sa.user_id = ep.user_id
       WHERE sa.user_id = ?
     `;
     

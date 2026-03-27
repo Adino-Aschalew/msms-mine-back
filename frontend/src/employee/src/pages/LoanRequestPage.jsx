@@ -22,6 +22,8 @@ import {
 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { loansAPI } from '../../../shared/services/loansAPI';
+import { savingsAPI } from '../../../shared/services/savingsAPI';
+import { employeeAPI } from '../../../shared/services/employeeAPI';
 
 /* ─── Reusable field label ─────────────────────────────────────────────── */
 const FieldLabel = ({ children, required }) => (
@@ -78,16 +80,50 @@ const LoanRequestPage = () => {
     guarantorInfo: false,
   });
 
+  const [employeeData, setEmployeeData] = useState({
+    savingsBalance: 0,
+    salary: 0,
+    employmentDuration: 0,
+    loading: true
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState('pending');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const employeeData = {
-    savingsBalance: 45000,
-    salary: 10000,
-    employmentDuration: 24,
-  };
+  useEffect(() => {
+    const fetchProfileAndSavings = async () => {
+      try {
+        const [profileRes, savingsRes] = await Promise.all([
+          employeeAPI.getProfile(),
+          savingsAPI.getSavingsAccount().catch(() => null)
+        ]);
+
+        // Handle various response formats ( Axios vs Fetch vs Direct )
+        const profileData = profileRes?.data || profileRes;
+        const eProfile = profileData?.employeeProfile || profileData?.employee_profile || {};
+        
+        const savingsData = savingsRes?.data || savingsRes;
+
+        const hireDateStr = eProfile.hire_date || eProfile.created_at;
+        const hireDate = hireDateStr ? new Date(hireDateStr) : new Date();
+        const daysEmployed = Math.floor((new Date() - hireDate) / (1000 * 60 * 60 * 24));
+
+        setEmployeeData({
+          savingsBalance: parseFloat(savingsData?.current_balance || 0),
+          salary: parseFloat(eProfile.salary || 0),
+          employmentDuration: Math.floor(daysEmployed / 30),
+          loading: false
+        });
+      } catch (error) {
+        console.error('Error fetching profile for loan request:', error);
+        setEmployeeData(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    fetchProfileAndSavings();
+  }, []);
 
   const loanTypes = [
     {
@@ -226,7 +262,10 @@ const LoanRequestPage = () => {
 
   const canProceedToNext = () => {
     if (currentStep === 1) return selectedLoanType !== null;
-    if (currentStep === 2) return !!(formData.requestedAmount && formData.loanDuration && formData.loanPurpose);
+    if (currentStep === 2) {
+      return !!(formData.requestedAmount && formData.loanDuration && formData.loanPurpose) && 
+             eligibility.salaryRule && eligibility.savingsBalance;
+    }
     if (currentStep === 3) return eligibility.guarantorInfo;
     if (currentStep === 4) return isEligible;
     return false;
@@ -244,7 +283,7 @@ const LoanRequestPage = () => {
         <div className="text-right">
           <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Available Credit</p>
           <p className="text-xl font-black text-gray-900 dark:text-white">
-            ${(employeeData.savingsBalance * 2).toLocaleString()}
+            {(employeeData.savingsBalance * 2).toLocaleString()} ETB
           </p>
         </div>
       </div>
@@ -333,7 +372,7 @@ const LoanRequestPage = () => {
                         <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
                           <div>
                             <p className="text-[10px] text-gray-400 uppercase tracking-widest">Max Amount</p>
-                            <p className="text-sm font-black text-gray-900 dark:text-white">${type.maxAmount.toLocaleString()}</p>
+                            <p className="text-sm font-black text-gray-900 dark:text-white">{type.maxAmount.toLocaleString()} ETB</p>
                           </div>
                           <div className="text-right">
                             <p className="text-[10px] text-gray-400 uppercase tracking-widest">APR</p>
@@ -409,7 +448,7 @@ const LoanRequestPage = () => {
                     <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-100 dark:border-gray-700">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Monthly Installment</p>
-                        <p className="text-xl font-black text-gray-900 dark:text-white">${calculateMonthlyInstallment()}</p>
+                        <p className="text-xl font-black text-gray-900 dark:text-white">{calculateMonthlyInstallment()} ETB</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Salary Threshold (40%)</p>
@@ -709,11 +748,11 @@ const LoanRequestPage = () => {
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {[
                           { label: 'Loan Type', value: selectedLoanType?.name || '—' },
-                          { label: 'Requested Amount', value: `$${parseFloat(formData.requestedAmount || 0).toLocaleString()}` },
+                          { label: 'Requested Amount', value: `${parseFloat(formData.requestedAmount || 0).toLocaleString()} ETB` },
                           { label: 'Duration', value: `${formData.loanDuration || 0} months` },
-                          { label: 'Monthly Installment', value: `$${calculateMonthlyInstallment()}` },
+                          { label: 'Monthly Installment', value: `${calculateMonthlyInstallment()} ETB` },
                           { label: 'APR', value: selectedLoanType?.apr || 'N/A' },
-                          { label: 'Total Repayment', value: `$${(parseFloat(calculateMonthlyInstallment()) * parseInt(formData.loanDuration || 0)).toFixed(2)}` },
+                          { label: 'Total Repayment', value: `${(parseFloat(calculateMonthlyInstallment()) * parseInt(formData.loanDuration || 0)).toFixed(2)} ETB` },
                         ].map(({ label, value }) => (
                           <div key={label} className="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
@@ -882,8 +921,8 @@ const LoanRequestPage = () => {
           <SectionCard title="Your Profile">
             <div className="space-y-2">
               {[
-                { label: 'Savings Balance', value: `$${employeeData.savingsBalance.toLocaleString()}`, Icon: FiDollarSign, color: 'blue' },
-                { label: 'Monthly Salary', value: `$${employeeData.salary.toLocaleString()}`, Icon: FiCreditCard, color: 'emerald' },
+                { label: 'Savings Balance', value: `${employeeData.savingsBalance.toLocaleString()} ETB`, Icon: FiDollarSign, color: 'blue' },
+                { label: 'Monthly Salary', value: `${employeeData.salary.toLocaleString()} ETB`, Icon: FiCreditCard, color: 'emerald' },
                 { label: 'Employment', value: `${employeeData.employmentDuration} months`, Icon: FiCalendar, color: 'purple' },
               ].map(({ label, value, Icon, color }) => (
                 <div key={label} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg">
@@ -904,7 +943,7 @@ const LoanRequestPage = () => {
             <ul className="space-y-2">
               {[
                 'Keep monthly installments below 40% of your salary',
-                'Savings balance must be ≥ 2× loan amount',
+                'Loan amount must be ≤ 2× savings balance',
                 'Choose duration for manageable payments',
                 'Ensure guarantor information is complete',
               ].map((tip, i) => (

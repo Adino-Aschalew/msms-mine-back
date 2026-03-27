@@ -41,15 +41,8 @@ export const savingsAPI = {
   },
 
   // Withdraw savings
-  withdrawSavings: async (amount, reason, supportingDocument = null) => {
-    const formData = new FormData();
-    formData.append('amount', amount);
-    formData.append('reason', reason);
-    if (supportingDocument) {
-      formData.append('supporting_document', supportingDocument);
-    }
-
-    const response = await apiClient.upload('/api/savings/withdraw', formData.get('file'), {
+  async withdrawSavings(amount, reason) {
+    const response = await apiClient.post('/api/savings/withdraw', {
       amount,
       reason
     });

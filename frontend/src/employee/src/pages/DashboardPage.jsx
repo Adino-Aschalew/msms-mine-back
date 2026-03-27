@@ -3,6 +3,7 @@ import { FiTrendingUp, FiDollarSign, FiCreditCard, FiActivity, FiCalendar } from
 import StatCard from '../components/Shared/StatCard';
 import { LineChart, BarChart } from '../components/Shared/Chart';
 import { loansAPI } from '../services/api';
+import { savingsAPI } from '../../../shared/services/savingsAPI';
 
 const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -12,6 +13,7 @@ const DashboardPage = () => {
       activeLoans: 0,
       outstandingLoanBalance: 0,
       monthlyPayrollDeduction: 0,
+      salary: 0,
     },
     savingsGrowthData: {
       labels: [],
@@ -34,101 +36,86 @@ const DashboardPage = () => {
   const fetchDashboardData = async () => {
     try {
       setDashboardData(prev => ({ ...prev, loading: true, error: null }));
-      
-      // Fetch loans data
-      const loansRes = await loansAPI.getMyLoans();
-      const applicationsRes = await loansAPI.getMyApplications();
-      
+
+      // Fetch all required data in parallel for a complete dashboard
+      const [loansRes, applicationsRes, savingsRes, savingsTransRes, loanTransRes] = await Promise.all([
+        loansAPI.getMyLoans(),
+        loansAPI.getMyApplications(),
+        savingsAPI.getSavingsAccount().catch(() => null),
+        savingsAPI.getSavingsTransactions(1, 10).catch(() => ({ transactions: [] })),
+        loansAPI.getMyTransactions({ limit: 10 }).catch(() => ({ data: [] }))
+      ]);
+
       const loans = loansRes?.data || [];
       const applications = applicationsRes?.data || [];
-      
+      const savings = savingsRes || { current_balance: 0, saving_percentage: 0, salary: 0 };
+      const savingsTransactions = savingsTransRes?.transactions || [];
+      const loanTransactions = loanTransRes?.data || loanTransRes?.transactions || [];
+
       // Calculate stats from real data
-      const activeLoans = loans.filter(loan => loan.status === 'ACTIVE').length;
+      const activeLoansCount = loans.filter(loan => loan.status === 'ACTIVE').length;
       const totalLoanBalance = loans.reduce((sum, loan) => sum + parseFloat(loan.outstanding_balance || 0), 0);
-      const monthlyDeduction = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_deduction || 0), 0);
-      
-      // Generate chart data
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      
-      const savingsGrowthData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [
-          {
-            label: 'Savings Balance',
-            data: Array(12).fill(45000 + Math.random() * 5000), // Simulated growth data
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.4,
-            fill: true,
-          },
-        ],
-      };
+      const loanMonthlyDeduction = loans.reduce((sum, loan) => sum + parseFloat(loan.monthly_deduction || 0), 0);
 
-      const loanBalanceData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [
-          {
-            label: 'Loan Balance',
-            data: Array(12).fill(15000 - Math.random() * 2000), // Simulated repayment data
-            borderColor: 'rgb(239, 68, 68)',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            tension: 0.4,
-            fill: true,
-          },
-        ],
-      };
+      const balance = parseFloat(savings.current_balance || 0);
+      const salary = parseFloat(savings.salary || 0);
+      const savingRate = parseFloat(savings.saving_percentage || 0);
+      const savingsMonthlyDeduction = (salary * savingRate / 100);
 
-      // Create recent activity from real data
+      // 1. Unified Recent Activity (Applications, Status Changes, Account Events)
       const recentActivity = [
-        ...(applications.slice(0, 2).map(app => ({
-          id: app.id,
+        ...(applications.map(app => ({
+          id: `app-${app.id}`,
           type: 'loan_request',
-          title: 'Loan Request Submitted',
-          description: `Loan request of $${app.requested_amount}`,
-          date: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          title: 'Loan Application',
+          description: `${app.purpose} - ${parseFloat(app.requested_amount).toLocaleString()} ETB`,
+          date: app.created_at,
           status: app.status.toLowerCase(),
         }))),
-        ...(loans.slice(0, 2).map(loan => ({
-          id: loan.id,
+        ...(loans.map(loan => ({
+          id: `loan-act-${loan.id}`,
           type: 'loan_approval',
-          title: 'Loan Status Update',
-          description: `Loan ${loan.status}`,
-          date: loan.start_date?.split('T')[0] || new Date().toISOString().split('T')[0],
-          status: loan.status.toLowerCase(),
-        }))),
-      ];
+          title: 'Loan Active',
+          description: `Disbursed ${parseFloat(loan.loan_amount).toLocaleString()} ETB`,
+          date: loan.disbursement_date || loan.created_at,
+          status: 'completed',
+        })))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 
+      // 2. Unified Recent Transactions (Savings Contributions, Loan Disbursements/Payments)
       const recentTransactions = [
-        ...(applications.slice(0, 3).map(app => ({
-          id: app.id,
-          date: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          type: 'Loan Request',
-          amount: `$${app.requested_amount}`,
-          status: app.status,
-        }))),
-        ...(loans.slice(0, 3).map(loan => ({
-          id: loan.id,
-          date: loan.start_date?.split('T')[0] || new Date().toISOString().split('T')[0],
-          type: 'Loan Disbursement',
-          amount: `$${loan.loan_amount}`,
+        ...(savingsTransactions.map(st => ({
+          id: `sav-t-${st.transaction_id || st.id}`,
+          date: st.transaction_date,
+          type: st.transaction_type === 'CONTRIBUTION' ? 'Savings Contribution' : st.transaction_type,
+          amount: `${parseFloat(st.amount).toLocaleString()} ETB`,
           status: 'Completed',
+          rawDate: new Date(st.transaction_date)
         }))),
-      ];
+        ...(loanTransactions.map(lt => ({
+          id: `loan-t-${lt.id}`,
+          date: lt.transaction_date,
+          type: lt.transaction_type === 'DISBURSEMENT' ? 'Loan Disbursement' : 'Loan Repayment',
+          amount: `${parseFloat(lt.amount).toLocaleString()} ETB`,
+          status: 'Completed',
+          rawDate: new Date(lt.transaction_date)
+        })))
+      ].sort((a, b) => b.rawDate - a.rawDate).slice(0, 5);
 
       setDashboardData({
         stats: {
-          savingsBalance: 45000, // This would come from savings API
-          currentSavingRate: 25,
-          activeLoans,
+          savingsBalance: balance,
+          currentSavingRate: savingRate,
+          activeLoans: activeLoansCount,
           outstandingLoanBalance: totalLoanBalance,
-          monthlyPayrollDeduction: monthlyDeduction,
+          monthlyPayrollDeduction: (loanMonthlyDeduction + savingsMonthlyDeduction),
+          salary: salary,
         },
         savingsGrowthData: {
           labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
           datasets: [{
             label: 'Savings Balance',
-            data: Array(12).fill(45000 + Math.random() * 5000), // Simulated growth data
+            data: balance === 0 ? Array(12).fill(0) : Array(12).fill(balance),
             borderColor: 'rgb(59, 130, 246)',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             tension: 0.4,
@@ -139,7 +126,7 @@ const DashboardPage = () => {
           labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
           datasets: [{
             label: 'Loan Balance',
-            data: Array(12).fill(15000 - Math.random() * 2000), // Simulated repayment data
+            data: Array(12).fill(totalLoanBalance),
             borderColor: 'rgb(239, 68, 68)',
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             tension: 0.4,
@@ -153,10 +140,10 @@ const DashboardPage = () => {
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      setDashboardData(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: 'Failed to load dashboard data' 
+      setDashboardData(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Failed to load dashboard data'
       }));
     }
   };
@@ -214,11 +201,19 @@ const DashboardPage = () => {
         <p className="text-gray-600 dark:text-gray-400 mt-1">Welcome back! Here's your financial overview.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard
+          title="Monthly Salary"
+          value={`${dashboardData.stats.salary.toLocaleString()} ETB`}
+          change="Your gross monthly income"
+          changeType="neutral"
+          icon={<FiDollarSign className="w-6 h-6" />}
+          color="primary"
+        />
         <StatCard
           title="Savings Balance"
-          value={`$${dashboardData.stats.savingsBalance.toLocaleString()}`}
-          change="+$2,500 this month"
+          value={`${dashboardData.stats.savingsBalance.toLocaleString()} ETB`}
+          change={dashboardData.stats.savingsBalance > 0 ? "Total accumulated savings" : "Start your savings today"}
           changeType="positive"
           icon={<FiTrendingUp className="w-6 h-6" />}
           color="success"
@@ -226,7 +221,7 @@ const DashboardPage = () => {
         <StatCard
           title="Current Saving Rate"
           value={`${dashboardData.stats.currentSavingRate}%`}
-          change="of monthly salary"
+          change="of your monthly salary"
           changeType="neutral"
           icon={<FiActivity className="w-6 h-6" />}
           color="primary"
@@ -234,26 +229,26 @@ const DashboardPage = () => {
         <StatCard
           title="Active Loans"
           value={dashboardData.stats.activeLoans}
-          change="2 active loans"
+          change={`${dashboardData.stats.activeLoans} active loan${dashboardData.stats.activeLoans !== 1 ? 's' : ''}`}
           changeType="neutral"
           icon={<FiCreditCard className="w-6 h-6" />}
           color="warning"
         />
         <StatCard
           title="Outstanding Balance"
-          value={`$${dashboardData.stats.outstandingLoanBalance.toLocaleString()}`}
-          change="-$1,000 this month"
-          changeType="positive"
+          value={`${dashboardData.stats.outstandingLoanBalance.toLocaleString()} ETB`}
+          change={dashboardData.stats.outstandingLoanBalance > 0 ? "Remaining principal + interest" : "No active loan debt"}
+          changeType={dashboardData.stats.outstandingLoanBalance > 0 ? "negative" : "positive"}
           icon={<FiDollarSign className="w-6 h-6" />}
           color="danger"
         />
         <StatCard
           title="Monthly Deduction"
-          value={`$${dashboardData.stats.monthlyPayrollDeduction.toLocaleString()}`}
-          change="Next: March 31"
+          value={`${dashboardData.stats.monthlyPayrollDeduction.toLocaleString()} ETB`}
+          change={`Next: ${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`}
           changeType="neutral"
           icon={<FiCalendar className="w-6 h-6" />}
-          color="primary"
+          color="warning"
         />
       </div>
 

@@ -16,6 +16,7 @@ const SavingsPage = () => {
     confirmation: false,
   });
   const [showWithdrawalSuccess, setShowWithdrawalSuccess] = useState(false);
+  const [showActivationSuccess, setShowActivationSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [savingsData, setSavingsData] = useState({
     totalBalance: 0,
@@ -23,6 +24,7 @@ const SavingsPage = () => {
     monthlyDeduction: 0,
     totalContributions: 0,
     salary: 0,
+    hasAccount: false,
   });
   const [payrollHistory, setPayrollHistory] = useState([]);
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
@@ -43,38 +45,63 @@ const SavingsPage = () => {
     try {
       setLoading(true);
       
+      let currentSalary = 0;
+      let currentBalance = 0;
+
       try {
-        // Get savings account data
-        const accountData = await savingsAPI.getSavingsAccount();
-        if (accountData) {
+        // Get savings account data (summary includes extra stats)
+        const account = await savingsAPI.getSavingsAccount();
+        
+        if (account) {
+          currentSalary = parseFloat(account.salary || 0);
+          currentBalance = parseFloat(account.current_balance || 0);
+          const rate = parseFloat(account.saving_percentage || 25);
+          
           setSavingsData({
-            totalBalance: accountData.total_balance || 0,
-            currentRate: accountData.saving_percentage || 25,
-            monthlyDeduction: accountData.monthly_deduction || 0,
-            totalContributions: accountData.total_contributions || 0,
-            salary: accountData.salary || 0,
+            totalBalance: currentBalance,
+            currentRate: rate,
+            monthlyDeduction: (currentSalary * rate / 100),
+            totalContributions: parseFloat(account.total_contributions || 0),
+            salary: currentSalary,
+            hasAccount: true,
           });
-          setSavingRate(accountData.saving_percentage || 25);
-          setSavingInput(String(accountData.saving_percentage || 25));
+          setSavingRate(rate);
+          setSavingInput(String(rate));
+        } else {
+          setSavingsData(prev => ({ ...prev, hasAccount: false }));
         }
       } catch (accountError) {
         console.log('No savings account found, using defaults');
-        // User doesn't have a savings account yet, use defaults
         setSavingsData({
           totalBalance: 0,
           currentRate: 25,
           monthlyDeduction: 0,
           totalContributions: 0,
           salary: 0,
+          hasAccount: false,
         });
         setSavingRate(25);
         setSavingInput('25');
       }
 
       try {
-        // Get payroll history
-        const historyData = await savingsAPI.getSavingsTransactions(1, 10);
-        setPayrollHistory(historyData.transactions || []);
+        // Get payroll history (contributions)
+        const result = await savingsAPI.getSavingsTransactions(1, 20);
+        const transactions = result?.transactions || [];
+        
+        const history = transactions
+          .filter(t => t.transaction_type === 'CONTRIBUTION' || t.transaction_type === 'INTEREST')
+          .map(t => ({
+            id: t.id,
+            date: t.transaction_date,
+            payrollMonth: new Date(t.transaction_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            salary: currentSalary, // Assuming current salary for history display
+            savingPercentage: t.saving_percentage || 0,
+            deductionAmount: parseFloat(t.amount),
+            balance: parseFloat(t.balance_after)
+          }));
+        
+        setPayrollHistory(history);
       } catch (historyError) {
         console.log('No transaction history found');
         setPayrollHistory([]);
@@ -82,21 +109,28 @@ const SavingsPage = () => {
 
       try {
         // Get withdrawal requests
-        console.log('Fetching withdrawal requests...');
-        const withdrawalData = await savingsAPI.getSavingsTransactions(1, 10, { transaction_type: 'withdrawal' });
-        console.log('Withdrawal data received:', withdrawalData);
-        setWithdrawalRequests(withdrawalData.transactions || []);
+        const result = await savingsAPI.getSavingsTransactions(1, 10, { transaction_type: 'WITHDRAWAL' });
+        const transactions = result?.transactions || [];
+        
+        setWithdrawalRequests(transactions.map(t => ({
+          id: `WDL-${t.id}`,
+          date: t.transaction_date,
+          amount: parseFloat(t.amount),
+          status: 'approved', // Transactions in the log are already processed
+          adminNotes: t.description
+        })));
       } catch (withdrawalError) {
-        console.log('No withdrawal requests found, using empty array:', withdrawalError);
+        console.log('No withdrawal requests found');
         setWithdrawalRequests([]);
       }
 
-      // Generate growth data (mock for now)
+      // Generate growth data based on real balance
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const currentBalance = savingsData.totalBalance || 0;
-      const growthData = months.map((month, index) => {
-        const balance = currentBalance - (11 - index) * 1000;
-        return Math.max(0, balance + Math.random() * 500);
+      const growthData = months.map((_, index) => {
+        if (currentBalance === 0) return 0;
+        // Simple visualization: show growth up to current balance
+        const monthlyGrowth = (currentBalance / 12);
+        return Math.max(0, (monthlyGrowth * (index + 1)));
       });
 
       setSavingsGrowthData({
@@ -115,7 +149,6 @@ const SavingsPage = () => {
 
     } catch (error) {
       console.error('Failed to load savings data:', error);
-      // Could show error message in UI instead
     } finally {
       setLoading(false);
     }
@@ -209,16 +242,43 @@ const SavingsPage = () => {
       </div>
 
       {/* Show message if no savings account exists */}
-      {savingsData.totalBalance === 0 && savingsData.salary === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-center space-x-3">
-            <FiInfo className="w-6 h-6 text-blue-600" />
-            <div>
-              <h3 className="text-lg font-medium text-blue-900">No Savings Account Found</h3>
-              <p className="text-blue-700 mt-1">
-                You don't have a savings account yet. Contact HR to set up your payroll-deducted savings account.
-              </p>
+      {!loading && !savingsData.hasAccount && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-8 mb-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-start space-x-4">
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <FiInfo className="w-8 h-8 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-blue-900 uppercase tracking-tight">Setup Your Savings Account</h3>
+                <p className="text-blue-700 mt-2 max-w-xl">
+                  You haven't activated your payroll-deducted savings account yet. Start building your future today with a minimum 15% contribution.
+                </p>
+              </div>
             </div>
+            <button
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  await savingsAPI.createSavingsAccount(25); // Default 25%
+                  setShowActivationSuccess(true);
+                  await loadSavingsData();
+                } catch (err) {
+                  if (err.message.includes('already exists')) {
+                    // Gracefully handle if account was already created but not loaded
+                    await loadSavingsData();
+                    setShowActivationSuccess(true);
+                  } else {
+                    console.error('Failed to create account:', err);
+                  }
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="px-8 py-4 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg hover:scale-[1.02]"
+            >
+              Activate Now
+            </button>
           </div>
         </div>
       )}
@@ -226,8 +286,8 @@ const SavingsPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Savings Balance"
-          value={`$${savingsData.totalBalance.toLocaleString()}`}
-          change={savingsData.totalBalance > 0 ? "+$2,500 this month" : "No activity yet"}
+          value={`${savingsData.totalBalance.toLocaleString()} ETB`}
+          change={savingsData.totalBalance > 0 ? "Total accumulated savings" : "No balance yet"}
           changeType={savingsData.totalBalance > 0 ? "positive" : "neutral"}
           icon={<FiTrendingUp className="w-6 h-6" />}
           color="success"
@@ -235,23 +295,23 @@ const SavingsPage = () => {
         <StatCard
           title="Current Saving Rate"
           value={`${savingsData.currentRate}%`}
-          change="of monthly salary"
+          change="of your monthly salary"
           changeType="neutral"
           icon={<FiDollarSign className="w-6 h-6" />}
           color="primary"
         />
         <StatCard
           title="Monthly Deduction"
-          value={`$${savingsData.monthlyDeduction.toLocaleString()}`}
-          change={savingsData.monthlyDeduction > 0 ? "Next: March 31" : "No deductions yet"}
+          value={`${savingsData.monthlyDeduction.toLocaleString()} ETB`}
+          change={`Next: ${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`}
           changeType="neutral"
           icon={<FiCalendar className="w-6 h-6" />}
           color="warning"
         />
         <StatCard
           title="Total Contributions"
-          value={`$${savingsData.totalContributions.toLocaleString()}`}
-          change={savingsData.totalContributions > 0 ? "Since joining" : "No contributions yet"}
+          value={`${savingsData.totalContributions.toLocaleString()} ETB`}
+          change={savingsData.totalContributions > 0 ? "Sum of all deposits" : "No contributions yet"}
           changeType="neutral"
           icon={<FiDownload className="w-6 h-6" />}
           color="primary"
@@ -291,81 +351,83 @@ const SavingsPage = () => {
                 <LineChart data={savingsGrowthData} height={300} />
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 w-full">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2.5 bg-blue-600 rounded-xl">
-                    <FiTrendingUp className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Update Saving Rate</h3>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Configuration Panel</p>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Saving Percentage (%)</label>
-                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tighter bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">Min 15% – Max 65%</span>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          min="15"
-                          max="65"
-                          value={savingInput}
-                          onChange={(e) => setSavingInput(e.target.value)}
-                          onBlur={() => {
-                            const val = parseInt(savingInput);
-                            if (!isNaN(val)) {
-                              setSavingInput(String(Math.min(65, Math.max(15, val))));
-                            }
-                          }}
-                          className={`w-full px-4 py-3 bg-white dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-xl font-black text-gray-900 dark:text-white pr-10 ${
-                            savingInput !== '' && !isRateValid
-                              ? 'border-red-400 focus:ring-red-400/10'
-                              : 'border-gray-200 dark:border-gray-700'
-                          }`}
-                          placeholder="e.g. 25"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
-                      </div>
-                      {savingInput !== '' && !isRateValid && (
-                        <p className="text-[10px] text-red-500 font-bold uppercase tracking-tighter">Must be between 15% and 65%</p>
-                      )}
+              {savingsData.hasAccount && (
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 w-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 bg-blue-600 rounded-xl">
+                      <FiTrendingUp className="w-5 h-5 text-white" />
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Estimated Monthly Deduction</label>
-                      <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
-                        <p className={`text-xl font-black ${isRateValid ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
-                          {isRateValid ? `$${estimatedDeduction.toLocaleString()}` : '—'}
-                        </p>
-                      </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Update Saving Rate</h3>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Configuration Panel</p>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-xl flex items-start gap-3">
-                    <FiAlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-[11px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-tight leading-relaxed">
-                      Important: Changes submitted now will be processed and applied starting from the next payroll cycle.
-                    </p>
-                  </div>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Saving Percentage (%)</label>
+                          <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tighter bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">Min 15% – Max 65%</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="15"
+                            max="65"
+                            value={savingInput}
+                            onChange={(e) => setSavingInput(e.target.value)}
+                            onBlur={() => {
+                              const val = parseInt(savingInput);
+                              if (!isNaN(val)) {
+                                setSavingInput(String(Math.min(65, Math.max(15, val))));
+                              }
+                            }}
+                            className={`w-full px-4 py-3 bg-white dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-xl font-black text-gray-900 dark:text-white pr-10 ${
+                              savingInput !== '' && !isRateValid
+                                ? 'border-red-400 focus:ring-red-400/10'
+                                : 'border-gray-200 dark:border-gray-700'
+                            }`}
+                            placeholder="e.g. 25"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
+                        </div>
+                        {savingInput !== '' && !isRateValid && (
+                          <p className="text-[10px] text-red-500 font-bold uppercase tracking-tighter">Must be between 15% and 65%</p>
+                        )}
+                      </div>
 
-                  <button
-                    onClick={handleSavingConfirm}
-                    disabled={!isRateValid || savingInput === ''}
-                    className="w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all
-                      bg-gray-900 dark:bg-white text-white dark:text-gray-900
-                      hover:scale-[1.01] active:scale-[0.98]
-                      shadow-xl shadow-gray-200 dark:shadow-none
-                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100"
-                  >
-                    Confirm Rate Update
-                  </button>
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Estimated Monthly Deduction</label>
+                        <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                          <p className={`text-xl font-black ${isRateValid ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
+                            {isRateValid ? `${estimatedDeduction.toLocaleString()} ETB` : '—'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-xl flex items-start gap-3">
+                      <FiAlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-[11px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-tight leading-relaxed">
+                        Important: Changes submitted now will be processed and applied starting from the next payroll cycle.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleSavingConfirm}
+                      disabled={!isRateValid || savingInput === ''}
+                      className="w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all
+                        bg-gray-900 dark:bg-white text-white dark:text-gray-900
+                        hover:scale-[1.01] active:scale-[0.98]
+                        shadow-xl shadow-gray-200 dark:shadow-none
+                        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100"
+                    >
+                      Confirm Rate Update
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Success Modal */}
               {showSavingSuccess && (
@@ -382,7 +444,7 @@ const SavingsPage = () => {
                     </p>
                     <p className="text-4xl font-black text-blue-600 dark:text-blue-400 mb-1">{savingRate}%</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-                      Monthly deduction: <span className="font-bold text-emerald-600">${(10000 * savingRate / 100).toLocaleString()}</span>
+                      Monthly deduction: <span className="font-bold text-emerald-600">{(savingsData.salary * savingRate / 100).toLocaleString()} ETB</span>
                     </p>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Changes apply in the next payroll cycle</p>
                     <button
@@ -410,11 +472,11 @@ const SavingsPage = () => {
                   <div className="bg-white/5 rounded-xl p-6 border border-white/10">
                     <div className="text-center">
                       <p className="text-sm text-gray-300 mb-1">Available Balance</p>
-                      <p className="text-4xl font-bold mb-2">${savingsData.totalBalance.toLocaleString()}</p>
+                      <p className="text-4xl font-bold mb-2">{savingsData.totalBalance.toLocaleString()} ETB</p>
                       <div className="flex items-center justify-center space-x-6 text-sm">
                         <div className="text-center">
                           <p className="text-gray-300">Monthly Contribution</p>
-                          <p className="font-semibold">${(savingsData.salary * savingRate / 100).toLocaleString()}</p>
+                          <p className="font-semibold">{(savingsData.salary * savingRate / 100).toLocaleString()} ETB</p>
                         </div>
                         <div className="text-center">
                           <p className="text-gray-300">Interest Rate</p>
@@ -492,13 +554,13 @@ const SavingsPage = () => {
                             <div>
                               <p className="text-sm text-gray-600 dark:text-gray-400">Available for Withdrawal</p>
                               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                ${savingsData.totalBalance.toLocaleString()}
+                                {savingsData.totalBalance.toLocaleString()} ETB
                               </p>
                             </div>
                             <div className="text-right">
                               <p className="text-xs text-gray-500 dark:text-gray-400">Interest Earned</p>
                               <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                                ${(savingsData.totalBalance * 0.025).toFixed(2)}
+                                {(savingsData.totalBalance * 0.025).toLocaleString()} ETB
                               </p>
                             </div>
                           </div>
@@ -659,7 +721,7 @@ const SavingsPage = () => {
                                 {new Date(request.date).toLocaleDateString()}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                ${request.amount.toLocaleString()}
+                                {request.amount.toLocaleString()} ETB
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status)}`}>
@@ -732,16 +794,16 @@ const SavingsPage = () => {
                           {record.payrollMonth}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          ${record.salary.toLocaleString()}
+                          {record.salary.toLocaleString()} ETB
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                           {record.savingPercentage}%
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                          ${record.deductionAmount.toLocaleString()}
+                          {record.deductionAmount.toLocaleString()} ETB
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                          ${record.balance.toLocaleString()}
+                          {record.balance.toLocaleString()} ETB
                         </td>
                       </tr>
                     ))}
@@ -752,6 +814,37 @@ const SavingsPage = () => {
           )}
         </div>
       </div>
+
+      {/* Activation Success Modal */}
+      {showActivationSuccess && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl p-10 max-w-sm w-full mx-4 text-center border border-gray-100 dark:border-gray-700 animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+            <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-8 relative">
+              <div className="absolute inset-0 bg-blue-400/20 rounded-full animate-ping duration-1000"></div>
+              <FiTrendingUp className="w-12 h-12 text-blue-600 dark:text-blue-400 relative z-10" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-4">Account Activated!</h3>
+            
+            <div className="space-y-4 mb-10">
+              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Standard Saving Rate</p>
+                <p className="text-3xl font-black text-blue-600 dark:text-blue-400">25%</p>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Your payroll contributions will now begin automatically. You can adjust your saving percentage anytime from your dashboard.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowActivationSuccess(false)}
+              className="w-full py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-gray-200 dark:shadow-none"
+            >
+              Enter Dashboard
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

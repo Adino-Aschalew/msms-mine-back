@@ -7,6 +7,8 @@ class HrController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const filters = {
+        page,
+        limit,
         department: req.query.department,
         employment_status: req.query.employment_status,
         job_grade: req.query.job_grade,
@@ -17,7 +19,7 @@ class HrController {
       // Remove undefined filters
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
       
-      const result = await HrService.getEmployees(page, limit, filters);
+      const result = await HrService.getEmployees(filters);
       
       res.json({
         success: true,
@@ -92,54 +94,6 @@ class HrController {
       res.status(500).json({
         success: false,
         message: 'Failed to update employment status'
-      });
-    }
-  }
-
-  static async createEmployee(req, res) {
-    try {
-      const employeeData = {
-        employee_id: req.body.employee_id,
-        username: req.body.username,
-        email: req.body.email,
-        role: req.body.role || 'EMPLOYEE'
-      };
-      
-      const profileData = {
-        first_name: req.body.first_name,
-        last_name: req.body.last_name,
-        phone: req.body.phone,
-        address: req.body.address,
-        department: req.body.department,
-        job_grade: req.body.job_grade,
-        employment_status: req.body.employment_status,
-        hire_date: req.body.hire_date
-      };
-      
-      const adminId = req.userId;
-      const ip = req.ip;
-      const userAgent = req.get('User-Agent');
-      
-      const result = await HrService.createEmployee(employeeData, profileData, adminId, ip, userAgent);
-      
-      res.status(201).json({
-        success: true,
-        message: result.message,
-        data: result.employee
-      });
-    } catch (error) {
-      console.error('Create employee error:', error);
-      
-      if (error.message.includes('already exists') || error.message.includes('required')) {
-        return res.status(400).json({
-          success: false,
-          message: error.message
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        message: 'Failed to create employee'
       });
     }
   }
@@ -299,13 +253,17 @@ class HrController {
 
   static async createEmployee(req, res) {
     try {
-      const { employeeId, firstName, lastName, grandfatherName, email, phone, department, role, type, salary, address, emergencyContact, joinDate, status } = req.body;
+      const { 
+        employeeId, firstName, lastName, grandfatherName, email, 
+        phone, department, role, type, salary, address, 
+        emergencyContact, joinDate, status, jobRole 
+      } = req.body;
       
       const employeeData = {
         employee_id: employeeId || `EMP${Date.now().toString().slice(-6)}`,
         username: email,
         email: email,
-        role: role || 'EMPLOYEE'
+        role: 'EMPLOYEE' // SECURITY: All users created via HR dashboard are categorized as 'EMPLOYEE'
       };
       
       const profileData = {
@@ -316,9 +274,9 @@ class HrController {
         address: address,
         department: department,
         job_grade: type,
-        job_role: role || jobRole,
+        job_role: role || jobRole, // Display role/job title
         salary: salary,
-        employment_status: status === 'Active' ? 'ACTIVE' : 'INACTIVE',
+        employment_status: status === 'Active' ? 'ACTIVE' : (status === 'Inactive' ? 'INACTIVE' : status.toUpperCase()),
         hire_date: joinDate
       };
       

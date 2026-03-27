@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { 
-  Users, 
-  UserMinus, 
-  Briefcase, 
+import {
+  Users,
+  UserMinus,
+  UserX,
+  UserCheck,
+  Briefcase,
   Clock,
   RefreshCw
 } from 'lucide-react';
-import { 
-  DndContext, 
+import {
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -37,12 +39,12 @@ const initialTopWidgets = [
     component: <StatCard title="Total Employees" value="1,245" icon={Users} trend="up" trendValue="12%" colorClass="bg-blue-500" />
   },
   {
-    id: 'stat-leave',
-    component: <StatCard title="On Leave" value="38" icon={UserMinus} trend="down" trendValue="4%" colorClass="bg-rose-500" />
+    id: 'stat-terminated',
+    component: <StatCard title="Terminated User" value="12" icon={UserX} trend="up" trendValue="2%" colorClass="bg-rose-500" />
   },
   {
-    id: 'stat-positions',
-    component: <StatCard title="Open Positions" value="24" icon={Briefcase} trend="up" trendValue="8%" colorClass="bg-amber-500" />
+    id: 'stat-active',
+    component: <StatCard title="Active User" value="1,233" icon={UserCheck} trend="up" trendValue="10%" colorClass="bg-emerald-500" />
   },
   {
     id: 'stat-pending',
@@ -91,11 +93,11 @@ export default function DashboardPage() {
       setDashboardData({
         totalEmployees: 0,
         activeEmployees: 0,
-        employeesOnLeave: 0,
-        openPositions: 0,
+        terminated: 0,
         pendingApprovals: 0,
         employeeGrowthRate: 0,
-        leaveRate: 0,
+        terminatedRate: 0,
+        activeRate: 0,
         departmentData: [],
         attendanceData: [],
         diversityData: []
@@ -108,26 +110,25 @@ export default function DashboardPage() {
   const updateDashboard = async () => {
     try {
       setUpdating(true);
-      
+
       // Create stats object to update
       const statsToUpdate = {
         totalEmployees: dashboardData?.totalEmployees || 0,
         activeEmployees: dashboardData?.activeEmployees || 0,
+        terminatedRate: dashboardData?.terminatedRate || 0,
         employeeGrowthRate: dashboardData?.employeeGrowthRate || 0,
-        leaveRate: dashboardData?.leaveRate || 0,
-        openPositions: dashboardData?.openPositions || 0,
         pendingApprovals: dashboardData?.pendingApprovals || 0,
         lastUpdated: new Date().toISOString()
       };
-      
+
       const response = await hrAPI.updateDashboardStats(statsToUpdate);
-      
+
       // Refresh dashboard data
       await fetchDashboardData();
-      
+
       // Show success modal
       setShowSuccessModal(true);
-      
+
     } catch (err) {
       console.error('Update dashboard error:', err);
       setError('Failed to update dashboard');
@@ -143,12 +144,12 @@ export default function DashboardPage() {
       component: <StatCard title="Total Employees" value={dashboardData?.totalEmployees?.toLocaleString() || '0'} icon={Users} trend="up" trendValue={`${dashboardData?.employeeGrowthRate || '0'}%`} colorClass="bg-blue-500" />
     },
     {
-      id: 'stat-leave',
-      component: <StatCard title="On Leave" value={dashboardData?.employeesOnLeave?.toLocaleString() || '0'} icon={UserMinus} trend="down" trendValue={`${dashboardData?.leaveRate || '0'}%`} colorClass="bg-rose-500" />
+      id: 'stat-terminated',
+      component: <StatCard title="Terminated User" value={dashboardData?.terminated?.toLocaleString() || '0'} icon={UserX} trend="up" trendValue={`${dashboardData?.terminatedRate || '0'}%`} colorClass="bg-rose-500" />
     },
     {
-      id: 'stat-positions',
-      component: <StatCard title="Open Positions" value={dashboardData?.openPositions?.toLocaleString() || '0'} icon={Briefcase} trend="up" trendValue={`${dashboardData?.positionGrowthRate || '0'}%`} colorClass="bg-amber-500" />
+      id: 'stat-active',
+      component: <StatCard title="Active User" value={dashboardData?.activeEmployees?.toLocaleString() || '0'} icon={UserCheck} trend="up" trendValue={`${dashboardData?.activeRate || '0'}%`} colorClass="bg-emerald-500" />
     },
     {
       id: 'stat-pending',
@@ -209,8 +210,8 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard Overview</h1>
           <p className="text-muted-foreground text-sm">Welcome back, {user?.first_name || 'HR Admin'}. Here is what is happening today.</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={updateDashboard}
           disabled={updating || !dashboardData}
           className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors shadow-sm font-medium text-sm w-full sm:w-auto justify-center"
@@ -219,16 +220,16 @@ export default function DashboardPage() {
           <span>{updating ? 'Updating...' : 'Update Dashboard'}</span>
         </button>
       </div>
-      
+
       {/* Top STATS Row Editable via Drag-and-Drop */}
-      <DndContext 
+      <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEndTop}
         modifiers={[restrictToWindowEdges]}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SortableContext 
+          <SortableContext
             items={dynamicTopWidgets.map(w => w.id)}
             strategy={rectSortingStrategy}
           >
@@ -242,28 +243,28 @@ export default function DashboardPage() {
       </DndContext>
 
       {/* Analytics & Activity Row Editable via Drag-and-Drop */}
-      <DndContext 
+      <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEndBottom}
         modifiers={[restrictToWindowEdges]}
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <SortableContext 
+          <SortableContext
             items={dynamicBottomWidgets.map(w => w.id)}
             strategy={rectSortingStrategy}
           >
             {dynamicBottomWidgets.map(widget => (
-               <SortableWidget key={widget.id} id={widget.id} className={widget.className}>
-                 {widget.component}
-               </SortableWidget>
+              <SortableWidget key={widget.id} id={widget.id} className={widget.className}>
+                {widget.component}
+              </SortableWidget>
             ))}
           </SortableContext>
         </div>
       </DndContext>
 
       {/* Success Modal */}
-      <SuccessModal 
+      <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         title="Dashboard Updated Successfully!"

@@ -405,6 +405,40 @@ class LoanModel {
     };
   }
 
+  static async getUserLoanTransactions(userId, page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+    const selectQuery = `
+      SELECT lt.*, l.loan_amount, l.employee_id
+      FROM loan_transactions lt
+      JOIN loans l ON lt.loan_id = l.id
+      WHERE l.user_id = ?
+      ORDER BY lt.transaction_date DESC
+      LIMIT ? OFFSET ?
+    `;
+    
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM loan_transactions lt
+      JOIN loans l ON lt.loan_id = l.id
+      WHERE l.user_id = ?
+    `;
+    
+    const [transactions, countResult] = await Promise.all([
+      query(selectQuery, [userId, limit, offset]),
+      query(countQuery, [userId])
+    ]);
+    
+    return {
+      transactions,
+      pagination: {
+        page,
+        limit,
+        total: countResult[0].total,
+        pages: Math.ceil(countResult[0].total / limit)
+      }
+    };
+  }
+
   static async updateLoanStatus(loanId, status) {
     const updateQuery = `
       UPDATE loans 

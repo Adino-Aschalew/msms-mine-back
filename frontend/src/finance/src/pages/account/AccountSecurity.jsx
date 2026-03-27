@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, Lock, Key, Smartphone, Mail, Eye, EyeOff, AlertTriangle, CheckCircle, Clock, User, Save } from 'lucide-react';
-import { authAPI } from '../../../shared/services/authAPI';
+import { authAPI } from '../../../../shared/services/authAPI';
 
 const AccountSecurity = () => {
   const [showPassword, setShowPassword] = useState(false);

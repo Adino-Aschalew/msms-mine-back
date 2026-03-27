@@ -11,7 +11,7 @@ export const loansAPI = {
   // Get loan applications
   getLoanApplications: async (page = 1, limit = 10, filters = {}) => {
     const params = { page, limit, ...filters };
-    const response = await apiClient.get('/api/loans/applications', params);
+    const response = await apiClient.get('/api/loans/my-applications', params);
     return response.data;
   },
 
@@ -24,7 +24,7 @@ export const loansAPI = {
   // Get user's loans
   getUserLoans: async (page = 1, limit = 10) => {
     const params = { page, limit };
-    const response = await apiClient.get('/api/loans/user', params);
+    const response = await apiClient.get('/api/loans/my-loans', params);
     return response.data;
   },
 

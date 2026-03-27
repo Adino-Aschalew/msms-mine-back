@@ -92,8 +92,8 @@ const AccountsOverview = () => {
             </div>
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {account.balance >= 0 ? '' : '-'}$
-                {Math.abs(account.balance).toLocaleString()}
+                {account.balance >= 0 ? '' : '-'}
+                {Math.abs(account.balance).toLocaleString()} ETB
               </p>
               <div className="flex items-center justify-end space-x-1">
                 {account.change >= 0 ? (
@@ -117,10 +117,10 @@ const AccountsOverview = () => {
       <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            Total Balance
+            Net Position
           </p>
           <p className="text-lg font-bold text-gray-900 dark:text-white">
-            ${((data?.savings?.total_savings || 0) - (data?.loans?.total_loans || 0)).toLocaleString()}
+            {((data?.savings?.total_savings || 0) - (data?.loans?.total_loans || 0)).toLocaleString()} ETB
           </p>
         </div>
       </div>

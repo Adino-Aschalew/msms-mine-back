@@ -317,19 +317,10 @@ class UserController {
     try {
       console.log('getProfile - Request received for userId:', req.userId);
       const userId = req.userId;
-      const user = await UserModel.findByIdWithProfile(userId);
-      console.log('getProfile - User data:', user);
       
-      if (!user) {
-        console.log('getProfile - User not found');
-        return res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
-
-      // Remove sensitive data
-      delete user.password_hash;
+      // Use UserService to get the user with profile - it already handles findByIdWithProfile and data transformation
+      const user = await UserService.getUserById(userId);
+      console.log('getProfile - User data retrieved successfully');
       
       const responseData = {
         user: {
@@ -339,10 +330,8 @@ class UserController {
           role: user.role,
           created_at: user.created_at
         },
-        employeeProfile: user.employee_profile
+        employeeProfile: user.employee_profile || null
       };
-      
-      console.log('getProfile - Response data:', responseData);
       
       res.json({
         success: true,
@@ -350,7 +339,6 @@ class UserController {
       });
     } catch (error) {
       console.error('Get profile error:', error);
-      console.error('Get profile error stack:', error.stack);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch profile'

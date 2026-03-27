@@ -72,6 +72,11 @@ export const loansAPI = {
     return response.data;
   },
 
+  getMyTransactions: async (params = {}) => {
+    const response = await api.get('/loans/my-transactions', { params });
+    return response.data;
+  },
+
   getMyApplications: async (params = {}) => {
     const response = await api.get('/loans/my-applications', { params });
     return response.data;

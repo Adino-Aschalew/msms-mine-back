@@ -10,10 +10,14 @@ class SavingsService {
       }
       
       // Check if account already exists
+      console.log('SavingsService.createAccount: checking for existing account for userId:', userId);
       const existingAccount = await SavingsModel.getSavingsAccount(userId);
       if (existingAccount) {
+        console.log('SavingsService.createAccount: account exists for userId:', userId, existingAccount);
         throw new Error('Savings account already exists');
       }
+      
+      console.log('SavingsService.createAccount: creating new account for userId:', userId, 'employeeId:', employeeId);
       
       // Create account
       const accountId = await SavingsModel.createSavingsAccount(userId, employeeId, savingPercentage);
@@ -118,7 +122,7 @@ class SavingsService {
       
       // Add contribution
       const result = await SavingsModel.addSavingsTransaction(
-        account.id,
+        account.account_id,
         userId,
         'CONTRIBUTION',
         amount,
@@ -167,7 +171,7 @@ class SavingsService {
       
       // Process withdrawal
       const result = await SavingsModel.addSavingsTransaction(
-        account.id,
+        account.account_id,
         userId,
         'WITHDRAWAL',
         amount,

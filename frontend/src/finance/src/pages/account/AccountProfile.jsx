@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Camera, Save, Edit2, Upload, Briefcase, Building, CheckCircle, Shield, Award, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useTheme } from '../../contexts/ThemeContext';
-import { authAPI } from '../../../shared/services/authAPI';
+import { authAPI } from '../../../../shared/services/authAPI';
 
 const AccountProfile = () => {
   const { theme } = useTheme();

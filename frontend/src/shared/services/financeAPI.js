@@ -4,7 +4,8 @@ import apiClient from '../services/api';
 export const financeAPI = {
   // Get dashboard data
   getDashboardData: async (params = {}) => {
-    return apiClient.get('/api/finance/analytics', params);
+    const response = await apiClient.get('/api/finance/analytics', params);
+    return response.data;
   },
 
   // Get financial overview

@@ -22,16 +22,20 @@ export default function EmployeesPage() {
     fetchEmployees();
   }, []);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (showLoading = true) => {
     try {
-      setLoading(true);
-      const data = await hrAPI.getAllEmployees(1, 1000); // Get all employees for now
-      setEmployees(Array.isArray(data) ? data : (data.data || []));
+      if (showLoading) setLoading(true);
+      setError(null);
+      const response = await hrAPI.getAllEmployees(1, 1000); // Get all employees for now
+      
+      // Handle the nested structure from hrAPI
+      const employeesData = response?.success ? response.data : (response?.data || response);
+      setEmployees(Array.isArray(employeesData) ? employeesData : (employeesData?.employees || []));
     } catch (err) {
-      setError('Failed to fetch employees');
       console.error('Error fetching employees:', err);
+      setError('Failed to fetch employees. Please check your connection.');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -39,23 +43,26 @@ export default function EmployeesPage() {
     try {
       const response = await hrAPI.createEmployeeProfile(newEmployee);
       if (response.success) {
-        await fetchEmployees(); // Refresh the list
+        // Refresh the list without showing a full-page loading spinner
+        await fetchEmployees(false); 
         setIsModalOpen(false);
+        setSuccessMessage('Employee created successfully!');
         
         // Show success message with default password
         const defaultPassword = response.data?.employee?.defaultPassword || 'BIT##123';
-        alert(`Employee created successfully!\n\nDefault Password: ${defaultPassword}\n\nThe employee will receive an email with their login credentials.`);
+        // Use a more subtle feedback if possible, but keeping alert for now as per user request
+        alert(`Employee created successfully!\n\nDefault Password: ${defaultPassword}`);
       }
     } catch (err) {
       console.error('Error adding employee:', err);
-      setError('Failed to add employee');
+      setError('Failed to add employee. Please try again.');
     }
   };
 
   const handleUpdateEmployee = async (updatedEmployee) => {
     try {
       await hrAPI.updateEmployeeProfile(updatedEmployee.id, updatedEmployee);
-      await fetchEmployees(); // Refresh the list
+      await fetchEmployees(false); // Refresh without full loading spinner
       setSuccessMessage('Employee profile updated successfully!');
     } catch (err) {
       console.error('Error updating employee:', err);
@@ -66,7 +73,8 @@ export default function EmployeesPage() {
   const handleDeleteEmployee = async (id) => {
     try {
       await hrAPI.updateEmploymentStatus(id, 'TERMINATED');
-      await fetchEmployees(); // Refresh the list
+      await fetchEmployees(false); // Refresh without full loading spinner
+      setSuccessMessage('Employee terminated successfully!');
     } catch (err) {
       console.error('Error deleting employee:', err);
       setError('Failed to delete employee');

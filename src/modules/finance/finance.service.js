@@ -48,7 +48,8 @@ class FinanceService {
           COUNT(*) as total_transactions,
           SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END) as total_payments,
           SUM(CASE WHEN transaction_type = 'INTEREST' THEN amount ELSE 0 END) as total_interest,
-          SUM(CASE WHEN transaction_type = 'PENALTY' THEN amount ELSE 0 END) as total_penalties
+          SUM(CASE WHEN transaction_type = 'PENALTY' THEN amount ELSE 0 END) as total_penalties,
+          SUM(CASE WHEN transaction_type = 'DISBURSEMENT' THEN amount ELSE 0 END) as total_disbursements
         FROM loan_transactions 
         WHERE 1=1
         ${this.getDateFilter(period, 'transaction_date')}
@@ -67,15 +68,19 @@ class FinanceService {
         ${payrollDateFilter}
       `);
       
+      const totalSavings = parseFloat(savingsTotals[0]?.total_savings || 0);
+      const totalLoans = parseFloat(loanTotals[0]?.total_loans || 0);
+
       return {
         period,
+        total_assets: totalSavings + totalLoans,
         savings: {
-          total_savings: parseFloat(savingsTotals[0]?.total_savings || 0),
+          total_savings: totalSavings,
           active_accounts: savingsTotals[0]?.active_accounts || 0,
           average_balance: parseFloat(savingsTotals[0]?.avg_balance || 0)
         },
         loans: {
-          total_loans: parseFloat(loanTotals[0]?.total_loans || 0),
+          total_loans: totalLoans,
           active_loans: loanTotals[0]?.active_loans || 0,
           overdue_loans: loanTotals[0]?.overdue_loans || 0,
           average_balance: parseFloat(loanTotals[0]?.avg_loan_balance || 0)
@@ -91,41 +96,16 @@ class FinanceService {
             total_transactions: loanTransactions[0]?.total_transactions || 0,
             total_payments: parseFloat(loanTransactions[0]?.total_payments || 0),
             total_interest: parseFloat(loanTransactions[0]?.total_interest || 0),
-            total_penalties: parseFloat(loanTransactions[0]?.total_penalties || 0)
+            total_penalties: parseFloat(loanTransactions[0]?.total_penalties || 0),
+            total_disbursements: parseFloat(loanTransactions[0]?.total_disbursements || 0)
           }
         },
         payroll: {
           total_payrolls: payrollSummary[0]?.total_payrolls || 0,
-          total_records: payrollSummary[0]?.total_records || 0,
+          total_records: payrollSummary[0]?.total_records_processed || 0,
           total_amount: parseFloat(payrollSummary[0]?.total_payroll_amount || 0),
           average_salary: parseFloat(payrollSummary[0]?.avg_salary || 0)
         }
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async getAnalytics(period = 'MONTHLY') {
-    try {
-      const overview = await this.getFinancialOverview(period);
-      const cashFlow = await this.getCashFlowReport(period);
-      const profitLoss = await this.getProfitLossReport(period);
-      
-      // Calculate growth rates (simplified demo)
-      const growthRates = {
-        revenue: 12.5,
-        expenses: 8.2,
-        payroll: 5.3,
-        savings: 18.7
-      };
-
-      return {
-        overview,
-        cashFlow,
-        profitLoss,
-        growthRates,
-        timestamp: new Date().toISOString()
       };
     } catch (error) {
       throw error;
@@ -194,11 +174,11 @@ class FinanceService {
 
   static async getCashFlowReport(period, filters = {}) {
     try {
-      const dateFilter = this.getDateFilter(period);
+      const dateFilter = this.getDateFilter(period, 'transaction_date');
       
       const [cashFlow] = await query(`
         SELECT 
-          DATE_FORMAT(created_at, '%Y-%m') as period,
+          DATE_FORMAT(transaction_date, '%Y-%m') as period,
           SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as savings_in,
           SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN -amount ELSE 0 END) as savings_out,
           SUM(CASE WHEN transaction_type = 'PAYMENT' THEN -amount ELSE 0 END) as loan_payments,
@@ -206,27 +186,27 @@ class FinanceService {
           SUM(CASE WHEN transaction_type = 'PENALTY' THEN -amount ELSE 0 END) as loan_penalties
         FROM (
           SELECT 
-            'CONTRIBUTION' as transaction_type, amount, created_at
+            'CONTRIBUTION' as transaction_type, amount, transaction_date
           FROM savings_transactions
           UNION ALL
           SELECT 
-            'WITHDRAWAL' as transaction_type, amount, created_at
+            'WITHDRAWAL' as transaction_type, amount, transaction_date
           FROM savings_transactions
           UNION ALL
           SELECT 
-            'PAYMENT' as transaction_type, amount, created_at
+            'PAYMENT' as transaction_type, amount, transaction_date
           FROM loan_transactions
           UNION ALL
           SELECT 
-            'INTEREST' as transaction_type, amount, created_at
+            'INTEREST' as transaction_type, amount, transaction_date
           FROM savings_transactions
           UNION ALL
           SELECT 
-            'PENALTY' as transaction_type, amount, created_at
+            'PENALTY' as transaction_type, amount, transaction_date
           FROM loan_transactions
         ) as transactions
-        ${dateFilter}
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        WHERE 1=1 ${dateFilter}
+        GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
         ORDER BY period DESC
       `);
       
@@ -238,48 +218,48 @@ class FinanceService {
 
   static async getProfitLossReport(period, filters = {}) {
     try {
-      const dateFilter = this.getDateFilter(period);
+      const dateFilter = this.getDateFilter(period, 'transaction_date');
       
       // Get income and expenses
       const [incomeData] = await query(`
         SELECT 
-          DATE_FORMAT(created_at, '%Y-%m') as period,
+          DATE_FORMAT(transaction_date, '%Y-%m') as period,
           SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as savings_income,
           SUM(CASE WHEN transaction_type = 'PAYMENT' THEN -amount ELSE 0 END) as loan_payments,
           SUM(CASE WHEN transaction_type = 'INTEREST' THEN amount ELSE 0 END) as savings_interest
         FROM (
-          SELECT 'CONTRIBUTION' as transaction_type, amount, created_at
+          SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date
           FROM savings_transactions
           UNION ALL
-          SELECT 'PAYMENT' as transaction_type, amount, created_at
+          SELECT 'PAYMENT' as transaction_type, amount, transaction_date
           FROM loan_transactions
           UNION ALL
-          SELECT 'INTEREST' as transaction_type, amount, created_at
+          SELECT 'INTEREST' as transaction_type, amount, transaction_date
           FROM savings_transactions
         ) as transactions
-        ${dateFilter}
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        WHERE 1=1 ${dateFilter}
+        GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
         ORDER BY period DESC
       `);
       
       const [expenseData] = await query(`
         SELECT 
-          DATE_FORMAT(created_at, '%Y-%m') as period,
+          DATE_FORMAT(transaction_date, '%Y-%m') as period,
           SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN amount ELSE 0 END) as savings_expenses,
           SUM(CASE WHEN transaction_type = 'PENALTY' THEN amount ELSE 0 END) as loan_penalties,
           SUM(CASE WHEN transaction_type = 'FEES' THEN amount ELSE 0 END) as other_expenses
         FROM (
-          SELECT 'WITHDRAWAL' as transaction_type, amount, created_at
+          SELECT 'WITHDRAWAL' as transaction_type, amount, transaction_date
           FROM savings_transactions
           UNION ALL
-          SELECT 'PENALTY' as transaction_type, amount, created_at
+          SELECT 'PENALTY' as transaction_type, amount, transaction_date
           FROM loan_transactions
           UNION ALL
-          SELECT 'FEES' as transaction_type, amount, created_at
+          SELECT 'FEES' as transaction_type, amount, transaction_date
           FROM loan_transactions
         ) as transactions
-        ${dateFilter}
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        WHERE 1=1 ${dateFilter}
+        GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
         ORDER BY period DESC
       `);
       
@@ -577,16 +557,16 @@ class FinanceService {
       const overview = await this.getFinancialOverview(period);
       const cashFlow = await this.getCashFlowReport(period);
       
-      // Calculate expense distribution
+      // Calculate expense distribution with safe handled NULLs
       const [expenses] = await query(`
         SELECT 
           category, 
           SUM(amount) as value,
-          ROUND((SUM(amount) / (SELECT SUM(amount) FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL')) * 100, 1) as percentage
+          ROUND((SUM(amount) / NULLIF((SELECT SUM(amount) FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL'), 0)) * 100, 1) as percentage
         FROM (
-          SELECT 'Payroll' as category, amount FROM (SELECT SUM(total_amount) as amount FROM payroll_batches) as p
+          SELECT 'Payroll' as category, COALESCE(SUM(total_amount), 0) as amount FROM payroll_batches
           UNION ALL
-          SELECT 'Withdrawals' as category, amount FROM (SELECT SUM(amount) as amount FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL') as w
+          SELECT 'Withdrawals' as category, COALESCE(SUM(amount), 0) as amount FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL'
         ) as e
         GROUP BY category
       `);
@@ -595,7 +575,7 @@ class FinanceService {
         revenue: overview.transactions.savings.total_contributions + overview.transactions.loans.total_payments,
         expenses: overview.transactions.savings.total_withdrawals + overview.payroll.total_amount,
         netProfit: (overview.transactions.savings.total_contributions + overview.transactions.loans.total_payments) - (overview.transactions.savings.total_withdrawals + overview.payroll.total_amount),
-        revenueGrowth: 15.5, // Mock growth for now
+        revenueGrowth: 15.5,
         expensesGrowth: 8.2,
         profitGrowth: 12.7,
         cashBalance: overview.total_assets,
@@ -605,7 +585,7 @@ class FinanceService {
         accountsPayable: overview.payroll.total_amount,
         payableChange: 3.4,
         expenseBreakdown: expenses,
-        monthlyCashFlow: cashFlow.monthly_data || []
+        monthlyCashFlow: cashFlow || []
       };
     } catch (error) {
       throw error;

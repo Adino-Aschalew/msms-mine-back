@@ -9,6 +9,8 @@ class SavingsController {
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
       
+      console.log('SavingsController.createAccount - Request from userId:', userId, 'employeeId:', employeeId);
+      
       const result = await SavingsService.createAccount(userId, employeeId, saving_percentage, ip, userAgent);
       
       res.status(201).json({

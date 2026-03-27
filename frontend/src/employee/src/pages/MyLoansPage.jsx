@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FiDollarSign, FiCalendar, FiFilter, FiSearch, FiEye, FiDownload } from 'react-icons/fi';
+import { FiDollarSign, FiCalendar, FiFilter, FiSearch, FiEye, FiDownload, FiCreditCard } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
-import { loansAPI } from '../services/api';
+import { loansAPI } from '../../../shared/services/loansAPI';
 
 const MyLoansPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,25 +18,37 @@ const MyLoansPage = () => {
   const fetchLoansData = async () => {
     try {
       setLoading(true);
-      const appsRes = await loansAPI.getMyApplications();
-      const loansRes = await loansAPI.getMyLoans();
-      
-      const realApps = appsRes?.data || [];
-      const realLoans = loansRes?.data || [];
+      const appsRes = await loansAPI.getLoanApplications();
+      const loansRes = await loansAPI.getUserLoans();
+
+      const realApps = appsRes?.data || appsRes || [];
+      const realLoans = loansRes?.data || loansRes || [];
 
       const combined = realApps.map(app => {
-        const activeLoan = realLoans.find(l => l.application_id === app.id);
-        
+        const appId = Number(app.id);
+        const activeLoan = realLoans.find(l =>
+          Number(l.loan_application_id) === appId ||
+          Number(l.application_id) === appId
+        );
+
+        const status = activeLoan ? activeLoan.status.toLowerCase() : app.status.toLowerCase();
+        const requestedAmount = parseFloat(app.requested_amount || 0);
+        const approvedAmount = activeLoan ? parseFloat(activeLoan.loan_amount) : (app.status === 'APPROVED' ? parseFloat(app.approved_amount || app.requested_amount) : 0);
+        const duration = activeLoan ? activeLoan.duration_months : (app.approved_term_months || app.repayment_duration_months || 0);
+
+        // Calculate a projected installment if approved but no active loan record yet
+        const projectedInstallment = status === 'approved' && duration > 0 ? (approvedAmount / duration) : 0;
+
         return {
-          id: app.id,
+          id: app.id.toString(),
           loanType: app.purpose || 'Personal',
-          requestedAmount: app.requested_amount,
-          approvedAmount: activeLoan ? parseFloat(activeLoan.loan_amount) : (app.status === 'APPROVED' ? app.requested_amount : 0),
-          loanDuration: activeLoan ? activeLoan.duration_months : (app.repayment_duration_months || 0),
-          monthlyInstallment: activeLoan ? parseFloat(activeLoan.monthly_deduction) : 0,
-          remainingBalance: activeLoan ? parseFloat(activeLoan.outstanding_balance) : 0,
-          status: activeLoan ? activeLoan.status.toLowerCase() : app.status.toLowerCase(),
-          approvalDate: activeLoan ? activeLoan.start_date?.split('T')[0] : null,
+          requestedAmount,
+          approvedAmount,
+          loanDuration: duration,
+          monthlyInstallment: activeLoan ? parseFloat(activeLoan.monthly_repayment || activeLoan.monthly_deduction || 0) : (projectedInstallment || 0),
+          remainingBalance: activeLoan ? parseFloat(activeLoan.outstanding_balance || activeLoan.remaining_balance || 0) : (status === 'approved' ? approvedAmount : 0),
+          status,
+          approvalDate: activeLoan ? activeLoan.created_at?.split('T')[0] : (app.created_at?.split('T')[0] || null),
           interestRate: activeLoan ? activeLoan.interest_rate : 5,
         };
       });
@@ -48,20 +60,21 @@ const MyLoansPage = () => {
       setLoading(false);
     }
   };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200';
+      case 'approved':
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
       case 'pending':
-        return 'bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-200';
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
       case 'rejected':
-        return 'bg-danger-100 text-danger-800 dark:bg-danger-900 dark:text-danger-200';
+      case 'failed':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
       case 'completed':
-        return 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200';
-      case 'suspended':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
     }
   };
 
@@ -82,7 +95,7 @@ const MyLoansPage = () => {
 
   const filteredLoans = loans.filter(loan => {
     const matchesSearch = loan.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         loan.loanType.toLowerCase().includes(searchTerm.toLowerCase());
+      loan.loanType.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -103,15 +116,6 @@ const MyLoansPage = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Loans</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Track and manage your loan applications</p>
         </div>
-        <Link
-          to="/loans/request"
-          className="px-2 py-3 btn-primary btn"
-        >
-          <div className="flex items-center text-center justify-evenly gap-2">
-         <span className='text-lg'>+</span>
-         <span>Request New Loan</span>
-          </div>
-        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -120,10 +124,10 @@ const MyLoansPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Loans</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                {loading ? '...' : loans.filter(loan => loan.status === 'active').length}
+                {loading ? '...' : loans.filter(loan => loan.status === 'active' || loan.status === 'approved').length}
               </p>
             </div>
-            <div className="p-3 bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400 rounded-lg">
+            <div className="p-3 bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 rounded-lg">
               <FiDollarSign className="w-6 h-6" />
             </div>
           </div>
@@ -134,11 +138,11 @@ const MyLoansPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Outstanding</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                ${loading ? '...' : loans.reduce((sum, loan) => sum + loan.remainingBalance, 0).toLocaleString()}
+                {loading ? '...' : loans.reduce((sum, loan) => sum + loan.remainingBalance, 0).toLocaleString()} ETB
               </p>
             </div>
-            <div className="p-3 bg-warning-100 text-warning-600 dark:bg-warning-900 dark:text-warning-400 rounded-lg">
-              <FiCalendar className="w-6 h-6" />
+            <div className="p-3 bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400 rounded-lg">
+              <FiCreditCard className="w-6 h-6" />
             </div>
           </div>
         </div>
@@ -148,11 +152,11 @@ const MyLoansPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Payment</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                ${loading ? '...' : loans.reduce((sum, loan) => sum + loan.monthlyInstallment, 0).toLocaleString()}
+                {loading ? '...' : loans.reduce((sum, loan) => sum + loan.monthlyInstallment, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
               </p>
             </div>
-            <div className="p-3 bg-success-100 text-success-600 dark:bg-success-900 dark:text-success-400 rounded-lg">
-              <FiDollarSign className="w-6 h-6" />
+            <div className="p-3 bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400 rounded-lg">
+              <FiCalendar className="w-6 h-6" />
             </div>
           </div>
         </div>
@@ -186,7 +190,7 @@ const MyLoansPage = () => {
                   className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 w-64"
                 />
               </div>
-              
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -253,20 +257,20 @@ const MyLoansPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    ${loan.requestedAmount.toLocaleString()}
+                    {loan.requestedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    ${loan.approvedAmount.toLocaleString()}
+                    {loan.approvedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {loan.loanDuration} months
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    ${loan.monthlyInstallment.toLocaleString()}
+                    {loan.monthlyInstallment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     <div>
-                      <div className="text-sm font-medium">${loan.remainingBalance.toLocaleString()}</div>
+                      <div className="text-sm font-medium">{loan.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB</div>
                       {loan.status === 'active' && (
                         <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                           <div

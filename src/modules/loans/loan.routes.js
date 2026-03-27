@@ -13,6 +13,7 @@ router.get('/dashboard', LoanController.getEmployeeDashboard);
 router.post('/apply', auditMiddleware('LOAN_APPLICATION_CREATED'), LoanController.applyForLoan);
 router.get('/my-applications', LoanController.getUserLoanApplications);
 router.get('/my-loans', LoanController.getUserLoans);
+router.get('/my-transactions', LoanController.getUserLoanTransactions);
 router.get('/my-loans/:loanId', LoanController.getUserLoanById);
 router.get('/check-eligibility', LoanController.checkEligibility);
 router.get('/eligibility-score', LoanController.getEligibilityScore);
