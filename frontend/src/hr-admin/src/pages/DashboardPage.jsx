@@ -27,7 +27,6 @@ import { useAuth } from '../../../shared/contexts/AuthContext';
 
 import StatCard from '../components/Dashboard/StatCard';
 import ActivityFeed from '../components/Dashboard/ActivityFeed';
-import { DepartmentChart, AttendanceChart, DiversityChart } from '../components/Dashboard/AnalyticsCharts';
 import SortableWidget from '../components/Dashboard/SortableWidget';
 import SuccessModal from '../components/Dashboard/SuccessModal';
 
@@ -52,10 +51,7 @@ const initialTopWidgets = [
 ];
 
 const initialBottomWidgets = [
-  { id: 'chart-dept', component: <DepartmentChart />, className: "col-span-1 lg:col-span-1" },
-  { id: 'chart-attendance', component: <AttendanceChart />, className: "col-span-1 lg:col-span-2" },
-  { id: 'chart-diversity', component: <DiversityChart />, className: "col-span-1 lg:col-span-1" },
-  { id: 'activity-feed', component: <ActivityFeed />, className: "col-span-1 lg:col-span-2" }
+  { id: 'activity-feed', component: <ActivityFeed />, className: "col-span-1 lg:col-span-3" }
 ];
 
 export default function DashboardPage() {
@@ -85,7 +81,9 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       const response = await hrAPI.getDashboardStats();
-      setDashboardData(response.data?.data || response.data || {});
+      // Since hrAPI already returns response.data, we check if it's nested or the stats themselves
+      const stats = response?.success ? response.data : (response?.data || response);
+      setDashboardData(stats || {});
     } catch (err) {
       console.error('HR Dashboard error:', err);
       setError('Failed to fetch HR dashboard data. Please try again.');
@@ -159,10 +157,7 @@ export default function DashboardPage() {
   ];
 
   const dynamicBottomWidgets = [
-    { id: 'chart-dept', component: <DepartmentChart data={dashboardData?.departmentData} />, className: "col-span-1 lg:col-span-1" },
-    { id: 'chart-attendance', component: <AttendanceChart data={dashboardData?.attendanceData} />, className: "col-span-1 lg:col-span-2" },
-    { id: 'chart-diversity', component: <DiversityChart data={dashboardData?.diversityData} />, className: "col-span-1 lg:col-span-1" },
-    { id: 'activity-feed', component: <ActivityFeed activities={dashboardData?.recentActivities} />, className: "col-span-1 lg:col-span-2" }
+    { id: 'activity-feed', component: <ActivityFeed activities={dashboardData?.recentActivities} />, className: "col-span-1 lg:col-span-3" }
   ];
 
   if (loading) {

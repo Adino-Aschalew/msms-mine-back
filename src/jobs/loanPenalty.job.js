@@ -76,7 +76,7 @@ class LoanPenaltyJob {
           l.*,
           ep.first_name,
           ep.last_name,
-          ep.email,
+          u.email,
           DATEDIFF(NOW(), l.next_payment_date) as overdue_days
         FROM loans l
         LEFT JOIN users u ON l.user_id = u.id

@@ -27,9 +27,9 @@ class HrService {
       }
       
       if (filters.search) {
-        whereClause += ' AND (u.username LIKE ? OR u.email LIKE ? OR ep.first_name LIKE ? OR ep.last_name LIKE ? OR u.employee_id LIKE ?)';
+        whereClause += ' AND (u.username LIKE ? OR u.email LIKE ? OR ep.first_name LIKE ? OR ep.last_name LIKE ? OR ep.grandfather_name LIKE ? OR u.employee_id LIKE ?)';
         const searchTerm = `%${filters.search}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
       }
       
       if (filters.is_active !== undefined) {
@@ -57,10 +57,13 @@ class HrService {
           u.last_login,
           ep.first_name,
           ep.last_name,
+          ep.grandfather_name,
           ep.phone,
           ep.address,
           ep.department,
           ep.job_grade,
+          ep.job_role,
+          ep.salary,
           ep.employment_status,
           ep.hire_date,
           ep.hr_verified,
@@ -95,13 +98,13 @@ class HrService {
     try {
       // Check if user exists and is not already verified
       const [user] = await query(`
-        SELECT u.*, ep.first_name, ep.last_name, ep.email, ep.hr_verified
+        SELECT u.*, ep.first_name, ep.last_name, u.email, ep.hr_verified
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.id = ? AND ep.hr_verified = FALSE
       `, [userId]);
       
-      if (!user || !user[0]) {
+      if (!user) {
         throw new Error('Employee not found or already verified');
       }
       
@@ -114,9 +117,9 @@ class HrService {
       
       // Log verification
       await auditLog(verifiedBy, 'EMPLOYEE_VERIFIED', 'users', userId, null, { 
-        employee_id: user[0].employee_id,
-        username: user[0].username,
-        email: user[0].email
+        employee_id: user.employee_id,
+        username: user.username,
+        email: user.email
       }, ip, userAgent);
       
       // Notifications disabled for now - email service not properly configured
@@ -125,10 +128,10 @@ class HrService {
       return { 
         message: 'Employee verified successfully',
         employee: {
-          id: user[0].id,
-          employee_id: user[0].employee_id,
-          name: `${user[0].first_name} ${user[0].last_name}`,
-          email: user[0].email
+          id: user.id,
+          employee_id: user.employee_id,
+          name: `${user.first_name} ${user.last_name}`,
+          email: user.email
         }
       };
     } catch (error) {
@@ -145,13 +148,13 @@ class HrService {
       
       // Check if user exists
       const [user] = await query(`
-        SELECT u.*, ep.first_name, ep.last_name, ep.email, ep.employment_status as current_status
+        SELECT u.*, ep.first_name, ep.last_name, u.email, ep.employment_status as current_status
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.id = ?
       `, [userId]);
       
-      if (!user || !user[0]) {
+      if (!user) {
         throw new Error('User not found');
       }
       
@@ -173,7 +176,7 @@ class HrService {
       
       // Log status change
       await auditLog(updatedBy, 'EMPLOYMENT_STATUS_UPDATE', 'employee_profiles', userId, null, {
-        old_status: user[0].current_status,
+        old_status: user.current_status,
         new_status: employmentStatus
       }, ip, userAgent);
       
@@ -183,10 +186,10 @@ class HrService {
       return { 
         message: 'Employment status updated successfully',
         employee: {
-          id: user[0].id,
-          employee_id: user[0].employee_id,
-          name: `${user[0].first_name} ${user[0].last_name}`,
-          previous_status: user[0].current_status,
+          id: user.id,
+          employee_id: user.employee_id,
+          name: `${user.first_name} ${user.last_name}`,
+          previous_status: user.current_status,
           new_status: employmentStatus
         }
       };
@@ -227,12 +230,12 @@ class HrService {
       const userId = userResult.insertId;
       
       // Create employee profile
-      const { first_name, last_name, phone, address, department, job_grade, employment_status, hire_date } = profileData;
+      const { first_name, last_name, grandfather_name, phone, address, department, job_grade, job_role, salary, employment_status, hire_date } = profileData;
       
       await query(`
-        INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, phone, address, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `, [userId, employee_id, first_name, last_name, department || null, job_grade || null, employment_status || 'ACTIVE', hire_date || null, phone || null, address || null]);
+        INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, grandfather_name, department, job_grade, job_role, salary, employment_status, hire_date, phone, address, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [userId, employee_id, first_name, last_name, grandfather_name || null, department || null, job_grade || null, job_role || null, salary || null, employment_status || 'ACTIVE', hire_date || null, phone || null, address || null]);
       
       // Log creation
       await auditLog(createdBy, 'EMPLOYEE_CREATED', 'users', userId, null, {
@@ -357,24 +360,26 @@ class HrService {
           u.last_login,
           ep.first_name,
           ep.last_name,
+          ep.grandfather_name,
           ep.phone,
           ep.address,
           ep.department,
           ep.job_grade,
+          ep.job_role,
           ep.employment_status,
           ep.hire_date,
-          ep.salary_grade,
+          ep.salary,
           ep.updated_at
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.id = ?
       `, [userId]);
       
-      if (!employee || !employee[0]) {
+      if (!employee) {
         throw new Error('Employee not found');
       }
       
-      return employee[0];
+      return employee;
     } catch (error) {
       throw error;
     }
@@ -382,11 +387,11 @@ class HrService {
 
   static async updateEmployeeProfile(userId, profileData, updatedBy, ip, userAgent) {
     try {
-      const { first_name, last_name, phone, address, department, job_grade, salary_grade } = profileData;
+      const { first_name, last_name, grandfather_name, phone, address, department, job_grade, job_role, salary } = profileData;
       
       // Check if employee exists
       const [existing] = await query('SELECT id FROM users WHERE id = ?', [userId]);
-      if (!existing || !existing[0]) {
+      if (!existing) {
         throw new Error('Employee not found');
       }
       
@@ -404,6 +409,11 @@ class HrService {
         params.push(last_name);
       }
       
+      if (grandfather_name !== undefined) {
+        updateFields.push('grandfather_name = ?');
+        params.push(grandfather_name);
+      }
+      
       if (phone !== undefined) {
         updateFields.push('phone = ?');
         params.push(phone);
@@ -419,14 +429,14 @@ class HrService {
         params.push(department);
       }
       
-      if (job_grade !== undefined) {
-        updateFields.push('job_grade = ?');
-        params.push(job_grade);
+      if (job_role !== undefined) {
+        updateFields.push('job_role = ?');
+        params.push(job_role);
       }
       
-      if (salary_grade !== undefined) {
-        updateFields.push('salary_grade = ?');
-        params.push(salary_grade);
+      if (salary !== undefined) {
+        updateFields.push('salary = ?');
+        params.push(salary);
       }
       
       if (updateFields.length === 0) {
@@ -525,13 +535,13 @@ class HrService {
       for (const userId of userIds) {
         try {
           const [user] = await query(`
-            SELECT u.*, ep.first_name, ep.last_name, ep.email, ep.hr_verified
+            SELECT u.*, ep.first_name, ep.last_name, u.email, ep.hr_verified
             FROM users u
             LEFT JOIN employee_profiles ep ON u.id = ep.user_id
             WHERE u.id = ? AND ep.hr_verified = FALSE
           `, [userId]);
           
-          if (!user || !user[0]) {
+          if (!user) {
             results.failed.push({ userId, reason: 'User not found or already verified' });
             continue;
           }
@@ -545,9 +555,9 @@ class HrService {
           
           // Log verification
           await auditLog(verifiedBy, 'EMPLOYEE_VERIFIED', 'users', userId, null, {
-            employee_id: user[0].employee_id,
-            username: user[0].username,
-            email: user[0].email
+            employee_id: user.employee_id,
+            username: user.username,
+            email: user.email
           }, ip, userAgent);
           
           // Notifications disabled for now - email service not properly configured
@@ -555,8 +565,8 @@ class HrService {
           
           results.verified.push({
             userId,
-            employee_id: user[0].employee_id,
-            name: `${user[0].first_name} ${user[0].last_name}`
+            employee_id: user.employee_id,
+            name: `${user.first_name} ${user.last_name}`
           });
           
         } catch (error) {
@@ -584,15 +594,16 @@ class HrService {
       let terminated = 0;
       let departments = 0;
       let jobGrades = 0;
+      let recentActivities = [];
       
       try {
         // Get total employees
         const [totalResult] = await query('SELECT COUNT(*) as count FROM users WHERE role IN (?, ?, ?)', ['EMPLOYEE', 'HR', 'MANAGER']);
-        totalEmployees = totalResult[0]?.count || 0;
+        totalEmployees = totalResult?.count || 0;
         
         // Get active employees
         const [activeResult] = await query('SELECT COUNT(*) as count FROM users WHERE role IN (?, ?, ?) AND is_active = 1', ['EMPLOYEE', 'HR', 'MANAGER']);
-        activeEmployees = activeResult[0]?.count || 0;
+        activeEmployees = activeResult?.count || 0;
         
         // Get verified employees
         const [verifiedResult] = await query(`
@@ -601,7 +612,7 @@ class HrService {
           LEFT JOIN employee_profiles ep ON u.id = ep.user_id 
           WHERE u.role IN (?, ?, ?) AND ep.hr_verified = 1
         `, ['EMPLOYEE', 'HR', 'MANAGER']);
-        verifiedEmployees = verifiedResult[0]?.count || 0;
+        verifiedEmployees = verifiedResult?.count || 0;
         
         // Get pending verification
         const [pendingResult] = await query(`
@@ -610,10 +621,10 @@ class HrService {
           LEFT JOIN employee_profiles ep ON u.id = ep.user_id 
           WHERE u.role IN (?, ?, ?) AND (ep.hr_verified = 0 OR ep.hr_verified IS NULL)
         `, ['EMPLOYEE', 'HR', 'MANAGER']);
-        pendingVerification = pendingResult[0]?.count || 0;
+        pendingVerification = pendingResult?.count || 0;
         
         // Get employment status counts
-        const [statusResult] = await query(`
+        const statusResult = await query(`
           SELECT 
             employment_status,
             COUNT(*) as count
@@ -643,47 +654,67 @@ class HrService {
           FROM employee_profiles 
           WHERE department IS NOT NULL
         `);
-        departments = deptResult[0]?.count || 0;
-        
+        departments = deptResult?.count || 0;
         // Get job grades count
         const [gradeResult] = await query(`
           SELECT COUNT(DISTINCT job_grade) as count 
           FROM employee_profiles 
           WHERE job_grade IS NOT NULL
         `);
-        jobGrades = gradeResult[0]?.count || 0;
+        jobGrades = gradeResult?.count || 0;
+        
+        // Get recent activities from audit logs
+        const activitiesResult = await query(`
+          SELECT 
+            al.id,
+            al.action,
+            al.table_name,
+            al.record_id,
+            al.old_values,
+            al.new_values,
+            al.created_at,
+            u.username,
+            ep.first_name,
+            ep.last_name
+          FROM audit_logs al
+          LEFT JOIN users u ON al.user_id = u.id
+          LEFT JOIN employee_profiles ep ON u.id = ep.user_id
+          WHERE al.action IN ('EMPLOYEE_CREATED', 'EMPLOYEE_PROFILE_UPDATE', 'EMPLOYEE_VERIFIED', 'EMPLOYMENT_STATUS_UPDATE')
+          ORDER BY al.created_at DESC
+          LIMIT 10
+        `);
+        
+        recentActivities = activitiesResult.map(al => ({
+          id: al.id,
+          type: al.action,
+          user: `${al.first_name || ''} ${al.last_name || al.username || 'System'}`.trim(),
+          action: (al.action || '').replace(/_/g, ' ').toLowerCase(),
+          target: al.table_name || 'HR System',
+          time: al.created_at,
+          details: al.new_values
+        }));
         
       } catch (queryError) {
         console.error('❌ Database query error:', queryError);
-        // Return default values if queries fail
-        totalEmployees = 10;
-        activeEmployees = 8;
-        verifiedEmployees = 6;
-        pendingVerification = 2;
-        activeEmployment = 8;
-        employeesOnLeave = 1;
-        terminated = 1;
-        departments = 3;
-        jobGrades = 5;
       }
 
       const dashboardStats = {
-        totalEmployees,
-        activeEmployees,
-        verifiedEmployees,
-        pendingVerification,
-        activeEmployment,
-        employeesOnLeave,
-        terminated,
-        departments,
-        jobGrades,
-        employeeGrowthRate: 5.0,
-        leaveRate: 2.1,
+        totalEmployees: Number(totalEmployees || 0),
+        activeEmployees: Number(activeEmployees || 0),
+        verifiedEmployees: Number(verifiedEmployees || 0),
+        pendingVerification: Number(pendingVerification || 0),
+        activeEmployment: Number(activeEmployment || 0),
+        employeesOnLeave: Number(employeesOnLeave || 0),
+        terminated: Number(terminated || 0),
+        departments: Number(departments || 0),
+        jobGrades: Number(jobGrades || 0),
+        employeeGrowthRate: 0,
+        leaveRate: 0,
         openPositions: 0,
-        pendingApprovals: 0,
+        pendingApprovals: Number(pendingVerification || 0),
         approvalRate: 0,
         positionGrowthRate: 0,
-        recentActivities: [],
+        recentActivities: recentActivities || [],
         departmentData: [],
         attendanceData: [],
         diversityData: []
@@ -1423,10 +1454,13 @@ class HrService {
           u.last_login,
           ep.first_name,
           ep.last_name,
+          ep.grandfather_name,
           ep.phone,
           ep.address,
           ep.department,
           ep.job_grade,
+          ep.job_role,
+          ep.salary,
           ep.employment_status,
           ep.hire_date,
           ep.hr_verified,
@@ -1436,12 +1470,12 @@ class HrService {
         WHERE u.id = ?
       `, [userId]);
       
-      if (!userProfile || !userProfile[0]) {
+      if (!userProfile) {
         throw new Error('User not found');
       }
       
       return {
-        user: userProfile[0],
+        user: userProfile,
         loginActivity: []
       };
     } catch (error) {
@@ -1474,6 +1508,90 @@ class HrService {
       
       return { message: 'Profile updated successfully' };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getPerformanceStats() {
+    try {
+      const [stats] = await query(`
+        SELECT 
+          COUNT(*) as total_reviews,
+          AVG(score) as average_score,
+          COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed_reviews,
+          COUNT(CASE WHEN status != 'Completed' THEN 1 END) as pending_reviews
+        FROM performance_reviews
+      `);
+      
+      const [countResult] = await query('SELECT COUNT(*) as count FROM performance_reviews');
+      const count = countResult && countResult.count ? countResult.count : 0;
+      
+      return {
+        ...stats,
+        total_reviews: stats ? stats.total_reviews : 0,
+        average_score: stats ? parseFloat(stats.average_score) || 0 : 0
+      };
+    } catch (error) {
+      console.error('getPerformanceStats error:', error);
+      return { total_reviews: 0, average_score: 0, completed_reviews: 0, pending_reviews: 0 };
+    }
+  }
+
+  static async getPerformanceReviews(limit = 10, offset = 0) {
+    try {
+      const selectQuery = `
+        SELECT 
+          pr.id, 
+          pr.employee_id, 
+          ep.first_name, 
+          ep.last_name, 
+          ep.department,
+          pr.review_type as reviewType, 
+          pr.review_date as reviewDate, 
+          pr.status, 
+          pr.score,
+          rp.first_name as reviewer_first_name, 
+          rp.last_name as reviewer_last_name,
+          pr.next_review_date as nextReview
+        FROM performance_reviews pr
+        LEFT JOIN employee_profiles ep ON pr.employee_id = ep.employee_id
+        LEFT JOIN employee_profiles rp ON pr.reviewer_id = rp.user_id
+        ORDER BY pr.review_date DESC
+        LIMIT ? OFFSET ?
+      `;
+      const [reviews] = await query(selectQuery, [limit, offset]);
+      
+      return (reviews || []).map(r => ({
+        id: r.id.toString(),
+        employeeId: r.employee_id,
+        employeeName: (r.first_name && r.last_name) ? `${r.first_name} ${r.last_name}` : r.employee_id,
+        department: r.department || 'N/A',
+        reviewType: r.reviewType,
+        reviewDate: r.reviewDate ? new Date(r.reviewDate).toISOString().split('T')[0] : null,
+        status: r.status,
+        score: r.score,
+        reviewer: (r.reviewer_first_name && r.reviewer_last_name) ? `${r.reviewer_first_name} ${r.reviewer_last_name}` : 'Unknown',
+        nextReview: r.nextReview ? new Date(r.nextReview).toISOString().split('T')[0] : null
+      }));
+    } catch (error) {
+      console.error('getPerformanceReviews error:', error);
+      return [];
+    }
+  }
+
+  static async createPerformanceReview(reviewData) {
+    try {
+      const { employeeId, reviewerId, reviewType, reviewDate, nextReviewDate, status, score, feedback } = reviewData;
+      
+      const [result] = await query(`
+        INSERT INTO performance_reviews 
+        (employee_id, reviewer_id, review_type, review_date, next_review_date, status, score, feedback, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [employeeId, reviewerId, reviewType, reviewDate, nextReviewDate, status, score || 0, feedback]);
+      
+      return { id: result.insertId, ...reviewData };
+    } catch (error) {
+      console.error('createPerformanceReview error:', error);
       throw error;
     }
   }

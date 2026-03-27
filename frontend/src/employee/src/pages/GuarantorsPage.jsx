@@ -1,14 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiUsers, FiPlus, FiSearch, FiEdit, FiTrash2, FiHome, FiUser, FiFile, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { employeeAPI } from '../../../shared/services/employeeAPI';
 import { guarantorsAPI } from '../../../shared/services/guarantorsAPI';
-
-const mockEmployees = [
-  { id: 'EMP001', fullName: 'John Doe', email: 'john.doe@company.com', department: 'Engineering', position: 'Senior Developer' },
-  { id: 'EMP002', fullName: 'Jane Smith', email: 'jane.smith@company.com', department: 'Marketing', position: 'Marketing Manager' },
-  { id: 'EMP003', fullName: 'Mike Johnson', email: 'mike.johnson@company.com', department: 'Finance', position: 'Senior Accountant' },
-  { id: 'EMP004', fullName: 'Sarah Wilson', email: 'sarah.wilson@company.com', department: 'HR', position: 'HR Specialist' },
-  { id: 'EMP005', fullName: 'David Brown', email: 'david.brown@company.com', department: 'Operations', position: 'Ops Manager' },
-];
 
 const GuarantorsPage = () => {
   const [activeTab, setActiveTab] = useState('internal');
@@ -23,6 +16,10 @@ const GuarantorsPage = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [internalGuarantors, setInternalGuarantors] = useState([]);
+  const [externalGuarantors, setExternalGuarantors] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -136,25 +133,33 @@ const GuarantorsPage = () => {
     }));
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (validateStep(formStep)) {
       if (formStep === 2 && formData.type === 'internal') {
-        const employee = mockEmployees.find(emp => emp.id.toLowerCase() === formData.employeeId.toLowerCase());
-        if (employee) {
-          setFormData(prev => ({
-            ...prev,
-            fullName: employee.fullName,
-            email: employee.email,
-            department: employee.department,
-            position: employee.position
-          }));
-          setFormStep(3);
-          setFormErrors({});
-        } else {
+        setIsSubmitting(true);
+        try {
+          const res = await employeeAPI.validateEmployee(formData.employeeId);
+          if (res && res.success && res.data) {
+            const employee = res.data;
+            setFormData(prev => ({
+              ...prev,
+              fullName: `${employee.first_name} ${employee.last_name}`,
+              email: employee.email,
+              department: employee.department,
+              position: employee.job_grade || employee.job_title || employee.department
+            }));
+            setFormStep(3);
+            setFormErrors({});
+          } else {
+             throw new Error('Employee not found');
+          }
+        } catch (err) {
           setErrorModal({
             isOpen: true,
             message: `Identification system failed: No employee record found matching ID "${formData.employeeId}". Please verify the ID and try again.`
           });
+        } finally {
+          setIsSubmitting(false);
         }
       } else {
         setFormStep(formStep + 1);

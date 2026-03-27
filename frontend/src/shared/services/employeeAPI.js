@@ -27,6 +27,12 @@ export const employeeAPI = {
     return response.data;
   },
 
+  // Validate employee ID for guarantors
+  validateEmployee: async (employeeId) => {
+    const response = await apiClient.get(`/api/employee/validate/${employeeId}`);
+    return response.data;
+  },
+
   // Update employee profile
   updateProfile: async (profileData) => {
     const response = await apiClient.put('/api/users/profile', profileData);

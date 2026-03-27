@@ -27,6 +27,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import ScheduleReviewModal from '../components/Performance/ScheduleReviewModal';
 import { useTheme } from '../contexts/ThemeContext';
+import { hrAPI } from '../../../shared/services/hrAPI';
 
 export default function PerformancePage() {
   const { theme } = useTheme();
@@ -37,10 +38,73 @@ export default function PerformancePage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
 
+  const [performanceReviews, setPerformanceReviews] = useState([]);
+  const [kpiData, setKpiData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   // Register Chart.js components once
   useEffect(() => {
     ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, reviewsRes] = await Promise.all([
+        hrAPI.getPerformanceStats(),
+        hrAPI.getPerformanceReviews(1, 100)
+      ]);
+      
+      const r_data = Array.isArray(reviewsRes) ? reviewsRes : (reviewsRes?.data || []);
+      setPerformanceReviews(r_data);
+      
+      const s_data = statsRes?.data || {};
+      
+      setKpiData([
+        {
+          title: 'Overall Performance',
+          value: s_data.average_score ? s_data.average_score.toFixed(1) + '%' : '0%',
+          change: '+0%',
+          trend: 'up',
+          icon: Target,
+          color: 'blue',
+          description: 'Company-wide average'
+        },
+        {
+          title: 'Total Reviews',
+          value: (s_data.total_reviews || 0).toString(),
+          change: '+0',
+          trend: 'up',
+          icon: Target,
+          color: 'purple',
+          description: 'All time'
+        },
+        {
+          title: 'Completed',
+          value: (s_data.completed_reviews || 0).toString(),
+          change: '+0',
+          trend: 'up',
+          icon: CheckCircle,
+          color: 'green',
+          description: 'Successfully finished'
+        },
+        {
+          title: 'Pending',
+          value: (s_data.pending_reviews || 0).toString(),
+          change: '-0',
+          trend: 'down',
+          icon: AlertTriangle,
+          color: 'orange',
+          description: 'Awaiting action'
+        }
+      ]);
+    } catch (err) {
+      console.error('Failed to fetch performance data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Chart data for performance trends
   const performanceTrendsData = {
@@ -184,109 +248,7 @@ export default function PerformancePage() {
     console.log('New review scheduled:', data);
   };
 
-  // Mock data for KPI cards
-  const kpiData = [
-    {
-      title: 'Overall Performance',
-      value: '87.5%',
-      change: '+3.2%',
-      trend: 'up',
-      icon: Target,
-      color: 'blue',
-      description: 'Company-wide average'
-    },
-    {
-      title: 'Active Reviews',
-      value: '24',
-      change: '+4',
-      trend: 'up',
-      icon: Calendar,
-      color: 'green',
-      description: 'In progress this month'
-    },
-    {
-      title: 'Completion Rate',
-      value: '92%',
-      change: '+1.5%',
-      trend: 'up',
-      icon: CheckCircle,
-      color: 'purple',
-      description: 'On-time completion'
-    },
-    {
-      title: 'Pending Actions',
-      value: '8',
-      change: '-2',
-      trend: 'down',
-      icon: AlertTriangle,
-      color: 'orange',
-      description: 'Require attention'
-    }
-  ];
-
-  // Mock data for performance reviews
-  const performanceReviews = [
-    {
-      id: 'PRV-001',
-      employeeId: 'EMP-001',
-      employeeName: 'Sarah Jenkins',
-      department: 'Engineering',
-      reviewType: 'Quarterly',
-      reviewDate: '2026-03-15',
-      status: 'Completed',
-      score: 92,
-      reviewer: 'David Chen',
-      nextReview: '2026-06-15'
-    },
-    {
-      id: 'PRV-002',
-      employeeId: 'EMP-002',
-      employeeName: 'Michael Chen',
-      department: 'Sales',
-      reviewType: 'Monthly',
-      reviewDate: '2026-03-14',
-      status: 'In Progress',
-      score: 88,
-      reviewer: 'Amanda Brooks',
-      nextReview: '2026-04-14'
-    },
-    {
-      id: 'PRV-003',
-      employeeId: 'EMP-003',
-      employeeName: 'Emma Davis',
-      department: 'Marketing',
-      reviewType: 'Quarterly',
-      reviewDate: '2026-03-13',
-      status: 'Completed',
-      score: 95,
-      reviewer: 'Lisa Wong',
-      nextReview: '2026-06-13'
-    },
-    {
-      id: 'PRV-004',
-      employeeId: 'EMP-004',
-      employeeName: 'David Smith',
-      department: 'Engineering',
-      reviewType: 'Annual',
-      reviewDate: '2026-03-12',
-      status: 'Pending',
-      score: 75,
-      reviewer: 'Sarah Jenkins',
-      nextReview: '2027-03-12'
-    },
-    {
-      id: 'PRV-005',
-      employeeId: 'EMP-005',
-      employeeName: 'Alex Johnson',
-      department: 'HR',
-      reviewType: 'Monthly',
-      reviewDate: '2026-03-11',
-      status: 'Completed',
-      score: 80,
-      reviewer: 'HR Admin',
-      nextReview: '2026-04-11'
-    }
-  ];
+  // Dynamic data fetched from hrAPI
 
   const getKpiColor = (color) => {
     const colors = {

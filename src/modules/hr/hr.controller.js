@@ -174,10 +174,31 @@ class HrController {
   static async updateEmployeeProfile(req, res) {
     try {
       const { userId } = req.params;
-      const profileData = req.body;
       const adminId = req.userId;
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
+      
+      const { 
+        firstName, lastName, grandfatherName, phone, address, department, jobRole, role, 
+        type, salary, status, joinDate 
+      } = req.body;
+      
+      const profileData = {
+        first_name: firstName,
+        last_name: lastName,
+        grandfather_name: grandfatherName,
+        phone,
+        address,
+        department,
+        job_grade: type,
+        job_role: jobRole || role,
+        employment_status: status ? status.toUpperCase() : undefined,
+        hire_date: joinDate,
+        salary: salary
+      };
+      
+      // Remove undefined values to avoid overwriting with null if unintentional
+      Object.keys(profileData).forEach(key => profileData[key] === undefined && delete profileData[key]);
       
       const result = await HrService.updateEmployeeProfile(userId, profileData, adminId, ip, userAgent);
       
@@ -278,7 +299,7 @@ class HrController {
 
   static async createEmployee(req, res) {
     try {
-      const { employeeId, firstName, lastName, email, phone, department, role, type, salary, address, emergencyContact, joinDate, status } = req.body;
+      const { employeeId, firstName, lastName, grandfatherName, email, phone, department, role, type, salary, address, emergencyContact, joinDate, status } = req.body;
       
       const employeeData = {
         employee_id: employeeId || `EMP${Date.now().toString().slice(-6)}`,
@@ -290,10 +311,13 @@ class HrController {
       const profileData = {
         first_name: firstName,
         last_name: lastName,
+        grandfather_name: grandfatherName,
         phone: phone,
         address: address,
         department: department,
         job_grade: type,
+        job_role: role || jobRole,
+        salary: salary,
         employment_status: status === 'Active' ? 'ACTIVE' : 'INACTIVE',
         hire_date: joinDate
       };

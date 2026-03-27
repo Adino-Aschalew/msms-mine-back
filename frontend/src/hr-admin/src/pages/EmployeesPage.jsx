@@ -9,6 +9,14 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   useEffect(() => {
     fetchEmployees();
@@ -17,8 +25,8 @@ export default function EmployeesPage() {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const response = await hrAPI.getAllEmployees(1, 1000); // Get all employees for now
-      setEmployees(response.data?.data || []); // Backend returns {success: true, data: employees}
+      const data = await hrAPI.getAllEmployees(1, 1000); // Get all employees for now
+      setEmployees(Array.isArray(data) ? data : (data.data || []));
     } catch (err) {
       setError('Failed to fetch employees');
       console.error('Error fetching employees:', err);
@@ -48,6 +56,7 @@ export default function EmployeesPage() {
     try {
       await hrAPI.updateEmployeeProfile(updatedEmployee.id, updatedEmployee);
       await fetchEmployees(); // Refresh the list
+      setSuccessMessage('Employee profile updated successfully!');
     } catch (err) {
       console.error('Error updating employee:', err);
       setError('Failed to update employee');
@@ -106,6 +115,19 @@ export default function EmployeesPage() {
           <span>Add Employee</span>
         </button>
       </div>
+      
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-right duration-300">
+          <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <div className="bg-white/20 p-1 rounded-full">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="font-medium text-sm">{successMessage}</span>
+          </div>
+        </div>
+      )}
       
       <div className="w-full">
         <EmployeeTableNew 

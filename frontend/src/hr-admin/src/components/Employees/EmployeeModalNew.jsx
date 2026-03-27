@@ -27,22 +27,22 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
   useEffect(() => {
     if (employee) {
       setFormData({
-        employeeId: employee.employeeId || '',
-        firstName: employee.firstName || '',
-        lastName: employee.lastName || '',
-        grandfatherName: employee.grandfatherName || '',
+        employeeId: employee.employeeId || employee.employee_id || '',
+        firstName: employee.firstName || employee.first_name || '',
+        lastName: employee.lastName || employee.last_name || '',
+        grandfatherName: employee.grandfatherName || employee.grandfather_name || '',
         email: employee.email || '',
         phone: employee.phone || '',
         department: employee.department || 'Engineering',
-        role: employee.role || '',
-        type: employee.type || 'Full-time',
-        salary: employee.salary || '',
+        role: employee.job_role || employee.role || '',
+        type: employee.type || employee.job_grade || 'Full-time',
+        salary: employee.salary || employee.salary_grade || '',
         password: '',
         confirmPassword: '',
         address: employee.address || '',
-        emergencyContact: employee.emergencyContact || '',
-        joinDate: employee.joinDate || new Date().toISOString().split('T')[0],
-        status: employee.status || 'Active'
+        emergencyContact: employee.emergencyContact || employee.emergency_contact || '',
+        joinDate: employee.joinDate || employee.hire_date || new Date().toISOString().split('T')[0],
+        status: employee.status || employee.employment_status || 'Active'
       });
     } else {
       setFormData({

@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { hrAPI } from '../../../shared/services/hrAPI';
 import { authAPI } from '../../../shared/services/authAPI';
+import { hrAPI } from '../../../shared/services/hrAPI';
 
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');

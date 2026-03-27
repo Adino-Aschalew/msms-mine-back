@@ -161,7 +161,7 @@ class SalaryMonitorJob {
           u.username,
           ep.first_name,
           ep.last_name,
-          ep.email,
+          u.email,
           DATEDIFF(NOW(), la.created_at) as days_pending
         FROM loan_applications la
         LEFT JOIN users u ON la.user_id = u.id
@@ -188,7 +188,7 @@ class SalaryMonitorJob {
           u.username,
           ep.first_name,
           ep.last_name,
-          ep.email,
+          u.email,
           l.employee_id,
           l.outstanding_balance
         FROM penalties p

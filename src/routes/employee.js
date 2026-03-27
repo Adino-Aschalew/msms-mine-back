@@ -8,6 +8,7 @@ const router = express.Router();
 router.post('/verify', authMiddleware, auditMiddleware('HR_VERIFICATION'), EmployeeController.verifyEmployee);
 router.get('/profile', authMiddleware, EmployeeController.getProfile);
 router.put('/profile', authMiddleware, auditMiddleware('PROFILE_UPDATE', 'employee_profiles'), EmployeeController.updateProfile);
+router.get('/validate/:employeeId', authMiddleware, EmployeeController.validateEmployee);
 
 router.get('/all', authMiddleware, roleCheck(['SUPER_ADMIN', 'LOAN_COMMITTEE', 'FINANCE_ADMIN']), EmployeeController.getAllEmployees);
 router.get('/unverified', authMiddleware, roleCheck(['SUPER_ADMIN', 'LOAN_COMMITTEE']), EmployeeController.getUnverifiedEmployees);

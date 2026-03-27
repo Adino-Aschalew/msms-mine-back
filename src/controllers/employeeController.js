@@ -109,6 +109,32 @@ class EmployeeController {
       });
     }
   }
+
+  static async validateEmployee(req, res) {
+    try {
+      const { employeeId } = req.params;
+      
+      const profile = await Employee.getEmployeeProfileByEmployeeId(employeeId);
+      
+      if (!profile) {
+        return res.status(404).json({
+          success: false,
+          message: 'Employee profile not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: profile
+      });
+    } catch (error) {
+      console.error('Validate employee error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
   
   static async getAllEmployees(req, res) {
     try {

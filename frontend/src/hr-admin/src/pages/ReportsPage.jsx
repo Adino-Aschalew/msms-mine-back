@@ -4,6 +4,7 @@ import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { useTheme } from '../contexts/ThemeContext';
 import { hrAPI } from '../../../shared/services/hrAPI';
+import { reportsAPI } from '../../../shared/services/reportsAPI';
 
 ChartJS.register(
   CategoryScale,
@@ -53,62 +54,37 @@ export default function ReportsPage() {
 
   const fetchReportsList = async () => {
     try {
-      // Mock reports list for now - this can be enhanced later
-      const mockReports = [
-        {
-          id: 'RPT-001',
-          name: 'Monthly Performance Report',
-          type: 'Performance',
-          department: 'All',
-          generated: '2026-03-15',
+      const response = await reportsAPI.getHistory(1, 100);
+      if (response && response.data && response.data.history) {
+        const historyData = response.data.history;
+        
+        const formattedReports = historyData.map(report => ({
+          id: report.id.toString(),
+          name: report.report_name,
+          type: report.report_type,
+          department: 'All', 
+          generated: new Date(report.generation_date).toLocaleDateString(),
           status: 'Completed',
-          size: '2.4 MB'
-        },
-        {
-          id: 'RPT-002',
-          name: 'Employee Attendance Summary',
-          type: 'Attendance',
-          department: 'All',
-          generated: '2026-03-14',
-          status: 'Completed',
-          size: '1.8 MB'
-        },
-        {
-          id: 'RPT-003',
-          name: 'Q1 Department Analytics',
-          type: 'Analytics',
-          department: 'Engineering',
-          generated: '2026-03-13',
-          status: 'Processing',
-          size: '-'
-        },
-        {
-          id: 'RPT-004',
-          name: 'Salary Structure Analysis',
-          type: 'Finance',
-          department: 'All',
-          generated: '2026-03-12',
-          status: 'Completed',
-          size: '3.1 MB'
-        },
-        {
-          id: 'RPT-005',
-          name: 'Training Completion Report',
-          type: 'Training',
-          department: 'HR',
-          generated: '2026-03-11',
-          status: 'Completed',
-          size: '1.2 MB'
-        }
-      ];
-      
-      setReports(mockReports);
-      setReportStats({
-        total: mockReports.length,
-        thisMonth: mockReports.filter(r => r.status === 'Completed').length,
-        processing: mockReports.filter(r => r.status === 'Processing').length,
-        failed: mockReports.filter(r => r.status === 'Failed').length
-      });
+          size: 'Unknown'
+        }));
+        
+        setReports(formattedReports);
+        
+        const now = new Date();
+        const thisMonthCount = formattedReports.filter(r => {
+          const d = new Date(r.generated);
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        }).length;
+        
+        setReportStats({
+          total: formattedReports.length,
+          thisMonth: thisMonthCount,
+          processing: 0,
+          failed: 0
+        });
+      } else {
+        setReports([]);
+      }
     } catch (error) {
       console.error('Failed to fetch reports list:', error);
     }
