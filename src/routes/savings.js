@@ -7,7 +7,9 @@ const router = express.Router();
 
 router.post('/account', authMiddleware, auditMiddleware('SAVINGS_ACCOUNT_CREATE', 'savings_accounts'), SavingsController.createAccount);
 router.get('/account', authMiddleware, SavingsController.getAccount);
-router.put('/account/percentage', authMiddleware, auditMiddleware('SAVING_PERCENTAGE_UPDATE', 'savings_accounts'), SavingsController.updateSavingPercentage);
+router.put('/account/percentage', authMiddleware, auditMiddleware('SAVING_PERCENTAGE_REQUEST_CREATE', 'savings_update_requests'), SavingsController.updateSavingPercentage);
+router.get('/requests', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), SavingsController.getSavingsRequests);
+router.put('/requests/:requestId/handle', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), auditMiddleware('SAVING_PERCENTAGE_REQUEST_HANDLE', 'savings_update_requests'), SavingsController.handleSavingsRequest);
 router.get('/transactions', authMiddleware, SavingsController.getTransactions);
 router.post('/contribute', authMiddleware, auditMiddleware('SAVINGS_CONTRIBUTION', 'savings_transactions'), SavingsController.addContribution);
 router.post('/withdraw', authMiddleware, auditMiddleware('SAVINGS_WITHDRAWAL', 'savings_transactions'), SavingsController.withdrawSavings);

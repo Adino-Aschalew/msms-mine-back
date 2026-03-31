@@ -27,7 +27,7 @@ ChartJS.register(
 const RevenueChart = ({ dateRange, dashboardData }) => {
   const { theme } = useTheme();
   
-  const cashFlow = dashboardData?.cashFlow || [];
+  const cashFlow = dashboardData?.monthlyCashFlow || [];
   
   const data = {
     labels: cashFlow.length > 0 
@@ -41,12 +41,8 @@ const RevenueChart = ({ dateRange, dashboardData }) => {
       {
         label: 'Revenue',
         data: cashFlow.length > 0
-          ? cashFlow.map(d => parseFloat(d.savings_in || 0) + parseFloat(d.loan_payments || 0)).reverse()
-          : dateRange === '7days'
-          ? [12000, 15000, 18000, 14000, 22000, 19000, 16000]
-          : dateRange === '30days'
-          ? [85000, 92000, 78000, 95000]
-          : [320000, 350000, 380000, 360000, 420000, 450000],
+          ? cashFlow.map(d => (parseFloat(d.savings_in || 0) + parseFloat(d.loan_payments || 0) + parseFloat(d.savings_interest || 0))).reverse()
+          : [],
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         fill: true,
@@ -55,12 +51,8 @@ const RevenueChart = ({ dateRange, dashboardData }) => {
       {
         label: 'Expenses',
         data: cashFlow.length > 0
-          ? cashFlow.map(d => parseFloat(d.savings_out || 0)).reverse() // Simplified expenses
-          : dateRange === '7days'
-          ? [8000, 9000, 11000, 8500, 13000, 11500, 10000]
-          : dateRange === '30days'
-          ? [55000, 58000, 52000, 61000]
-          : [220000, 240000, 260000, 250000, 280000, 300000],
+          ? cashFlow.map(d => Math.abs(parseFloat(d.savings_out || 0) + parseFloat(d.loan_penalties || 0))).reverse()
+          : [],
         borderColor: 'rgb(239, 68, 68)',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         fill: true,
@@ -99,7 +91,7 @@ const RevenueChart = ({ dateRange, dashboardData }) => {
             if (label) {
               label += ': ';
             }
-            label += '$' + context.parsed.y.toLocaleString();
+            label += context.parsed.y.toLocaleString() + ' ETB';
             return label;
           },
         },
@@ -119,7 +111,7 @@ const RevenueChart = ({ dateRange, dashboardData }) => {
         ticks: {
           color: theme === 'dark' ? '#ffffff' : '#374151',
           callback: function (value) {
-            return '$' + value.toLocaleString();
+            return value.toLocaleString() + ' ETB';
           },
         },
         grid: {

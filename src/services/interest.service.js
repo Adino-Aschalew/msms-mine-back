@@ -28,7 +28,7 @@ class InterestService {
       
       // Add interest transaction
       await connection.execute(`
-        INSERT INTO savings_transactions (account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
+        INSERT INTO savings_transactions (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
         VALUES (?, ?, 'INTEREST', ?, ?, ?, ?, ?, NOW())
       `, [
         accountId,
@@ -129,7 +129,7 @@ class InterestService {
           if (interestAmount > 0) {
             // Add interest transaction
             await connection.execute(`
-              INSERT INTO savings_transactions (account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
+              INSERT INTO savings_transactions (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
               VALUES (?, ?, 'INTEREST', ?, ?, ?, ?, ?, NOW())
             `, [
               account.id,
@@ -268,7 +268,7 @@ class InterestService {
       let tableName, idField;
       if (accountType === 'savings') {
         tableName = 'savings_transactions';
-        idField = 'account_id';
+        idField = 'savings_account_id';
       } else if (accountType === 'loan') {
         tableName = 'loan_transactions';
         idField = 'loan_id';

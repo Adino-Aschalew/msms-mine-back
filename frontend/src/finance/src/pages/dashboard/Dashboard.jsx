@@ -11,10 +11,12 @@ import {
   Calendar,
   Download,
   Eye,
+  CheckSquare,
+  AlertTriangle
 } from 'lucide-react';
 import KPICard from '../../components/widgets/KPICard';
 import RevenueChart from '../../components/charts/RevenueChart';
-import ExpenseChart from '../../components/charts/ExpenseChart';
+import SavingAnalyzer from '../../components/charts/SavingAnalyzer';
 import CashFlowChart from '../../components/charts/CashFlowChart';
 import RecentTransactionsTable from '../../components/tables/RecentTransactionsTable';
 import AccountsOverview from '../../components/widgets/AccountsOverview';
@@ -152,6 +154,9 @@ const Dashboard = () => {
     );
   }
 
+  const pendingPayroll = dashboardData?.pendingApprovals?.payroll || 0;
+  const pendingSavings = dashboardData?.pendingApprovals?.savingsRequests || 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -172,6 +177,40 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* Pending Approvals Alert Bar */}
+      {(pendingPayroll > 0 || pendingSavings > 0) && (
+        <div className="flex flex-col md:flex-row gap-4">
+          {pendingPayroll > 0 && (
+            <div className="flex-1 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-amber-900">{pendingPayroll} Payroll Batches Pending</p>
+                  <p className="text-xs text-amber-600">Action required for salary disbursement</p>
+                </div>
+              </div>
+              <a href="/finance/payroll/import" className="text-sm font-bold text-amber-600 hover:text-amber-700 underline">Review Now</a>
+            </div>
+          )}
+          {pendingSavings > 0 && (
+            <div className="flex-1 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <CheckSquare className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">{pendingSavings} Savings Adjustments Pending</p>
+                  <p className="text-xs text-blue-600">Employee percentage changes await approval</p>
+                </div>
+              </div>
+              <a href="/finance/savings/requests" className="text-sm font-bold text-blue-600 hover:text-blue-700 underline">Approve</a>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* KPI Cards */}
       <motion.div
@@ -221,14 +260,14 @@ const Dashboard = () => {
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Expense Breakdown
+              Saving Analyzer (Savings vs Loans)
             </h2>
             <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <Eye className="h-4 w-4" />
             </button>
           </div>
-          <div className="h-48 sm:h-64">
-            <ExpenseChart dateRange={dateRange} dashboardData={dashboardData} />
+          <div className="h-64 sm:h-[300px]">
+            <SavingAnalyzer dashboardData={dashboardData} />
           </div>
         </motion.div>
       </div>

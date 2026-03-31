@@ -122,7 +122,7 @@ class SavingsService {
       
       // Add contribution
       const result = await SavingsModel.addSavingsTransaction(
-        account.account_id,
+        account.id,
         userId,
         'CONTRIBUTION',
         amount,
@@ -171,7 +171,7 @@ class SavingsService {
       
       // Process withdrawal
       const result = await SavingsModel.addSavingsTransaction(
-        account.account_id,
+        account.id,
         userId,
         'WITHDRAWAL',
         amount,

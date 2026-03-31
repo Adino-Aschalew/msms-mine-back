@@ -1,5 +1,6 @@
 const express = require('express');
 const FinanceController = require('./finance.controller');
+const PayrollController = require('../../controllers/payrollController');
 const { authMiddleware, roleMiddleware } = require('../../middleware/auth');
 const { auditMiddleware } = require('../../middleware/audit');
 const { cloudinary, storage } = require('../../config/cloudinary');
@@ -41,11 +42,17 @@ router.get('/analytics', FinanceController.getAnalytics);
 router.get('/budgets/overview', FinanceController.getBudgetOverview);
 
 // Payroll management
-router.post('/payroll', auditMiddleware('PAYROLL_PROCESSED'), FinanceController.processPayroll);
-router.post('/payroll/upload', memoryUpload.single('payroll'), auditMiddleware('PAYROLL_UPLOADED'), FinanceController.uploadPayrollFile);
-router.get('/payroll/batches', FinanceController.getPayrollBatches);
-router.get('/payroll/batches/:batchId', FinanceController.getPayrollBatchDetails);
-router.get('/payroll/history/:userId', FinanceController.getPayrollHistory);
+router.post('/payroll/upload', memoryUpload.single('payroll'), auditMiddleware('PAYROLL_UPLOADED'), PayrollController.uploadPayroll);
+router.put('/payroll/batches/:batchId/validate', auditMiddleware('PAYROLL_BATCH_VALIDATE'), PayrollController.validateBatch);
+router.put('/payroll/batches/:batchId/approve', auditMiddleware('PAYROLL_BATCH_APPROVE'), PayrollController.approveBatch);
+router.put('/payroll/batches/:batchId/process', auditMiddleware('PAYROLL_BATCH_PROCESS'), PayrollController.processBatch);
+router.put('/payroll/batches/:batchId/reverse', auditMiddleware('PAYROLL_BATCH_REVERSE'), PayrollController.reverseBatch);
+router.get('/payroll/batches', PayrollController.getBatches);
+router.get('/payroll/batches/:batchId', PayrollController.getBatch);
+router.get('/payroll/batches/:batchId/details', PayrollController.getBatchDetails);
+router.get('/payroll/history/:userId', PayrollController.getEmployeePayrollHistory);
+router.get('/payroll/stats', PayrollController.getPayrollStats);
+router.get('/payroll/template', PayrollController.downloadBatchTemplate);
 
 // Financial reports
 router.get('/reports/:reportType', FinanceController.getFinancialReports);

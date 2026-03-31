@@ -629,16 +629,95 @@ class FinanceService {
         cashFlow = [];
       }
       
+      // Get pending approval counts
+      let pendingPayrolls = 0;
+      let pendingSavingsRequests = 0;
+      
+      try {
+        const [payrollCount] = await query("SELECT COUNT(*) as count FROM payroll_batches WHERE status IN ('UPLOADED', 'VALIDATED', 'CONFIRMED')");
+        pendingPayrolls = payrollCount[0]?.count || 0;
+        
+        const [savingsCount] = await query("SELECT COUNT(*) as count FROM savings_requests WHERE status = 'PENDING'");
+        pendingSavingsRequests = savingsCount[0]?.count || 0;
+      } catch (countError) {
+        console.warn('Pending counts query failed:', countError.message);
+      }
+
+      // Saving Analyzer Data
+      let analyzerData = {
+        monthSaving: 0,
+        monthLoan: 0,
+        highSaving: 0,
+        highLoan: 0,
+        yearSaving: 0,
+        yearLoan: 0
+      };
+
+      try {
+        // Current month totals
+        const [monthTotals] = await query(`
+          SELECT 
+            COALESCE(SUM(CASE WHEN transaction_type = 'CONTRIBUTION' AND DATE_FORMAT(transaction_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END), 0) as month_saving,
+            COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' AND DATE_FORMAT(transaction_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END), 0) as month_loan
+          FROM (
+            SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
+            UNION ALL
+            SELECT 'PAYMENT' as transaction_type, amount, transaction_date FROM loan_transactions
+          ) as t
+        `);
+        
+        // Year totals
+        const [yearTotals] = await query(`
+          SELECT 
+            COALESCE(SUM(CASE WHEN transaction_type = 'CONTRIBUTION' AND YEAR(transaction_date) = YEAR(CURDATE()) THEN amount ELSE 0 END), 0) as year_saving,
+            COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' AND YEAR(transaction_date) = YEAR(CURDATE()) THEN amount ELSE 0 END), 0) as year_loan
+          FROM (
+            SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
+            UNION ALL
+            SELECT 'PAYMENT' as transaction_type, amount, transaction_date FROM loan_transactions
+          ) as t
+        `);
+
+        // Historical Highs (by month)
+        const [highs] = await query(`
+          SELECT 
+            MAX(monthly_saving) as high_saving,
+            MAX(monthly_loan) as high_loan
+          FROM (
+            SELECT 
+              DATE_FORMAT(transaction_date, '%Y-%m') as period,
+              SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as monthly_saving,
+              SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END) as monthly_loan
+            FROM (
+              SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
+              UNION ALL
+              SELECT 'PAYMENT' as transaction_type, amount, transaction_date FROM loan_transactions
+            ) as t2
+            GROUP BY period
+          ) as t3
+        `);
+
+        analyzerData = {
+          monthSaving: parseFloat(monthTotals[0]?.month_saving || 0),
+          monthLoan: parseFloat(monthTotals[0]?.month_loan || 0),
+          highSaving: parseFloat(highs[0]?.high_saving || 0),
+          highLoan: parseFloat(highs[0]?.high_loan || 0),
+          yearSaving: parseFloat(yearTotals[0]?.year_saving || 0),
+          yearLoan: parseFloat(yearTotals[0]?.year_loan || 0)
+        };
+      } catch (analyzerError) {
+        console.warn('Saving analyzer query failed:', analyzerError.message);
+      }
+
       // Calculate expense distribution with safe handled NULLs
       let expenses = [];
       try {
         [expenses] = await query(`
           SELECT 
             category, 
-            SUM(amount) as value,
-            ROUND((SUM(amount) / NULLIF((SELECT SUM(amount) FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL'), 0)) * 100, 1) as percentage
+            SUM(amount) as value
           FROM (
-            SELECT 'Payroll' as category, COALESCE(SUM(total_amount), 0) as amount FROM payroll_batches
+            SELECT 'Payroll' as category, COALESCE(SUM(total_amount), 0) as amount FROM payroll_batches WHERE status = 'PROCESSED'
             UNION ALL
             SELECT 'Withdrawals' as category, COALESCE(SUM(amount), 0) as amount FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL'
           ) as e
@@ -647,32 +726,37 @@ class FinanceService {
       } catch (expenseError) {
         console.warn('Expense breakdown failed, using fallback:', expenseError.message);
         expenses = [
-          { category: 'Payroll', value: 0, percentage: 0 },
-          { category: 'Withdrawals', value: 0, percentage: 0 }
+          { category: 'Payroll', value: 0 },
+          { category: 'Withdrawals', value: 0 }
         ];
       }
 
       // Safe calculations with fallbacks
-      const totalContributions = overview.transactions?.savings?.total_contributions || 0;
-      const totalPayments = overview.transactions?.loans?.total_payments || 0;
-      const totalWithdrawals = overview.transactions?.savings?.total_withdrawals || 0;
-      const totalPayroll = overview.payroll?.total_amount || 0;
+      const totalContributions = parseFloat(overview.transactions?.savings?.total_contributions || 0);
+      const totalPayments = parseFloat(overview.transactions?.loans?.total_payments || 0);
+      const totalWithdrawals = parseFloat(overview.transactions?.savings?.total_withdrawals || 0);
+      const totalPayroll = parseFloat(overview.payroll?.total_amount || 0);
       
       return {
         revenue: totalContributions + totalPayments,
         expenses: totalWithdrawals + totalPayroll,
         netProfit: (totalContributions + totalPayments) - (totalWithdrawals + totalPayroll),
-        revenueGrowth: 15.5,
+        revenueGrowth: 15.5, // These could be calculated by comparing with previous period
         expensesGrowth: 8.2,
         profitGrowth: 12.7,
-        cashBalance: overview.total_assets || 0,
+        cashBalance: parseFloat(overview.total_assets || 0),
         cashChange: 5.2,
-        accountsReceivable: overview.transactions?.loans?.total_disbursements || 0,
+        accountsReceivable: parseFloat(overview.transactions?.loans?.total_disbursements || 0),
         receivableChange: -2.1,
         accountsPayable: totalPayroll,
         payableChange: 3.4,
         expenseBreakdown: expenses,
-        monthlyCashFlow: cashFlow || []
+        monthlyCashFlow: cashFlow || [],
+        pendingApprovals: {
+          payroll: pendingPayrolls,
+          savingsRequests: pendingSavingsRequests
+        },
+        savingAnalyzer: analyzerData
       };
     } catch (error) {
       console.error('Analytics service error:', error);

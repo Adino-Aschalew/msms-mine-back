@@ -1,4 +1,5 @@
 const Savings = require('../models/Savings');
+const SavingsRequest = require('../models/SavingsRequest');
 const { auditLog } = require('../middleware/audit');
 
 class SavingsController {
@@ -70,7 +71,7 @@ class SavingsController {
   
   static async updateSavingPercentage(req, res) {
     try {
-      const { saving_percentage } = req.body;
+      const { saving_percentage, reason } = req.body;
       const userId = req.userId;
       
       if (!saving_percentage || saving_percentage < 15 || saving_percentage > 65) {
@@ -80,26 +81,88 @@ class SavingsController {
         });
       }
       
-      const updated = await Savings.updateSavingPercentage(userId, saving_percentage);
-      
-      if (!updated) {
+      const account = await Savings.getSavingsAccount(userId);
+      if (!account) {
         return res.status(404).json({
           success: false,
-          message: 'Savings account not found or not active'
+          message: 'Savings account not found'
         });
       }
       
-      await auditLog(userId, 'SAVING_PERCENTAGE_UPDATE', 'savings_accounts', null, null, { saving_percentage }, req.ip, req.get('User-Agent'));
+      const requestId = await SavingsRequest.createRequest(
+        userId, 
+        account.saving_percentage, 
+        saving_percentage, 
+        reason
+      );
+      
+      await auditLog(userId, 'SAVING_PERCENTAGE_REQUEST_CREATE', 'savings_update_requests', requestId, null, { old_percentage: account.saving_percentage, new_percentage: saving_percentage, reason }, req.ip, req.get('User-Agent'));
       
       res.json({
         success: true,
-        message: 'Saving percentage updated successfully'
+        message: 'Savings update request submitted for approval',
+        data: { requestId }
       });
     } catch (error) {
       console.error('Update saving percentage error:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error'
+      });
+    }
+  }
+
+  static async getSavingsRequests(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const filters = {
+        status: req.query.status,
+        user_id: req.query.user_id
+      };
+      
+      const result = await SavingsRequest.getRequests(page, limit, filters);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Get savings requests error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  static async handleSavingsRequest(req, res) {
+    try {
+      const { requestId } = req.params;
+      const { status, comments } = req.body;
+      const reviewedBy = req.userId;
+      
+      if (!['APPROVED', 'REJECTED'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status must be APPROVED or REJECTED'
+        });
+      }
+      
+      const result = await SavingsRequest.updateRequestStatus(requestId, status, reviewedBy, comments || '');
+      
+      await auditLog(reviewedBy, `SAVING_PERCENTAGE_REQUEST_${status}`, 'savings_update_requests', requestId, null, { status, comments }, req.ip, req.get('User-Agent'));
+      
+      res.json({
+        success: true,
+        message: `Savings request ${status.toLowerCase()} successfully`,
+        data: result
+      });
+    } catch (error) {
+      console.error('Handle savings request error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
       });
     }
   }

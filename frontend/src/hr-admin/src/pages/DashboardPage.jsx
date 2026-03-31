@@ -43,31 +43,30 @@ const DashboardPage = () => {
     return num.toString();
   };
 
-// Initial Widgets State
-const initialTopWidgets = [
-  {
-    id: 'stat-employees',
-    component: <StatCard title="Total Employees" value="1,245" icon={Users} trend="up" trendValue="12%" colorClass="bg-blue-500" />
-  },
-  {
-    id: 'stat-terminated',
-    component: <StatCard title="Terminated User" value="12" icon={UserX} trend="up" trendValue="2%" colorClass="bg-rose-500" />
-  },
-  {
-    id: 'stat-active',
-    component: <StatCard title="Active User" value="1,233" icon={UserCheck} trend="up" trendValue="10%" colorClass="bg-emerald-500" />
-  },
-  {
-    id: 'stat-pending',
-    component: <StatCard title="Pending Approvals" value="12" icon={Clock} trend="down" trendValue="2%" colorClass="bg-violet-500" />
-  }
-];
+  // Initial Widgets State
+  const initialTopWidgets = [
+    {
+      id: 'stat-employees',
+      component: <StatCard title="Total Employees" value="1,245" icon={Users} trend="up" trendValue="12%" colorClass="bg-blue-500" />
+    },
+    {
+      id: 'stat-terminated',
+      component: <StatCard title="Terminated User" value="12" icon={UserX} trend="up" trendValue="2%" colorClass="bg-rose-500" />
+    },
+    {
+      id: 'stat-active',
+      component: <StatCard title="Active User" value="1,233" icon={UserCheck} trend="up" trendValue="10%" colorClass="bg-emerald-500" />
+    },
+    {
+      id: 'stat-pending',
+      component: <StatCard title="Pending Approvals" value="12" icon={Clock} trend="down" trendValue="2%" colorClass="bg-violet-500" />
+    }
+  ];
 
-const initialBottomWidgets = [
-  { id: 'activity-feed', component: <ActivityFeed />, className: "col-span-1 lg:col-span-3" }
-];
+  const initialBottomWidgets = [
+    { id: 'activity-feed', component: <ActivityFeed />, className: "col-span-1 lg:col-span-3" }
+  ];
 
-export default function DashboardPage() {
   const [topWidgets, setTopWidgets] = useState(initialTopWidgets);
   const [bottomWidgets, setBottomWidgets] = useState(initialBottomWidgets);
   const [dashboardData, setDashboardData] = useState(null);
@@ -284,3 +283,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+export default DashboardPage;

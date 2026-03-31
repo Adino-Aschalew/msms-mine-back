@@ -1,106 +1,72 @@
 import React, { useState } from 'react';
-import { Search, UserPlus, Filter, Download, Mail, Phone, Calendar, DollarSign, TrendingUp, Users } from 'lucide-react';
+import { Search, UserPlus, Filter, Download, Mail, Phone, Calendar, DollarSign, TrendingUp, Users, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { financeAPI } from '../../../../shared/services/financeAPI';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 const Employees = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
 
-  const employees = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      phone: '+1 (555) 123-4567',
-      department: 'Engineering',
-      position: 'Senior Developer',
-      salary: 95000,
-      savingsBalance: 12500,
-      joinDate: '2022-03-15',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face'
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      email: 'michael.chen@company.com',
-      phone: '+1 (555) 234-5678',
-      department: 'Sales',
-      position: 'Sales Manager',
-      salary: 85000,
-      savingsBalance: 10200,
-      joinDate: '2021-08-20',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face'
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      email: 'emily.rodriguez@company.com',
-      phone: '+1 (555) 345-6789',
-      department: 'Marketing',
-      position: 'Marketing Director',
-      salary: 110000,
-      savingsBalance: 18750,
-      joinDate: '2020-01-10',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face'
-    },
-    {
-      id: 4,
-      name: 'David Kim',
-      email: 'david.kim@company.com',
-      phone: '+1 (555) 456-7890',
-      department: 'Engineering',
-      position: 'DevOps Engineer',
-      salary: 88000,
-      savingsBalance: 8900,
-      joinDate: '2023-02-01',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=32&h=32&fit=crop&crop=face'
-    },
-    {
-      id: 5,
-      name: 'Jessica Taylor',
-      email: 'jessica.taylor@company.com',
-      phone: '+1 (555) 567-8901',
-      department: 'HR',
-      position: 'HR Manager',
-      salary: 75000,
-      savingsBalance: 6800,
-      joinDate: '2021-11-15',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=32&h=32&fit=crop&crop=face'
-    },
-    {
-      id: 6,
-      name: 'Robert Wilson',
-      email: 'robert.wilson@company.com',
-      phone: '+1 (555) 678-9012',
-      department: 'Finance',
-      position: 'Financial Analyst',
-      salary: 72000,
-      savingsBalance: 5400,
-      joinDate: '2022-07-01',
-      status: 'on-leave',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'
+  const { addNotification } = useNotifications();
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({ totalSalaries: 0, totalSavings: 0, activeCount: 0 });
+  const [departments, setDepartments] = useState(['all']);
+
+  React.useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  React.useEffect(() => {
+    fetchEmployees();
+  }, [searchTerm, selectedDepartment]);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await financeAPI.getDepartments();
+      if (response && response.length > 0) {
+        setDepartments(['all', ...response.map(d => d.name)]);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch departments, using defaults');
+      setDepartments(['all', 'Engineering', 'Sales', 'Marketing', 'HR', 'Finance']);
     }
-  ];
+  };
 
-  const departments = ['all', 'Engineering', 'Sales', 'Marketing', 'HR', 'Finance'];
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const response = await financeAPI.getEmployees({
+        search: searchTerm,
+        department: selectedDepartment === 'all' ? undefined : selectedDepartment,
+        page: 1,
+        limit: 100
+      });
+      
+      const list = response.employees || response.data?.employees || [];
+      setEmployees(list);
+      
+      // Calculate summary stats
+      const salary = list.reduce((sum, emp) => sum + parseFloat(emp.salary || 0), 0);
+      const savings = list.reduce((sum, emp) => sum + parseFloat(emp.savingsBalance || 0), 0);
+      const active = list.filter(emp => emp.status === 'active' || emp.is_active).length;
+      
+      setStats({ totalSalaries: salary, totalSavings: savings, activeCount: active });
+    } catch (err) {
+      setError('Failed to fetch employees');
+      addNotification({ type: 'error', title: 'Error', message: 'Failed to synchronize employee data' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = selectedDepartment === 'all' || employee.department === selectedDepartment;
-    return matchesSearch && matchesDepartment;
-  });
-
-  const totalEmployees = filteredEmployees.length;
-  const totalSalaries = filteredEmployees.reduce((sum, emp) => sum + emp.salary, 0);
-  const totalSavings = filteredEmployees.reduce((sum, emp) => sum + emp.savingsBalance, 0);
-  const activeEmployees = filteredEmployees.filter(emp => emp.status === 'active').length;
+  const totalEmployees = employees.length;
+  const totalSalaries = stats.totalSalaries;
+  const totalSavings = stats.totalSavings;
+  const activeEmployees = stats.activeCount;
 
   return (
     <div className="space-y-6">
@@ -129,7 +95,7 @@ const Employees = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Salaries</p>
-              <p className="text-2xl font-bold text-green-600">${totalSalaries.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-emerald-600 font-black">{totalSalaries.toLocaleString()} ETB</p>
             </div>
             <DollarSign className="h-8 w-8 text-green-500" />
           </div>
@@ -138,7 +104,7 @@ const Employees = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Savings</p>
-              <p className="text-2xl font-bold text-blue-600">${totalSavings.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-blue-600 font-black">{totalSavings.toLocaleString()} ETB</p>
             </div>
             <TrendingUp className="h-8 w-8 text-blue-500" />
           </div>
@@ -155,7 +121,7 @@ const Employees = () => {
       </div>
 
       {/* Controls */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg p-4 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -165,7 +131,7 @@ const Employees = () => {
                 placeholder="Search employees..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -174,7 +140,7 @@ const Employees = () => {
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {departments.map(dept => (
                 <option key={dept} value={dept}>
@@ -183,15 +149,15 @@ const Employees = () => {
               ))}
             </select>
             
-            <button className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors">
+            <button className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors">
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </button>
-            <button className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors">
+            <button className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export
             </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors">
+            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-lg shadow-blue-500/20">
               <UserPlus className="h-4 w-4 mr-2" />
               Add Employee
             </button>
@@ -200,75 +166,87 @@ const Employees = () => {
       </div>
 
       {/* Employees Table */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Employee
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Department
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Salary
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Savings
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Join Date
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredEmployees.map((employee) => (
-                <tr key={employee.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <img
-                        src={employee.avatar}
-                        alt={employee.name}
-                        className="h-10 w-10 rounded-full"
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {employee.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {employee.position}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {employee.department}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      employee.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {employee.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${(employee.salary / 1000).toFixed(0)}K
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                    ${(employee.savingsBalance / 1000).toFixed(1)}K
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {employee.joinDate}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+               {loading ? (
+                 <tr>
+                   <td colSpan="6" className="px-6 py-12 text-center">
+                     <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+                   </td>
+                 </tr>
+               ) : employees.length === 0 ? (
+                 <tr>
+                   <td colSpan="6" className="px-6 py-12 text-center text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest text-xs">
+                     No matching employees found
+                   </td>
+                 </tr>
+               ) : (
+                 employees.map((employee) => (
+                   <tr key={employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                     <td className="px-6 py-4 whitespace-nowrap">
+                       <div className="flex items-center">
+                         <div className="h-10 w-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center font-black text-indigo-700 dark:text-indigo-400">
+                           {employee.first_name?.[0]}{employee.last_name?.[0]}
+                         </div>
+                         <div className="ml-4">
+                           <div className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase">
+                             {employee.name}
+                           </div>
+                           <div className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">
+                             {employee.job_grade || employee.position || 'Employee'}
+                           </div>
+                         </div>
+                       </div>
+                     </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-xs font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest">
+                       {employee.department}
+                     </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-[9px] font-black uppercase">
+                       <span className={`px-2 py-1 rounded-full ${
+                         employee.status === 'active' || employee.is_active
+                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                           : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                       }`}>
+                         {employee.status || 'Active'}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900 dark:text-gray-100 tracking-tighter">
+                       {parseFloat(employee.salary || 0).toLocaleString()} ETB
+                     </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-blue-600 dark:text-blue-400 tracking-tighter">
+                       {parseFloat(employee.savingsBalance || 0).toLocaleString()} ETB
+                     </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-400 dark:text-gray-500">
+                       {new Date(employee.joinDate).toLocaleDateString()}
+                     </td>
+                   </tr>
+                 ))
+               )}
+             </tbody>
           </table>
         </div>
       </div>

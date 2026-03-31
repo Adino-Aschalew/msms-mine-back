@@ -16,10 +16,11 @@ import Settings from './pages/settings/Settings.jsx';
 import AccountProfile from './pages/account/AccountProfile.jsx';
 import AccountSecurity from './pages/account/AccountSecurity.jsx';
 import Accounts from './pages/accounts/Accounts.jsx';
-import Budgets from './pages/budgets/Budgets.jsx';
-import Invoices from './pages/invoices/Invoices.jsx';
-import PayrollReports from './pages/payroll/PayrollReports.jsx';
-import Notifications from './pages/notifications/Notifications.jsx';
+ import Budgets from './pages/budgets/Budgets.jsx';
+ import Invoices from './pages/invoices/Invoices.jsx';
+ import PayrollReports from './pages/payroll/PayrollReports.jsx';
+ import SavingsRequests from './pages/savings/SavingsRequests.jsx';
+ import Notifications from './pages/notifications/Notifications.jsx';
 import Help from './pages/help/Help.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
 
@@ -55,9 +56,10 @@ function FinanceApp() {
                 <Route path="/users" element={<Users />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/account/profile" element={<AccountProfile />} />
-                <Route path="/account/security" element={<AccountSecurity />} />
-                <Route path="/help" element={<Help />} />
+                 <Route path="/account/profile" element={<AccountProfile />} />
+                 <Route path="/account/security" element={<AccountSecurity />} />
+                 <Route path="/savings/requests" element={<SavingsRequests />} />
+                 <Route path="/help" element={<Help />} />
               </Routes>
             </div>
           </main>

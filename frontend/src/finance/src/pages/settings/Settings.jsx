@@ -210,8 +210,8 @@ const Settings = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Navigation */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Categories</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Categories</h3>
               <nav className="space-y-2">
                 {Object.entries(navigationStructure).map(([key, section]) => {
                   const Icon = section.icon;
@@ -226,7 +226,7 @@ const Settings = () => {
                         className={`w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
                           isActive
                             ? getColorClasses(section.color)
-                            : 'text-gray-600 hover:bg-gray-50'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                         }`}
                       >
                         <Icon className={`h-5 w-5 mr-3 ${isActive ? '' : getIconColorClasses(section.color)}`} />
@@ -245,8 +245,8 @@ const Settings = () => {
                                 onClick={() => setActiveSubTab(subTab.id)}
                                 className={`w-full flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                                   isSubActive
-                                    ? 'bg-gray-100 text-gray-900'
-                                    : 'text-gray-500 hover:bg-gray-50'
+                                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/30'
                                 }`}
                               >
                                 <SubIcon className={`h-3 w-3 mr-2 ${isSubActive ? 'text-gray-700' : 'text-gray-400'}`} />
@@ -265,81 +265,81 @@ const Settings = () => {
 
           {/* Content Area */}
           <div className="lg:col-span-9">
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
               {/* Company Settings */}
               {activeTab === 'general' && activeSubTab === 'company' && (
                 <div className="space-y-8">
-                  <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
-                    <div className="p-3 bg-blue-100 rounded-xl">
-                      <Building2 className="h-6 w-6 text-blue-600" />
+                  <div className="flex items-center space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                      <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                         Company Information
                       </h2>
-                      <p className="text-gray-600">Update your company details and contact information</p>
+                      <p className="text-gray-600 dark:text-gray-400">Update your company details and contact information</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Company Name
                       </label>
                       <input
                         type="text"
                         value={settings.companyName}
                         onChange={(e) => setSettings({...settings, companyName: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Company Email
                       </label>
                       <input
                         type="email"
                         value={settings.companyEmail}
                         onChange={(e) => setSettings({...settings, companyEmail: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Company Phone
                       </label>
                       <input
                         type="tel"
                         value={settings.companyPhone}
                         onChange={(e) => setSettings({...settings, companyPhone: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Tax ID
                       </label>
                       <input
                         type="text"
                         value={settings.taxId}
                         onChange={(e) => setSettings({...settings, taxId: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       />
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                       Company Address
                     </label>
                     <textarea
                       value={settings.companyAddress}
                       onChange={(e) => setSettings({...settings, companyAddress: e.target.value})}
                       rows={3}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg resize-none"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
                     />
                   </div>
                 </div>
@@ -348,27 +348,27 @@ const Settings = () => {
               {/* Preferences Settings */}
               {activeTab === 'general' && activeSubTab === 'preferences' && (
                 <div className="space-y-8">
-                  <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
-                    <div className="p-3 bg-blue-100 rounded-xl">
-                      <SettingsIcon className="h-6 w-6 text-blue-600" />
+                  <div className="flex items-center space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                      <SettingsIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                         General Preferences
                       </h2>
-                      <p className="text-gray-600">Configure your regional and display preferences</p>
+                      <p className="text-gray-600 dark:text-gray-400">Configure your regional and display preferences</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Default Currency
                       </label>
                       <select
                         value={settings.currency}
                         onChange={(e) => setSettings({...settings, currency: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       >
                         <option value="USD">USD - US Dollar</option>
                         <option value="EUR">EUR - Euro</option>
@@ -378,13 +378,13 @@ const Settings = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Timezone
                       </label>
                       <select
                         value={settings.timezone}
                         onChange={(e) => setSettings({...settings, timezone: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       >
                         <option value="America/New_York">Eastern Time</option>
                         <option value="America/Chicago">Central Time</option>
@@ -394,13 +394,13 @@ const Settings = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Language
                       </label>
                       <select
                         value={settings.language}
                         onChange={(e) => setSettings({...settings, language: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       >
                         <option value="en">English</option>
                         <option value="es">Spanish</option>
@@ -410,13 +410,13 @@ const Settings = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Date Format
                       </label>
                       <select
                         value={settings.dateFormat}
                         onChange={(e) => setSettings({...settings, dateFormat: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       >
                         <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                         <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -425,13 +425,13 @@ const Settings = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Time Format
                       </label>
                       <select
                         value={settings.timeFormat}
                         onChange={(e) => setSettings({...settings, timeFormat: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       >
                         <option value="12h">12-hour</option>
                         <option value="24h">24-hour</option>
@@ -457,19 +457,19 @@ const Settings = () => {
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-xl border border-green-200 dark:border-green-800/50">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           General Email Notifications
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 dark:text-gray-400">
                           Receive important updates via email
                         </p>
                       </div>
                       <button
                         onClick={() => setSettings({...settings, emailNotifications: !settings.emailNotifications})}
                         className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                          settings.emailNotifications ? 'bg-green-600' : 'bg-gray-300'
+                          settings.emailNotifications ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-700'
                         }`}
                       >
                         <span
@@ -570,13 +570,13 @@ const Settings = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                           Session Timeout
                         </label>
                         <select
                           value={settings.sessionTimeout}
                           onChange={(e) => setSettings({...settings, sessionTimeout: e.target.value})}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg"
+                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                         >
                           <option value="15min">15 minutes</option>
                           <option value="30min">30 minutes</option>
@@ -586,14 +586,14 @@ const Settings = () => {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                           Minimum Password Length
                         </label>
                         <input
                           type="number"
                           value={settings.passwordMinLength}
                           onChange={(e) => setSettings({...settings, passwordMinLength: parseInt(e.target.value)})}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg"
+                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                           min="6"
                           max="20"
                         />
@@ -628,34 +628,34 @@ const Settings = () => {
                           onClick={() => setSettings({...settings, theme: 'light'})}
                           className={`p-4 rounded-xl border-2 transition-all ${
                             settings.theme === 'light' 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
                           <Sun className="h-6 w-6 mx-auto mb-2 text-yellow-500" />
-                          <span className="text-sm font-medium">Light</span>
+                          <span className="text-sm font-medium dark:text-white">Light</span>
                         </button>
                         <button
                           onClick={() => setSettings({...settings, theme: 'dark'})}
                           className={`p-4 rounded-xl border-2 transition-all ${
                             settings.theme === 'dark' 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
-                          <Moon className="h-6 w-6 mx-auto mb-2 text-indigo-600" />
-                          <span className="text-sm font-medium">Dark</span>
+                          <Moon className="h-6 w-6 mx-auto mb-2 text-indigo-600 dark:text-indigo-400" />
+                          <span className="text-sm font-medium dark:text-white">Dark</span>
                         </button>
                         <button
                           onClick={() => setSettings({...settings, theme: 'system'})}
                           className={`p-4 rounded-xl border-2 transition-all ${
                             settings.theme === 'system' 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
-                          <Monitor className="h-6 w-6 mx-auto mb-2 text-gray-600" />
-                          <span className="text-sm font-medium">System</span>
+                          <Monitor className="h-6 w-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+                          <span className="text-sm font-medium dark:text-white">System</span>
                         </button>
                       </div>
                     </div>
@@ -681,10 +681,10 @@ const Settings = () => {
               )}
 
               {/* Action Buttons */}
-              <div className="flex justify-between pt-8 border-t border-gray-200">
+              <div className="flex justify-between pt-8 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={resetSettings}
-                  className="flex items-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                  className="flex items-center px-6 py-3 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                 >
                   <RotateCcw className="h-5 w-5 mr-2" />
                   Reset to Default

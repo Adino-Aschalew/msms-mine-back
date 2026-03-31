@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { DollarSign, Users, Calendar, TrendingUp, FileText, Upload, Download, Clock, CheckCircle, AlertCircle, BarChart, PieChart, ArrowUpRight, ArrowDownRight, Plus, Search, Filter, X } from 'lucide-react';
+import { DollarSign, Users, Calendar, TrendingUp, FileText, Upload, Download, Clock, CheckCircle, AlertCircle, BarChart, PieChart, ArrowUpRight, ArrowDownRight, Plus, Search, Filter, X, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { financeAPI } from '../../../../shared/services/financeAPI';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 const Payroll = () => {
   const { theme } = useTheme();
@@ -10,106 +12,59 @@ const Payroll = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [processingPayroll, setProcessingPayroll] = useState(null);
   const [completedPayroll, setCompletedPayroll] = useState(null);
-  const [upcomingPayrollsList, setUpcomingPayrollsList] = useState([
-    {
-      id: 1,
-      period: 'April 2024',
-      scheduledDate: '2024-04-15',
-      status: 'pending',
-      estimatedPayroll: 285000,
-      employees: 45
-    },
-    {
-      id: 2,
-      period: 'May 2024',
-      scheduledDate: '2024-05-15',
-      status: 'pending',
-      estimatedPayroll: 285000,
-      employees: 45
-    }
-  ]);
-  const [recentPayrollsList, setRecentPayrollsList] = useState([
-    {
-      id: 1,
-      period: 'March 2024',
-      status: 'completed',
-      processedDate: '2024-03-15',
-      totalPayroll: 285000,
-      employees: 45,
-      netPayroll: 243000
-    },
-    {
-      id: 2,
-      period: 'February 2024',
-      status: 'completed',
-      processedDate: '2024-02-15',
-      totalPayroll: 278000,
-      employees: 44,
-      netPayroll: 237000
-    },
-    {
-      id: 3,
-      period: 'January 2024',
-      status: 'completed',
-      processedDate: '2024-01-15',
-      totalPayroll: 292000,
-      employees: 46,
-      netPayroll: 249000
-    }
-  ]);
+  const { addNotification } = useNotifications();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    currentMonth: { totalPayroll: 0, totalEmployees: 0, averageSalary: 0, netPayroll: 0, overtimeCost: 0 },
+    lastMonth: { totalPayroll: 0, totalEmployees: 0, averageSalary: 0, netPayroll: 0, overtimeCost: 0 },
+    trend: []
+  });
+  const [recentPayrollsList, setRecentPayrollsList] = useState([]);
+  const [upcomingPayrollsList, setUpcomingPayrollsList] = useState([]);
 
-  const payrollStats = {
-    currentMonth: {
-      totalPayroll: 285000,
-      totalEmployees: 45,
-      averageSalary: 6333,
-      overtimeCost: 12480,
-      taxes: 42000,
-      netPayroll: 243000
-    },
-    lastMonth: {
-      totalPayroll: 278000,
-      totalEmployees: 44,
-      averageSalary: 6318,
-      overtimeCost: 11200,
-      taxes: 41000,
-      netPayroll: 237000
-    },
-    yearToDate: {
-      totalPayroll: 855000,
-      totalEmployees: 45,
-      averageSalary: 6333,
-      overtimeCost: 37800,
-      taxes: 126000,
-      netPayroll: 729000
+  React.useEffect(() => {
+    fetchPayrollData();
+  }, []);
+
+  const fetchPayrollData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, batchesRes] = await Promise.all([
+        financeAPI.getPayrollStats(),
+        financeAPI.getPayrollBatches({ limit: 10 })
+      ]);
+      
+      if (statsRes.success) setStats(statsRes.data);
+      if (batchesRes.success) {
+        const allBatches = batchesRes.data.batches || [];
+        setRecentPayrollsList(allBatches.filter(b => b.status === 'PROCESSED' || b.status === 'REVERSED'));
+        setUpcomingPayrollsList(allBatches.filter(b => ['UPLOADED', 'VALIDATED', 'CONFIRMED'].includes(b.status)));
+      }
+    } catch (error) {
+      addNotification({ type: 'error', title: 'Error', message: 'Failed to fetch payroll data' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const monthlyTrendData = [
-    { month: 'Jan', amount: 265000 },
-    { month: 'Feb', amount: 278000 },
-    { month: 'Mar', amount: 285000 },
-    { month: 'Apr', amount: 272000 },
-    { month: 'May', amount: 290000 },
-    { month: 'Jun', amount: 281000 }
-  ];
+  const currentStats = stats.currentMonth;
+  const lastStats = stats.lastMonth;
+  const monthlyTrendData = stats.trend;
 
   const getChangePercentage = (current, previous) => {
+    if (!previous || previous === 0) return '0.0';
     return ((current - previous) / previous * 100).toFixed(1);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'green';
-      case 'processing': return 'yellow';
-      case 'pending': return 'blue';
-      case 'failed': return 'red';
+      case 'PROCESSED': case 'completed': return 'green';
+      case 'VALIDATED': case 'processing': return 'yellow';
+      case 'CONFIRMED': case 'pending': return 'blue';
+      case 'REVERSED': case 'failed': return 'red';
       default: return 'gray';
     }
   };
-
-  const currentStats = payrollStats.currentMonth;
-  const lastStats = payrollStats.lastMonth;
 
   const exportData = () => {
     // Create CSV data for export
@@ -150,7 +105,7 @@ const Payroll = () => {
 
   const handleImportPayroll = () => {
     // Navigate to payroll import page or open import modal
-    window.location.href = '/payroll/import';
+    window.location.href = '/finance/payroll/import';
   };
 
   const handleGenerateReports = () => {
@@ -303,14 +258,14 @@ const Payroll = () => {
         <div className="flex gap-2">
           <button 
             onClick={exportData}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm font-medium rounded-md transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium rounded-md transition-colors"
           >
             <Download className="h-4 w-4 mr-2" />
             Export Data
           </button>
           <button 
             onClick={processPayroll}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-lg shadow-blue-500/20"
           >
             <Plus className="h-4 w-4 mr-2" />
             Process Payroll
@@ -320,12 +275,12 @@ const Payroll = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-base font-medium text-gray-600">Total Payroll</p>
-              <p className="text-3xl font-bold text-gray-900">
-                ${(currentStats.totalPayroll / 1000).toFixed(0)}K
+              <p className="text-base font-medium text-gray-600 dark:text-gray-400">Total Payroll</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white font-black">
+                {(currentStats.totalPayroll).toLocaleString()} <span className="text-sm">ETB</span>
               </p>
               <div className="flex items-center mt-1">
                 {parseFloat(getChangePercentage(currentStats.totalPayroll, lastStats.totalPayroll)) >= 0 ? (
@@ -342,11 +297,11 @@ const Payroll = () => {
           </div>
         </div>
         
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-base font-medium text-gray-600">Active Employees</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-base font-medium text-gray-600 dark:text-gray-400">Active Employees</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {currentStats.totalEmployees}
               </p>
               <div className="flex items-center mt-1">
@@ -364,11 +319,11 @@ const Payroll = () => {
           </div>
         </div>
         
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-base font-medium text-gray-600">Average Salary</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-base font-medium text-gray-600 dark:text-gray-400">Average Salary</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 ${(currentStats.averageSalary / 1000).toFixed(1)}K
               </p>
               <div className="flex items-center mt-1">
@@ -386,11 +341,11 @@ const Payroll = () => {
           </div>
         </div>
         
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-base font-medium text-gray-600">Overtime Cost</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-base font-medium text-gray-600 dark:text-gray-400">Overtime Cost</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 ${(currentStats.overtimeCost / 1000).toFixed(1)}K
               </p>
               <div className="flex items-center mt-1">
@@ -410,94 +365,94 @@ const Payroll = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <button 
             onClick={handleImportPayroll}
-            className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
           >
-            <Upload className="h-5 w-5 text-blue-600 mr-2" />
-            <span className="text-base font-medium text-gray-900">Import Payroll</span>
+            <Upload className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2 group-hover:scale-110 transition-transform" />
+            <span className="text-base font-medium text-gray-900 dark:text-gray-100">Import Payroll</span>
           </button>
           <button 
             onClick={handleGenerateReports}
-            className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
           >
-            <FileText className="h-5 w-5 text-green-600 mr-2" />
-            <span className="text-base font-medium text-gray-900">Generate Reports</span>
+            <FileText className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 group-hover:scale-110 transition-transform" />
+            <span className="text-base font-medium text-gray-900 dark:text-gray-100">Generate Reports</span>
           </button>
           <button 
             onClick={handleManageEmployees}
-            className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
           >
-            <Users className="h-5 w-5 text-purple-600 mr-2" />
-            <span className="text-base font-medium text-gray-900">Manage Employees</span>
+            <Users className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-2 group-hover:scale-110 transition-transform" />
+            <span className="text-base font-medium text-gray-900 dark:text-gray-100">Manage Employees</span>
           </button>
           <button 
             onClick={handleSchedulePayroll}
-            className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
           >
-            <Calendar className="h-5 w-5 text-orange-600 mr-2" />
-            <span className="text-base font-medium text-gray-900">Schedule Payroll</span>
+            <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2 group-hover:scale-110 transition-transform" />
+            <span className="text-base font-medium text-gray-900 dark:text-gray-100">Schedule Payroll</span>
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Payrolls */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Recent Payrolls
               </h3>
-              <button className="text-sm text-blue-600 hover:text-blue-800">
+              <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
                 View All
               </button>
             </div>
             <div className="space-y-3">
               {recentPayrollsList.map((payroll) => (
-                <div key={payroll.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div key={payroll.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50/50 dark:bg-gray-900/30">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-full ${
-                      getStatusColor(payroll.status) === 'green' ? 'bg-green-100' :
-                      getStatusColor(payroll.status) === 'yellow' ? 'bg-yellow-100' :
-                      getStatusColor(payroll.status) === 'blue' ? 'bg-blue-100' :
-                      'bg-gray-100'
+                      getStatusColor(payroll.status) === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                      getStatusColor(payroll.status) === 'yellow' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                      getStatusColor(payroll.status) === 'blue' ? 'bg-blue-100 dark:bg-blue-900/30' :
+                      'bg-gray-100 dark:bg-gray-700'
                     }`}>
                       {getStatusColor(payroll.status) === 'green' ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                       ) : getStatusColor(payroll.status) === 'yellow' ? (
-                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                        <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                       ) : getStatusColor(payroll.status) === 'blue' ? (
-                        <Clock className="h-4 w-4 text-blue-600" />
+                        <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       ) : (
-                        <AlertCircle className="h-4 w-4 text-gray-600" />
+                        <AlertCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                       )}
                     </div>
                     <div>
-                      <p className="text-base font-medium text-gray-900">
-                        {payroll.period}
+                      <p className="text-base font-medium text-gray-900 dark:text-gray-100">
+                        {payroll.batch_name}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        {payroll.employees} employees • ${(payroll.totalPayroll / 1000).toFixed(0)}K
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {payroll.total_employees} employees • {parseFloat(payroll.total_amount).toLocaleString()} ETB
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <span className={`px-2 py-1 text-sm font-medium rounded-full ${
-                      getStatusColor(payroll.status) === 'green' ? 'bg-green-100 text-green-800' :
-                      getStatusColor(payroll.status) === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                      getStatusColor(payroll.status) === 'blue' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
+                      getStatusColor(payroll.status) === 'green' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' :
+                      getStatusColor(payroll.status) === 'yellow' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300' :
+                      getStatusColor(payroll.status) === 'blue' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' :
+                      'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
                       {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
                     </span>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {new Date(payroll.processedDate).toLocaleDateString()}
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {new Date(payroll.payroll_date).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -507,38 +462,38 @@ const Payroll = () => {
         </div>
 
         {/* Upcoming Payrolls */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Upcoming Payrolls
               </h3>
-              <button className="text-sm text-blue-600 hover:text-blue-800">
+              <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
                 Schedule New
               </button>
             </div>
             <div className="space-y-3">
               {upcomingPayrollsList.map((payroll) => (
-                <div key={payroll.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div key={payroll.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50/50 dark:bg-gray-900/30">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-blue-100 rounded-full">
-                      <Calendar className="h-4 w-4 text-blue-600" />
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                      <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-base font-medium text-gray-900">
-                        {payroll.period}
+                      <p className="text-base font-medium text-gray-900 dark:text-gray-100">
+                        {payroll.batch_name}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        {payroll.employees} employees • Est. ${(payroll.estimatedPayroll / 1000).toFixed(0)}K
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {payroll.total_employees} employees • {parseFloat(payroll.total_amount).toLocaleString()} ETB
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="px-2 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">
-                      {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
+                    <span className="px-2 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                      {payroll.status}
                     </span>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {new Date(payroll.scheduledDate).toLocaleDateString()}
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {new Date(payroll.payroll_date || payroll.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -549,25 +504,25 @@ const Payroll = () => {
       </div>
 
       {/* Payroll Analytics */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
         <div className="p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Payroll Analytics
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Monthly Trend Chart */}
             <div className="text-center">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h4 className="text-base font-medium text-gray-900 mb-3">
+              <div className="p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                <h4 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">
                   Monthly Trend
                 </h4>
                 <div className="h-32 flex items-end justify-center space-x-2 p-2">
                   {monthlyTrendData.map((data, index) => {
                     const maxAmount = Math.max(...monthlyTrendData.map(d => d.amount));
                     const heightPercentage = (data.amount / maxAmount) * 100;
-                    const colorIntensity = index === 2 ? 'bg-blue-500' : 
-                                        index === 4 ? 'bg-blue-400' : 
-                                        index === 1 ? 'bg-blue-300' : 'bg-blue-200';
+                    const colorIntensity = index === 2 ? 'bg-blue-500 dark:bg-blue-400' : 
+                                        index === 4 ? 'bg-blue-400 dark:bg-blue-500' : 
+                                        index === 1 ? 'bg-blue-300 dark:bg-blue-600' : 'bg-blue-200 dark:bg-blue-700';
                     
                     return (
                       <div key={data.month} className="flex flex-col items-center flex-1">
@@ -576,12 +531,12 @@ const Payroll = () => {
                           style={{ height: `${heightPercentage * 0.8}px`, minHeight: '10px' }}
                           title={`${data.month}: $${(data.amount / 1000).toFixed(0)}K`}
                         ></div>
-                        <span className="text-xs text-gray-600 mt-1">{data.month}</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">{data.month}</span>
                       </div>
                     );
                   })}
                 </div>
-                <div className="mt-3 text-sm text-gray-600">
+                <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex justify-between text-xs mb-1">
                     <span>Min: $265K</span>
                     <span>Max: $290K</span>
@@ -593,8 +548,8 @@ const Payroll = () => {
 
             {/* Department Breakdown Pie Chart */}
             <div className="text-center">
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h4 className="text-base font-medium text-gray-900 mb-3">
+              <div className="p-4 bg-green-50/50 dark:bg-emerald-900/10 rounded-lg border border-green-100 dark:border-emerald-900/20">
+                <h4 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">
                   Department Breakdown
                 </h4>
                 <div className="relative h-32 flex items-center justify-center p-2">
@@ -607,27 +562,27 @@ const Payroll = () => {
                       }}
                     ></div>
                     {/* Center circle to create donut effect */}
-                    <div className="absolute inset-4 bg-blue-50 rounded-full flex items-center justify-center">
-                      <span className="text-lg font-bold text-gray-900">$285K</span>
+                    <div className="absolute inset-4 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center border border-green-100 dark:border-emerald-900/20 shadow-inner">
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">$285K</span>
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
-                    <span className="text-gray-600">Sales 25%</span>
+                    <span className="text-gray-600 dark:text-gray-400">Sales 25%</span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
-                    <span className="text-gray-600">Tech 25%</span>
+                    <span className="text-gray-600 dark:text-gray-400">Tech 25%</span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-amber-500 rounded-full mr-1"></div>
-                    <span className="text-gray-600">HR 25%</span>
+                    <span className="text-gray-600 dark:text-gray-400">HR 25%</span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
-                    <span className="text-gray-600">Admin 25%</span>
+                    <span className="text-gray-600 dark:text-gray-400">Admin 25%</span>
                   </div>
                 </div>
               </div>
@@ -635,49 +590,49 @@ const Payroll = () => {
 
             {/* Cost Analysis Progress Chart */}
             <div className="text-center">
-              <div className="p-4 bg-purple-50 rounded-lg">
-                <h4 className="text-base font-medium text-gray-900 mb-3">
+              <div className="p-4 bg-purple-50/50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-900/20">
+                <h4 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">
                   Cost Analysis
                 </h4>
                 <div className="space-y-3 p-3">
                   <div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600">Base Salary</span>
-                      <span className="font-medium text-gray-900">85%</span>
+                      <span className="text-gray-600 dark:text-gray-400">Base Salary</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">85%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-purple-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600">Overtime</span>
-                      <span className="font-medium text-gray-900">4%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: '4%' }}></div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-purple-500 h-2 rounded-full shadow-sm" style={{ width: '85%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600">Benefits</span>
-                      <span className="font-medium text-gray-900">8%</span>
+                      <span className="text-gray-600 dark:text-gray-400">Overtime</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">4%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '8%' }}></div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-amber-500 h-2 rounded-full shadow-sm" style={{ width: '4%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600">Taxes</span>
-                      <span className="font-medium text-gray-900">15%</span>
+                      <span className="text-gray-600 dark:text-gray-400">Benefits</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">8%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-red-500 h-2 rounded-full" style={{ width: '15%' }}></div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-blue-500 h-2 rounded-full shadow-sm" style={{ width: '8%' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-600 dark:text-gray-400">Taxes</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">15%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-red-500 h-2 rounded-full shadow-sm" style={{ width: '15%' }}></div>
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                   Comprehensive cost breakdown
                 </p>
               </div>
@@ -688,85 +643,81 @@ const Payroll = () => {
 
       {/* Processing Modal */}
       {showProcessModal && processingPayroll && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mr-4"></div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Processing Payroll</h3>
-                <p className="text-sm text-gray-600">Please wait while we process the payroll...</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-700 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 bg-blue-400/20 rounded-full animate-ping"></div>
+                <div className="relative animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-b-transparent"></div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Processing Payroll</h3>
+              <p className="text-base text-gray-500 dark:text-gray-400 mt-1">Please wait while we finalize calculations...</p>
+            </div>
+            
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 mb-6 border border-gray-100 dark:border-gray-700/50">
+              <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Period</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{processingPayroll.period}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Employees</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{processingPayroll.employees}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Estimated Total</p>
+                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">${processingPayroll.totalPayroll.toLocaleString()}</p>
+                </div>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Period</p>
-                  <p className="font-medium text-gray-900">{processingPayroll.period}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Employees</p>
-                  <p className="font-medium text-gray-900">{processingPayroll.employees}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Total Payroll</p>
-                  <p className="font-medium text-gray-900">${processingPayroll.totalPayroll.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Status</p>
-                  <p className="font-medium text-blue-600">Processing...</p>
-                </div>
-              </div>
+            
+            <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mb-2 overflow-hidden">
+              <div className="bg-blue-600 h-full rounded-full transition-all duration-300 w-3/4 animate-pulse"></div>
             </div>
-            <div className="flex justify-center">
-              <div className="text-sm text-gray-500">
-                This will take approximately 3 seconds...
-              </div>
-            </div>
+            <p className="text-center text-xs text-blue-600 dark:text-blue-400 font-medium">Step 3 of 4: Generating Slips...</p>
           </div>
         </div>
       )}
 
       {/* Success Modal */}
       {showSuccessModal && completedPayroll && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <div className="bg-green-100 rounded-full p-3 mr-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-700 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="bg-green-100 dark:bg-green-900/40 rounded-full p-4 mb-4 ring-8 ring-green-50 dark:ring-green-900/20">
+                <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Payroll Completed!</h3>
-                <p className="text-sm text-gray-600">Payroll has been successfully processed</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Payroll Completed!</h3>
+              <p className="text-base text-gray-500 dark:text-gray-400 mt-1">Funds have been successfully allocated</p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 mb-8 border border-gray-100 dark:border-gray-700/50">
+              <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Period</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{completedPayroll.period}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Employees</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{completedPayroll.employees}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Gross Amount</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">${completedPayroll.totalPayroll.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Net Allocation</p>
+                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">${completedPayroll.netPayroll.toLocaleString()}</p>
+                </div>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Period</p>
-                  <p className="font-medium text-gray-900">{completedPayroll.period}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Employees</p>
-                  <p className="font-medium text-gray-900">{completedPayroll.employees}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Total Payroll</p>
-                  <p className="font-medium text-gray-900">${completedPayroll.totalPayroll.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Net Payroll</p>
-                  <p className="font-medium text-gray-900">${completedPayroll.netPayroll.toLocaleString()}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-center">
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Close
-              </button>
-            </div>
+
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+            >
+              Continue to Dashboard
+            </button>
           </div>
         </div>
       )}

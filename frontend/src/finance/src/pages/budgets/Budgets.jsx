@@ -186,7 +186,7 @@ const Budgets = () => {
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             <option value="all">All Periods</option>
             <option value="monthly">Monthly</option>
@@ -197,7 +197,7 @@ const Budgets = () => {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             <option value="all">All Status</option>
             <option value="on-track">On Track</option>
@@ -259,7 +259,7 @@ const Budgets = () => {
                     {percentageSpent.toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${getProgressColor(percentageSpent)}`}
                     style={{ width: `${Math.min(percentageSpent, 100)}%` }}
@@ -357,7 +357,7 @@ const Budgets = () => {
                   {cat.efficiency}%
                 </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${
                     cat.efficiency <= 80 ? 'bg-green-500' :

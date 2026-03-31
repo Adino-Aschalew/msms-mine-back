@@ -95,7 +95,7 @@ const ExpenseChart = ({ dateRange, dashboardData }) => {
             if (label) {
               label += ': ';
             }
-            const value = '$' + context.parsed.toLocaleString();
+            const value = context.parsed.toLocaleString() + ' ETB';
             const total = context.dataset.data.reduce((a, b) => a + b, 0);
             const percentage = ((context.parsed / total) * 100).toFixed(1);
             label += `${value} (${percentage}%)`;

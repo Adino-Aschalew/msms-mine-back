@@ -18,14 +18,27 @@ export const financeAPI = {
   uploadPayroll: async (file) => {
     const formData = new FormData();
     formData.append('payroll', file);
-    const response = await apiClient.post('/api/finance/payroll/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const response = await apiClient.post('/api/finance/payroll/upload', formData);
+    return response;
+  },
+
+  validatePayroll: async (batchId) => {
+    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/validate`);
     return response.data;
   },
 
-  processPayroll: async (payrollData) => {
-    const response = await apiClient.post('/api/finance/payroll', payrollData);
+  approvePayroll: async (batchId) => {
+    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/approve`);
+    return response.data;
+  },
+
+  processPayroll: async (batchId) => {
+    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/process`);
+    return response.data;
+  },
+
+  reversePayroll: async (batchId) => {
+    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/reverse`);
     return response.data;
   },
 
@@ -34,8 +47,13 @@ export const financeAPI = {
     return response.data;
   },
 
-  getPayrollBatchDetails: async (batchId) => {
-    const response = await apiClient.get(`/api/finance/payroll/batches/${batchId}`);
+  getPayrollBatchDetails: async (batchId, page = 1, limit = 10) => {
+    const response = await apiClient.get(`/api/finance/payroll/batches/${batchId}/details`, { page, limit });
+    return response.data;
+  },
+
+  getPayrollStats: async () => {
+    const response = await apiClient.get('/api/finance/payroll/stats');
     return response.data;
   },
 

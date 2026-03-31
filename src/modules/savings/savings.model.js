@@ -2,20 +2,33 @@ const { query, transaction } = require('../../config/database');
 
 class SavingsModel {
   static async createSavingsAccount(userId, employeeId, savingPercentage) {
-    const insertQuery = `
-      INSERT INTO savings_accounts (user_id, employee_id, saving_percentage, account_status, created_at)
-      VALUES (?, ?, ?, 'ACTIVE', NOW())
-    `;
-    
-    try {
-      const result = await query(insertQuery, [userId, employeeId, savingPercentage]);
-      return result.insertId;
-    } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        throw new Error('Savings account already exists for this user');
-      }
-      throw error;
-    }
+    return await transaction(async (connection) => {
+      // 1. Create account
+      const [accountResult] = await connection.execute(
+        `INSERT INTO savings_accounts (user_id, employee_id, saving_percentage, account_status, created_at)
+         VALUES (?, ?, ?, 'ACTIVE', NOW())`,
+        [userId, employeeId, savingPercentage]
+      );
+      
+      const accountId = accountResult.insertId;
+      
+      // 2. Create initial version
+      const [versionResult] = await connection.execute(
+        `INSERT INTO savings_versions (user_id, version_number, savings_type, savings_value, status, effective_date, activated_at)
+         VALUES (?, 1, 'PERCENTAGE', ?, 'ACTIVE', CURDATE(), NOW())`,
+        [userId, savingPercentage]
+      );
+      
+      const versionId = versionResult.insertId;
+      
+      // 3. Link version to account
+      await connection.execute(
+        'UPDATE savings_accounts SET current_version_id = ? WHERE id = ?',
+        [versionId, accountId]
+      );
+      
+      return accountId;
+    });
   }
 
   static async getSavingsAccount(userId) {
@@ -37,7 +50,7 @@ class SavingsModel {
       FROM savings_accounts sa
       JOIN users u ON sa.user_id = u.id
       LEFT JOIN employee_profiles ep ON sa.user_id = ep.user_id
-      WHERE sa.account_id = ?
+      WHERE sa.id = ?
     `;
     
     const accounts = await query(selectQuery, [accountId]);
@@ -61,7 +74,7 @@ class SavingsModel {
     return await transaction(async (connection) => {
       // Get current balance
       const [account] = await connection.execute(
-        'SELECT current_balance FROM savings_accounts WHERE account_id = ? FOR UPDATE',
+        'SELECT current_balance FROM savings_accounts WHERE id = ? FOR UPDATE',
         [accountId]
       );
       
@@ -95,7 +108,7 @@ class SavingsModel {
       
       // Update account balance
       await connection.execute(
-        'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE account_id = ?',
+        'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
         [newBalance, accountId]
       );
       
@@ -129,14 +142,14 @@ class SavingsModel {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM savings_transactions st
-      JOIN savings_accounts sa ON st.savings_account_id = sa.account_id
+      JOIN savings_accounts sa ON st.savings_account_id = sa.id
       ${whereClause}
     `;
     
     const selectQuery = `
       SELECT st.*, sa.account_status, sa.saving_percentage
       FROM savings_transactions st
-      JOIN savings_accounts sa ON st.savings_account_id = sa.account_id
+      JOIN savings_accounts sa ON st.savings_account_id = sa.id
       ${whereClause}
       ORDER BY st.transaction_date DESC
       LIMIT ? OFFSET ?
@@ -276,7 +289,7 @@ class SavingsModel {
           
           if (monthlyInterest > 0) {
             await this.addSavingsTransaction(
-              account.account_id,
+              account.id,
               account.user_id,
               'INTEREST',
               monthlyInterest,
@@ -323,7 +336,7 @@ class SavingsModel {
           const penaltyAmount = account.current_balance * penaltyRate;
           
           await this.addSavingsTransaction(
-            account.account_id,
+            account.id,
             account.user_id,
             'PENALTY',
             penaltyAmount,
@@ -351,10 +364,10 @@ class SavingsModel {
       SELECT 
         sa.*,
         ep.salary,
-        (SELECT COUNT(*) FROM savings_transactions WHERE savings_account_id = sa.account_id) as total_transactions,
-        (SELECT COALESCE(SUM(amount), 0) FROM savings_transactions WHERE savings_account_id = sa.account_id AND transaction_type = 'CONTRIBUTION') as total_contributions,
-        (SELECT COALESCE(SUM(amount), 0) FROM savings_transactions WHERE savings_account_id = sa.account_id AND transaction_type = 'WITHDRAWAL') as total_withdrawals,
-        (SELECT MAX(transaction_date) FROM savings_transactions WHERE savings_account_id = sa.account_id) as last_transaction_date
+        (SELECT COUNT(*) FROM savings_transactions WHERE savings_account_id = sa.id) as total_transactions,
+        (SELECT COALESCE(SUM(amount), 0) FROM savings_transactions WHERE savings_account_id = sa.id AND transaction_type = 'CONTRIBUTION') as total_contributions,
+        (SELECT COALESCE(SUM(amount), 0) FROM savings_transactions WHERE savings_account_id = sa.id AND transaction_type = 'WITHDRAWAL') as total_withdrawals,
+        (SELECT MAX(transaction_date) FROM savings_transactions WHERE savings_account_id = sa.id) as last_transaction_date
       FROM savings_accounts sa
       LEFT JOIN employee_profiles ep ON sa.user_id = ep.user_id
       WHERE sa.user_id = ?

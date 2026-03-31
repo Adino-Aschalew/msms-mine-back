@@ -1,4 +1,6 @@
 const mysql = require('mysql2/promise');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config({ path: '.env' });
 
 async function runMigration() {
@@ -11,14 +13,14 @@ async function runMigration() {
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'microfinance_system',
-      port: process.env.DB_PORT || 3307
+      port: parseInt(process.env.DB_PORT) || 3307
     });
 
     console.log('Connected to database successfully');
 
     // Read and execute migration
-    const fs = require('fs');
-    const migrationSQL = fs.readFileSync('./migrations/enterprise_savings_system.sql', 'utf8');
+    const migrationFilePath = path.join(__dirname, 'migrations', '20240322_payroll_savings_updates.sql');
+    const migrationSQL = fs.readFileSync(migrationFilePath, 'utf8');
     
     // Split SQL into individual statements
     const statements = migrationSQL
@@ -26,26 +28,28 @@ async function runMigration() {
       .map(stmt => stmt.trim())
       .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
 
-    console.log('Executing enterprise savings system migration...');
+    console.log('Executing migration...');
     
     for (const statement of statements) {
       if (statement.trim()) {
-        console.log('Executing:', statement.substring(0, 100) + '...');
-        await connection.execute(statement);
+        console.log('Executing:', statement);
+        try {
+          await connection.execute(statement);
+        } catch (err) {
+          if (err.code === 'ER_DUP_FIELDNAME' || err.code === 'ER_CANT_DROP_FIELD_OR_KEY' || err.code === 'ER_DUP_KEYNAME') {
+            console.log(`⚠️  Warning (expected if already run): ${err.message}`);
+          } else {
+            throw err;
+          }
+        }
       }
     }
 
     console.log('✅ Migration completed successfully!');
-    console.log('Created enterprise savings system tables and views');
 
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
-    
-    if (error.code === 'ER_DUP_FIELDNAME' || error.code === 'ER_TABLE_EXISTS_ERROR') {
-      console.log('⚠️  Table/columns may already exist - this is normal');
-    } else {
-      console.error('Full error:', error);
-    }
+    console.error('Full error:', error);
   } finally {
     if (connection) {
       await connection.end();

@@ -17,9 +17,10 @@ export const savingsAPI = {
   },
 
   // Update saving percentage
-  updateSavingPercentage: async (savingPercentage) => {
+  updateSavingPercentage: async (savingPercentage, reason) => {
     const response = await apiClient.put('/api/savings/account/percentage', {
-      saving_percentage: savingPercentage
+      saving_percentage: savingPercentage,
+      reason: reason
     });
     return response.data;
   },
@@ -52,6 +53,21 @@ export const savingsAPI = {
   // Get savings statistics
   getSavingsStats: async (period = 'MONTHLY') => {
     const response = await apiClient.get('/api/savings/stats', { period });
+    return response.data;
+  },
+
+  // Admin: Get all savings update requests
+  getSavingsRequests: async () => {
+    const response = await apiClient.get('/api/savings/requests');
+    return response.data;
+  },
+
+  // Admin: Handle a savings update request
+  handleSavingsRequest: async (requestId, status, comments) => {
+    const response = await apiClient.put(`/api/savings/requests/${requestId}/handle`, {
+      status,
+      comments
+    });
     return response.data;
   }
 };

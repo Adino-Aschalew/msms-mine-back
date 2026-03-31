@@ -12,7 +12,8 @@ import {
   FiSettings,
   FiLogOut,
   FiHelpCircle,
-  FiTrendingUp
+  FiTrendingUp,
+  FiTarget
 } from 'react-icons/fi';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -22,7 +23,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/employee/dashboard', icon: FiGrid, label: 'Dashboard' },
     { path: '/employee/loans', icon: FiDollarSign, label: 'My Loans' },
     { path: '/employee/loans/request', icon: FiFileText, label: 'Loan Request' },
-    { path: '/employee/savings', icon: FiTrendingUp, label: 'Savings' },
+    { path: '/employee/savings', icon: FiTarget, label: 'My Savings' },
     { path: '/employee/guarantors', icon: FiUsers, label: 'Guarantors' },
     { path: '/employee/repayments', icon: FiCreditCard, label: 'Repayments' },
     { path: '/employee/payroll', icon: FiCalendar, label: 'Payroll' },

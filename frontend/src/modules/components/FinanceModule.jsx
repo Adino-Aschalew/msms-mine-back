@@ -21,6 +21,7 @@ import Budgets from '../../finance/src/pages/budgets/Budgets';
 import Invoices from '../../finance/src/pages/invoices/Invoices';
 import PayrollReports from '../../finance/src/pages/payroll/PayrollReports';
 import Notifications from '../../finance/src/pages/notifications/Notifications';
+import SavingsRequests from '../../finance/src/pages/savings/SavingsRequests';
 import Help from '../../finance/src/pages/help/Help';
 
 const FinanceModule = () => {
@@ -51,6 +52,7 @@ const FinanceModule = () => {
               <Route path="settings" element={<Settings />} />
               <Route path="account/profile" element={<AccountProfile />} />
               <Route path="account/security" element={<AccountSecurity />} />
+              <Route path="savings/requests" element={<SavingsRequests />} />
               <Route path="help" element={<Help />} />
             </Route>
             <Route path="*" element={<Navigate to="/finance/dashboard" replace />} />

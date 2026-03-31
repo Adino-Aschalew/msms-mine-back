@@ -29,9 +29,14 @@ const navigation = [
     icon: FiArrowRight,
   },
   {
-    name: 'Accounts',
+    name: 'Savings Adjustments',
+    href: '/finance/savings/requests',
+    icon: FiTrendingUp,
+  },
+  {
+    name: 'Profile',
     href: '/finance/account/profile',
-    icon: FiGrid,
+    icon: FiShield,
   },
   {
     name: 'Payroll',

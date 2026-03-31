@@ -121,7 +121,7 @@ class ReportService {
           COUNT(CASE WHEN st.transaction_type = 'WITHDRAWAL' THEN 1 END) as total_withdrawals,
           COUNT(CASE WHEN st.transaction_type = 'INTEREST' THEN 1 END) as total_interest_payments
         FROM savings_accounts sa
-        LEFT JOIN savings_transactions st ON sa.id = st.account_id
+        LEFT JOIN savings_transactions st ON sa.id = st.savings_account_id
         WHERE sa.account_status = 'ACTIVE'
       `);
       
@@ -210,7 +210,7 @@ class ReportService {
           ep.last_name,
           ep.department
         FROM savings_transactions st
-        LEFT JOIN savings_accounts sa ON st.account_id = sa.id
+        LEFT JOIN savings_accounts sa ON st.savings_account_id = sa.id
         LEFT JOIN users u ON sa.user_id = u.id
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE 1=1

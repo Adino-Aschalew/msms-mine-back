@@ -1,4 +1,6 @@
 const SavingsService = require('./savings.service');
+const SavingsRequest = require('../../models/SavingsRequest');
+const { auditLog } = require('../../middleware/audit');
 
 class SavingsController {
   static async createAccount(req, res) {
@@ -48,8 +50,9 @@ class SavingsController {
       console.error('Get savings account error:', error);
       
       if (error.message.includes('not found')) {
-        return res.status(404).json({
-          success: false,
+        return res.json({
+          success: true,
+          data: null,
           message: error.message
         });
       }
@@ -423,6 +426,61 @@ class SavingsController {
       res.status(500).json({
         success: false,
         message: 'Failed to check missed savings'
+      });
+    }
+  }
+
+  static async getSavingsRequests(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const filters = {
+        status: req.query.status,
+        user_id: req.query.user_id
+      };
+      
+      const result = await SavingsRequest.getRequests(page, limit, filters);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Get savings requests error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  static async handleSavingsRequest(req, res) {
+    try {
+      const { requestId } = req.params;
+      const { status, comments } = req.body;
+      const reviewedBy = req.userId;
+      
+      if (!['APPROVED', 'REJECTED'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status must be APPROVED or REJECTED'
+        });
+      }
+      
+      const result = await SavingsRequest.updateRequestStatus(requestId, status, reviewedBy, comments || '');
+      
+      await auditLog(reviewedBy, `SAVING_PERCENTAGE_REQUEST_${status}`, 'savings_requests', requestId, null, { status, comments }, req.ip, req.get('User-Agent'));
+      
+      res.json({
+        success: true,
+        message: `Savings request ${status.toLowerCase()} successfully`,
+        data: result
+      });
+    } catch (error) {
+      console.error('Handle savings request error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
       });
     }
   }

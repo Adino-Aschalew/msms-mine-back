@@ -1,5 +1,6 @@
 const express = require('express');
 const SavingsController = require('./savings.controller');
+const EnterpriseSavingsController = require('./enterprise-savings.controller');
 const { authMiddleware, roleMiddleware } = require('../../middleware/auth');
 const { auditMiddleware } = require('../../middleware/audit');
 
@@ -16,6 +17,22 @@ router.put('/account/percentage', SavingsController.updateSavingPercentage);
 router.get('/transactions', SavingsController.getTransactions);
 router.post('/contribute', SavingsController.addContribution);
 router.post('/withdraw', SavingsController.withdrawSavings);
+
+// Enterprise Savings Dashboard Routes
+router.get('/dashboard', EnterpriseSavingsController.getSavingsDashboard);
+router.get('/statistics', EnterpriseSavingsController.getSavingsStatistics);
+router.get('/history', EnterpriseSavingsController.getSavingsHistory);
+router.get('/constraints', EnterpriseSavingsController.getSavingsConstraints);
+router.get('/requests/pending', EnterpriseSavingsController.getPendingRequests);
+
+// Savings Request Management
+router.post('/simulate', EnterpriseSavingsController.simulateSavingsChange);
+router.post('/requests', EnterpriseSavingsController.submitSavingsRequest);
+router.delete('/requests/:requestId', EnterpriseSavingsController.cancelRequest);
+
+// Finance Admin routes for savings requests
+router.get('/requests', roleMiddleware(['ADMIN', 'FINANCE_ADMIN']), SavingsController.getSavingsRequests);
+router.put('/requests/:requestId/handle', roleMiddleware(['ADMIN', 'FINANCE_ADMIN']), auditMiddleware('SAVING_PERCENTAGE_REQUEST_HANDLE'), SavingsController.handleSavingsRequest);
 
 // Admin/HR routes
 router.get('/all', roleMiddleware(['ADMIN', 'HR']), SavingsController.getAllAccounts);

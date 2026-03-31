@@ -64,18 +64,25 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
 
 
 CREATE TABLE IF NOT EXISTS savings_accounts (
-    account_id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     employee_id VARCHAR(50) NOT NULL,
-    saving_percentage DECIMAL(5,2) NOT NULL CHECK (saving_percentage >= 15 AND saving_percentage <= 65),
+    savings_type ENUM('PERCENTAGE', 'FIXED_AMOUNT') DEFAULT 'PERCENTAGE',
+    saving_percentage DECIMAL(5,2) DEFAULT 15.00 CHECK (saving_percentage >= 15 AND saving_percentage <= 65),
+    fixed_amount DECIMAL(15,2) DEFAULT 0.00,
     current_balance DECIMAL(15,2) DEFAULT 0.00,
     total_contributions DECIMAL(15,2) DEFAULT 0.00,
     interest_earned DECIMAL(15,2) DEFAULT 0.00,
     account_status ENUM('ACTIVE','FROZEN','CLOSED') DEFAULT 'ACTIVE',
     is_active BOOLEAN DEFAULT TRUE,
     is_frozen BOOLEAN DEFAULT FALSE,
+    is_paused BOOLEAN DEFAULT FALSE,
+    current_version_id INT NULL,
     lock_period_end_date DATE NULL,
     last_contribution_date TIMESTAMP NULL,
+    last_request_date DATE NULL,
+    total_requests_count INT DEFAULT 0,
+    approved_requests_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -83,6 +90,70 @@ CREATE TABLE IF NOT EXISTS savings_accounts (
     INDEX idx_employee_id (employee_id),
     INDEX idx_account_status (account_status),
     INDEX idx_last_contribution_date (last_contribution_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS savings_versions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    version_number INT NOT NULL,
+    savings_type ENUM('PERCENTAGE', 'FIXED_AMOUNT') NOT NULL,
+    savings_value DECIMAL(15,2) NOT NULL,
+    status ENUM('ACTIVE', 'INACTIVE', 'PENDING', 'REPLACED') DEFAULT 'PENDING',
+    effective_date DATE NOT NULL,
+    expiry_date DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    activated_at TIMESTAMP NULL,
+    replaced_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS savings_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id VARCHAR(50) NOT NULL,
+    user_id INT NOT NULL,
+    request_type VARCHAR(50) NOT NULL,
+    old_value DECIMAL(15,2) NOT NULL,
+    new_value DECIMAL(15,2) NOT NULL,
+    savings_type ENUM('PERCENTAGE', 'FIXED_AMOUNT') NOT NULL,
+    effective_date DATE NOT NULL,
+    requested_effective_date DATE NOT NULL,
+    status ENUM('PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'CANCELLED', 'APPLIED') DEFAULT 'PENDING',
+    workflow_stage VARCHAR(50) DEFAULT 'SUBMITTED',
+    salary_snapshot DECIMAL(15,2) NULL,
+    loan_deductions_snapshot DECIMAL(15,2) NULL,
+    current_deduction_ratio DECIMAL(5,2) NULL,
+    projected_deduction_ratio DECIMAL(5,2) NULL,
+    simulation_result JSON NULL,
+    reason TEXT NULL,
+    urgency_level ENUM('NORMAL', 'URGENT', 'CRITICAL') DEFAULT 'NORMAL',
+    submitted_by INT NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    final_approved_by INT NULL,
+    final_approved_at TIMESTAMP NULL,
+    final_approval_comments TEXT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (submitted_by) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (final_approved_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_user_id (user_id),
+    INDEX idx_status (status),
+    INDEX idx_submitted_at (submitted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS savings_configuration (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(100) UNIQUE NOT NULL,
+    config_value JSON NOT NULL,
+    description TEXT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_config_key (config_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -98,7 +169,7 @@ CREATE TABLE IF NOT EXISTS savings_transactions (
     description TEXT NULL,
     transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     payroll_batch_id INT NULL,
-    FOREIGN KEY (savings_account_id) REFERENCES savings_accounts(account_id) ON DELETE CASCADE,
+    FOREIGN KEY (savings_account_id) REFERENCES savings_accounts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_savings_account_id (savings_account_id),
     INDEX idx_user_id (user_id),
@@ -395,74 +466,63 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_notification_type (notification_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Migration: Update Payroll and Savings Change Workflow
 
+-- Update payroll_batches status to include REVERSED
+ALTER TABLE payroll_batches MODIFY COLUMN status ENUM('UPLOADED','VALIDATED','CONFIRMED','PROCESSED','REVERSED') DEFAULT 'UPLOADED';
+
+-- Add columns for month and year to facilitate duplicate prevention
+ALTER TABLE payroll_batches ADD COLUMN IF NOT EXISTS payroll_month INT;
+ALTER TABLE payroll_batches ADD COLUMN IF NOT EXISTS payroll_year INT;
+
+-- Update existing records to populate month and year
+UPDATE payroll_batches SET 
+    payroll_month = MONTH(payroll_date),
+    payroll_year = YEAR(payroll_date)
+WHERE payroll_month IS NULL;
+
+-- Initial Seed Data
 INSERT INTO users
     (employee_id, username, email, password_hash, role, is_active, email_verified, first_name, last_name)
 VALUES
-    -- Admin
-    ('ADMIN001', 'admin@msms.com', 'admin@msms.com',
-     '$2a$12$3vrgkj5a6NA8J44HJ5H1AeG5JzQKUlaAEdGxSK2pVXPTfB32AghWm',
-     'ADMIN', TRUE, TRUE, 'System', 'Administrator'),
+    ('ADMIN001', 'admin@msms.com', 'admin@msms.com', '$2a$12$3vrgkj5a6NA8J44HJ5H1AeG5JzQKUlaAEdGxSK2pVXPTfB32AghWm', 'ADMIN', TRUE, TRUE, 'System', 'Administrator'),
+    ('HR001', 'hr@msms.com', 'hr@msms.com', '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW', 'HR', TRUE, TRUE, 'Abebe', 'HR'),
+    ('FIN001', 'finance@msms.com', 'finance@msms.com', '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW', 'FINANCE_ADMIN', TRUE, TRUE, 'Kalkidan', 'Finance'),
+    ('LOAN001', 'loancommittee@msms.com', 'loancommittee@msms.com', '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW', 'LOAN_COMMITTEE', TRUE, TRUE, 'Mikael', 'LoanCommittee'),
+    ('EMP001', 'EMP001', 'john.doe@msms.com', '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW', 'EMPLOYEE', TRUE, TRUE, 'John', 'Doe');
 
-    -- HR
-    ('HR001', 'hr@msms.com', 'hr@msms.com',INSERT INTO employee_profiles
-    (user_id, employee_id, first_name, last_name, grandfather_name,
-     department, job_grade, job_title, employment_status, status,
-     hire_date, phone, phone_number, address, committee_level,
-     salary, job_role, hr_verified, hr_verification_date,
-     created_at, updated_at)
+INSERT INTO employee_profiles
+    (user_id, employee_id, first_name, last_name, grandfather_name, department, job_grade, job_title, employment_status, status, hire_date, phone, phone_number, address, committee_level, salary, job_role, hr_verified, hr_verification_date)
 VALUES
-    -- Admin (IT)
-    (1, 'ADMIN001', 'System', 'Administrator', 'Girma',
-     'IT', 'ADMIN', 'System Administrator',
-     'ACTIVE', 'active', '2024-01-01',
-     '+251910000001', '+251910000001', 'Somewhere, Addis Ababa',
-     1, 80000.00, 'Superuser', TRUE, NOW(), NOW(), NOW()),
+    (1, 'ADMIN001', 'System', 'Administrator', 'Girma', 'IT', 'ADMIN', 'System Administrator', 'ACTIVE', 'active', '2024-01-01', '+251910000001', '+251910000001', 'Somewhere, Addis Ababa', 1, 80000.00, 'Superuser', TRUE, NOW()),
+    (2, 'HR001', 'Abebe', 'HR', 'Tesfaye', 'Human Resources', 'MANAGER', 'HR Manager', 'ACTIVE', 'active', '2024-01-01', '+251910000002', '+251910000002', 'Somewhere, Addis Ababa', 1, 60000.00, 'HR Operations', TRUE, NOW()),
+    (3, 'FIN001', 'Kalkidan', 'Finance', 'Teshome', 'Finance', 'MANAGER', 'Finance Manager', 'ACTIVE', 'active', '2024-01-01', '+251910000003', '+251910000003', 'Somewhere, Addis Ababa', 1, 65000.00, 'Financial Oversight', TRUE, NOW()),
+    (4, 'LOAN001', 'Mikael', 'LoanCommittee', 'Bekele', 'Loans', 'CHAIR', 'Loan Committee Chair', 'ACTIVE', 'active', '2024-01-01', '+251910000004', '+251910000004', 'Somewhere, Addis Ababa', 3, 55000.00, 'Credit Approval', TRUE, NOW()),
+    (5, 'EMP001', 'John', 'Doe', 'Robert', 'Engineering', 'SENIOR_DEVELOPER', 'Software Developer', 'ACTIVE', 'active', '2024-01-15', '+251910000005', '+251910000005', '123 Main St', 1, 45000.00, 'Backend Developer', TRUE, NOW());
 
-    -- HR
-    (2, 'HR001', 'Abebe', 'HR', 'Tesfaye',
-     'Human Resources', 'MANAGER', 'HR Manager',
-     'ACTIVE', 'active', '2024-01-01',
-     '+251910000002', '+251910000002', 'Somewhere, Addis Ababa',
-     1, 60000.00, 'HR Operations', TRUE, NOW(), NOW(), NOW()),
+INSERT INTO savings_accounts 
+    (user_id, employee_id, savings_type, saving_percentage, current_balance, total_contributions, account_status)
+VALUES
+    (5, 'EMP001', 'PERCENTAGE', 15.00, 5000.00, 5000.00, 'ACTIVE');
 
-    -- Finance
-    (3, 'FIN001', 'Kalkidan', 'Finance', 'Teshome',
-     'Finance', 'MANAGER', 'Finance Manager',
-     'ACTIVE', 'active', '2024-01-01',
-     '+251910000003', '+251910000003', 'Somewhere, Addis Ababa',
-     1, 65000.00, 'Financial Oversight', TRUE, NOW(), NOW(), NOW()),
+INSERT INTO savings_versions
+    (user_id, version_number, savings_type, savings_value, status, effective_date, activated_at)
+VALUES
+    (5, 1, 'PERCENTAGE', 15.00, 'ACTIVE', '2024-01-15', NOW());
 
-    -- Loan Committee (Chair)
-    (4, 'LOAN001', 'Mikael', 'LoanCommittee', 'Bekele',
-     'Loans', 'CHAIR', 'Loan Committee Chair',
-     'ACTIVE', 'active', '2024-01-01',
-     '+251910000004', '+251910000004', 'Somewhere, Addis Ababa',
-     3, 55000.00, 'Credit Approval', TRUE, NOW(), NOW(), NOW()),
+UPDATE savings_accounts SET current_version_id = 1 WHERE user_id = 5;
 
-    -- Regular Employee
-    (5, 'EMP001', 'John', 'Doe', 'Robert',
-     'Engineering', 'SENIOR_DEVELOPER', 'Software Developer',
-     'ACTIVE', 'active', '2024-01-15',
-     '+251910000005', '+251910000005', '123 Main St',
-     1, 45000.00, 'Backend Developer', TRUE, NOW(), NOW(), NOW());
-     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-     'HR', TRUE, TRUE, 'Abebe', 'HR'),
+INSERT INTO savings_transactions
+    (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, description)
+VALUES
+    (1, 5, 'CONTRIBUTION', 5000.00, 0.00, 5000.00, 'Initial savings contribution');
 
-    -- Finance Admin
-    ('FIN001', 'finance@msms.com', 'finance@msms.com',
-     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-     'FINANCE_ADMIN', TRUE, TRUE, 'Kalkidan', 'Finance'),
-
-    -- Loan Committee
-    ('LOAN001', 'loancommittee@msms.com', 'loancommittee@msms.com',
-     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-     'LOAN_COMMITTEE', TRUE, TRUE, 'Mikael', 'LoanCommittee'),
-
-    -- Regular Employee
-    ('EMP001', 'EMP001', 'john.doe@msms.com',
-     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-     'EMPLOYEE', TRUE, TRUE, 'John', 'Doe');
+INSERT INTO savings_configuration (config_key, config_value, description)
+VALUES 
+    ('min_savings_percentage', '{"value": 15}', 'Minimum percentage allowed for payroll deduction'),
+    ('max_savings_percentage', '{"value": 65}', 'Maximum percentage allowed for payroll deduction'),
+    ('max_total_deduction_ratio', '{"value": 50}', 'Maximum total deduction ratio (loans + savings) allowed'),
+    ('min_net_salary_threshold', '{"value": 2000}', 'Minimum net salary threshold that must be maintained after all deductions');
 
 
 

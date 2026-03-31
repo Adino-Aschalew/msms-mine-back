@@ -23,7 +23,7 @@ ChartJS.register(
 const CashFlowChart = ({ dateRange, dashboardData }) => {
   const { theme } = useTheme();
   
-  const cashFlow = dashboardData?.cashFlow || [];
+  const cashFlow = dashboardData?.monthlyCashFlow || [];
   
   const data = {
     labels: cashFlow.length > 0 
@@ -38,11 +38,7 @@ const CashFlowChart = ({ dateRange, dashboardData }) => {
         label: 'Cash In',
         data: cashFlow.length > 0
           ? cashFlow.map(d => parseFloat(d.savings_in || 0) + parseFloat(d.loan_payments || 0) + parseFloat(d.savings_interest || 0)).reverse()
-          : dateRange === '7days'
-          ? [15000, 18000, 22000, 14000, 25000, 19000, 16000]
-          : dateRange === '30days'
-          ? [95000, 102000, 88000, 105000]
-          : [350000, 380000, 420000, 360000, 450000, 480000],
+          : [],
         backgroundColor: 'rgba(34, 197, 94, 0.8)',
         borderColor: 'rgb(34, 197, 94)',
         borderWidth: 1,
@@ -51,11 +47,7 @@ const CashFlowChart = ({ dateRange, dashboardData }) => {
         label: 'Cash Out',
         data: cashFlow.length > 0
           ? cashFlow.map(d => Math.abs(parseFloat(d.savings_out || 0) + parseFloat(d.loan_penalties || 0))).reverse()
-          : dateRange === '7days'
-          ? [12000, 14000, 18000, 11000, 20000, 15000, 13000]
-          : dateRange === '30days'
-          ? [75000, 78000, 72000, 81000]
-          : [280000, 300000, 320000, 290000, 340000, 360000],
+          : [],
         backgroundColor: 'rgba(239, 68, 68, 0.8)',
         borderColor: 'rgb(239, 68, 68)',
         borderWidth: 1,
@@ -91,7 +83,7 @@ const CashFlowChart = ({ dateRange, dashboardData }) => {
             if (label) {
               label += ': ';
             }
-            label += '$' + context.parsed.y.toLocaleString();
+            label += context.parsed.y.toLocaleString() + ' ETB';
             return label;
           },
         },
@@ -111,7 +103,7 @@ const CashFlowChart = ({ dateRange, dashboardData }) => {
         ticks: {
           color: theme === 'dark' ? '#ffffff' : '#374151',
           callback: function (value) {
-            return '$' + value.toLocaleString();
+            return value.toLocaleString() + ' ETB';
           },
         },
         grid: {

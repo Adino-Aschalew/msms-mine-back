@@ -270,10 +270,6 @@ class NotificationService {
     
     await this.createNotification(userId, subject, message, status === 'APPROVED' ? 'SUCCESS' : 'INFO');
     
-    // Get user email and send email notification
-    const userQuery = 'SELECT email, first_name FROM users u LEFT JOIN employee_profiles ep ON u.id = ep.user_id WHERE u.id = ?';
-    const user = await query(userQuery, [userId]);
-    
     if (user && user[0]) {
       const emailMessage = `
         <h2>Loan Application ${status}</h2>
@@ -284,6 +280,39 @@ class NotificationService {
       `;
       
       await this.sendEmail(user[0].email, subject, emailMessage);
+    }
+  }
+
+  static async sendSavingsStatusNotification(userId, requestId, status, newValue, comments) {
+    const subject = `Savings Change Request ${status}`;
+    const valueDisplay = newValue + '%';
+    const message = status === 'APPROVED' 
+      ? `Your request to change savings percentage to ${valueDisplay} has been approved.`
+      : `Your request to change savings percentage to ${valueDisplay} was rejected. Reason: ${comments || 'No reason provided'}`;
+    
+    await this.createNotification(userId, subject, message, status === 'APPROVED' ? 'SUCCESS' : 'DANGER');
+    
+    // Get user email and send email notification
+    const userQuery = 'SELECT email, first_name FROM users u LEFT JOIN employee_profiles ep ON u.id = ep.user_id WHERE u.id = ?';
+    const userArr = await query(userQuery, [userId]);
+    const user = userArr[0];
+    
+    if (user && user.email) {
+      const emailTitle = status === 'APPROVED' ? 'Approved' : 'Rejected';
+      const emailMessage = `
+        <div style="font-family: sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: ${status === 'APPROVED' ? '#10b981' : '#f43f5e'};">Savings Request ${emailTitle}</h2>
+          <p>Dear ${user.first_name || 'Employee'},</p>
+          <p>Your request (ID: #${requestId}) to update your monthly savings contribution to <strong>${valueDisplay}</strong> has been <strong>${status.toLowerCase()}</strong>.</p>
+          ${status === 'REJECTED' ? `<p><strong>Reason:</strong> ${comments || 'No specific reason provided.'}</p>` : ''}
+          ${status === 'APPROVED' ? `<p>This change will be effective from the next payroll cycle.</p>` : ''}
+          <p>You can view the full details on your savings dashboard.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #666;">This is an automated notification from the Microfinance System. Please do not reply to this email.</p>
+        </div>
+      `;
+      
+      await this.sendEmail(user.email, subject, emailMessage);
     }
   }
 }

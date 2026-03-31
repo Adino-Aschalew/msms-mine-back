@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, ArrowRightLeft, Search, Filter, Download, Plus } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, ArrowRightLeft, Search, Filter, Download, Plus, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { financeAPI } from '../../../../shared/services/financeAPI';
 
 const Transactions = ({ filter = 'all' }) => {
   const { theme } = useTheme();
@@ -17,28 +18,43 @@ const Transactions = ({ filter = 'all' }) => {
     return num.toString();
   };
 
-  const transactions = [
-    { id: 1, description: 'Client Payment - Tech Solutions', amount: 15000, type: 'income', status: 'completed', date: '2024-03-15', category: 'Sales' },
-    { id: 2, description: 'Office Rent Payment', amount: -3500, type: 'expense', status: 'completed', date: '2024-03-14', category: 'Operations' },
-    { id: 3, description: 'Software License Renewal', amount: -1200, type: 'expense', status: 'pending', date: '2024-03-13', category: 'Technology' },
-    { id: 4, description: 'Consulting Services', amount: 8500, type: 'income', status: 'completed', date: '2024-03-12', category: 'Services' },
-    { id: 5, description: 'Marketing Campaign', amount: -2500, type: 'expense', status: 'completed', date: '2024-03-11', category: 'Marketing' },
-    { id: 6, description: 'Product Sales - Enterprise Client', amount: 25000, type: 'income', status: 'completed', date: '2024-03-10', category: 'Sales' },
-    { id: 7, description: 'Employee Salaries', amount: -18000, type: 'expense', status: 'completed', date: '2024-03-09', category: 'Payroll' },
-    { id: 8, description: 'Equipment Purchase', amount: -3200, type: 'expense', status: 'pending', date: '2024-03-08', category: 'Assets' },
-  ];
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({ totalIncome: 0, totalExpenses: 0 });
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || 
-      (selectedFilter === 'income' && transaction.type === 'income') ||
-      (selectedFilter === 'expenses' && transaction.type === 'expense') ||
-      (selectedFilter === 'transfers' && transaction.type === 'transfer');
-    return matchesSearch && matchesFilter;
-  });
+  React.useEffect(() => {
+    fetchTransactions();
+  }, [searchTerm, selectedFilter]);
 
-  const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = Math.abs(filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const response = await financeAPI.getTransactionsList({
+        search: searchTerm,
+        type: selectedFilter,
+        page: 1,
+        limit: 50
+      });
+      
+      const list = response.transactions || [];
+      setTransactions(list);
+      
+      // Calculate stats from the list (or fetch from a stats API)
+      const income = list.filter(t => t.amount > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const expenses = list.filter(t => t.amount < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+      setStats({ totalIncome: income, totalExpenses: expenses });
+
+    } catch (err) {
+      setError('Failed to fetch transactions');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalIncome = stats.totalIncome;
+  const totalExpenses = stats.totalExpenses;
 
   return (
     <div className="space-y-6">
@@ -54,10 +70,10 @@ const Transactions = ({ filter = 'all' }) => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className={`bg-white ${theme === 'dark' ? 'dark:bg-slate-800' : ''} border border-gray-200 ${theme === 'dark' ? 'dark:border-slate-600' : ''} rounded-lg p-6 shadow-sm`}>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Total Balance</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Balance</p>
               <p className="text-3xl font-bold text-blue-600">
                 {formatCompactNumber(totalIncome - totalExpenses)}
               </p>
@@ -66,10 +82,10 @@ const Transactions = ({ filter = 'all' }) => {
           </div>
         </div>
         
-        <div className={`bg-white ${theme === 'dark' ? 'dark:bg-slate-800' : ''} border border-gray-200 ${theme === 'dark' ? 'dark:border-slate-600' : ''} rounded-lg p-6 shadow-sm`}>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Total Income</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Income</p>
               <p className="text-3xl font-bold text-green-600">
                 {formatCompactNumber(totalIncome)}
               </p>
@@ -78,10 +94,10 @@ const Transactions = ({ filter = 'all' }) => {
           </div>
         </div>
         
-        <div className={`bg-white ${theme === 'dark' ? 'dark:bg-slate-800' : ''} border border-gray-200 ${theme === 'dark' ? 'dark:border-slate-600' : ''} rounded-lg p-6 shadow-sm`}>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Total Expenses</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Expenses</p>
               <p className="text-3xl font-bold text-red-600">
                 {formatCompactNumber(totalExpenses)}
               </p>
@@ -92,7 +108,7 @@ const Transactions = ({ filter = 'all' }) => {
       </div>
 
       {/* Controls */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -102,21 +118,21 @@ const Transactions = ({ filter = 'all' }) => {
                 placeholder="Search transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
           
           <div className="flex gap-2">
-            <button className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors">
+            <button className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors">
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </button>
-            <button className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors">
+            <button className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export
             </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors">
+            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-lg shadow-blue-500/20">
               <Plus className="h-4 w-4 mr-2" />
               Add Transaction
             </button>
@@ -125,58 +141,72 @@ const Transactions = ({ filter = 'all' }) => {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {transaction.date}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {transaction.description}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {transaction.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`font-medium ${
-                      transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.amount > 0 ? '+' : ''}{formatCompactNumber(Math.abs(transaction.amount))}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      transaction.status === 'completed' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {transaction.status}
-                    </span>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-10 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-blue-600" />
                   </td>
                 </tr>
-              ))}
+              ) : transactions.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-10 text-center text-gray-400 font-bold uppercase text-xs">
+                    No transactions found
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium">
+                      {new Date(transaction.date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-bold uppercase tracking-tight">
+                      {transaction.description || transaction.user_name || 'System Transaction'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest">
+                      {transaction.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`font-black tracking-tighter ${
+                        transaction.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                      }`}>
+                        {transaction.amount > 0 ? '+' : ''}{parseFloat(transaction.amount).toLocaleString()} ETB
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-[9px] font-black uppercase rounded-full ${
+                        transaction.status === 'completed' || transaction.status === 'SUCCESS'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                      }`}>
+                        {transaction.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -34,6 +34,13 @@ export const loansAPI = {
     return response.data;
   },
 
+  // Get user loan transactions
+  getUserLoanTransactions: async (page = 1, limit = 20) => {
+    const params = { page, limit };
+    const response = await apiClient.get('/api/loans/my-transactions', params);
+    return response.data;
+  },
+
   // Get loan repayments
   getLoanRepayments: async (loanId, page = 1, limit = 10) => {
     const params = { page, limit };

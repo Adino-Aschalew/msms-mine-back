@@ -126,22 +126,35 @@ const AccountProfile = () => {
       const updateData = {
         first_name: profile.firstName,
         last_name: profile.lastName,
-        phone: profile.phone,
-        address: profile.location,
-        bio: profile.bio
+        phone_number: profile.phone,
+        address: profile.location
+        // bio field not supported by backend yet
       };
       
-      const response = await authAPI.updateProfile(updateData);
+      console.log('Sending update data:', updateData);
       
-      if (response.success) {
-        setSuccess('Profile updated successfully!');
-        setIsEditing(false);
-        // Refresh profile data
-        await fetchProfile();
-      } else {
-        setError(response.message || 'Failed to update profile');
+      try {
+        const response = await authAPI.updateProfile(updateData);
+        console.log('Update response received:', response);
+        console.log('Response type:', typeof response);
+        console.log('Response keys:', response ? Object.keys(response) : 'Response is null/undefined');
+        
+        // Backend returns user data directly, not wrapped in success property
+        if (response && (response.id || response.employee_id)) {
+          setSuccess('Profile updated successfully!');
+          setIsEditing(false);
+          // Refresh profile data
+          await fetchProfile();
+        } else {
+          console.log('Response indicates failure:', response);
+          setError('Failed to update profile - invalid response structure');
+        }
+      } catch (apiError) {
+        console.error('API call failed:', apiError);
+        setError(apiError.message || 'API call failed');
       }
     } catch (err) {
+      console.error('General update error:', err);
       setError(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);

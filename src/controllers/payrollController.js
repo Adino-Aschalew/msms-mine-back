@@ -16,7 +16,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   fileFilter: fileFilter,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 // 10MB
@@ -31,17 +31,69 @@ class PayrollController {
       const uploadUserId = req.userId;
       
       if (!req.file) {
+        console.error('Upload failed: req.file is missing');
         return res.status(400).json({
           success: false,
-          message: 'Payroll file is required'
+          message: 'Payroll file is required and must be in allowed format (CSV/Excel)'
+        });
+      }
+      
+      console.log('Payroll upload req.file properties:', {
+        fieldname: req.file.fieldname,
+        originalname: req.file.originalname,
+        size: req.file.size,
+        hasBuffer: !!req.file.buffer,
+        path: req.file.path,
+        secure_url: req.file.secure_url
+      });
+      
+      let cloudinaryUrl = req.file.path || req.file.secure_url || req.file.url;
+      let publicId = req.file.filename;
+      
+      // If we only have a buffer (memory storage), upload it manually to Cloudinary
+      if (!cloudinaryUrl && req.file.buffer) {
+        console.log('Manual upload to Cloudinary from buffer...');
+        const uploadResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'microfinance/payroll',
+              resource_type: 'raw',
+              public_id: `payroll-${Date.now()}`
+            },
+            (error, result) => {
+              if (error) {
+                console.error('Cloudinary manual upload error:', error);
+                reject(error);
+              } else {
+                resolve(result);
+              }
+            }
+          );
+          
+          const stream = require('stream');
+          const bufferStream = new stream.PassThrough();
+          bufferStream.end(req.file.buffer);
+          bufferStream.pipe(uploadStream);
+        });
+        
+        cloudinaryUrl = uploadResult.secure_url;
+        publicId = uploadResult.public_id;
+        console.log('Manual upload success:', cloudinaryUrl);
+      }
+      
+      if (!cloudinaryUrl) {
+        console.error('Failed to resolve Cloudinary URL');
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload/retrieve file URL'
         });
       }
       
       // Process payroll file from Cloudinary URL
-      const result = await Payroll.processPayrollFile(req.file.path, uploadUserId, {
-        cloudinaryUrl: req.file.path,
+      const result = await Payroll.processPayrollFile(cloudinaryUrl, uploadUserId, {
+        cloudinaryUrl: cloudinaryUrl,
         originalName: req.file.originalname,
-        publicId: req.file.filename
+        publicId: publicId
       });
       
       if (result.success) {
@@ -57,43 +109,37 @@ class PayrollController {
         res.json({
           success: true,
           message: 'Payroll uploaded and processed successfully',
+          batch_id: result.batchId,
+          batch_name: result.batchName,
+          total_employees: result.totalEmployees,
+          total_amount: result.totalAmount,
+          status: 'UPLOADED',
+          warnings: result.warnings,
+          valid_records_count: result.validRecords,
           data: result
         });
       } else {
         await auditLog(uploadUserId, 'PAYROLL_UPLOAD_FAILED', 'payroll_batches', null, null, { 
           fileName: req.file.originalname,
           errors: result.errors,
-          cloudinaryUrl: req.file.path
+          cloudinaryUrl: cloudinaryUrl
         }, req.ip, req.get('User-Agent'));
         
-        // Delete failed file from Cloudinary
-        try {
-          await cloudinary.uploader.destroy(req.file.filename, { resource_type: 'raw' });
-        } catch (deleteError) {
-          console.error('Failed to delete file from Cloudinary:', deleteError);
-        }
-        
-        res.status(400).json({
+        res.json({
           success: false,
           message: 'Payroll validation failed',
+          errors: result.errors,
+          total_employees: result.validRecords ? result.validRecords.length : 0,
           data: result
         });
       }
     } catch (error) {
-      console.error('Upload payroll error:', error);
-      
-      // Delete failed file from Cloudinary
-      if (req.file) {
-        try {
-          await cloudinary.uploader.destroy(req.file.filename, { resource_type: 'raw' });
-        } catch (deleteError) {
-          console.error('Failed to delete file from Cloudinary:', deleteError);
-        }
-      }
+      console.error('CRITICAL Upload payroll error:', error);
       
       res.status(500).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: 'Internal server error during payroll upload: ' + (error.message || 'Unknown error'),
+        error: error.message
       });
     }
   }
@@ -198,22 +244,68 @@ class PayrollController {
     }
   }
   
-  static async confirmBatch(req, res) {
+  static async approveBatch(req, res) {
     try {
       const { batchId } = req.params;
-      const confirmedBy = req.userId;
+      const approvedBy = req.userId;
       
-      const result = await Payroll.confirmPayrollBatch(batchId, confirmedBy);
+      const result = await Payroll.approvePayrollBatch(batchId, approvedBy);
       
-      await auditLog(confirmedBy, 'PAYROLL_BATCH_CONFIRM', 'payroll_batches', batchId, null, result, req.ip, req.get('User-Agent'));
+      await auditLog(approvedBy, 'PAYROLL_BATCH_APPROVE', 'payroll_batches', batchId, null, result, req.ip, req.get('User-Agent'));
       
       res.json({
         success: true,
-        message: 'Payroll batch confirmed and processed successfully',
+        message: 'Payroll batch approved successfully',
         data: result
       });
     } catch (error) {
-      console.error('Confirm payroll batch error:', error);
+      console.error('Approve payroll batch error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
+
+  static async processBatch(req, res) {
+    try {
+      const { batchId } = req.params;
+      const processedBy = req.userId;
+      
+      const result = await Payroll.processPayrollBatch(batchId, processedBy);
+      
+      await auditLog(processedBy, 'PAYROLL_BATCH_PROCESS', 'payroll_batches', batchId, null, result, req.ip, req.get('User-Agent'));
+      
+      res.json({
+        success: true,
+        message: 'Payroll batch processed successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Process payroll batch error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
+
+  static async reverseBatch(req, res) {
+    try {
+      const { batchId } = req.params;
+      const reversedBy = req.userId;
+      
+      const result = await Payroll.reversePayrollBatch(batchId, reversedBy);
+      
+      await auditLog(reversedBy, 'PAYROLL_BATCH_REVERSE', 'payroll_batches', batchId, null, result, req.ip, req.get('User-Agent'));
+      
+      res.json({
+        success: true,
+        message: 'Payroll batch reversed successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Reverse payroll batch error:', error);
       res.status(500).json({
         success: false,
         message: error.message || 'Internal server error'
