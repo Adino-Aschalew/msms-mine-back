@@ -5,6 +5,16 @@ import { savingsAPI } from '../../../shared/services/savingsAPI';
 import { loansAPI } from '../../../shared/services/loansAPI';
 
 const PayrollPage = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [searchTerm, setSearchTerm] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
   const [yearFilter, setYearFilter] = useState('2024');
@@ -148,7 +158,7 @@ const PayrollPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Monthly Salary</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {currentMonthStats.salary.toLocaleString()} ETB
+                  {formatCompactNumber(currentMonthStats.salary)}
                 </p>
                 <div className="flex items-center mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium">
                   <FiTrendingUp className="mr-1" />
@@ -166,7 +176,7 @@ const PayrollPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Deductions</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {currentMonthStats.totalDeductions.toLocaleString()} ETB
+                  {formatCompactNumber(currentMonthStats.totalDeductions)}
                 </p>
                 <div className="flex items-center mt-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
                   <FiActivity className="mr-1" />
@@ -184,7 +194,7 @@ const PayrollPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Net Pay</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {currentMonthStats.netPay.toLocaleString()} ETB
+                  {formatCompactNumber(currentMonthStats.netPay)}
                 </p>
                 <div className="flex items-center mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
                   <FiTarget className="mr-1" />
@@ -289,17 +299,17 @@ const PayrollPage = () => {
                           <div className="text-xs text-gray-500 dark:text-gray-400">{new Date(payroll.payDate).toLocaleDateString()}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
-                          {payroll.salary.toLocaleString()} ETB
+                          {formatCompactNumber(payroll.salary)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            <div>Savings: {payroll.savingsDeduction.toLocaleString()} ETB</div>
-                            <div>Loan: {payroll.loanDeduction.toLocaleString()} ETB</div>
+                            <div>Savings: {formatCompactNumber(payroll.savingsDeduction)}</div>
+                            <div>Loan: {formatCompactNumber(payroll.loanDeduction)}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-green-600 dark:text-green-400">
-                            {payroll.netPay.toLocaleString()} ETB
+                            {formatCompactNumber(payroll.netPay)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -327,14 +337,14 @@ const PayrollPage = () => {
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Gross Salary</span>
                   <span className="font-bold text-gray-900 dark:text-white">
-                    {currentMonthStats.salary.toLocaleString()} ETB
+                    {formatCompactNumber(currentMonthStats.salary)}
                   </span>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Savings</span>
                     <span className="font-medium text-red-600 dark:text-red-400">
-                      -{currentMonthStats.savingsDeduction.toLocaleString()} ETB
+                      -{formatCompactNumber(currentMonthStats.savingsDeduction)}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
@@ -345,7 +355,7 @@ const PayrollPage = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Loan Repayment</span>
                     <span className="font-medium text-red-600 dark:text-red-400">
-                      -{currentMonthStats.loanDeduction.toLocaleString()} ETB
+                      -{formatCompactNumber(currentMonthStats.loanDeduction)}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
@@ -356,7 +366,7 @@ const PayrollPage = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Other Deductions</span>
                     <span className="font-medium text-red-600 dark:text-red-400">
-                      -{currentMonthStats.otherDeductions.toLocaleString()} ETB
+                      -{formatCompactNumber(currentMonthStats.otherDeductions)}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
@@ -367,7 +377,7 @@ const PayrollPage = () => {
                   <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-900/50">
                     <span className="text-sm font-bold text-gray-900 dark:text-white">Net Pay</span>
                     <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                      {currentMonthStats.netPay.toLocaleString()} ETB
+                      {formatCompactNumber(currentMonthStats.netPay)}
                     </span>
                   </div>
                 </div>
@@ -384,25 +394,25 @@ const PayrollPage = () => {
                 <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Salary</span>
                   <span className="font-bold text-blue-600 dark:text-blue-400">
-                    {yearStats.totalSalary.toLocaleString()} ETB
+                    {formatCompactNumber(yearStats.totalSalary)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Savings</span>
                   <span className="font-bold text-green-600 dark:text-green-400">
-                    {yearStats.totalSavings.toLocaleString()} ETB
+                    {formatCompactNumber(yearStats.totalSavings)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Loan Repayments</span>
                   <span className="font-bold text-orange-600 dark:text-orange-400">
-                    {yearStats.totalLoanRepayments.toLocaleString()} ETB
+                    {formatCompactNumber(yearStats.totalLoanRepayments)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-900/50">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Net Pay</span>
                   <span className="font-bold text-purple-600 dark:text-purple-400">
-                    {yearStats.totalNetPay.toLocaleString()} ETB
+                    {formatCompactNumber(yearStats.totalNetPay)}
                   </span>
                 </div>
               </div>

@@ -7,6 +7,16 @@ const Transactions = ({ filter = 'all' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState(filter);
 
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const transactions = [
     { id: 1, description: 'Client Payment - Tech Solutions', amount: 15000, type: 'income', status: 'completed', date: '2024-03-15', category: 'Sales' },
     { id: 2, description: 'Office Rent Payment', amount: -3500, type: 'expense', status: 'completed', date: '2024-03-14', category: 'Operations' },
@@ -49,7 +59,7 @@ const Transactions = ({ filter = 'all' }) => {
             <div>
               <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Total Balance</p>
               <p className="text-3xl font-bold text-blue-600">
-                ${(totalIncome - totalExpenses).toLocaleString()}
+                {formatCompactNumber(totalIncome - totalExpenses)}
               </p>
             </div>
             <ArrowRightLeft className="h-10 w-10 text-blue-500" />
@@ -61,7 +71,7 @@ const Transactions = ({ filter = 'all' }) => {
             <div>
               <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Total Income</p>
               <p className="text-3xl font-bold text-green-600">
-                ${totalIncome.toLocaleString()}
+                {formatCompactNumber(totalIncome)}
               </p>
             </div>
             <ArrowUpRight className="h-10 w-10 text-green-500" />
@@ -73,7 +83,7 @@ const Transactions = ({ filter = 'all' }) => {
             <div>
               <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Total Expenses</p>
               <p className="text-3xl font-bold text-red-600">
-                ${totalExpenses.toLocaleString()}
+                {formatCompactNumber(totalExpenses)}
               </p>
             </div>
             <ArrowDownRight className="h-10 w-10 text-red-500" />
@@ -153,7 +163,7 @@ const Transactions = ({ filter = 'all' }) => {
                     <span className={`font-medium ${
                       transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.amount > 0 ? '+' : ''}${transaction.amount.toLocaleString()}
+                      {transaction.amount > 0 ? '+' : ''}{formatCompactNumber(Math.abs(transaction.amount))}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

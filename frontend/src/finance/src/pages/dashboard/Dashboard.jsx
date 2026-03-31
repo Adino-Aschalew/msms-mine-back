@@ -23,6 +23,16 @@ import { financeAPI } from '../../../../shared/services/financeAPI';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
 
 const Dashboard = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [dateRange, setDateRange] = useState('30days');
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,11 +46,35 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await financeAPI.getDashboardData({ period: dateRange });
       setDashboardData(response);
     } catch (err) {
-      setError('Failed to fetch finance dashboard data');
+      // Check if it's a network/connection error
+      if (err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED')) {
+        setError('Unable to connect to the server. Please check if the backend is running.');
+      } else {
+        setError('Failed to fetch finance dashboard data');
+      }
       console.error('Finance Dashboard error:', err);
+      
+      // Set fallback data to prevent complete failure
+      setDashboardData({
+        revenue: 0,
+        expenses: 0,
+        netProfit: 0,
+        revenueGrowth: 0,
+        expensesGrowth: 0,
+        profitGrowth: 0,
+        cashBalance: 0,
+        cashChange: 0,
+        accountsReceivable: 0,
+        receivableChange: 0,
+        accountsPayable: 0,
+        payableChange: 0,
+        expenseBreakdown: [],
+        monthlyCashFlow: []
+      });
     } finally {
       setLoading(false);
     }
@@ -50,7 +84,7 @@ const Dashboard = () => {
   const kpiData = [
     {
       title: 'Revenue',
-      value: `${(dashboardData?.revenue || 0).toLocaleString()} ETB`,
+      value: formatCompactNumber(dashboardData?.revenue || 0),
       change: `+${dashboardData?.revenueGrowth || '0'}%`,
       trend: dashboardData?.revenueGrowth >= 0 ? 'up' : 'down',
       icon: DollarSign,
@@ -58,7 +92,7 @@ const Dashboard = () => {
     },
     {
       title: 'Expenses',
-      value: `${(dashboardData?.expenses || 0).toLocaleString()} ETB`,
+      value: formatCompactNumber(dashboardData?.expenses || 0),
       change: `+${dashboardData?.expensesGrowth || '0'}%`,
       trend: dashboardData?.expensesGrowth >= 0 ? 'up' : 'down',
       icon: CreditCard,
@@ -66,7 +100,7 @@ const Dashboard = () => {
     },
     {
       title: 'Net Profit',
-      value: `${(dashboardData?.netProfit || 0).toLocaleString()} ETB`,
+      value: formatCompactNumber(dashboardData?.netProfit || 0),
       change: `+${dashboardData?.profitGrowth || '0'}%`,
       trend: dashboardData?.profitGrowth >= 0 ? 'up' : 'down',
       icon: TrendingUp,
@@ -74,7 +108,7 @@ const Dashboard = () => {
     },
     {
       title: 'Cash Balance',
-      value: `${(dashboardData?.cashBalance || 0).toLocaleString()} ETB`,
+      value: formatCompactNumber(dashboardData?.cashBalance || 0),
       change: `${dashboardData?.cashChange >= 0 ? '+' : ''}${dashboardData?.cashChange || '0'}%`,
       trend: dashboardData?.cashChange >= 0 ? 'up' : 'down',
       icon: Wallet,
@@ -82,7 +116,7 @@ const Dashboard = () => {
     },
     {
       title: 'Accounts Receivable',
-      value: `${(dashboardData?.accountsReceivable || 0).toLocaleString()} ETB`,
+      value: formatCompactNumber(dashboardData?.accountsReceivable || 0),
       change: `${dashboardData?.receivableChange >= 0 ? '+' : ''}${dashboardData?.receivableChange || '0'}%`,
       trend: dashboardData?.receivableChange >= 0 ? 'up' : 'down',
       icon: ArrowUpRight,
@@ -90,7 +124,7 @@ const Dashboard = () => {
     },
     {
       title: 'Accounts Payable',
-      value: `${(dashboardData?.accountsPayable || 0).toLocaleString()} ETB`,
+      value: formatCompactNumber(dashboardData?.accountsPayable || 0),
       change: `+${dashboardData?.payableChange || '0'}%`,
       trend: dashboardData?.payableChange >= 0 ? 'up' : 'down',
       icon: ArrowDownRight,

@@ -4,6 +4,16 @@ import { formatDistanceToNow, isValid, parseISO } from 'date-fns';
 import { financeAPI } from '../../../../shared/services/financeAPI';
 
 const RecentTransactionsTable = ({ limit = 10 }) => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [transactions, setTransactions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -106,7 +116,7 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
                     : 'text-blue-600 dark:text-blue-400'
                 }`}>
                   {['income', 'contribution'].includes(String(transaction.type).toLowerCase()) ? '+' : ['expense', 'withdrawal', 'payment'].includes(String(transaction.type).toLowerCase()) ? '-' : ''}
-                  {parseFloat(transaction.amount || 0).toLocaleString()} ETB
+                  {formatCompactNumber(parseFloat(transaction.amount || 0))}
                 </p>
               </td>
               <td className="py-3">

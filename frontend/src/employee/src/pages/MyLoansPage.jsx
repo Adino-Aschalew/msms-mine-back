@@ -4,6 +4,16 @@ import { Link } from 'react-router-dom';
 import { loansAPI } from '../../../shared/services/loansAPI';
 
 const MyLoansPage = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -138,7 +148,7 @@ const MyLoansPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Outstanding</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                {loading ? '...' : loans.reduce((sum, loan) => sum + loan.remainingBalance, 0).toLocaleString()} ETB
+                {loading ? '...' : formatCompactNumber(loans.reduce((sum, loan) => sum + loan.remainingBalance, 0))}
               </p>
             </div>
             <div className="p-3 bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400 rounded-lg">
@@ -152,7 +162,7 @@ const MyLoansPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Payment</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                {loading ? '...' : loans.reduce((sum, loan) => sum + loan.monthlyInstallment, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                {loading ? '...' : formatCompactNumber(loans.reduce((sum, loan) => sum + loan.monthlyInstallment, 0))}
               </p>
             </div>
             <div className="p-3 bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400 rounded-lg">
@@ -257,20 +267,20 @@ const MyLoansPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {loan.requestedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                    {formatCompactNumber(loan.requestedAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {loan.approvedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                    {formatCompactNumber(loan.approvedAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {loan.loanDuration} months
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {loan.monthlyInstallment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                    {formatCompactNumber(loan.monthlyInstallment)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     <div>
-                      <div className="text-sm font-medium">{loan.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB</div>
+                      <div className="text-sm font-medium">{formatCompactNumber(loan.remainingBalance)}</div>
                       {loan.status === 'active' && (
                         <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                           <div

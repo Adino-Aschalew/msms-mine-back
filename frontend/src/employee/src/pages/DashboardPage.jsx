@@ -6,6 +6,18 @@ import { loansAPI } from '../services/api';
 import { savingsAPI } from '../../../shared/services/savingsAPI';
 
 const DashboardPage = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }else if (num >= 10000) {
+      return (num / 10000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [dashboardData, setDashboardData] = useState({
     stats: {
       savingsBalance: 0,
@@ -204,7 +216,7 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Monthly Salary"
-          value={`${dashboardData.stats.salary.toLocaleString()} ETB`}
+          value={`${formatCompactNumber(dashboardData.stats.salary)}`}
           change="Your gross monthly income"
           changeType="neutral"
           icon={<FiDollarSign className="w-6 h-6" />}
@@ -212,7 +224,7 @@ const DashboardPage = () => {
         />
         <StatCard
           title="Savings Balance"
-          value={`${dashboardData.stats.savingsBalance.toLocaleString()} ETB`}
+          value={`${formatCompactNumber(dashboardData.stats.savingsBalance)}`}
           change={dashboardData.stats.savingsBalance > 0 ? "Total accumulated savings" : "Start your savings today"}
           changeType="positive"
           icon={<FiTrendingUp className="w-6 h-6" />}
@@ -236,7 +248,7 @@ const DashboardPage = () => {
         />
         <StatCard
           title="Outstanding Balance"
-          value={`${dashboardData.stats.outstandingLoanBalance.toLocaleString()} ETB`}
+          value={`${formatCompactNumber(dashboardData.stats.outstandingLoanBalance)}`}
           change={dashboardData.stats.outstandingLoanBalance > 0 ? "Remaining principal + interest" : "No active loan debt"}
           changeType={dashboardData.stats.outstandingLoanBalance > 0 ? "negative" : "positive"}
           icon={<FiDollarSign className="w-6 h-6" />}
@@ -244,7 +256,7 @@ const DashboardPage = () => {
         />
         <StatCard
           title="Monthly Deduction"
-          value={`${dashboardData.stats.monthlyPayrollDeduction.toLocaleString()} ETB`}
+          value={`${formatCompactNumber(dashboardData.stats.monthlyPayrollDeduction)}`}
           change={`Next: ${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`}
           changeType="neutral"
           icon={<FiCalendar className="w-6 h-6" />}

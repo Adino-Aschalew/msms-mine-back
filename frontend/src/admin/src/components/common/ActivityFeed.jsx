@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserPlus, Settings, UserCheck, Clock } from 'lucide-react';
+import { UserPlus, Settings, UserCheck, Clock3 } from 'lucide-react';
 
 const ActivityFeed = ({ activities }) => {
   const getActivityIcon = (type) => {
@@ -11,7 +11,7 @@ const ActivityFeed = ({ activities }) => {
       case 'settings_updated':
         return <Settings className="h-4 w-4 text-purple-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
+        return <Clock3 className="h-4 w-4 text-gray-600" />;
     }
   };
 

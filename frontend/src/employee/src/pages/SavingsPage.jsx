@@ -4,6 +4,22 @@ import StatCard from '../components/Shared/StatCard';
 import { LineChart } from '../components/Shared/Chart';
 import { savingsAPI } from '../../../shared/services/savingsAPI';
 
+const formatCompactETB = (value) => {
+  if (value >= 1000000) {
+    return (value / 1000000).toFixed(2).replace(/\.00$/, '') + ' METB';
+  }
+  if (value > 100000) {
+    return (value / 100000).toFixed(2).replace(/\.00$/, '') + 'KETB'
+  }
+  if (value > 10000) {
+    return (value / 10000).toFixed(2).replace(/\.00$/, '') + 'KETB'
+  }
+  if (value >= 1000) {
+    return (value / 1000).toFixed(2).replace(/\.00$/, '') + ' KETB';
+  }
+  return value.toLocaleString() + ' ETB';
+};
+
 const SavingsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [savingRate, setSavingRate] = useState(25);
@@ -23,6 +39,8 @@ const SavingsPage = () => {
     currentRate: 25,
     monthlyDeduction: 0,
     totalContributions: 0,
+    interestEarned: 0,
+    interestRate: 7, // Based on schema.sql system_configuration default
     salary: 0,
     hasAccount: false,
   });
@@ -32,7 +50,7 @@ const SavingsPage = () => {
     labels: [],
     datasets: []
   });
-  
+
   const parsedRate = parseInt(savingInput);
   const isRateValid = !isNaN(parsedRate) && parsedRate >= 15 && parsedRate <= 65;
   const estimatedDeduction = isRateValid ? (savingsData.salary * parsedRate / 100) : 0;
@@ -44,24 +62,26 @@ const SavingsPage = () => {
   const loadSavingsData = async () => {
     try {
       setLoading(true);
-      
+
       let currentSalary = 0;
       let currentBalance = 0;
 
       try {
         // Get savings account data (summary includes extra stats)
         const account = await savingsAPI.getSavingsAccount();
-        
+
         if (account) {
           currentSalary = parseFloat(account.salary || 0);
           currentBalance = parseFloat(account.current_balance || 0);
           const rate = parseFloat(account.saving_percentage || 25);
-          
+
           setSavingsData({
             totalBalance: currentBalance,
             currentRate: rate,
             monthlyDeduction: (currentSalary * rate / 100),
             totalContributions: parseFloat(account.total_contributions || 0),
+            interestEarned: parseFloat(account.interest_earned || 0),
+            interestRate: 7, // This could be fetched from system_configuration if needed
             salary: currentSalary,
             hasAccount: true,
           });
@@ -77,6 +97,8 @@ const SavingsPage = () => {
           currentRate: 25,
           monthlyDeduction: 0,
           totalContributions: 0,
+          interestEarned: 0,
+          interestRate: 7,
           salary: 0,
           hasAccount: false,
         });
@@ -88,7 +110,7 @@ const SavingsPage = () => {
         // Get payroll history (contributions)
         const result = await savingsAPI.getSavingsTransactions(1, 20);
         const transactions = result?.transactions || [];
-        
+
         const history = transactions
           .filter(t => t.transaction_type === 'CONTRIBUTION' || t.transaction_type === 'INTEREST')
           .map(t => ({
@@ -100,7 +122,7 @@ const SavingsPage = () => {
             deductionAmount: parseFloat(t.amount),
             balance: parseFloat(t.balance_after)
           }));
-        
+
         setPayrollHistory(history);
       } catch (historyError) {
         console.log('No transaction history found');
@@ -111,7 +133,7 @@ const SavingsPage = () => {
         // Get withdrawal requests
         const result = await savingsAPI.getSavingsTransactions(1, 10, { transaction_type: 'WITHDRAWAL' });
         const transactions = result?.transactions || [];
-        
+
         setWithdrawalRequests(transactions.map(t => ({
           id: `WDL-${t.id}`,
           date: t.transaction_date,
@@ -162,23 +184,23 @@ const SavingsPage = () => {
 
   const handleSavingConfirm = async () => {
     if (!isRateValid) return;
-    
+
     try {
       setLoading(true);
       await savingsAPI.updateSavingPercentage(parsedRate);
-      
+
       setSavingRate(parsedRate);
       setShowSavingSuccess(true);
-      
+
       // Update local data
       setSavingsData(prev => ({
         ...prev,
         currentRate: parsedRate,
         monthlyDeduction: (prev.salary * parsedRate / 100)
       }));
-      
+
       console.log(`Saving rate updated to ${parsedRate}%`);
-      
+
     } catch (error) {
       console.error('Failed to update saving rate:', error);
     } finally {
@@ -188,24 +210,24 @@ const SavingsPage = () => {
 
   const handleWithdrawalSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
-      
+
       await savingsAPI.withdrawSavings(
         savingsData.totalBalance,
         withdrawalForm.reason,
         withdrawalForm.supportingDocument
       );
-      
+
       setShowWithdrawalForm(false);
       setWithdrawalForm({ reason: '', supportingDocument: null, confirmation: false });
       setShowWithdrawalSuccess(true);
-      
+
       console.log('Withdrawal request submitted successfully');
-      
+
       await loadSavingsData();
-      
+
     } catch (error) {
       console.error('Failed to submit withdrawal request:', error);
     } finally {
@@ -286,7 +308,7 @@ const SavingsPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Savings Balance"
-          value={`${savingsData.totalBalance.toLocaleString()} ETB`}
+          value={formatCompactETB(savingsData.totalBalance)}
           change={savingsData.totalBalance > 0 ? "Total accumulated savings" : "No balance yet"}
           changeType={savingsData.totalBalance > 0 ? "positive" : "neutral"}
           icon={<FiTrendingUp className="w-6 h-6" />}
@@ -302,7 +324,7 @@ const SavingsPage = () => {
         />
         <StatCard
           title="Monthly Deduction"
-          value={`${savingsData.monthlyDeduction.toLocaleString()} ETB`}
+          value={formatCompactETB(savingsData.monthlyDeduction)}
           change={`Next: ${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`}
           changeType="neutral"
           icon={<FiCalendar className="w-6 h-6" />}
@@ -310,11 +332,27 @@ const SavingsPage = () => {
         />
         <StatCard
           title="Total Contributions"
-          value={`${savingsData.totalContributions.toLocaleString()} ETB`}
+          value={formatCompactETB(savingsData.totalContributions)}
           change={savingsData.totalContributions > 0 ? "Sum of all deposits" : "No contributions yet"}
           changeType="neutral"
           icon={<FiDownload className="w-6 h-6" />}
           color="primary"
+        />
+        <StatCard
+          title="Interest Rate"
+          value={`${savingsData.interestRate}%`}
+          change="Annual interest rate"
+          changeType="positive"
+          icon={<FiTrendingUp className="w-6 h-6" />}
+          color="success"
+        />
+        <StatCard
+          title="Interest Earned"
+          value={formatCompactETB(savingsData.interestEarned)}
+          change={savingsData.interestEarned > 0 ? "Accumulated interest" : "No interest yet"}
+          changeType="positive"
+          icon={<FiTrendingUp className="w-6 h-6" />}
+          color="success"
         />
       </div>
 
@@ -383,11 +421,10 @@ const SavingsPage = () => {
                                 setSavingInput(String(Math.min(65, Math.max(15, val))));
                               }
                             }}
-                            className={`w-full px-4 py-3 bg-white dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-xl font-black text-gray-900 dark:text-white pr-10 ${
-                              savingInput !== '' && !isRateValid
-                                ? 'border-red-400 focus:ring-red-400/10'
-                                : 'border-gray-200 dark:border-gray-700'
-                            }`}
+                            className={`w-full px-4 py-3 bg-white dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-xl font-black text-gray-900 dark:text-white pr-10 ${savingInput !== '' && !isRateValid
+                              ? 'border-red-400 focus:ring-red-400/10'
+                              : 'border-gray-200 dark:border-gray-700'
+                              }`}
                             placeholder="e.g. 25"
                           />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
@@ -468,7 +505,7 @@ const SavingsPage = () => {
                     <h2 className="text-3xl font-bold mb-2">Savings Withdrawal</h2>
                     <p className="text-gray-300">Request access to your accumulated savings</p>
                   </div>
-                  
+
                   <div className="bg-white/5 rounded-xl p-6 border border-white/10">
                     <div className="text-center">
                       <p className="text-sm text-gray-300 mb-1">Available Balance</p>
@@ -522,14 +559,14 @@ const SavingsPage = () => {
                         You can request a full withdrawal of your savings balance. This action cannot be undone.
                       </p>
                     </div>
-                    
+
                     <button
                       onClick={() => setShowWithdrawalForm(true)}
                       className="w-full bg-blue-600 text-white py-4 px-8 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
                     >
                       Start Withdrawal Request
                     </button>
-                    
+
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
                       By proceeding, you acknowledge that this is a full withdrawal request.
                     </p>
@@ -652,7 +689,7 @@ const SavingsPage = () => {
                           />
                           <div>
                             <span className="text-sm text-gray-700 dark:text-gray-300">
-                              I understand that this is a full withdrawal request and my savings balance will be reset to zero upon approval. 
+                              I understand that this is a full withdrawal request and my savings balance will be reset to zero upon approval.
                               I also acknowledge that this action cannot be undone and future contributions will start a new savings cycle.
                             </span>
                             <span className="text-red-500 ml-1">*</span>
@@ -823,9 +860,9 @@ const SavingsPage = () => {
               <div className="absolute inset-0 bg-blue-400/20 rounded-full animate-ping duration-1000"></div>
               <FiTrendingUp className="w-12 h-12 text-blue-600 dark:text-blue-400 relative z-10" />
             </div>
-            
+
             <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-4">Account Activated!</h3>
-            
+
             <div className="space-y-4 mb-10">
               <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Standard Saving Rate</p>

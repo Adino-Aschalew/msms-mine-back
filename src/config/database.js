@@ -11,11 +11,14 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // Additional options for MySQL compatibility
-  acquireTimeout: 60000,
-  timeout: 60000,
+  // Remove problematic options that might cause connection issues
+  // acquireTimeout: 60000,
+  // timeout: 60000,
   reconnect: true,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  // Add connection retry logic
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 };
 
 const pool = mysql.createPool(dbConfig);

@@ -2,6 +2,7 @@ CREATE DATABASE IF NOT EXISTS microfinance_system CHARACTER SET utf8mb4 COLLATE 
 USE microfinance_system;
 SET FOREIGN_KEY_CHECKS = 0;
 
+
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id VARCHAR(50) UNIQUE NOT NULL,
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_reset_token (reset_token),
     INDEX idx_reset_token_expiry (reset_token_expiry)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS employee_profiles (
     profile_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -60,6 +62,7 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
     INDEX idx_department (department)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 CREATE TABLE IF NOT EXISTS savings_accounts (
     account_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -82,6 +85,7 @@ CREATE TABLE IF NOT EXISTS savings_accounts (
     INDEX idx_last_contribution_date (last_contribution_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 CREATE TABLE IF NOT EXISTS savings_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     savings_account_id INT NOT NULL,
@@ -103,6 +107,7 @@ CREATE TABLE IF NOT EXISTS savings_transactions (
     INDEX idx_payroll_batch_id (payroll_batch_id),
     INDEX idx_reference_id (reference_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS loan_applications (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -129,6 +134,7 @@ CREATE TABLE IF NOT EXISTS loan_applications (
     INDEX idx_created_at (created_at),
     INDEX idx_reviewed_by (reviewed_by)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS loans (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -163,6 +169,7 @@ CREATE TABLE IF NOT EXISTS loans (
     INDEX idx_disbursement_date (disbursement_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 CREATE TABLE IF NOT EXISTS loan_repayments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     loan_id INT NOT NULL,
@@ -187,6 +194,7 @@ CREATE TABLE IF NOT EXISTS loan_repayments (
     INDEX idx_due_date (due_date),
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS guarantors (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -217,6 +225,7 @@ CREATE TABLE IF NOT EXISTS guarantors (
     INDEX idx_approved_by (approved_by)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 CREATE TABLE IF NOT EXISTS payroll_batches (
     id INT AUTO_INCREMENT PRIMARY KEY,
     batch_name VARCHAR(200) NOT NULL,
@@ -243,6 +252,7 @@ CREATE TABLE IF NOT EXISTS payroll_batches (
     INDEX idx_cloudinary_url (cloudinary_url)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 CREATE TABLE IF NOT EXISTS payroll_details (
     id INT AUTO_INCREMENT PRIMARY KEY,
     payroll_batch_id INT NOT NULL,
@@ -268,6 +278,7 @@ CREATE TABLE IF NOT EXISTS payroll_details (
     INDEX idx_payment_date (payment_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 CREATE TABLE IF NOT EXISTS system_configuration (
     id INT AUTO_INCREMENT PRIMARY KEY,
     config_key VARCHAR(100) UNIQUE NOT NULL,
@@ -281,6 +292,7 @@ CREATE TABLE IF NOT EXISTS system_configuration (
     INDEX idx_is_active (is_active),
     INDEX idx_config_type (config_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -300,6 +312,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     INDEX idx_created_at (created_at),
     INDEX idx_record_id (record_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS penalties (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -324,6 +337,7 @@ CREATE TABLE IF NOT EXISTS penalties (
     INDEX idx_reference_id (reference_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 CREATE TABLE IF NOT EXISTS ai_forecasts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     forecast_type ENUM('USER_REGISTRATION','LOAN_DEMAND','LIQUIDITY','RISK_INDICATORS') NOT NULL,
@@ -343,6 +357,7 @@ CREATE TABLE IF NOT EXISTS ai_forecasts (
     INDEX idx_created_at (created_at),
     INDEX idx_model_version (model_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS generated_reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -380,54 +395,74 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_notification_type (notification_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO system_configuration (config_key, config_value, config_type, description) VALUES
-('savings_interest_rate', '7.00', 'NUMBER', 'Annual savings interest rate (%)'),
-('min_saving_percentage', '15.00', 'NUMBER', 'Minimum savings deduction % of salary'),
-('max_saving_percentage', '65.00', 'NUMBER', 'Maximum savings deduction % of salary'),
-('savings_lock_period_months', '6', 'NUMBER', 'Months before savings can be withdrawn'),
-('loan_interest_rate', '11.00', 'NUMBER', 'Annual loan interest rate (%)'),
-('min_loan_eligibility_months', '6', 'NUMBER', 'Minimum months of savings required for loan'),
-('max_loan_multiplier', '6', 'NUMBER', 'Max loan = multiplier × total savings balance'),
-('min_loan_duration_months', '6', 'NUMBER', 'Minimum loan repayment period (months)'),
-('max_loan_duration_months', '60', 'NUMBER', 'Maximum loan repayment period (months)'),
-('max_guarantors_per_loan', '2', 'NUMBER', 'Maximum guarantors allowed per loan'),
-('min_guarantor_income_ratio', '0.5', 'NUMBER', 'Guarantor income must be ≥ this × loan amount'),
-('penalty_days_threshold', '10', 'NUMBER', 'Days grace before missed-savings penalty kicks in'),
-('penalty_rate_percentage', '2.00', 'NUMBER', 'Penalty as % of savings balance'),
-('system_maintenance_mode', 'false', 'BOOLEAN', 'Put system into maintenance mode'),
-('max_file_upload_size_mb', '10', 'NUMBER', 'Maximum uploaded file size in MB'),
-('allowed_file_types', 'csv,xlsx,xls', 'STRING', 'Accepted payroll upload file extensions'),
-('automatic_interest_calculation', 'true', 'BOOLEAN', 'Run monthly interest calculation automatically'),
-('payroll_auto_confirmation', 'false', 'BOOLEAN', 'Auto-confirm payroll after validation');
 
-INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified, first_name, last_name)
-VALUES ('ADMIN001', 'admin@msms.com', 'admin@msms.com',
-        '$2a$12$3vrgkj5a6NA8J44HJ5H1AeG5JzQKUlaAEdGxSK2pVXPTfB32AghWm',
-        'ADMIN', TRUE, TRUE, 'System', 'Administrator'),
-       ('HR001', 'hr@msms.com', 'hr@msms.com',
-        '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-        'HR', TRUE, TRUE, 'HR', 'Manager'),
-       ('FIN001', 'finance@msms.com', 'finance@msms.com',
-        '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-        'FINANCE_ADMIN', TRUE, TRUE, 'Finance', 'Manager'),
-       ('LOAN001', 'loancommittee@msms.com', 'loancommittee@msms.com',
-        '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-        'LOAN_COMMITTEE', TRUE, TRUE, 'Loan', 'Committee'),
-       ('EMP001', 'EMP001', 'john.doe@msms.com',
-        '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
-        'EMPLOYEE', TRUE, TRUE, 'John', 'Doe');
-
-INSERT INTO employee_profiles
-    (user_id, employee_id, first_name, last_name, department, job_grade,
-     employment_status, hire_date, hr_verified, hr_verification_date, grandfather_name, salary, job_role)
+INSERT INTO users
+    (employee_id, username, email, password_hash, role, is_active, email_verified, first_name, last_name)
 VALUES
-    (1, 'ADMIN001', 'System', 'Administrator', 'IT', 'ADMIN', 'ACTIVE', '2024-01-01', TRUE, NOW(), NULL, NULL, NULL),
-    (2, 'HR001', 'HR', 'Manager', 'Human Resources', 'MANAGER', 'ACTIVE', '2024-01-01', TRUE, NOW(), NULL, NULL, NULL),
-    (3, 'FIN001', 'Finance', 'Manager', 'Finance', 'MANAGER', 'ACTIVE', '2024-01-01', TRUE, NOW(), NULL, NULL, NULL),
-    (4, 'LOAN001', 'Loan', 'Committee', 'Loans', 'CHAIR', 'ACTIVE', '2024-01-01', TRUE, NOW(), NULL, NULL, NULL),
-    (5, 'EMP001', 'John', 'Doe', 'Engineering', 'SENIOR_DEVELOPER', 'ACTIVE', '2024-01-15', TRUE, NOW(), NULL, 15000.00, 'Developer');
+    -- Admin
+    ('ADMIN001', 'admin@msms.com', 'admin@msms.com',
+     '$2a$12$3vrgkj5a6NA8J44HJ5H1AeG5JzQKUlaAEdGxSK2pVXPTfB32AghWm',
+     'ADMIN', TRUE, TRUE, 'System', 'Administrator'),
 
-INSERT INTO savings_accounts (user_id, employee_id, saving_percentage, current_balance, account_status, interest_earned)
-VALUES (5, 'EMP001', 25.00, 5000.00, 'ACTIVE', 125.00);
+    -- HR
+    ('HR001', 'hr@msms.com', 'hr@msms.com',INSERT INTO employee_profiles
+    (user_id, employee_id, first_name, last_name, grandfather_name,
+     department, job_grade, job_title, employment_status, status,
+     hire_date, phone, phone_number, address, committee_level,
+     salary, job_role, hr_verified, hr_verification_date,
+     created_at, updated_at)
+VALUES
+    -- Admin (IT)
+    (1, 'ADMIN001', 'System', 'Administrator', 'Girma',
+     'IT', 'ADMIN', 'System Administrator',
+     'ACTIVE', 'active', '2024-01-01',
+     '+251910000001', '+251910000001', 'Somewhere, Addis Ababa',
+     1, 80000.00, 'Superuser', TRUE, NOW(), NOW(), NOW()),
 
-SET FOREIGN_KEY_CHECKS = 1;
+    -- HR
+    (2, 'HR001', 'Abebe', 'HR', 'Tesfaye',
+     'Human Resources', 'MANAGER', 'HR Manager',
+     'ACTIVE', 'active', '2024-01-01',
+     '+251910000002', '+251910000002', 'Somewhere, Addis Ababa',
+     1, 60000.00, 'HR Operations', TRUE, NOW(), NOW(), NOW()),
+
+    -- Finance
+    (3, 'FIN001', 'Kalkidan', 'Finance', 'Teshome',
+     'Finance', 'MANAGER', 'Finance Manager',
+     'ACTIVE', 'active', '2024-01-01',
+     '+251910000003', '+251910000003', 'Somewhere, Addis Ababa',
+     1, 65000.00, 'Financial Oversight', TRUE, NOW(), NOW(), NOW()),
+
+    -- Loan Committee (Chair)
+    (4, 'LOAN001', 'Mikael', 'LoanCommittee', 'Bekele',
+     'Loans', 'CHAIR', 'Loan Committee Chair',
+     'ACTIVE', 'active', '2024-01-01',
+     '+251910000004', '+251910000004', 'Somewhere, Addis Ababa',
+     3, 55000.00, 'Credit Approval', TRUE, NOW(), NOW(), NOW()),
+
+    -- Regular Employee
+    (5, 'EMP001', 'John', 'Doe', 'Robert',
+     'Engineering', 'SENIOR_DEVELOPER', 'Software Developer',
+     'ACTIVE', 'active', '2024-01-15',
+     '+251910000005', '+251910000005', '123 Main St',
+     1, 45000.00, 'Backend Developer', TRUE, NOW(), NOW(), NOW());
+     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
+     'HR', TRUE, TRUE, 'Abebe', 'HR'),
+
+    -- Finance Admin
+    ('FIN001', 'finance@msms.com', 'finance@msms.com',
+     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
+     'FINANCE_ADMIN', TRUE, TRUE, 'Kalkidan', 'Finance'),
+
+    -- Loan Committee
+    ('LOAN001', 'loancommittee@msms.com', 'loancommittee@msms.com',
+     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
+     'LOAN_COMMITTEE', TRUE, TRUE, 'Mikael', 'LoanCommittee'),
+
+    -- Regular Employee
+    ('EMP001', 'EMP001', 'john.doe@msms.com',
+     '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW',
+     'EMPLOYEE', TRUE, TRUE, 'John', 'Doe');
+
+
+

@@ -1,4 +1,4 @@
-import { UserPlus, UserMinus, FileText, CheckCircle, RefreshCw, UserCheck, AlertCircle } from 'lucide-react';
+import { UserPlus, UserMinus, FileText, CheckCircle, RefreshCw, UserCheck, AlertCircle, Clock3 as Clock } from 'lucide-react';
 
 const getActivityConfig = (type) => {
   const configs = {

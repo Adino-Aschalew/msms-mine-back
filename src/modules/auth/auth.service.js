@@ -103,7 +103,7 @@ class AuthService {
     }
   }
 
-  static async login(identifier, password, role, ip, userAgent) {
+  static async login(identifier, password, ip, userAgent) {
     try {
       console.log('Login attempt - identifier:', identifier);
       
@@ -116,14 +116,22 @@ class AuthService {
       // Auto-detect login mode: email => admin/staff, employee_id => employee
       if (identifier.includes('@')) {
         // Email login: HR, ADMIN, FINANCE_ADMIN, LOAN_COMMITTEE
+        console.log('Attempting email-based login for:', identifier);
         user = await this.findByEmail(identifier);
         console.log('Email-based login, found user:', user ? `YES (role: ${user.role})` : 'NO');
         
         if (user && user.role === 'EMPLOYEE') {
           throw new Error('Employees must log in with their Employee ID, not email');
         }
+        
+        // Allow admin/staff users to log in with email
+        if (user && ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'].includes(user.role)) {
+          // Admin users can log in with email - this is correct
+          console.log('Admin/Staff login successful with email');
+        }
       } else {
         // Employee ID login
+        console.log('Attempting employee ID login for:', identifier);
         user = await this.findByEmployeeId(identifier.toUpperCase());
         console.log('Employee ID login, found user:', user ? `YES (role: ${user.role})` : 'NO');
         
@@ -137,17 +145,23 @@ class AuthService {
         await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
         throw new Error('Invalid credentials. Please check your username/ID and password.');
       }
-
+      
+      // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      console.log('Password valid:', isValidPassword);
       
       if (!isValidPassword) {
         console.log('Login failed: Invalid password');
-        await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
+        await auditLog(user.id, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
         throw new Error('Invalid credentials. Please check your username/ID and password.');
       }
-
-      await this.updateLastLogin(user.id);
+      
+      console.log('Login successful for user:', user.id, 'role:', user.role);
+      
+      // Update last login
+      await query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+      
+      // Create audit log
+      await auditLog(user.id, 'LOGIN_SUCCESS', 'users', null, null, { identifier }, ip, userAgent);
       
       const token = jwt.sign(
         { userId: user.id, employee_id: user.employee_id, role: user.role },
@@ -160,8 +174,6 @@ class AuthService {
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
       );
-
-      await auditLog(user.id, 'LOGIN_SUCCESS', 'users', user.id, null, null, ip, userAgent);
 
       return {
         user: {
@@ -285,14 +297,21 @@ class AuthService {
   }
 
   static async findByEmail(email) {
-    const selectQuery = `
-      SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
-      FROM users u
-      LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-      WHERE u.email = ?
-    `;
-    const users = await query(selectQuery, [email]);
-    return users[0] || null;
+    try {
+      console.log('Finding user by email:', email);
+      const selectQuery = `
+        SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
+        FROM users u
+        LEFT JOIN employee_profiles ep ON u.id = ep.user_id
+        WHERE u.email = ?
+      `;
+      const users = await query(selectQuery, [email]);
+      console.log('Query result:', users);
+      return users[0] || null;
+    } catch (error) {
+      console.error('Database error in findByEmail:', error);
+      throw error;
+    }
   }
 
   static async findById(userId) {

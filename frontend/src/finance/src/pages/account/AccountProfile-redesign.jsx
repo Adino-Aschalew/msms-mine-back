@@ -36,22 +36,11 @@ const AccountProfile = () => {
     confirmPassword: '',
   });
 
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return '2023';
-    try {
-      const date = new Date(dateString);
-      return date.getFullYear();
-    } catch {
-      return '2023';
-    }
-  };
-
   // Stats data for finance user
   const stats = [
     { label: 'Total Transactions', value: '1,234', icon: Activity, color: 'text-blue-600' },
-    { label: 'Account Balance', value: '45.6K', icon: Target, color: 'text-green-600' },
-    { label: 'Active Since', value: formatDate(profile.joinDate), icon: Calendar, color: 'text-purple-600' },
+    { label: 'Account Balance', value: '45.6KETB', icon: Target, color: 'text-green-600' },
+    { label: 'Active Since', value: profile.joinDate || '2023', icon: Calendar, color: 'text-purple-600' },
     { label: 'Security Level', value: 'High', icon: Shield, color: 'text-orange-600' },
   ];
 

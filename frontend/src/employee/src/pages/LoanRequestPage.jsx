@@ -1,56 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import {
-  FiDollarSign,
-  FiUsers,
-  FiFileText,
-  FiUpload,
-  FiCheck,
-  FiX,
-  FiAlertCircle,
-  FiInfo,
-  FiTrendingUp,
-  FiShield,
-  FiClock,
-  FiChevronRight,
-  FiArrowRight,
-  FiCreditCard,
-  FiCalendar,
-  FiTarget,
-  FiZap,
-  FiAward,
-  FiBriefcase,
-} from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { loansAPI } from '../../../shared/services/loansAPI';
 import { savingsAPI } from '../../../shared/services/savingsAPI';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
+import { DollarSign, Calendar, FileText, User, Building, Phone, Mail, Briefcase, CheckCircle, XCircle, AlertCircle, ChevronRight, Upload, CreditCard, Shield, TrendingUp } from 'lucide-react';
 
-/* ─── Reusable field label ─────────────────────────────────────────────── */
-const FieldLabel = ({ children, required }) => (
-  <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">
-    {children}{required && <span className="text-red-500 ml-0.5">*</span>}
+const FieldLabel = ({ children, required, icon }) => (
+  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+    {icon && <span className="text-gray-400">{icon}</span>}
+    {children} {required && <span className="text-red-500 ml-1">*</span>}
   </label>
 );
 
 const inputCls =
-  'w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors placeholder-gray-400';
+  'w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-100 placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 transition-all duration-200';
 
-const SectionCard = ({ title, children }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-    {title && (
-      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
-        <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">{title}</p>
-      </div>
-    )}
-    <div className="p-5">{children}</div>
-  </div>
-);
+const cardCls = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden';
+const headerCls = 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 px-6 py-4 border-b border-gray-100 dark:border-gray-700';
+const sectionTitleCls = 'text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2';
 
-/* ─── Component ────────────────────────────────────────────────────────── */
 const LoanRequestPage = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
   const [selectedLoanType, setSelectedLoanType] = useState(null);
+
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [formData, setFormData] = useState({
     requestedAmount: '',
     loanPurpose: '',
@@ -70,7 +52,6 @@ const LoanRequestPage = () => {
       workAddress: '',
       homeAddress: '',
     },
-    supportingDocument: null,
   });
 
   const [eligibility, setEligibility] = useState({
@@ -84,26 +65,25 @@ const LoanRequestPage = () => {
     savingsBalance: 0,
     salary: 0,
     employmentDuration: 0,
-    loading: true
+    loading: true,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [applicationStatus, setApplicationStatus] = useState('pending');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 3;
 
   useEffect(() => {
     const fetchProfileAndSavings = async () => {
       try {
         const [profileRes, savingsRes] = await Promise.all([
           employeeAPI.getProfile(),
-          savingsAPI.getSavingsAccount().catch(() => null)
+          savingsAPI.getSavingsAccount().catch(() => null),
         ]);
 
-        // Handle various response formats ( Axios vs Fetch vs Direct )
         const profileData = profileRes?.data || profileRes;
         const eProfile = profileData?.employeeProfile || profileData?.employee_profile || {};
-        
         const savingsData = savingsRes?.data || savingsRes;
 
         const hireDateStr = eProfile.hire_date || eProfile.created_at;
@@ -114,11 +94,11 @@ const LoanRequestPage = () => {
           savingsBalance: parseFloat(savingsData?.current_balance || 0),
           salary: parseFloat(eProfile.salary || 0),
           employmentDuration: Math.floor(daysEmployed / 30),
-          loading: false
+          loading: false,
         });
       } catch (error) {
         console.error('Error fetching profile for loan request:', error);
-        setEmployeeData(prev => ({ ...prev, loading: false }));
+        setEmployeeData((prev) => ({ ...prev, loading: false }));
       }
     };
 
@@ -126,53 +106,10 @@ const LoanRequestPage = () => {
   }, []);
 
   const loanTypes = [
-    {
-      id: 'emergency',
-      name: 'Emergency Loan',
-      maxAmount: 10000,
-      maxDuration: 12,
-      icon: FiZap,
-      description: 'Quick access funds for urgent situations',
-      features: ['Fast approval', 'Minimal documentation', '24-hour processing'],
-      apr: '8.5%',
-    },
-    {
-      id: 'personal',
-      name: 'Personal Loan',
-      maxAmount: 25000,
-      maxDuration: 36,
-      icon: FiUsers,
-      description: 'Flexible funding for personal needs and goals',
-      features: ['Flexible terms', 'Competitive rates', 'No collateral required'],
-      apr: '6.8%',
-    },
-    {
-      id: 'education',
-      name: 'Education Loan',
-      maxAmount: 20000,
-      maxDuration: 24,
-      icon: FiAward,
-      description: 'Invest in your education and future growth',
-      features: ['Career development', 'Skill enhancement', 'Academic support'],
-      apr: '5.2%',
-    },
-    {
-      id: 'medical',
-      name: 'Medical Loan',
-      maxAmount: 15000,
-      maxDuration: 18,
-      icon: FiShield,
-      description: 'Healthcare financing when you need it most',
-      features: ['Healthcare coverage', 'Medical procedures', 'Wellness programs'],
-      apr: '7.1%',
-    },
-  ];
-
-  const steps = [
-    { id: 1, title: 'Loan Type', icon: FiTarget },
-    { id: 2, title: 'Details', icon: FiFileText },
-    { id: 3, title: 'Guarantor', icon: FiUsers },
-    { id: 4, title: 'Review', icon: FiCheck },
+    { id: 'emergency', name: 'Emergency Loan', maxAmount: 10000, maxDuration: 12, apr: '8.5%', icon: AlertCircle, color: 'red' },
+    { id: 'personal', name: 'Personal Loan', maxAmount: 25000, maxDuration: 36, apr: '6.8%', icon: User, color: 'blue' },
+    { id: 'education', name: 'Education Loan', maxAmount: 20000, maxDuration: 24, apr: '5.2%', icon: FileText, color: 'green' },
+    { id: 'medical', name: 'Medical Loan', maxAmount: 15000, maxDuration: 18, apr: '7.1%', icon: Shield, color: 'purple' },
   ];
 
   useEffect(() => {
@@ -195,60 +132,15 @@ const LoanRequestPage = () => {
   };
 
   const isEligible = Object.values(eligibility).every(Boolean);
-  const canSubmit =
-    eligibility.savingsBalance && eligibility.salaryRule && eligibility.employmentDuration && eligibility.guarantorInfo;
 
-  const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
   const handleGuarantorChange = (field, value) =>
-    setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, [field]: value } }));
+    setFormData((prev) => ({ ...prev, guarantor: { ...prev.guarantor, [field]: value } }));
 
   const handleFileUpload = (field, file) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { alert('File size must be less than 5MB'); return; }
-    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowed.includes(file.type)) { alert('Only PDF, JPG, JPEG, PNG allowed'); return; }
     handleGuarantorChange(field, file);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!canSubmit) return;
-    setIsSubmitting(true);
-    
-    try {
-      const payload = {
-        loan_amount: parseFloat(formData.requestedAmount),
-        loan_purpose: formData.loanPurpose,
-        loan_term_months: parseInt(formData.loanDuration),
-        interest_rate: parseFloat((selectedLoanType?.apr || '5').replace('%', '')),
-        monthly_payment: parseFloat(calculateMonthlyInstallment()),
-        guarantor_details: JSON.stringify(formData.guarantorType === 'internal' 
-          ? { type: 'internal', employeeId: formData.guarantor.employeeId, email: formData.guarantor.email }
-          : { type: 'external', fullName: formData.guarantor.fullName, employer: formData.guarantor.employer, email: formData.guarantor.email }
-        )
-      };
-      
-      await loansAPI.applyForLoan(payload);
-      
-      setApplicationStatus('pending');
-      setSubmitSuccess(true);
-    } catch (error) {
-      console.error('Error applying for loan:', error);
-      alert('Failed to submit loan request: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleApproval = (status) => {
-    if (status === 'approved' && formData.guarantorType === 'external') {
-      if (!formData.guarantor.idDocument || !formData.guarantor.employmentProof) {
-        alert('External guarantor documents must be uploaded before approval.');
-        return;
-      }
-    }
-    setApplicationStatus(status);
-    setTimeout(() => setIsSubmitted(true), 1500);
   };
 
   const calculateMonthlyInstallment = () => {
@@ -257,715 +149,588 @@ const LoanRequestPage = () => {
     return a > 0 && d > 0 ? (a / d).toFixed(2) : '0.00';
   };
 
-  const nextStep = () => currentStep < steps.length && setCurrentStep(s => s + 1);
-  const prevStep = () => currentStep > 1 && setCurrentStep(s => s - 1);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!isEligible || !selectedLoanType) return;
+    setIsSubmitting(true);
 
-  const canProceedToNext = () => {
-    if (currentStep === 1) return selectedLoanType !== null;
-    if (currentStep === 2) {
-      return !!(formData.requestedAmount && formData.loanDuration && formData.loanPurpose) && 
-             eligibility.salaryRule && eligibility.savingsBalance;
+    try {
+      const payload = {
+        loan_amount: parseFloat(formData.requestedAmount),
+        loan_purpose: formData.loanPurpose,
+        loan_term_months: parseInt(formData.loanDuration),
+        interest_rate: parseFloat((selectedLoanType?.apr || '5').replace('%', '')),
+        monthly_payment: parseFloat(calculateMonthlyInstallment()),
+        guarantor_details: JSON.stringify(
+          formData.guarantorType === 'internal'
+            ? { type: 'internal', employeeId: formData.guarantor.employeeId, email: formData.guarantor.email }
+            : { type: 'external', fullName: formData.guarantor.fullName, employer: formData.guarantor.employer, email: formData.guarantor.email }
+        ),
+      };
+
+      await loansAPI.applyForLoan(payload);
+      setSubmitSuccess(true);
+    } catch (error) {
+      console.error('Error applying for loan:', error);
+      setErrorMsg(error.response?.data?.message || error.message || 'Failed to submit loan request.');
+    } finally {
+      setIsSubmitting(false);
     }
-    if (currentStep === 3) return eligibility.guarantorInfo;
-    if (currentStep === 4) return isEligible;
-    return false;
   };
 
-  /* ─────────────────────────────────────────────────────────────────────── */
-  return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Loan Application</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Complete your application in 4 steps</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Available Credit</p>
-          <p className="text-xl font-black text-gray-900 dark:text-white">
-            {(employeeData.savingsBalance * 2).toLocaleString()} ETB
+  if (submitSuccess) {
+    return (
+      <div className="w-full px-4 py-8">
+        <div className={`${cardCls} text-center p-8 max-w-4xl mx-auto`}>
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-3">Loan Request Submitted Successfully!</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">
+            Your loan request has been successfully recorded and is now pending review by the loan committee. You will receive an update once a decision has been made.
           </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => navigate('/employee/loans')}
+              className="px-6 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 rounded-lg flex items-center justify-center gap-2"
+            >
+              <CreditCard className="w-4 h-4" />
+              View My Loans
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all duration-200 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+            >
+              <FileText className="w-4 h-4" />
+              New Application
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full px-4 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+            <DollarSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Loan Application</h1>
+            <p className="text-gray-600 dark:text-gray-400">Apply for a loan in just a few simple steps</p>
+          </div>
+        </div>
+        
+        {/* Progress Indicator */}
+        <div className="mt-6">
+          <div className="flex items-center px-60 mb-4">
+            <div className={`flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg transition-all duration-300 z-10 ${
+              1 <= currentStep
+                ? 'bg-blue-600 text-white shadow-lg transform scale-110'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+            }`}>
+              {1 < currentStep ? (
+                <CheckCircle className="w-6 h-6" />
+              ) : (
+                <span>1</span>
+              )}
+            </div>
+            <div className={`flex-1 h-1 bg-gradient-to-r rounded-[33px] ${
+              1 < currentStep 
+                ? 'from-blue-500 to-blue-600' 
+                : 'from-gray-300 to-gray-400'
+            }`} />
+            <div className={`flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg transition-all duration-300 z-10 ${
+              2 <= currentStep
+                ? 'bg-blue-600 text-white shadow-lg transform scale-110'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+            }`}>
+              {2 < currentStep ? (
+                <CheckCircle className="w-6 h-6" />
+              ) : (
+                <span>2</span>
+              )}
+            </div>
+            <div className={`flex-1 h-1 bg-gradient-to-r rounded-[33px] ${
+              2 < currentStep 
+                ? 'from-blue-500 to-blue-600' 
+                : 'from-gray-300 to-gray-400'
+            }`} />
+            <div className={`flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg transition-all duration-300 z-10 ${
+              3 <= currentStep
+                ? 'bg-blue-600 text-white shadow-lg transform scale-110'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+            }`}>
+              {3 < currentStep ? (
+                <CheckCircle className="w-6 h-6" />
+              ) : (
+                <span>3</span>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-between items-center px-55 text-sm font-medium">
+            <div className={`text-center ${
+              currentStep >= 1 ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'
+            }`}>
+              <span>Loan Details</span>
+            </div>
+            <div className={`text-center ${
+              currentStep >= 2 ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'
+            }`}>
+              <span>Guarantor Info</span>
+            </div>
+            <div className={`text-center ${
+              currentStep >= 3 ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'
+            }`}>
+              <span>Review & Submit</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Step Indicator */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            const done = currentStep > step.id;
-            const active = currentStep === step.id;
-            return (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                      done
-                        ? 'bg-emerald-600 text-white'
-                        : active
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-                    }`}
-                  >
-                    {done ? <FiCheck className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+      <form onSubmit={handleSubmit}>
+        {/* Profile Stats Overview */}
+        <div className={`${cardCls} mb-8`}>
+          <div className={headerCls}>
+            <h2 className={sectionTitleCls}>
+              <TrendingUp className="w-5 h-5" />
+              Your Financial Profile
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-100 dark:border-green-800">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
-                  <div className="hidden sm:block">
-                    <p className={`text-xs font-black uppercase tracking-wider ${active || done ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                      {step.title}
-                    </p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-                      {done ? 'Done' : active ? 'In Progress' : 'Pending'}
-                    </p>
-                  </div>
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wider">Available Savings</span>
                 </div>
-                {index < steps.length - 1 && (
-                  <div className={`flex-1 h-px mx-4 ${done ? 'bg-emerald-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                )}
+                <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                  {formatCompactNumber(employeeData.savingsBalance)} ETB
+                </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Form Area */}
-        <div className="lg:col-span-3">
-          <form onSubmit={handleSubmit} className="space-y-6">
-
-            {/* ── STEP 1: Loan Type ── */}
-            {currentStep === 1 && (
-              <SectionCard title="Step 1 — Select Loan Type">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {loanTypes.map((type) => {
-                    const Icon = type.icon;
-                    const selected = selectedLoanType?.id === type.id;
-                    return (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => setSelectedLoanType(type)}
-                        className={`text-left p-4 rounded-xl border-2 transition-all ${
-                          selected
-                            ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/15'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className={`p-2 rounded-lg ${selected ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          {selected && <FiCheck className="w-4 h-4 text-blue-600" />}
-                        </div>
-                        <p className={`font-black text-sm uppercase tracking-tight mb-1 ${selected ? 'text-blue-700 dark:text-blue-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                          {type.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{type.description}</p>
-                        <div className="space-y-1 mb-3">
-                          {type.features.map((f, i) => (
-                            <div key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-                              <FiCheck className="w-3 h-3 text-emerald-500" />
-                              {f}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Max Amount</p>
-                            <p className="text-sm font-black text-gray-900 dark:text-white">{type.maxAmount.toLocaleString()} ETB</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] text-gray-400 uppercase tracking-widest">APR</p>
-                            <p className="text-sm font-black text-gray-900 dark:text-white">{type.apr}</p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+              
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Monthly Salary</span>
                 </div>
-              </SectionCard>
-            )}
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                  {formatCompactNumber(employeeData.salary)} ETB
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 p-4 rounded-lg border border-purple-100 dark:border-purple-800">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider">Employment Duration</span>
+                </div>
+                <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                  {employeeData.employmentDuration} months
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* ── STEP 2: Loan Details ── */}
-            {currentStep === 2 && (
-              <SectionCard title="Step 2 — Loan Details">
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <FieldLabel required>Requested Amount</FieldLabel>
-                      <div className="relative">
-                        <FiDollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="number"
-                          value={formData.requestedAmount}
-                          onChange={e => handleInputChange('requestedAmount', e.target.value)}
-                          className={`${inputCls} pl-9`}
-                          placeholder="10,000"
-                          max={selectedLoanType?.maxAmount}
-                          required
-                        />
-                      </div>
-                      {selectedLoanType && (
-                        <p className="text-[10px] text-gray-400 mt-1">Max: ${selectedLoanType.maxAmount.toLocaleString()}</p>
-                      )}
+        {/* Loan Information Category */}
+        <div className={`${cardCls} mb-6`}>
+          <div className={headerCls}>
+            <h2 className={sectionTitleCls}>
+              <DollarSign className="w-5 h-5" />
+              Loan Details
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <FieldLabel required icon={<DollarSign />}>Loan Type</FieldLabel>
+                <select
+                  className={inputCls}
+                  value={selectedLoanType?.id || ''}
+                  onChange={(e) => {
+                    const type = loanTypes.find((t) => t.id === e.target.value);
+                    setSelectedLoanType(type);
+                  }}
+                  required
+                >
+                  <option value="" disabled>Select Loan Type</option>
+                  {loanTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name} - {type.apr} APR
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedLoanType && (
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Loan Limits</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Maximum Amount:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{formatCompactNumber(selectedLoanType.maxAmount)} ETB</span>
                     </div>
-
-                    <div>
-                      <FieldLabel required>Loan Duration (months)</FieldLabel>
-                      <div className="relative">
-                        <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="number"
-                          value={formData.loanDuration}
-                          onChange={e => handleInputChange('loanDuration', e.target.value)}
-                          className={`${inputCls} pl-9`}
-                          placeholder="12"
-                          min="1"
-                          max={selectedLoanType?.maxDuration}
-                          required
-                        />
-                      </div>
-                      {selectedLoanType && (
-                        <p className="text-[10px] text-gray-400 mt-1">Max: {selectedLoanType.maxDuration} months</p>
-                      )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Maximum Duration:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{selectedLoanType.maxDuration} months</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Interest Rate:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{selectedLoanType.apr}</span>
                     </div>
                   </div>
+                </div>
+              )}
 
+              <div>
+                <FieldLabel required icon={<DollarSign />}>Requested Amount (ETB)</FieldLabel>
+                <input
+                  type="number"
+                  value={formData.requestedAmount}
+                  onChange={e => handleInputChange('requestedAmount', e.target.value)}
+                  className={inputCls}
+                  max={selectedLoanType?.maxAmount}
+                  placeholder="e.g. 5000"
+                  required
+                />
+              </div>
+
+              <div>
+                <FieldLabel required icon={<Calendar />}>Loan Duration (Months)</FieldLabel>
+                <input
+                  type="number"
+                  value={formData.loanDuration}
+                  onChange={e => handleInputChange('loanDuration', e.target.value)}
+                  className={inputCls}
+                  min="1"
+                  max={selectedLoanType?.maxDuration}
+                  placeholder="e.g. 12"
+                  required
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <FieldLabel required icon={<FileText />}>Loan Purpose</FieldLabel>
+                <textarea
+                  value={formData.loanPurpose}
+                  onChange={e => handleInputChange('loanPurpose', e.target.value)}
+                  className={inputCls}
+                  rows={3}
+                  placeholder="Detailed reason for the loan request..."
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Guarantor Details Category */}
+        <div className={`${cardCls} mb-6`}>
+          <div className={headerCls}>
+            <h2 className={sectionTitleCls}>
+              <User className="w-5 h-5" />
+              Guarantor Information
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="flex gap-6 mb-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input 
+                  type="radio" 
+                  value="internal" 
+                  checked={formData.guarantorType === 'internal'} 
+                  onChange={e => handleInputChange('guarantorType', e.target.value)} 
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                />
+                <Building className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Internal Employee</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input 
+                  type="radio" 
+                  value="external" 
+                  checked={formData.guarantorType === 'external'} 
+                  onChange={e => handleInputChange('guarantorType', e.target.value)} 
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                />
+                <User className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">External Party</span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {formData.guarantorType === 'internal' ? (
+                <>
                   <div>
-                    <FieldLabel required>Loan Purpose</FieldLabel>
-                    <textarea
-                      value={formData.loanPurpose}
-                      onChange={e => handleInputChange('loanPurpose', e.target.value)}
-                      className={inputCls}
-                      rows={4}
-                      placeholder="Describe how you plan to use this loan..."
-                      required
+                    <FieldLabel required icon={<Briefcase />}>Employee ID</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.employeeId} 
+                      onChange={e => handleGuarantorChange('employeeId', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<User />}>Full Name</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.fullName} 
+                      onChange={e => handleGuarantorChange('fullName', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<Mail />}>Email</FieldLabel>
+                    <input 
+                      type="email" 
+                      value={formData.guarantor.email} 
+                      onChange={e => handleGuarantorChange('email', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<Phone />}>Phone Number</FieldLabel>
+                    <input 
+                      type="tel" 
+                      value={formData.guarantor.phoneNumber} 
+                      onChange={e => handleGuarantorChange('phoneNumber', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel icon={<Building />}>Department</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.department} 
+                      onChange={e => handleGuarantorChange('department', e.target.value)} 
+                      className={inputCls} 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel icon={<Briefcase />}>Position</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.position} 
+                      onChange={e => handleGuarantorChange('position', e.target.value)} 
+                      className={inputCls} 
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <FieldLabel required icon={<User />}>Relationship to Applicant</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.relationship} 
+                      onChange={e => handleGuarantorChange('relationship', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <FieldLabel required icon={<User />}>Full Name</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.fullName} 
+                      onChange={e => handleGuarantorChange('fullName', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<Mail />}>Email</FieldLabel>
+                    <input 
+                      type="email" 
+                      value={formData.guarantor.email} 
+                      onChange={e => handleGuarantorChange('email', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<Phone />}>Phone Number</FieldLabel>
+                    <input 
+                      type="tel" 
+                      value={formData.guarantor.phoneNumber} 
+                      onChange={e => handleGuarantorChange('phoneNumber', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<Building />}>Employer</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.employer} 
+                      onChange={e => handleGuarantorChange('employer', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<Briefcase />}>Job Position</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.jobPosition} 
+                      onChange={e => handleGuarantorChange('jobPosition', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required icon={<DollarSign />}>Monthly Salary</FieldLabel>
+                    <input 
+                      type="number" 
+                      value={formData.guarantor.monthlySalary} 
+                      onChange={e => handleGuarantorChange('monthlySalary', e.target.value)} 
+                      className={inputCls} 
+                      required 
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <FieldLabel required icon={<User />}>Relationship to Applicant</FieldLabel>
+                    <input 
+                      type="text" 
+                      value={formData.guarantor.relationship} 
+                      onChange={e => handleGuarantorChange('relationship', e.target.value)} 
+                      className={inputCls} 
+                      required 
                     />
                   </div>
 
-                  {/* Live Calculator */}
-                  {formData.requestedAmount && formData.loanDuration && (
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-100 dark:border-gray-700">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Monthly Installment</p>
-                        <p className="text-xl font-black text-gray-900 dark:text-white">{calculateMonthlyInstallment()} ETB</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Salary Threshold (40%)</p>
-                        <p className={`text-sm font-black ${
-                          parseFloat(calculateMonthlyInstallment()) <= employeeData.salary * 0.4
-                            ? 'text-emerald-600'
-                            : 'text-red-500'
-                        }`}>
-                          {parseFloat(calculateMonthlyInstallment()) <= employeeData.salary * 0.4
-                            ? '✓ Within limit'
-                            : '✗ Exceeds 40%'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </SectionCard>
-            )}
-
-            {/* ── STEP 3: Guarantor ── */}
-            {currentStep === 3 && (
-              <div className="space-y-4">
-                <SectionCard title="Step 3 — Guarantor Type">
-                  <div className="grid grid-cols-2 gap-4">
-                    {['internal', 'external'].map(type => (
-                      <label key={type} className="relative cursor-pointer">
-                        <input
-                          type="radio"
-                          value={type}
-                          checked={formData.guarantorType === type}
-                          onChange={e => handleInputChange('guarantorType', e.target.value)}
-                          className="sr-only peer"
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                      <FieldLabel icon={<Upload />}>ID Document</FieldLabel>
+                      <div className="relative">
+                        <input 
+                          type="file" 
+                          onChange={e => handleFileUpload('idDocument', e.target.files[0])} 
+                          className={`${inputCls} !pr-12`} 
+                          accept=".pdf,.jpg,.jpeg,.png" 
                         />
-                        <div className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl peer-checked:border-blue-600 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/15 transition-all">
-                          {type === 'internal' ? (
-                            <FiBriefcase className="w-5 h-5 text-gray-500 peer-checked:text-blue-600" />
-                          ) : (
-                            <FiUsers className="w-5 h-5 text-gray-500 peer-checked:text-blue-600" />
-                          )}
-                          <div>
-                            <p className="text-sm font-bold text-gray-800 dark:text-gray-200 capitalize">
-                              {type === 'internal' ? 'Internal Employee' : 'External Guarantor'}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {type === 'internal' ? 'Company employee' : 'Outside company'}
-                            </p>
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </SectionCard>
-
-                {/* Internal Fields */}
-                {formData.guarantorType === 'internal' && (
-                  <SectionCard title="Internal Employee Details">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {[
-                        { label: 'Employee ID', field: 'employeeId', placeholder: 'EMP001', required: true },
-                        { label: 'Full Name', field: 'fullName', placeholder: 'John Doe', required: true },
-                        { label: 'Email', field: 'email', placeholder: 'john@company.com', type: 'email', required: true },
-                        { label: 'Phone Number', field: 'phoneNumber', placeholder: '+1234567890', type: 'tel', required: true },
-                        { label: 'Department', field: 'department', placeholder: 'Engineering' },
-                        { label: 'Position', field: 'position', placeholder: 'Senior Developer' },
-                      ].map(({ label, field, placeholder, type = 'text', required }) => (
-                        <div key={field}>
-                          <FieldLabel required={required}>{label}</FieldLabel>
-                          <input
-                            type={type}
-                            value={formData.guarantor[field]}
-                            onChange={e => handleGuarantorChange(field, e.target.value)}
-                            className={inputCls}
-                            placeholder={placeholder}
-                          />
-                        </div>
-                      ))}
-                      <div className="md:col-span-2">
-                        <FieldLabel required>Relationship to Borrower</FieldLabel>
-                        <input
-                          type="text"
-                          value={formData.guarantor.relationship}
-                          onChange={e => handleGuarantorChange('relationship', e.target.value)}
-                          className={inputCls}
-                          placeholder="Colleague, Friend, Family"
+                        <Upload className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <FieldLabel icon={<Upload />}>Employment Proof</FieldLabel>
+                      <div className="relative">
+                        <input 
+                          type="file" 
+                          onChange={e => handleFileUpload('employmentProof', e.target.files[0])} 
+                          className={`${inputCls} !pr-12`} 
+                          accept=".pdf,.jpg,.jpeg,.png" 
                         />
+                        <Upload className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
                       </div>
-                    </div>
-                  </SectionCard>
-                )}
-
-                {/* External Fields */}
-                {formData.guarantorType === 'external' && (
-                  <SectionCard title="External Guarantor Details">
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                          { label: 'Full Name', field: 'fullName', placeholder: 'Jane Smith', required: true },
-                          { label: 'Email', field: 'email', placeholder: 'jane@email.com', type: 'email', required: true },
-                          { label: 'Phone Number', field: 'phoneNumber', placeholder: '+1234567890', type: 'tel', required: true },
-                          { label: 'Employer', field: 'employer', placeholder: 'Tech Solutions Inc.', required: true },
-                          { label: 'Job Position', field: 'jobPosition', placeholder: 'Software Engineer', required: true },
-                          { label: 'Monthly Salary', field: 'monthlySalary', placeholder: '5000', type: 'number', required: true },
-                          { label: 'Work Address', field: 'workAddress', placeholder: '123 Business St', required: true },
-                          { label: 'Home Address', field: 'homeAddress', placeholder: '456 Home Ave', required: true },
-                        ].map(({ label, field, placeholder, type = 'text', required }) => (
-                          <div key={field}>
-                            <FieldLabel required={required}>{label}</FieldLabel>
-                            <input
-                              type={type}
-                              value={formData.guarantor[field]}
-                              onChange={e => handleGuarantorChange(field, e.target.value)}
-                              className={inputCls}
-                              placeholder={placeholder}
-                            />
-                          </div>
-                        ))}
-                        <div className="md:col-span-2">
-                          <FieldLabel required>Relationship to Borrower</FieldLabel>
-                          <input
-                            type="text"
-                            value={formData.guarantor.relationship}
-                            onChange={e => handleGuarantorChange('relationship', e.target.value)}
-                            className={inputCls}
-                            placeholder="Family Friend, Relative, etc."
-                          />
-                        </div>
-                      </div>
-
-                      {/* Document Uploads */}
-                      <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center gap-2 mb-3">
-                          <FiAlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                          <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-                            Required Documents — ID &amp; Employment Proof
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {[
-                            { label: 'ID Document', field: 'idDocument' },
-                            { label: 'Employment Proof', field: 'employmentProof' },
-                          ].map(({ label, field }) => (
-                            <div key={field}>
-                              <FieldLabel required>{label}</FieldLabel>
-                              <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={e => handleFileUpload(field, e.target.files[0])}
-                                className="sr-only"
-                                id={field}
-                              />
-                              <label
-                                htmlFor={field}
-                                className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                                  formData.guarantor[field]
-                                    ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/10'
-                                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/30 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                }`}
-                              >
-                                {formData.guarantor[field] ? (
-                                  <>
-                                    <FiCheck className="w-6 h-6 text-emerald-600 mb-1" />
-                                    <p className="text-xs font-bold text-emerald-600 text-center px-3 truncate max-w-full">
-                                      {formData.guarantor[field].name}
-                                    </p>
-                                  </>
-                                ) : (
-                                  <>
-                                    <FiUpload className="w-6 h-6 text-gray-400 mb-1" />
-                                    <p className="text-xs text-gray-500 text-center">Click to upload</p>
-                                    <p className="text-[10px] text-gray-400">PDF, JPG, PNG — max 5MB</p>
-                                  </>
-                                )}
-                              </label>
-                              {formData.guarantor[field] && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleGuarantorChange(field, null)}
-                                  className="flex items-center gap-1 text-[10px] text-red-500 hover:text-red-700 mt-1 font-bold uppercase"
-                                >
-                                  <FiX className="w-3 h-3" /> Remove
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </SectionCard>
-                )}
-              </div>
-            )}
-
-            {/* ── STEP 4: Review ── */}
-            {currentStep === 4 && (
-              <div className="space-y-4">
-                {/* Application Status Banner */}
-                {submitSuccess && !isSubmitted && (
-                  <div className={`p-4 rounded-xl border flex items-start gap-4 ${
-                    applicationStatus === 'pending'
-                      ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800'
-                      : applicationStatus === 'approved'
-                      ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
-                      : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
-                  }`}>
-                    <div className={`p-2 rounded-lg flex-shrink-0 ${
-                      applicationStatus === 'pending' ? 'bg-amber-100 dark:bg-amber-900/30'
-                      : applicationStatus === 'approved' ? 'bg-emerald-100 dark:bg-emerald-900/30'
-                      : 'bg-red-100 dark:bg-red-900/30'
-                    }`}>
-                      {applicationStatus === 'pending' ? (
-                        <FiClock className="w-5 h-5 text-amber-600" />
-                      ) : applicationStatus === 'approved' ? (
-                        <FiCheck className="w-5 h-5 text-emerald-600" />
-                      ) : (
-                        <FiX className="w-5 h-5 text-red-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-black uppercase tracking-tight ${
-                        applicationStatus === 'pending' ? 'text-amber-800 dark:text-amber-300'
-                        : applicationStatus === 'approved' ? 'text-emerald-800 dark:text-emerald-300'
-                        : 'text-red-800 dark:text-red-300'
-                      }`}>
-                        {applicationStatus === 'pending'
-                          ? 'Submitted — Awaiting Approval'
-                          : applicationStatus === 'approved'
-                          ? 'Application Approved'
-                          : 'Application Rejected'}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {applicationStatus === 'pending'
-                          ? 'Your application has been submitted and is pending review.'
-                          : applicationStatus === 'approved'
-                          ? 'Congratulations! Your loan has been approved.'
-                          : 'Your loan application could not be approved at this time.'}
-                      </p>
-                    </div>
-                    {applicationStatus === 'pending' && (
-                      <div className="flex gap-2 flex-shrink-0">
-                        <button type="button" onClick={() => handleApproval('approved')}
-                          className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors">
-                          Approve
-                        </button>
-                        <button type="button" onClick={() => handleApproval('rejected')}
-                          className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors">
-                          Reject
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Final State */}
-                {isSubmitted && (
-                  <div className={`p-6 rounded-xl border text-center ${
-                    applicationStatus === 'approved'
-                      ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
-                      : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
-                  }`}>
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ${
-                      applicationStatus === 'approved'
-                        ? 'bg-emerald-100 dark:bg-emerald-900/40'
-                        : 'bg-red-100 dark:bg-red-900/40'
-                    }`}>
-                      {applicationStatus === 'approved'
-                        ? <FiCheck className="w-7 h-7 text-emerald-600" />
-                        : <FiX className="w-7 h-7 text-red-600" />}
-                    </div>
-                    <h3 className={`text-lg font-black mb-1 ${
-                      applicationStatus === 'approved' ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'
-                    }`}>
-                      {applicationStatus === 'approved' ? 'Application Approved & Recorded' : 'Application Rejected & Recorded'}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      {applicationStatus === 'approved'
-                        ? 'All guarantor records and loan data have been updated in the system.'
-                        : 'The rejection has been recorded in the system.'}
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                      <button type="button" onClick={() => navigate('/employee/loans')}
-                        className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">
-                        View All Loans
-                      </button>
-                      <button type="button" onClick={() => window.location.reload()}
-                        className="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                        New Application
-                      </button>
                     </div>
                   </div>
-                )}
-
-                {/* Summary Cards */}
-                {!isSubmitted && (
-                  <>
-                    {/* Loan Summary */}
-                    <SectionCard title="Loan Summary">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {[
-                          { label: 'Loan Type', value: selectedLoanType?.name || '—' },
-                          { label: 'Requested Amount', value: `${parseFloat(formData.requestedAmount || 0).toLocaleString()} ETB` },
-                          { label: 'Duration', value: `${formData.loanDuration || 0} months` },
-                          { label: 'Monthly Installment', value: `${calculateMonthlyInstallment()} ETB` },
-                          { label: 'APR', value: selectedLoanType?.apr || 'N/A' },
-                          { label: 'Total Repayment', value: `${(parseFloat(calculateMonthlyInstallment()) * parseInt(formData.loanDuration || 0)).toFixed(2)} ETB` },
-                        ].map(({ label, value }) => (
-                          <div key={label} className="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-                            <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{value}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </SectionCard>
-
-                    {/* Loan Purpose */}
-                    <SectionCard title="Loan Purpose">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/40 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-                        {formData.loanPurpose || 'No purpose provided'}
-                      </p>
-                    </SectionCard>
-
-                    {/* Guarantor Summary */}
-                    <SectionCard title="Guarantor Information">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                            {formData.guarantorType === 'internal'
-                              ? <FiBriefcase className="w-4 h-4 text-blue-600" />
-                              : <FiUsers className="w-4 h-4 text-blue-600" />}
-                          </div>
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-tight text-gray-700 dark:text-gray-300">
-                              {formData.guarantorType === 'internal' ? 'Internal Employee' : 'External Guarantor'}
-                            </p>
-                            <p className="text-sm text-gray-500">{formData.guarantor.fullName || 'Not provided'}</p>
-                          </div>
-                          {!submitSuccess && (
-                            <button type="button" onClick={() => setCurrentStep(3)}
-                              className="ml-auto text-xs text-blue-600 font-bold hover:underline">
-                              Edit
-                            </button>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          {[
-                            { label: 'Email', value: formData.guarantor.email },
-                            { label: 'Phone', value: formData.guarantor.phoneNumber },
-                            ...(formData.guarantorType === 'internal'
-                              ? [{ label: 'Employee ID', value: formData.guarantor.employeeId },
-                                 { label: 'Department', value: formData.guarantor.department }]
-                              : [{ label: 'Employer', value: formData.guarantor.employer },
-                                 { label: 'Job Position', value: formData.guarantor.jobPosition }]),
-                          ].map(({ label, value }) => (
-                            <div key={label} className="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-                              <p className="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{value || '—'}</p>
-                            </div>
-                          ))}
-                        </div>
-                        {formData.guarantorType === 'external' && (
-                          <div className="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-100 dark:border-gray-700">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Uploaded Documents</p>
-                            <div className="flex gap-4">
-                              {['idDocument', 'employmentProof'].map(f => (
-                                <div key={f} className="flex items-center gap-1.5 text-xs">
-                                  {formData.guarantor[f]
-                                    ? <><FiCheck className="w-3.5 h-3.5 text-emerald-600" /><span className="text-emerald-700 dark:text-emerald-400 font-bold">
-                                        {f === 'idDocument' ? 'ID Doc' : 'Employment Proof'}
-                                      </span></>
-                                    : <><FiX className="w-3.5 h-3.5 text-red-500" /><span className="text-red-500 font-bold">
-                                        {f === 'idDocument' ? 'ID Doc Missing' : 'Employment Proof Missing'}
-                                      </span></>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </SectionCard>
-
-                    {/* Eligibility */}
-                    <SectionCard title="Eligibility Status">
-                      <div className="space-y-2">
-                        {Object.entries({
-                          'Sufficient Savings Balance': eligibility.savingsBalance,
-                          'Monthly Installment Within 40% Limit': eligibility.salaryRule,
-                          'Minimum Employment Duration (6 months)': eligibility.employmentDuration,
-                          'Complete Guarantor Information': eligibility.guarantorInfo,
-                        }).map(([key, value]) => (
-                          <div key={key} className={`flex items-center justify-between p-3 rounded-lg border ${
-                            value
-                              ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30'
-                              : 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
-                          }`}>
-                            <span className="text-sm text-gray-700 dark:text-gray-300">{key}</span>
-                            <span className={`flex items-center gap-1 text-xs font-black uppercase ${value ? 'text-emerald-600' : 'text-red-500'}`}>
-                              {value ? <FiCheck className="w-3.5 h-3.5" /> : <FiX className="w-3.5 h-3.5" />}
-                              {value ? 'Passed' : 'Failed'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      {!isEligible && !submitSuccess && (
-                        <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
-                          <FiAlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                          <p className="text-xs text-red-600 dark:text-red-400 font-bold">
-                            Please address the eligibility issues before submitting.
-                          </p>
-                        </div>
-                      )}
-                    </SectionCard>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Navigation */}
-            <div className="flex justify-between items-center pt-2">
-              <button
-                type="button"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${
-                  currentStep === 1
-                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                <FiChevronRight className="w-4 h-4 rotate-180" />
-                Previous
-              </button>
-
-              {currentStep < steps.length ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  disabled={!canProceedToNext()}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${
-                    canProceedToNext()
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  Next Step
-                  <FiChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={!isEligible || isSubmitting || submitSuccess}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${
-                    isEligible && !isSubmitting && !submitSuccess
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Processing...</>
-                  ) : (
-                    <>Submit Application<FiArrowRight className="w-4 h-4" /></>
-                  )}
-                </button>
+                </>
               )}
             </div>
-          </form>
+          </div>
         </div>
 
-        {/* ── Sidebar ── */}
-        <div className="space-y-4">
-          {/* Profile Summary */}
-          <SectionCard title="Your Profile">
-            <div className="space-y-2">
-              {[
-                { label: 'Savings Balance', value: `${employeeData.savingsBalance.toLocaleString()} ETB`, Icon: FiDollarSign, color: 'blue' },
-                { label: 'Monthly Salary', value: `${employeeData.salary.toLocaleString()} ETB`, Icon: FiCreditCard, color: 'emerald' },
-                { label: 'Employment', value: `${employeeData.employmentDuration} months`, Icon: FiCalendar, color: 'purple' },
-              ].map(({ label, value, Icon, color }) => (
-                <div key={label} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg">
-                  <div className={`p-2 bg-${color}-100 dark:bg-${color}-900/30 rounded-lg`}>
-                    <Icon className={`w-4 h-4 text-${color}-600 dark:text-${color}-400`} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-                    <p className="text-sm font-black text-gray-900 dark:text-white">{value}</p>
+        {/* Verification & Action Bar */}
+        <div className={`${cardCls} p-6`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Application Summary</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Installment</span>
+                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCompactNumber(calculateMonthlyInstallment())} ETB</span>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Eligibility Check</h4>
+                  <div className="space-y-2">
+                    <div className={`flex items-center gap-2 text-sm ${
+                      eligibility.savingsBalance ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                    }`}>
+                      {eligibility.savingsBalance ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                      <span>Savings Balance Requirement</span>
+                    </div>
+                    <div className={`flex items-center gap-2 text-sm ${
+                      eligibility.salaryRule ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                    }`}>
+                      {eligibility.salaryRule ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                      <span>Within 40% Salary Limit</span>
+                    </div>
+                    <div className={`flex items-center gap-2 text-sm ${
+                      eligibility.employmentDuration ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                    }`}>
+                      {eligibility.employmentDuration ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                      <span>Minimum 6 Months Employment</span>
+                    </div>
+                    <div className={`flex items-center gap-2 text-sm ${
+                      eligibility.guarantorInfo ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                    }`}>
+                      {eligibility.guarantorInfo ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                      <span>Guarantor Information Complete</span>
+                    </div>
                   </div>
                 </div>
-              ))}
+                {!isEligible && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg">
+                    <p className="text-sm text-red-700 dark:text-red-400 font-medium">
+                      ⚠️ All eligibility requirements must be met to submit the application.
+                    </p>
+                  </div>
+                )}
+                {errorMsg && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg">
+                    <p className="text-sm text-red-700 dark:text-red-400 font-medium">
+                      Error: {errorMsg}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </SectionCard>
-
-          {/* Tips */}
-          <SectionCard title="Application Tips">
-            <ul className="space-y-2">
-              {[
-                'Keep monthly installments below 40% of your salary',
-                'Loan amount must be ≤ 2× savings balance',
-                'Choose duration for manageable payments',
-                'Ensure guarantor information is complete',
-              ].map((tip, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
-                  <FiCheck className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                  {tip}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-
-          {/* Support */}
-          <SectionCard title="Need Help?">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Our loan specialists are here to assist you through the application process.
-            </p>
-            <button className="w-full py-2.5 rounded-lg text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              Contact Support
-            </button>
-          </SectionCard>
+            
+            <div className="flex flex-col justify-center">
+              <button
+                type="submit"
+                disabled={!isEligible || !selectedLoanType || isSubmitting}
+                className={`w-full px-8 py-4 font-semibold text-lg transition-all duration-200 rounded-xl ${
+                  isEligible && selectedLoanType && !isSubmitting
+                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                }`}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing Application...
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Submit Loan Application
+                  </div>
+                )}
+              </button>
+              
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
+                By submitting, you confirm that all information provided is accurate and complete.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

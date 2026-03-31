@@ -4,6 +4,16 @@ import { LineChart } from '../components/Shared/Chart';
 import { loansAPI } from '../../../shared/services/loansAPI';
 
 const RepaymentsPage = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [activeTab, setActiveTab] = useState('summary');
   const [selectedLoan, setSelectedLoan] = useState(null);
 
@@ -121,7 +131,7 @@ const RepaymentsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Loan Balance</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                {repaymentSummary.totalLoanBalance.toLocaleString()} ETB
+                {formatCompactNumber(repaymentSummary.totalLoanBalance)}
               </p>
             </div>
             <div className="p-3 bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400 rounded-lg">
@@ -135,7 +145,7 @@ const RepaymentsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Repaid</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                {repaymentSummary.totalRepaid.toLocaleString()} ETB
+                {formatCompactNumber(repaymentSummary.totalRepaid)}
               </p>
             </div>
             <div className="p-3 bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400 rounded-lg">
@@ -149,7 +159,7 @@ const RepaymentsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Remaining Balance</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                {repaymentSummary.remainingBalance.toLocaleString()} ETB
+                {formatCompactNumber(repaymentSummary.remainingBalance)}
               </p>
             </div>
             <div className="p-3 bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400 rounded-lg">
@@ -163,7 +173,7 @@ const RepaymentsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Deduction</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                {repaymentSummary.monthlyDeduction.toLocaleString()} ETB
+                {formatCompactNumber(repaymentSummary.monthlyDeduction)}
               </p>
             </div>
             <div className="p-3 bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 rounded-lg">
@@ -222,7 +232,7 @@ const RepaymentsPage = () => {
                       <div className="mb-2">
                         <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
                           <span>Progress</span>
-                          <span>{(loan.approvedAmount - loan.remainingBalance).toLocaleString()} / {loan.approvedAmount.toLocaleString()} ETB</span>
+                          <span>{formatCompactNumber(loan.approvedAmount - loan.remainingBalance)} / {formatCompactNumber(loan.approvedAmount)}</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
@@ -234,11 +244,11 @@ const RepaymentsPage = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">Monthly:</span>
-                          <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{loan.monthlyInstallment.toLocaleString()} ETB</span>
+                          <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{formatCompactNumber(loan.monthlyInstallment)}</span>
                         </div>
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">Remaining:</span>
-                          <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{loan.remainingBalance.toLocaleString()} ETB</span>
+                          <span className="ml-1 font-medium text-gray-900 dark:text-gray-100">{formatCompactNumber(loan.remainingBalance)}</span>
                         </div>
                       </div>
                     </div>
@@ -294,16 +304,16 @@ const RepaymentsPage = () => {
                           {payment.loanId}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.installmentAmount.toLocaleString()} ETB
+                          {formatCompactNumber(payment.installmentAmount)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.principal.toLocaleString()} ETB
+                          {formatCompactNumber(payment.principal)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.interest.toLocaleString()} ETB
+                          {formatCompactNumber(payment.interest)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.remainingBalance.toLocaleString()} ETB
+                          {formatCompactNumber(payment.remainingBalance)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
@@ -361,16 +371,16 @@ const RepaymentsPage = () => {
                           {payment.loanId}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.installment.toLocaleString()} ETB
+                          {formatCompactNumber(payment.installment)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.principal.toLocaleString()} ETB
+                          {formatCompactNumber(payment.principal)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.interest.toLocaleString()} ETB
+                          {formatCompactNumber(payment.interest)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {payment.balance.toLocaleString()} ETB
+                          {formatCompactNumber(payment.balance)}
                         </td>
                       </tr>
                     ))}

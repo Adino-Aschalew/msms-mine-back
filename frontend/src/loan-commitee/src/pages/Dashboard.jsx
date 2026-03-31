@@ -23,6 +23,16 @@ import { exportDashboardReport as exportUtil } from '../utils/exportUtils';
 import { loanCommitteeAPI } from '../../../shared/services/loansAPI';
 
 const Dashboard = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -130,7 +140,7 @@ const Dashboard = () => {
     },
     {
       title: 'Total Loan Portfolio',
-      value: `$${(dashboardData?.stats?.total_portfolio || 0).toLocaleString()}`,
+      value: formatCompactNumber(dashboardData?.stats?.total_portfolio || 0),
       change: 'Active Value',
       changeType: 'increase',
       icon: <DollarSign className="w-6 h-6" />,

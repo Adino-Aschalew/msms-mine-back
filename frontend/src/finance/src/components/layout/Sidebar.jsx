@@ -5,18 +5,14 @@ import {
   FiUsers,
   FiFileText,
   FiSettings,
-  FiHelpCircle,
   FiLogOut,
   FiX,
   FiUpload,
   FiTrendingUp,
   FiBell,
   FiHome,
-  FiFilePlus,
   FiCreditCard,
   FiShield,
-  FiBarChart,
-  FiUser,
   FiChevronLeft,
   FiArrowRight,
 } from 'react-icons/fi';
@@ -65,29 +61,14 @@ const navigation = [
     icon: FiUsers,
   },
   {
-    name: 'Budgets',
-    href: '/finance/budgets',
-    icon: FiFilePlus,
-  },
-  {
     name: 'Invoices',
     href: '/finance/invoices',
     icon: FiCreditCard,
   },
   {
-    name: 'Analytics',
-    href: '/finance/analytics',
-    icon: FiBarChart,
-  },
-  {
     name: 'Reports',
     href: '/finance/reports',
     icon: FiFileText,
-  },
-  {
-    name: 'Users & Roles',
-    href: '/finance/users',
-    icon: FiUser,
   },
   {
     name: 'Notifications',
@@ -98,16 +79,6 @@ const navigation = [
     name: 'Settings',
     href: '/finance/settings',
     icon: FiSettings,
-  },
-  {
-    name: 'Help & Support',
-    href: '/finance/help',
-    icon: FiHelpCircle,
-  },
-  {
-    name: 'Legal',
-    href: '/finance/legal',
-    icon: FiShield,
   },
 ];
 

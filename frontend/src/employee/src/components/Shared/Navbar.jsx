@@ -178,7 +178,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 w-full">
+    <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-1 w-full">
       <div className="flex items-center justify-between h-full">
         <div className="flex items-center space-x-4">
           <button
@@ -189,14 +189,12 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
           </button>
 
           <div className="relative hidden md:block">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 w-64"
-            />
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-900 font-bold dark:text-gray-300 text-2xl">Welcome back,</span>
+              <span className="text-blue-600 dark:text-white font-semibold text-2xl">
+                {user?.first_name || user?.name || 'User'}
+              </span>
+            </div>
           </div>
         </div>
 

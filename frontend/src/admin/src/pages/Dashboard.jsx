@@ -10,6 +10,16 @@ import { adminAPI } from '../../../shared/services/adminAPI';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 
 const Dashboard = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
   const [dateRange, setDateRange] = useState('30days');
   const [dashboardData, setDashboardData] = useState(null);
   const [adminStats, setAdminStats] = useState(null);
@@ -48,7 +58,7 @@ const Dashboard = () => {
   const statsData = [
     {
       title: 'Total Users',
-      value: (dashboardData?.overview?.totalUsers || 0).toLocaleString(),
+      value: formatCompactNumber(dashboardData?.overview?.totalUsers || 0),
       change: dashboardData?.overview?.userGrowth || '+0%',
       changeType: (dashboardData?.overview?.userGrowth || '').startsWith('+') ? 'increase' : 'decrease',
       icon: <Users className="h-6 w-6" />,
@@ -56,7 +66,7 @@ const Dashboard = () => {
     },
     {
       title: 'Total Admins',
-      value: (dashboardData?.overview?.totalAdmins || adminStats?.total || 0).toLocaleString(),
+      value: formatCompactNumber(dashboardData?.overview?.totalAdmins || adminStats?.total || 0),
       change: dashboardData?.overview?.adminGrowth || '+0%',
       changeType: (dashboardData?.overview?.adminGrowth || '').startsWith('+') ? 'increase' : 'decrease',
       icon: <UserPlus className="h-6 w-6" />,
@@ -64,10 +74,18 @@ const Dashboard = () => {
     },
     {
       title: 'Pending Applications',
-      value: (dashboardData?.overview?.pendingApplications || 0).toLocaleString(),
+      value: formatCompactNumber(dashboardData?.overview?.pendingApplications || 0),
       change: dashboardData?.overview?.loanGrowth || '+0%',
       changeType: (dashboardData?.overview?.loanGrowth || '').startsWith('+') ? 'increase' : 'decrease',
       icon: <TrendingUp className="h-6 w-6" />,
+      color: 'yellow'
+    },
+    {
+      title: 'Active Sessions',
+      value: formatCompactNumber(dashboardData?.overview?.activeSessions || 0),
+      change: dashboardData?.overview?.sessionGrowth || '+0%',
+      changeType: (dashboardData?.overview?.sessionGrowth || '').startsWith('+') ? 'increase' : 'decrease',
+      icon: <Calendar className="h-6 w-6" />,
       color: 'purple'
     }
   ];

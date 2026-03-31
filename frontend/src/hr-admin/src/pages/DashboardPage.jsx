@@ -32,6 +32,17 @@ import ActivityFeed from '../components/Dashboard/ActivityFeed';
 import SortableWidget from '../components/Dashboard/SortableWidget';
 import SuccessModal from '../components/Dashboard/SuccessModal';
 
+const DashboardPage = () => {
+  // Compact number formatting function
+  const formatCompactNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'METB';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'KETB';
+    }
+    return num.toString();
+  };
+
 // Initial Widgets State
 const initialTopWidgets = [
   {
@@ -141,19 +152,19 @@ export default function DashboardPage() {
   const dynamicTopWidgets = [
     {
       id: 'stat-employees',
-      component: <StatCard title="Total Employees" value={dashboardData?.totalEmployees?.toLocaleString() || '0'} icon={Users} trend="up" trendValue={`${dashboardData?.employeeGrowthRate || '0'}%`} colorClass="bg-blue-500" />
+      component: <StatCard title="Total Employees" value={formatCompactNumber(dashboardData?.totalEmployees || 0)} icon={Users} trend="up" trendValue={`${dashboardData?.employeeGrowthRate || '0'}%`} colorClass="bg-blue-500" />
     },
     {
       id: 'stat-terminated',
-      component: <StatCard title="Terminated User" value={dashboardData?.terminated?.toLocaleString() || '0'} icon={UserX} trend="up" trendValue={`${dashboardData?.terminatedRate || '0'}%`} colorClass="bg-rose-500" />
+      component: <StatCard title="Terminated User" value={formatCompactNumber(dashboardData?.terminated || 0)} icon={UserX} trend="up" trendValue={`${dashboardData?.terminatedRate || '0'}%`} colorClass="bg-rose-500" />
     },
     {
       id: 'stat-active',
-      component: <StatCard title="Active User" value={dashboardData?.activeEmployees?.toLocaleString() || '0'} icon={UserCheck} trend="up" trendValue={`${dashboardData?.activeRate || '0'}%`} colorClass="bg-emerald-500" />
+      component: <StatCard title="Active User" value={formatCompactNumber(dashboardData?.activeEmployees || 0)} icon={UserCheck} trend="up" trendValue={`${dashboardData?.activeRate || '0'}%`} colorClass="bg-emerald-500" />
     },
     {
       id: 'stat-pending',
-      component: <StatCard title="Pending Approvals" value={dashboardData?.pendingApprovals?.toLocaleString() || '0'} icon={Clock} trend="down" trendValue={`${dashboardData?.approvalRate || '0'}%`} colorClass="bg-violet-500" />
+      component: <StatCard title="Pending Approvals" value={formatCompactNumber(dashboardData?.pendingApprovals || 0)} icon={Clock} trend="down" trendValue={`${dashboardData?.approvalRate || '0'}%`} colorClass="bg-violet-500" />
     }
   ];
 
