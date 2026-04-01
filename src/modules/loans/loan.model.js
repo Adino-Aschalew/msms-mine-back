@@ -410,7 +410,7 @@ class LoanModel {
   static async getUserLoanTransactions(userId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     const selectQuery = `
-      SELECT lt.*, l.loan_amount, l.employee_id
+      SELECT lt.*, l.principal_amount, l.employee_id
       FROM loan_transactions lt
       JOIN loans l ON lt.loan_id = l.id
       WHERE l.user_id = ?

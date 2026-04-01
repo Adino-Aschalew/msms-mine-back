@@ -84,7 +84,16 @@ const MySavingsDashboard = () => {
   const handleActivate = async () => {
     try {
       setLoading(true);
-      await EnterpriseSavingsAPI.createSavingsAccount(25); // Default 25%
+      const result = await EnterpriseSavingsAPI.createSavingsAccount(); // Use default 15%
+      
+      // Show success message with applied percentage
+      const message = result.is_default 
+        ? `Savings account activated successfully with ${result.saving_percentage}% default contribution rate!` 
+        : `Savings account activated successfully with ${result.saving_percentage}% contribution rate!`;
+      
+      // You could add a toast notification here if you have one
+      console.log(message);
+      
       await loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to activate account');

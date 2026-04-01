@@ -135,6 +135,9 @@ export const calculateAge = (dateOfBirth) => {
 };
 
 export const getInitials = (firstName, lastName) => {
+  if (!firstName && !lastName) return 'U';
+  if (!firstName) return lastName.charAt(0).toUpperCase();
+  if (!lastName) return firstName.charAt(0).toUpperCase();
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 };
 

@@ -423,12 +423,12 @@ class CommitteeController {
         data: {
           stats: {
             ...stats[0],
-            total_portfolio: portfolio[0].total_portfolio
+            total_portfolio: portfolio[0]?.total_portfolio || '0.00'
           },
-          trends,
-          growth,
-          recentRequests,
-          sizeDistribution
+          trends: trends || [],
+          growth: growth || [],
+          recentRequests: recentRequests || [],
+          sizeDistribution: sizeDistribution || []
         }
       });
     } catch (error) {
@@ -487,10 +487,9 @@ class CommitteeController {
         SELECT 
           CASE 
             WHEN status = 'COMPLETED' THEN 'On Time'
-            WHEN status = 'ACTIVE' AND next_payment_date >= NOW() THEN 'On Time'
-            WHEN status = 'ACTIVE' AND DATEDIFF(NOW(), next_payment_date) BETWEEN 1 AND 7 THEN 'Late (1-7 days)'
-            WHEN status = 'ACTIVE' AND DATEDIFF(NOW(), next_payment_date) BETWEEN 8 AND 30 THEN 'Late (8-30 days)'
-            ELSE 'Default'
+            WHEN status = 'ACTIVE' THEN 'On Time'
+            WHEN status = 'DEFAULTED' THEN 'Default'
+            ELSE 'Unknown'
           END as category,
           COUNT(*) as count
         FROM loans

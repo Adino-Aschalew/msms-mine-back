@@ -5,8 +5,13 @@ const { auditMiddleware } = require('../../middleware/audit');
 
 const router = express.Router();
 
-// Apply authentication and role middleware
+// Apply authentication middleware to all routes
 router.use(authMiddleware);
+
+// Public employee validation route (accessible to all authenticated users)
+router.get('/validate/:employeeId', HrController.validateEmployee);
+
+// Apply role middleware for HR-specific routes
 router.use(roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']));
 
 // Employee management routes

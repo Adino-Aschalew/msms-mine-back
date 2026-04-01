@@ -21,10 +21,13 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
     const fetchTransactions = async () => {
       try {
         setLoading(true);
-        const data = await financeAPI.getRecentTransactions(limit);
-        setTransactions(data || []);
+        const response = await financeAPI.getRecentTransactions(limit);
+        // Handle the response structure properly
+        const transactionData = response?.data || response || [];
+        setTransactions(Array.isArray(transactionData) ? transactionData : []);
       } catch (err) {
         console.error('Failed to fetch transactions:', err);
+        setTransactions([]); // Ensure we always have an array
       } finally {
         setLoading(false);
       }
@@ -79,7 +82,7 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-          {transactions.map((transaction) => (
+          {Array.isArray(transactions) && transactions.map((transaction) => (
             <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               <td className="py-3">
                 <div className="flex items-center space-x-3">
@@ -129,6 +132,13 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
               </td>
             </tr>
           ))}
+          {!Array.isArray(transactions) || transactions.length === 0 ? (
+            <tr>
+              <td colSpan="6" className="py-8 text-center text-gray-500 dark:text-gray-400">
+                No transactions found
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
     </div>

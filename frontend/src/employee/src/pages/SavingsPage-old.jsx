@@ -1,15 +1,18 @@
-import React from 'react';
-import MySavingsDashboard from './MySavingsDashboard';
+import React, { useState, useEffect } from 'react';
+import { FiTrendingUp, FiDollarSign, FiCalendar, FiDownload, FiUpload, FiInfo, FiAlertCircle } from 'react-icons/fi';
+import savingsAPI from '../../shared/services/savingsAPI';
+import StatCard from '../../shared/components/StatCard';
+import LineChart from '../../shared/components/LineChart';
+import { formatCompactETB } from '../../shared/utils/formatters';
 
 const SavingsPage = () => {
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <MySavingsDashboard />
-    </div>
-  );
-};
-
-export default SavingsPage;
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showSavingSuccess, setShowSavingSuccess] = useState(false);
+  const [showWithdrawalForm, setShowWithdrawalForm] = useState(false);
+  const [savingRate, setSavingRate] = useState(25);
+  const [savingInput, setSavingInput] = useState('25');
+  const [withdrawalForm, setWithdrawalForm] = useState({
+    reason: '',
     supportingDocument: null,
     confirmation: false,
   });
@@ -50,7 +53,8 @@ export default SavingsPage;
 
       try {
         // Get savings account data (summary includes extra stats)
-        const account = await savingsAPI.getSavingsAccount();
+        const response = await savingsAPI.getSavingsAccount();
+        const account = response?.data;
 
         if (account) {
           currentSalary = parseFloat(account.salary || 0);
@@ -257,7 +261,7 @@ export default SavingsPage;
               onClick={async () => {
                 try {
                   setLoading(true);
-                  await savingsAPI.createSavingsAccount(25); // Default 25%
+                  await savingsAPI.createSavingsAccount(); // Use default 15%
                   setShowActivationSuccess(true);
                   await loadSavingsData();
                 } catch (err) {

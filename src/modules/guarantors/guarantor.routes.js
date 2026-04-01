@@ -9,13 +9,13 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // User routes (authenticated users)
-router.post('/', auditMiddleware('GUARANTOR_ADDED'), GuarantorController.addGuarantor);
-router.get('/', GuarantorController.getGuantors);
+router.post('/', GuarantorController.addGuarantor);
+router.get('/', GuarantorController.getGuarantors);
 router.get('/stats', GuarantorController.getGuarantorStats);
 
 // Individual guarantor routes
 router.get('/:guarantorId', GuarantorController.getGuarantorById);
-router.put('/:guarantorId/status', auditMiddleware('GUARANTOR_STATUS_UPDATE'), GuarantorController.updateGuarantorStatus);
+router.put('/:guarantorId/status', GuarantorController.updateGuarantorStatus);
 
 // Admin/HR routes
 router.get('/by-application/:loanApplicationId', roleMiddleware(['ADMIN', 'HR', 'LOAN_COMMITTEE']), GuarantorController.getGuarantors);

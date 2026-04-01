@@ -579,6 +579,24 @@ class HrController {
       });
     }
   }
+
+  static async validateEmployee(req, res) {
+    try {
+      const { employeeId } = req.params;
+      const employee = await HrService.validateEmployee(employeeId);
+      
+      res.json({
+        success: true,
+        data: employee,
+        message: 'Employee validated successfully'
+      });
+    } catch (error) {
+      res.status(404).json({
+        success: false,
+        message: error.message || 'Employee not found'
+      });
+    }
+  }
 }
 
 module.exports = HrController;

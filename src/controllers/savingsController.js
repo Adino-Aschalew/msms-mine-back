@@ -9,7 +9,10 @@ class SavingsController {
       const userId = req.userId;
       const employeeId = req.user.employee_id;
       
-      if (!saving_percentage || saving_percentage < 15 || saving_percentage > 65) {
+      // Default to 15% if not provided
+      const finalSavingPercentage = saving_percentage || 15;
+      
+      if (finalSavingPercentage < 15 || finalSavingPercentage > 65) {
         return res.status(400).json({
           success: false,
           message: 'Saving percentage must be between 15% and 65%'
@@ -25,14 +28,18 @@ class SavingsController {
         });
       }
       
-      const accountId = await Savings.createSavingsAccount(userId, employeeId, saving_percentage);
+      const accountId = await Savings.createSavingsAccount(userId, employeeId, finalSavingPercentage);
       
-      await auditLog(userId, 'SAVINGS_ACCOUNT_CREATE', 'savings_accounts', accountId, null, { saving_percentage }, req.ip, req.get('User-Agent'));
+      await auditLog(userId, 'SAVINGS_ACCOUNT_CREATE', 'savings_accounts', accountId, null, { saving_percentage: finalSavingPercentage }, req.ip, req.get('User-Agent'));
       
       res.status(201).json({
         success: true,
         message: 'Savings account created successfully',
-        data: { accountId }
+        data: { 
+          accountId,
+          saving_percentage: finalSavingPercentage,
+          is_default: !saving_percentage // Indicates if default percentage was used
+        }
       });
     } catch (error) {
       console.error('Create savings account error:', error);

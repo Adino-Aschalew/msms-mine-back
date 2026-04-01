@@ -2,6 +2,7 @@ const LoanModel = require('./loan.model');
 const { auditLog } = require('../../middleware/audit');
 const NotificationService = require('../../services/notification.service');
 const CommitteeService = require('../loanCommittee/committee.service');
+const { query } = require('../../config/database');
 
 class LoanService {
   static async applyForLoan(applicationData, userId, ip, userAgent) {
@@ -13,11 +14,20 @@ class LoanService {
       }
       
       // Calculate loan details
-      const { loan_amount, interest_rate, loan_term_months, monthly_income } = applicationData;
+      const { loan_amount, interest_rate, loan_term_months } = applicationData;
       const calculation = await LoanModel.calculateLoanAmount(loan_amount, interest_rate, loan_term_months);
       
       // Get employee_id from eligibility check result
       const employee_id = eligibility.employee_id;
+      
+      // Get user's monthly income from their profile
+      const [userProfile] = await query(`
+        SELECT ep.salary
+        FROM employee_profiles ep
+        WHERE ep.user_id = ?
+      `, [userId]);
+      
+      const user_monthly_income = userProfile?.salary || 0;
       
       // Create loan application
       const applicationId = await LoanModel.createLoanApplication({
@@ -25,8 +35,14 @@ class LoanService {
         user_id: userId,
         employee_id: employee_id,
         monthly_payment: calculation.monthlyPayment,
+        monthly_income: user_monthly_income,
         created_by: userId
       });
+      
+      // Save guarantor information
+      if (applicationData.guarantor_details) {
+        await this.saveGuarantorInformation(applicationId, userId, applicationData.guarantor_details);
+      }
       
       // Log application
       await auditLog(userId, 'LOAN_APPLICATION_CREATED', 'loan_applications', applicationId, null, applicationData, ip, userAgent);
@@ -570,6 +586,66 @@ class LoanService {
       };
     } catch (error) {
       throw error;
+    }
+  }
+
+  static async saveGuarantorInformation(loanApplicationId, userId, guarantorDetails) {
+    try {
+      // Parse guarantor details if it's a string
+      const guarantorData = typeof guarantorDetails === 'string' 
+        ? JSON.parse(guarantorDetails) 
+        : guarantorDetails;
+
+      const { type, employeeId, fullName, email, phoneNumber, employer, relationship } = guarantorData;
+
+      // Prepare guarantor record
+      const guarantorRecord = {
+        loan_application_id: loanApplicationId,
+        user_id: userId,
+        guarantor_type: type.toUpperCase(), // 'INTERNAL' or 'EXTERNAL'
+        guarantor_name: fullName || '',
+        guarantor_id: employeeId || '',
+        relationship: relationship || '',
+        monthly_income: 0, // Default value, can be updated later
+        contact_phone: phoneNumber || '',
+        contact_email: email || '',
+        address: '', // Default value
+        is_approved: null, // Not approved yet
+        approved_by: null,
+        approval_date: null
+      };
+
+      // Insert guarantor record
+      const insertQuery = `
+        INSERT INTO guarantors (
+          loan_application_id, user_id, guarantor_type, guarantor_name, 
+          guarantor_id, relationship, monthly_income, contact_phone, 
+          contact_email, address, is_approved, approved_by, approval_date, 
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      `;
+
+      await query(insertQuery, [
+        guarantorRecord.loan_application_id,
+        guarantorRecord.user_id,
+        guarantorRecord.guarantor_type,
+        guarantorRecord.guarantor_name,
+        guarantorRecord.guarantor_id,
+        guarantorRecord.relationship,
+        guarantorRecord.monthly_income,
+        guarantorRecord.contact_phone,
+        guarantorRecord.contact_email,
+        guarantorRecord.address,
+        guarantorRecord.is_approved,
+        guarantorRecord.approved_by,
+        guarantorRecord.approval_date
+      ]);
+
+      console.log('Guarantor information saved successfully for loan application:', loanApplicationId);
+    } catch (error) {
+      console.error('Error saving guarantor information:', error);
+      // Don't throw error here to avoid failing the loan application
+      // Just log the error for debugging
     }
   }
 }

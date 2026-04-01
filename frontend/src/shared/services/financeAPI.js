@@ -4,13 +4,13 @@ import apiClient from '../services/api';
 export const financeAPI = {
   // Get dashboard data
   getDashboardData: async (params = {}) => {
-    const response = await apiClient.get('/api/finance/analytics', params);
+    const response = await apiClient.get('/finance/analytics', params);
     return response.data;
   },
 
   // Get financial overview
   getFinancialOverview: async (period = 'MONTHLY') => {
-    const response = await apiClient.get('/api/finance/overview', { period });
+    const response = await apiClient.get('/finance/overview', { period });
     return response.data;
   },
 
@@ -18,111 +18,127 @@ export const financeAPI = {
   uploadPayroll: async (file) => {
     const formData = new FormData();
     formData.append('payroll', file);
-    const response = await apiClient.post('/api/finance/payroll/upload', formData);
+    const response = await apiClient.post('/finance/payroll/upload', formData);
     return response;
   },
 
   validatePayroll: async (batchId) => {
-    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/validate`);
+    const response = await apiClient.put(`/finance/payroll/batches/${batchId}/validate`);
     return response.data;
   },
 
   approvePayroll: async (batchId) => {
-    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/approve`);
+    const response = await apiClient.put(`/finance/payroll/batches/${batchId}/approve`);
     return response.data;
   },
 
   processPayroll: async (batchId) => {
-    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/process`);
+    const response = await apiClient.put(`/finance/payroll/batches/${batchId}/process`);
     return response.data;
   },
 
   reversePayroll: async (batchId) => {
-    const response = await apiClient.put(`/api/finance/payroll/batches/${batchId}/reverse`);
+    const response = await apiClient.put(`/finance/payroll/batches/${batchId}/reverse`);
     return response.data;
   },
 
   getPayrollBatches: async (params = {}) => {
-    const response = await apiClient.get('/api/finance/payroll/batches', params);
+    const response = await apiClient.get('/finance/payroll/batches', params);
     return response.data;
   },
 
   getPayrollBatchDetails: async (batchId, page = 1, limit = 10) => {
-    const response = await apiClient.get(`/api/finance/payroll/batches/${batchId}/details`, { page, limit });
+    const response = await apiClient.get(`/finance/payroll/batches/${batchId}/details`, { page, limit });
     return response.data;
   },
 
+  // Payroll Reports
+  getPayrollReport: async (filters = {}) => {
+    const response = await apiClient.get('/finance/reports/payroll', filters);
+    return response.data;
+  },
+
+  downloadPayrollReport: async (format = 'csv', filters = {}) => {
+    const response = await apiClient.get('/finance/reports/payroll/download', { 
+      format, 
+      ...filters 
+    }, {
+      responseType: 'blob'
+    });
+    return response;
+  },
+
   getPayrollStats: async () => {
-    const response = await apiClient.get('/api/finance/payroll/stats');
+    const response = await apiClient.get('/finance/payroll/stats');
     return response.data;
   },
 
   // Get recent transactions
   getRecentTransactions: async (limit = 10) => {
-    const response = await apiClient.get('/api/finance/transactions', { limit });
+    const response = await apiClient.get('/finance/transactions', { limit });
     return response.data;
   },
 
   getEmployees: async (params = {}) => {
-    const response = await apiClient.get('/api/finance/employees', params);
+    const response = await apiClient.get('/finance/employees', params);
     return response.data;
   },
 
   getTransactionsList: async (params = {}) => {
-    const response = await apiClient.get('/api/finance/transactions-list', params);
+    const response = await apiClient.get('/finance/transactions-list', params);
     return response.data;
   },
 
   getAnalytics: async (params = {}) => {
-    const response = await apiClient.get('/api/finance/analytics', params);
+    const response = await apiClient.get('/finance/analytics', params);
     return response.data;
   },
 
   getBudgets: async () => {
-    const response = await apiClient.get('/api/finance/budgets/overview');
+    const response = await apiClient.get('/finance/budgets/overview');
     return response.data;
   },
 
   getDepartments: async () => {
-    const response = await apiClient.get('/api/hr/departments'); // Assuming this exists or used by finance too
+    const response = await apiClient.get('/hr/departments'); // Assuming this exists or used by finance too
     return response.data;
   },
 
   getPayrollHistory: async (userId, params = {}) => {
-    const response = await apiClient.get(`/api/finance/payroll/history/${userId}`, params);
+    const response = await apiClient.get(`/finance/payroll/history/${userId}`, params);
     return response.data;
   },
 
   // Financial Reports
   getFinancialReports: async (reportType, params = {}) => {
-    const response = await apiClient.get(`/api/finance/reports/${reportType}`, params);
+    const response = await apiClient.get(`/finance/reports/${reportType}`, params);
     return response.data;
   },
 
   getCashFlowReport: async (period = 'MONTHLY') => {
-    const response = await apiClient.get('/api/finance/reports/cash-flow', { period });
+    const response = await apiClient.get('/finance/reports/cash-flow', { period });
     return response.data;
   },
 
   getProfitLossReport: async (period = 'MONTHLY') => {
-    const response = await apiClient.get('/api/finance/reports/profit-loss', { period });
+    const response = await apiClient.get('/finance/reports/profit-loss', { period });
     return response.data;
   },
 
   getLoanPortfolio: async (filters = {}) => {
-    const response = await apiClient.get('/api/finance/reports/loan-portfolio', filters);
+    const response = await apiClient.get('/finance/reports/loan-portfolio', filters);
     return response.data;
   },
 
   getSavingsSummary: async (period = 'MONTHLY') => {
-    const response = await apiClient.get('/api/finance/reports/savings-summary', { period });
+    const response = await apiClient.get('/finance/reports/savings-summary', { period });
     return response.data;
   },
 
   // Export Reports
   exportFinancialReport: async (reportType, period = 'MONTHLY', format = 'json') => {
     const params = { period, format };
-    const response = await apiClient.get(`/api/finance/export/${reportType}`, params, {
+    const response = await apiClient.get(`/finance/export/${reportType}`, params, {
       responseType: format === 'json' ? 'json' : 'blob'
     });
     return response;
@@ -130,7 +146,7 @@ export const financeAPI = {
 
   // System Health
   getSystemHealth: async () => {
-    const response = await apiClient.get('/api/finance/health');
+    const response = await apiClient.get('/finance/health');
     return response.data;
   }
 };

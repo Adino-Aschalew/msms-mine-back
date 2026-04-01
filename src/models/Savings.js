@@ -21,7 +21,7 @@ class Savings {
   
   static async getSavingsAccount(userId) {
     const selectQuery = `
-      SELECT sa.*, u.username, u.email, ep.first_name, ep.last_name, ep.department
+      SELECT sa.*, u.username, u.email, ep.first_name, ep.last_name, ep.department, ep.salary
       FROM savings_accounts sa
       JOIN users u ON sa.user_id = u.id
       JOIN employee_profiles ep ON sa.user_id = ep.user_id

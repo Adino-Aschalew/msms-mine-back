@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiUsers, FiPlus, FiSearch, FiEdit, FiTrash2, FiHome, FiUser, FiFile, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiUsers, FiPlus, FiSearch, FiEdit, FiTrash2, FiHome, FiUser, FiFile, FiX, FiCheck, FiAlertCircle, FiFilter, FiDownload, FiEye, FiShield, FiCalendar, FiDollarSign } from 'react-icons/fi';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
 import { guarantorsAPI } from '../../../shared/services/guarantorsAPI';
 
 const GuarantorsPage = () => {
-  const [activeTab, setActiveTab] = useState('internal');
+  const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingGuarantor, setEditingGuarantor] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, guarantorId: null, guarantorName: '' });
@@ -18,8 +20,11 @@ const GuarantorsPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [allGuarantors, setAllGuarantors] = useState([]);
   const [internalGuarantors, setInternalGuarantors] = useState([]);
   const [externalGuarantors, setExternalGuarantors] = useState([]);
+  const [selectedGuarantor, setSelectedGuarantor] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -63,19 +68,51 @@ const GuarantorsPage = () => {
       setLoading(true);
       setError(null);
       
-      const [internalData, externalData] = await Promise.all([
-        guarantorsAPI.getGuarantors({ type: 'internal' }),
-        guarantorsAPI.getGuarantors({ type: 'external' })
-      ]);
+      const response = await guarantorsAPI.getGuarantors();
+      const allGuarantorsData = response?.data || [];
       
-      setInternalGuarantors(internalData?.data || []);
-      setExternalGuarantors(externalData?.data || []);
+      // Separate by guarantor_type
+      const internal = allGuarantorsData.filter(g => g.guarantor_type === 'INTERNAL');
+      const external = allGuarantorsData.filter(g => g.guarantor_type === 'EXTERNAL');
+      
+      setAllGuarantors(allGuarantorsData);
+      setInternalGuarantors(internal);
+      setExternalGuarantors(external);
     } catch (err) {
       console.error('Failed to load guarantors:', err);
       setError('Failed to load guarantors. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFilteredGuarantors = () => {
+    let guarantors = activeTab === 'all' ? allGuarantors : 
+                   activeTab === 'internal' ? internalGuarantors : 
+                   externalGuarantors;
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      guarantors = guarantors.filter(g => {
+        if (statusFilter === 'approved') return g.is_approved === true;
+        if (statusFilter === 'pending') return g.is_approved === null;
+        if (statusFilter === 'rejected') return g.is_approved === false;
+        return true;
+      });
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      guarantors = guarantors.filter(guarantor =>
+        (guarantor.guarantor_name && guarantor.guarantor_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (guarantor.guarantor_id && guarantor.guarantor_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (guarantor.contact_email && guarantor.contact_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (guarantor.applicant_first_name && guarantor.applicant_first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (guarantor.applicant_last_name && guarantor.applicant_last_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    return guarantors;
   };
 
   const handleSearch = async () => {
@@ -289,22 +326,53 @@ const GuarantorsPage = () => {
   };
 
   const filteredInternalGuarantors = internalGuarantors.filter(guarantor =>
-    guarantor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    guarantor.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  guarantor.guarantor_type === 'INTERNAL' && (
+    (guarantor.guarantor_name && guarantor.guarantor_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (guarantor.guarantor_id && guarantor.guarantor_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (guarantor.contact_email && guarantor.contact_email.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
+);
 
-  const filteredExternalGuarantors = externalGuarantors.filter(g =>
-    g.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
+  guarantor.guarantor_type === 'EXTERNAL' && (
+    (guarantor.guarantor_name && guarantor.guarantor_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (guarantor.contact_email && guarantor.contact_email.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
+);
 
   const getStatusColor = (status) => {
     return status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-gray-50 text-gray-700 border-gray-100';
   };
 
   const tabs = [
+    { id: 'all', label: 'All', icon: FiUsers, count: allGuarantors.length },
     { id: 'internal', label: 'Internal', icon: FiHome, count: internalGuarantors.length },
     { id: 'external', label: 'External', icon: FiUser, count: externalGuarantors.length },
   ];
+
+  const exportGuarantors = () => {
+    const csvContent = [
+      ['ID', 'Name', 'Type', 'Email', 'Phone', 'Relationship', 'Status', 'Created Date'],
+      ...allGuarantors.map(g => [
+        g.id,
+        g.guarantor_name || 'N/A',
+        g.guarantor_type,
+        g.contact_email || 'N/A',
+        g.contact_phone || 'N/A',
+        g.relationship || 'N/A',
+        g.is_approved === true ? 'Approved' : g.is_approved === false ? 'Rejected' : 'Pending',
+        new Date(g.created_at).toLocaleDateString()
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `guarantors_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -313,29 +381,40 @@ const GuarantorsPage = () => {
         <div className="w-full mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 btn bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                <FiUsers className="w-6 h-6" />
+              <div className="w-12 h-12 btn bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+                <FiShield className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-600 dark:text-white">Guarantors</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total verified guarantors in system</p>
+                <h1 className="text-3xl font-bold text-gray-600 dark:text-white">System Guarantors</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">All guarantors registered in the system</p>
               </div>
             </div>
-            <button onClick={() => { resetForm(); setShowAddForm(true); }} className="btn btn-primary h-12 px-8 flex items-center gap-2">
-              <FiPlus className="w-5 h-5" />
-              <span>Add New</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowFilters(!showFilters)} className="btn btn-secondary h-12 px-6 flex items-center gap-2">
+                <FiFilter className="w-5 h-5" />
+                <span>Filters</span>
+              </button>
+              <button onClick={() => exportGuarantors()} className="btn btn-secondary h-12 px-6 flex items-center gap-2">
+                <FiDownload className="w-5 h-5" />
+                <span>Export</span>
+              </button>
+              <button onClick={() => { resetForm(); setShowAddForm(true); }} className="btn btn-primary h-12 px-8 flex items-center gap-2">
+                <FiPlus className="w-5 h-5" />
+                <span>Add New</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="w-full mx-auto px-6 py-8">
         {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[
-            { label: 'Total Active', value: internalGuarantors.length + externalGuarantors.length, color: 'blue', icon: FiUsers },
-            { label: 'Internal Emp', value: internalGuarantors.length, color: 'emerald', icon: FiHome },
-            { label: 'External Ref', value: externalGuarantors.length, color: 'orange', icon: FiUser },
+            { label: 'Total Guarantors', value: allGuarantors.length, color: 'purple', icon: FiUsers },
+            { label: 'Internal', value: internalGuarantors.length, color: 'emerald', icon: FiHome },
+            { label: 'External', value: externalGuarantors.length, color: 'orange', icon: FiUser },
+            { label: 'Pending Approval', value: allGuarantors.filter(g => g.is_approved === null).length, color: 'yellow', icon: FiAlertCircle },
           ].map((stat, i) => (
             <div key={i} className="stat-card px-10 py-10">
               <div className="flex items-center justify-between w-full">
@@ -350,6 +429,46 @@ const GuarantorsPage = () => {
             </div>
           ))}
         </div>
+
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="card mb-6 p-6 bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-400 tracking-widest">Status Filter</label>
+                <select 
+                  value={statusFilter} 
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full mt-2 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-sm dark:text-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="approved">Approved</option>
+                  <option value="pending">Pending</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-400 tracking-widest">Date Range</label>
+                <input 
+                  type="date" 
+                  className="w-full mt-2 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-sm dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-400 tracking-widest">Guarantor Type</label>
+                <select 
+                  value={activeTab} 
+                  onChange={(e) => setActiveTab(e.target.value)}
+                  className="w-full mt-2 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-sm dark:text-white"
+                >
+                  <option value="all">All Types</option>
+                  <option value="internal">Internal</option>
+                  <option value="external">External</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content Card */}
         <div className="card overflow-hidden">
@@ -388,49 +507,95 @@ const GuarantorsPage = () => {
                 <tr className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Identity & Contact</th>
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Employment details</th>
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Applicant</th>
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Relationship</th>
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">System Status</th>
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400 text-right">Row Controls</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                {(activeTab === 'internal' ? filteredInternalGuarantors : filteredExternalGuarantors).length > 0 ? (
-                  (activeTab === 'internal' ? filteredInternalGuarantors : filteredExternalGuarantors).map((guarantor) => (
+                {getFilteredGuarantors().length > 0 ? (
+                  getFilteredGuarantors().map((guarantor) => (
                     <tr key={guarantor.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-900/5 transition-colors group">
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-black text-sm border border-blue-200/50 dark:border-blue-800/50">
-                            {guarantor.fullName.charAt(0)}
+                          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black text-sm border border-purple-200/50 dark:border-purple-800/50">
+                            {guarantor.guarantor_name ? guarantor.guarantor_name.charAt(0) : (guarantor.guarantor_id ? guarantor.guarantor_id.charAt(0) : 'G')}
                           </div>
                           <div>
-                            <div className="font-bold text-gray-700 dark:text-white">{guarantor.fullName}</div>
-                            <div className="text-sm text-gray-600">{guarantor.email}</div>
+                            <div className="font-bold text-gray-700 dark:text-white">
+                              {guarantor.guarantor_name || (guarantor.guarantor_type === 'INTERNAL' ? `Employee: ${guarantor.guarantor_id}` : 'External Guarantor')}
+                            </div>
+                            <div className="text-sm text-gray-600">{guarantor.contact_email || 'No email'}</div>
+                            <div className="text-xs text-gray-400">{guarantor.contact_phone || 'No phone'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{guarantor.position || guarantor.jobPosition}</div>
-                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{guarantor.department || guarantor.employer}</div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {guarantor.guarantor_type === 'INTERNAL' ? 'Internal Employee' : 'External Individual'}
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                          {guarantor.guarantor_id || 'No ID'}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          <FiDollarSign className="w-3 h-3 inline mr-1" />
+                          {guarantor.monthly_income ? `${guarantor.monthly_income.toLocaleString()} ETB` : 'Not specified'}
+                        </div>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-sm text-gray-500">{guarantor.relationship}</span>
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {guarantor.applicant_first_name || 'Unknown'} {guarantor.applicant_last_name || ''}
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                          {guarantor.applicant_username || 'N/A'}
+                        </div>
+                        {guarantor.requested_amount && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Loan: {guarantor.requested_amount.toLocaleString()} ETB
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-5">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${getStatusColor(guarantor.status)}`}>
-                          {guarantor.status}
+                        <span className="text-sm text-gray-500">{guarantor.relationship || 'Not specified'}</span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${
+                          guarantor.is_approved === true 
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                            : guarantor.is_approved === false 
+                            ? 'bg-red-50 text-red-700 border-red-100'
+                            : 'bg-yellow-50 text-yellow-700 border-yellow-100'
+                        }`}>
+                          {guarantor.is_approved === true ? 'Approved' : guarantor.is_approved === false ? 'Rejected' : 'Pending'}
                         </span>
+                        <div className="text-xs text-gray-400 mt-1">
+                          <FiCalendar className="w-3 h-3 inline mr-1" />
+                          {new Date(guarantor.created_at).toLocaleDateString()}
+                        </div>
                       </td>
                       <td className="px-6 py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => handleEdit(guarantor)} className="p-2 text-blue-800 hover:text-blue-600 transition-colors"><FiEdit className="w-4 h-4" /></button>
-                          <button onClick={() => handleDelete(guarantor.id, guarantor.fullName)} className="p-2 text-red-800 hover:text-red-600 transition-colors"><FiTrash2 className="w-4 h-4" /></button>
+                          <button 
+                            onClick={() => { setSelectedGuarantor(guarantor); setShowDetailsModal(true); }} 
+                            className="p-2 text-blue-800 hover:text-blue-600 transition-colors" 
+                            title="View Details"
+                          >
+                            <FiEye className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleEdit(guarantor)} className="p-2 text-blue-800 hover:text-blue-600 transition-colors" title="Edit">
+                            <FiEdit className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(guarantor.id, guarantor.guarantor_name || guarantor.guarantor_id)} className="p-2 text-red-800 hover:text-red-600 transition-colors" title="Delete">
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="px-6 py-20 text-center text-gray-400">
+                    <td colSpan="6" className="px-6 py-20 text-center text-gray-400">
                       <FiUsers className="w-12 h-12 mx-auto mb-4 opacity-20" />
                       <p className="text-sm font-bold uppercase tracking-widest opacity-40">Zero records found</p>
                     </td>

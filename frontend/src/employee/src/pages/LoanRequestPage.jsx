@@ -71,6 +71,7 @@ const LoanRequestPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showPendingModal, setShowPendingModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
@@ -123,10 +124,11 @@ const LoanRequestPage = () => {
     setEligibility({
       savingsBalance: amount <= employeeData.savingsBalance * 2,
       salaryRule: monthlyInstallment <= employeeData.salary * 0.4,
-      employmentDuration: employeeData.employmentDuration >= 6,
+      // TEMPORARILY DISABLED: employmentDuration: employeeData.employmentDuration >= 6,
+      employmentDuration: true, // Bypass 6-month requirement for now
       guarantorInfo:
         formData.guarantorType === 'internal'
-          ? !!(formData.guarantor.employeeId && formData.guarantor.fullName && formData.guarantor.email)
+          ? !!(formData.guarantor.employeeId && formData.guarantor.relationship)
           : !!(formData.guarantor.fullName && formData.guarantor.email && formData.guarantor.employer),
     });
   };
@@ -136,6 +138,11 @@ const LoanRequestPage = () => {
   const handleInputChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
   const handleGuarantorChange = (field, value) =>
     setFormData((prev) => ({ ...prev, guarantor: { ...prev.guarantor, [field]: value } }));
+
+  // Simple employee ID input - no validation
+  const handleEmployeeIdChange = (employeeId) => {
+    handleGuarantorChange('employeeId', employeeId);
+  };
 
   const handleFileUpload = (field, file) => {
     if (!file) return;
@@ -152,7 +159,16 @@ const LoanRequestPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    if (!isEligible || !selectedLoanType) return;
+    
+    console.log('Form data:', formData);
+    console.log('Is eligible:', isEligible);
+    console.log('Selected loan type:', selectedLoanType);
+    
+    if (!isEligible || !selectedLoanType) {
+      console.log('Not eligible or no loan type selected');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -164,16 +180,33 @@ const LoanRequestPage = () => {
         monthly_payment: parseFloat(calculateMonthlyInstallment()),
         guarantor_details: JSON.stringify(
           formData.guarantorType === 'internal'
-            ? { type: 'internal', employeeId: formData.guarantor.employeeId, email: formData.guarantor.email }
+            ? { type: 'internal', employeeId: formData.guarantor.employeeId, relationship: formData.guarantor.relationship }
             : { type: 'external', fullName: formData.guarantor.fullName, employer: formData.guarantor.employer, email: formData.guarantor.email }
         ),
       };
+      
+      console.log('Payload to send:', payload);
 
       await loansAPI.applyForLoan(payload);
       setSubmitSuccess(true);
     } catch (error) {
       console.error('Error applying for loan:', error);
-      setErrorMsg(error.response?.data?.message || error.message || 'Failed to submit loan request.');
+      console.log('Error data:', error.data);
+      console.log('Error message from data:', error.data?.message);
+      console.log('Error message direct:', error.message);
+      
+      const errorMessage = error.data?.message || error.message || 'Failed to submit loan request.';
+      
+      // Check if error is about pending loan applications
+      if (errorMessage.includes('pending loan applications') || 
+          errorMessage.includes('Has pending loan') ||
+          errorMessage.includes('Has pending loan applications')) {
+        console.log('Showing pending modal for message:', errorMessage);
+        setShowPendingModal(true);
+      } else {
+        console.log('Setting error message:', errorMessage);
+        setErrorMsg(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -476,57 +509,10 @@ const LoanRequestPage = () => {
                     <input 
                       type="text" 
                       value={formData.guarantor.employeeId} 
-                      onChange={e => handleGuarantorChange('employeeId', e.target.value)} 
+                      onChange={e => handleEmployeeIdChange(e.target.value)} 
                       className={inputCls} 
                       required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<User />}>Full Name</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.fullName} 
-                      onChange={e => handleGuarantorChange('fullName', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<Mail />}>Email</FieldLabel>
-                    <input 
-                      type="email" 
-                      value={formData.guarantor.email} 
-                      onChange={e => handleGuarantorChange('email', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<Phone />}>Phone Number</FieldLabel>
-                    <input 
-                      type="tel" 
-                      value={formData.guarantor.phoneNumber} 
-                      onChange={e => handleGuarantorChange('phoneNumber', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel icon={<Building />}>Department</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.department} 
-                      onChange={e => handleGuarantorChange('department', e.target.value)} 
-                      className={inputCls} 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel icon={<Briefcase />}>Position</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.position} 
-                      onChange={e => handleGuarantorChange('position', e.target.value)} 
-                      className={inputCls} 
+                      placeholder="Enter employee ID (e.g., EMP001)"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -537,6 +523,7 @@ const LoanRequestPage = () => {
                       onChange={e => handleGuarantorChange('relationship', e.target.value)} 
                       className={inputCls} 
                       required 
+                      placeholder="e.g., Colleague, Friend, Family"
                     />
                   </div>
                 </>
@@ -674,7 +661,7 @@ const LoanRequestPage = () => {
                       eligibility.employmentDuration ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                     }`}>
                       {eligibility.employmentDuration ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                      <span>Minimum 6 Months Employment</span>
+                      <span>Minimum 6 Months Employment (Temporarily Disabled)</span>
                     </div>
                     <div className={`flex items-center gap-2 text-sm ${
                       eligibility.guarantorInfo ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
@@ -731,6 +718,39 @@ const LoanRequestPage = () => {
           </div>
         </div>
       </form>
+
+      {/* Pending Loan Modal */}
+      {showPendingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                Pending Loan Application
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                You already have a pending loan application. You cannot submit another loan request until your current application is processed (approved or rejected).
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => setShowPendingModal(false)}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  I Understand
+                </button>
+                <button
+                  onClick={() => window.location.href = '/employee/loans'}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  View My Applications
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

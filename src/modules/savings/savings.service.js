@@ -4,8 +4,11 @@ const { auditLog } = require('../../middleware/audit');
 class SavingsService {
   static async createAccount(userId, employeeId, savingPercentage, ip, userAgent) {
     try {
+      // Default to 15% if not provided
+      const finalSavingPercentage = savingPercentage || 15;
+      
       // Validate saving percentage
-      if (!savingPercentage || savingPercentage < 15 || savingPercentage > 65) {
+      if (finalSavingPercentage < 15 || finalSavingPercentage > 65) {
         throw new Error('Saving percentage must be between 15% and 65%');
       }
       
@@ -20,11 +23,16 @@ class SavingsService {
       console.log('SavingsService.createAccount: creating new account for userId:', userId, 'employeeId:', employeeId);
       
       // Create account
-      const accountId = await SavingsModel.createSavingsAccount(userId, employeeId, savingPercentage);
+      const accountId = await SavingsModel.createSavingsAccount(userId, employeeId, finalSavingPercentage);
       
-      await auditLog(userId, 'SAVINGS_ACCOUNT_CREATE', 'savings_accounts', accountId, null, { saving_percentage: savingPercentage }, ip, userAgent);
+      await auditLog(userId, 'SAVINGS_ACCOUNT_CREATE', 'savings_accounts', accountId, null, { saving_percentage: finalSavingPercentage }, ip, userAgent);
       
-      return { accountId, message: 'Savings account created successfully' };
+      return { 
+        accountId, 
+        message: 'Savings account created successfully',
+        saving_percentage: finalSavingPercentage,
+        is_default: !savingPercentage
+      };
     } catch (error) {
       throw error;
     }

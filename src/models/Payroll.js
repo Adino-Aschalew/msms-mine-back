@@ -364,23 +364,17 @@ class Payroll {
         continue;
       }
 
-      // Validate that net salary equals gross - saving - deduction (exact match)
-      const expectedNet = record.gross_salary - record.saving - record.deduction;
-      if (record.net_salary !== expectedNet) {
-        errors.push(
-          `Record ${recordNumber}: Net salary must equal gross - saving - deduction (expected ${expectedNet}, got ${record.net_salary})`
-        );
-        continue;
-      }
+      // We will automatically calculate net salary from gross, saving_percentage, and loan
+      // Remove the exact match validation that caused failures when file only has gross_salary
 
-      if (record.net_salary > record.gross_salary) {
-        warnings.push(`Record ${recordNumber}: Net salary (${record.net_salary}) is greater than gross salary (${record.gross_salary})`);
+      if (record.net_salary && record.net_salary > record.gross_salary) {
+        warnings.push(`Record ${recordNumber}: Provided net salary (${record.net_salary}) was greater than gross salary (${record.gross_salary})`);
       }
 
       // Check employee exists in bulk-loaded data
       const employee = employeeMap.get(record.employee_id);
       if (!employee) {
-        errors.push(`Record ${recordNumber}: Employee ${record.employee_id} not found in system`);
+        errors.push(`Record ${recordNumber}: This employee_id (${record.employee_id}) is invalid or not found in database`);
         continue;
       }
 
@@ -395,25 +389,29 @@ class Payroll {
 
       // Validate against stored employee salary
       if (employee.salary && parseFloat(employee.salary) !== parseFloat(record.gross_salary)) {
-        warnings.push(
-          `Record ${recordNumber}: Gross salary (${record.gross_salary}) differs from stored employee salary (${employee.salary})`
+        errors.push(
+          `Record ${recordNumber}: Invalid gross salary. Provided (${record.gross_salary}) does not match the stored salary for ${record.employee_id} (${employee.salary})`
         );
+        continue;
       }
 
-      // Use the deductions from your file instead of system calculations
-      const fileSavingsDeduction = record.saving || 0;
-      const fileLoanDeduction = record.deduction || 0;
-      const fileTotalDeductions = fileSavingsDeduction + fileLoanDeduction;
-
-      // Use the net salary from file (already calculated as gross - saving - deduction)
-      const fileNetSalary = record.net_salary;
-
-      // Log the difference for audit purposes but don't fail validation
+      // AUTOMATIC CALCULATION
       const systemSavingsDeduction = employee.saving_percentage ? (record.gross_salary * employee.saving_percentage / 100) : 0;
       const systemLoanRepayment = employee.monthly_repayment || 0;
 
-      if (fileSavingsDeduction !== systemSavingsDeduction) {
-        console.log(`Record ${recordNumber}: File savings deduction (${fileSavingsDeduction}) differs from system calculation (${systemSavingsDeduction})`);
+      // Use the system deductions
+      const calculatedSavingsDeduction = systemSavingsDeduction;
+      const calculatedLoanDeduction = systemLoanRepayment;
+      const calculatedTotalDeductions = calculatedSavingsDeduction + calculatedLoanDeduction;
+
+      // Calculate the net salary automatically
+      const calculatedNetSalary = record.gross_salary - calculatedTotalDeductions;
+
+      if (record.saving !== undefined && record.saving !== calculatedSavingsDeduction) {
+        warnings.push(`Record ${recordNumber}: Calculated savings deduction (${calculatedSavingsDeduction}) differs from file (${record.saving})`);
+      }
+      if (record.deduction !== undefined && record.deduction !== calculatedLoanDeduction) {
+        warnings.push(`Record ${recordNumber}: Calculated loan deduction (${calculatedLoanDeduction}) differs from file (${record.deduction})`);
       }
 
       validRecords.push({
@@ -428,11 +426,11 @@ class Payroll {
         'Notes': '', // Frontend field name
         employee_id: record.employee_id, // Use database field name
         gross_salary: record.gross_salary, // Use database field name
-        net_salary: record.net_salary, // Use database field name
-        savings_deduction: fileSavingsDeduction, // Use file savings deduction
-        loan_repayment_deduction: fileLoanDeduction, // Use file loan deduction
-        total_deductions: fileTotalDeductions, // Use file total deductions
-        final_amount: fileNetSalary
+        net_salary: calculatedNetSalary, // Use calculated net salary
+        savings_deduction: calculatedSavingsDeduction, // Use calculated savings deduction
+        loan_repayment_deduction: calculatedLoanDeduction, // Use calculated loan deduction
+        total_deductions: calculatedTotalDeductions, // Use calculated total deductions
+        final_amount: calculatedNetSalary
       });
     }
 
@@ -745,9 +743,9 @@ class Payroll {
         validationErrors.push(`Employee ${detail.employee_id}: Deductions exceed net salary`);
       }
 
-      // Verify exact net salary calculation: net_salary == gross_salary - saving - deduction
-      const expectedNet = detail.gross_salary - detail.saving - detail.deduction;
-      if (detail.net_salary !== expectedNet) {
+      // Verify exact net salary calculation: net_salary == gross_salary - savings_deduction - loan_repayment_deduction
+      const expectedNet = detail.gross_salary - detail.savings_deduction - detail.loan_repayment_deduction;
+      if (Math.abs(detail.net_salary - expectedNet) > 0.01) {
         validationErrors.push(`Employee ${detail.employee_id}: Net salary must equal gross - saving - deduction (expected ${expectedNet}, got ${detail.net_salary})`);
       }
     }

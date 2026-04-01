@@ -3,27 +3,26 @@ import apiClient from './api';
 class EnterpriseSavingsAPI {
   // Get complete savings dashboard data
   static async getSavingsDashboard() {
-    const response = await apiClient.get('/api/savings/dashboard');
+    const response = await apiClient.get('/savings/dashboard');
     return response.data;
   }
 
   // Create savings account
-  static async createSavingsAccount(savingPercentage) {
-    const response = await apiClient.post('/api/savings/account', {
-      saving_percentage: savingPercentage
-    });
+  static async createSavingsAccount(savingPercentage = null) {
+    const requestBody = savingPercentage ? { saving_percentage: savingPercentage } : {};
+    const response = await apiClient.post('/savings/account', requestBody);
     return response.data;
   }
 
   // Get savings statistics for widgets
   static async getSavingsStatistics() {
-    const response = await apiClient.get('/api/savings/statistics');
+    const response = await apiClient.get('/savings/statistics');
     return response.data;
   }
 
   // Simulate savings changes
   static async simulateSavingsChange(newValue, savingsType, effectiveDate) {
-    const response = await apiClient.post('/api/savings/simulate', {
+    const response = await apiClient.post('/savings/simulate', {
       newValue,
       savingsType,
       effectiveDate
@@ -33,13 +32,13 @@ class EnterpriseSavingsAPI {
 
   // Submit savings change request
   static async submitSavingsRequest(requestData) {
-    const response = await apiClient.post('/api/savings/requests', requestData);
+    const response = await apiClient.post('/savings/requests', requestData);
     return response.data;
   }
 
   // Get savings history
   static async getSavingsHistory(page = 1, limit = 20) {
-    const response = await apiClient.get('/api/savings/history', {
+    const response = await apiClient.get('/savings/history', {
       params: { page, limit }
     });
     return response.data;
@@ -47,19 +46,19 @@ class EnterpriseSavingsAPI {
 
   // Get system constraints
   static async getSavingsConstraints() {
-    const response = await apiClient.get('/api/savings/constraints');
+    const response = await apiClient.get('/savings/constraints');
     return response.data;
   }
 
   // Get pending requests
   static async getPendingRequests() {
-    const response = await apiClient.get('/api/savings/requests/pending');
+    const response = await apiClient.get('/savings/requests/pending');
     return response.data;
   }
 
   // Cancel a request
   static async cancelRequest(requestId) {
-    const response = await apiClient.delete(`/api/savings/requests/${requestId}`);
+    const response = await apiClient.delete(`/savings/requests/${requestId}`);
     return response.data;
   }
 

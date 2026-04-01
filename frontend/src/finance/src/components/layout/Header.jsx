@@ -32,7 +32,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
               
               {/* FiSearch Bar - Desktop */}
               <div className="hidden md:block">
-                 <h1 className='font-bold text-2xl'>Welcome Back,<span className='text-blue-600'>{user.firstName}</span></h1>
+                 <h1 className='font-bold text-2xl'>Welcome Back,<span className='text-blue-600'>{user?.firstName || 'User'}</span></h1>
               </div>
               
               {/* Mobile FiSearch Button */}
@@ -95,14 +95,14 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 >
                   <div className="relative">
                     <img
-                      src={user.avatar}
-                      alt={user.name}
+                      src={user?.avatar || '/default-avatar.png'}
+                      alt={user?.name || 'User'}
                       className="h-6 w-6 sm:h-8 sm:w-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                     />
                     <div className="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                   </div>
                   <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {user.name}
+                    {user?.name || 'User'}
                   </span>
                   <FiChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
@@ -113,16 +113,16 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                     <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center space-x-3">
                         <img
-                          src={user.avatar}
-                          alt={user.name}
+                          src={user?.avatar || '/default-avatar.png'}
+                          alt={user?.name || 'User'}
                           className="h-12 w-12 rounded-full object-cover border-2 border-white dark:border-gray-600"
                         />
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {user.name}
+                            {user?.name || 'User'}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {user.email}
+                            {user?.email || 'user@example.com'}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>

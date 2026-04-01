@@ -39,7 +39,7 @@ const useLoanStore = create((set, get) => ({
     try {
       const response = await loanAPI.getLoanRequests(params);
       set({ 
-        loans: response.data,
+        loans: response.data.data || response.data || [],
         loading: false 
       });
     } catch (error) {
@@ -56,7 +56,7 @@ const useLoanStore = create((set, get) => ({
     try {
       const response = await loanAPI.getLoanById(id);
       set({ 
-        currentLoan: response.data,
+        currentLoan: response.data.data || response.data,
         loading: false 
       });
     } catch (error) {
@@ -139,7 +139,7 @@ const useLoanStore = create((set, get) => ({
     try {
       const response = await loanAPI.getLoanStats(params);
       set({ 
-        stats: response.data,
+        stats: response.data.data || response.data,
         loading: false 
       });
     } catch (error) {

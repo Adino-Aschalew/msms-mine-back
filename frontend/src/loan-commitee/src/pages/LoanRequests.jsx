@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { handleButtonClick, approveLoan, rejectLoan, suspendLoan } from '../utils/actionHandlers';
 import { exportLoanReport } from '../utils/exportUtils';
-import { loanCommitteeAPI } from '../../../shared/services/loansAPI';
+import { committeeAPI } from '../services/committeeAPI';
 
 const LoanRequests = () => {
   const navigate = useNavigate();
@@ -58,23 +58,31 @@ const LoanRequests = () => {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const response = await loanCommitteeAPI.getPendingApplications(1, 100);
-      if (response && response.data) {
+      const response = await committeeAPI.getPendingApplications({
+        page: 1,
+        limit: 100,
+        search: searchTerm,
+        department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
+        min_amount: amountRange.min || undefined,
+        max_amount: amountRange.max || undefined
+      });
+      
+      if (response && response.data && response.data.success) {
         // Map backend response fields to frontend expected fields
-        const mappedData = response.data.map(app => ({
+        const mappedData = response.data.data.map(app => ({
           id: app.id,
-          employeeName: `${app.first_name} ${app.last_name}`,
+          employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
+          employeeId: app.employee_id || 'N/A',
           department: app.department || 'Not specified',
           loanType: app.purpose || 'Personal',
-          requestedAmount: parseFloat(app.requested_amount),
+          requestedAmount: parseFloat(app.requested_amount || 0),
           monthlySalary: parseFloat(app.monthly_income || 0),
           savingsBalance: parseFloat(app.savings_balance || 0),
-          guarantor: (typeof app.guarantor_details === 'string') 
-            ? JSON.parse(app.guarantor_details).fullName 
-            : (app.guarantor_details?.fullName || 'Not specified'),
+          guarantor: app.guarantor_details?.name || 'Not specified',
           eligibilityStatus: app.risk_level === 'CRITICAL' ? 'not-eligible' : 'eligible',
           submissionDate: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          status: app.status?.toLowerCase() || 'pending'
+          status: app.status?.toLowerCase() || 'pending',
+          riskLevel: app.risk_level || 'LOW'
         }));
         setLoanRequests(mappedData);
       }

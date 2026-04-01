@@ -3,7 +3,7 @@ import api from './api';
 export const notificationsAPI = {
   // Get all notifications for the user
   getNotifications: async (params = {}) => {
-    const response = await api.get('/notifications', { params });
+    const response = await api.get('/notifications', params);
     return response.data;
   },
 

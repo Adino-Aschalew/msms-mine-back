@@ -485,6 +485,64 @@ class FinanceController {
       });
     }
   }
+
+  static async getPayrollReport(req, res) {
+    try {
+      const { batchId, startDate, endDate } = req.query;
+      const SalarySyncService = require('../../services/salarySync.service');
+      
+      const dateRange = {};
+      if (startDate && endDate) {
+        dateRange.startDate = startDate;
+        dateRange.endDate = endDate;
+      }
+      
+      const report = await SalarySyncService.generatePayrollReport(
+        batchId ? parseInt(batchId) : null,
+        Object.keys(dateRange).length > 0 ? dateRange : null
+      );
+      
+      res.json({
+        success: true,
+        data: report
+      });
+    } catch (error) {
+      console.error('Get payroll report error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate payroll report'
+      });
+    }
+  }
+
+  static async downloadPayrollReport(req, res) {
+    try {
+      const { format = 'csv', batchId, startDate, endDate } = req.query;
+      const SalarySyncService = require('../../services/salarySync.service');
+      
+      const dateRange = {};
+      if (startDate && endDate) {
+        dateRange.startDate = startDate;
+        dateRange.endDate = endDate;
+      }
+      
+      const reportFile = await SalarySyncService.downloadPayrollReport(
+        format,
+        batchId ? parseInt(batchId) : null,
+        Object.keys(dateRange).length > 0 ? dateRange : null
+      );
+      
+      res.setHeader('Content-Type', reportFile.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${reportFile.filename}"`);
+      res.send(reportFile.content);
+    } catch (error) {
+      console.error('Download payroll report error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to download payroll report'
+      });
+    }
+  }
 }
 
 module.exports = FinanceController;

@@ -32,7 +32,7 @@ import {
   RefreshCw,
   Info
 } from 'lucide-react';
-import { loanCommitteeAPI } from '../../../shared/services/loansAPI';
+import { committeeAPI } from '../services/committeeAPI';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 
 const Disbursements = () => {
@@ -52,13 +52,28 @@ const Disbursements = () => {
   const fetchDisbursements = async () => {
     try {
       setLoading(true);
-      const res = await loanCommitteeAPI.getApprovedApplications();
-      if (res && res.data) {
-        setDisbursements(res.data);
+      const res = await committeeAPI.getApprovedApplications();
+      if (res && res.data && res.data.success) {
+        // Map backend response to frontend expected format
+        const mappedData = res.data.data.map(app => ({
+          id: app.id,
+          employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
+          employeeId: app.employee_id || 'N/A',
+          department: app.department || 'Not specified',
+          loanType: app.purpose || 'Personal',
+          approvedAmount: parseFloat(app.approved_amount || app.requested_amount || 0),
+          monthlyInstallment: parseFloat(app.monthly_repayment || 0),
+          tenure: app.approved_term_months || app.repayment_duration_months || 0,
+          approvalDate: app.review_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+          status: app.status?.toLowerCase() || 'approved',
+          nextPaymentDate: app.next_payment_date || 'N/A',
+          outstandingBalance: parseFloat(app.outstanding_balance || 0)
+        }));
+        setDisbursements(mappedData);
       }
-    } catch (err) {
-      console.error('Error fetching disbursements:', err);
-      setError('Failed to load disbursements data');
+    } catch (error) {
+      console.error('Error fetching disbursements:', error);
+      setError('Failed to fetch disbursements');
     } finally {
       setLoading(false);
     }
@@ -129,7 +144,10 @@ const Disbursements = () => {
     setProcessingActions(prev => new Set(prev).add(`${id}-disburse`));
     
     try {
-      await loanCommitteeAPI.disburseLoan(id);
+      await committeeAPI.disburseLoan(id, {
+        disbursement_date: new Date().toISOString().split('T')[0],
+        notes: 'Loan disbursed by committee'
+      });
       
       // Update local state
       setDisbursements(prev => prev.map(d => 

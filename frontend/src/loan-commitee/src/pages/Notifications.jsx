@@ -236,33 +236,41 @@ const Notifications = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Stay updated with loan system alerts and activities
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
-          <button
-            onClick={handleMarkAllAsRead}
-            className="btn bg-blue-600 text-white"
-            disabled={unreadCount === 0}
-          >
-            <Check className="w-4 h-4 mr-2" />
-            Mark All as Read
-          </button>
-          <button
-            onClick={handleClearNotifications}
-            className="bg-red-600 text-white btn"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear All
-          </button>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
+                Stay updated with loan system alerts and activities
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
+              <button
+                onClick={handleMarkAllAsRead}
+                className="btn bg-blue-600 text-white"
+                disabled={unreadCount === 0}
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Mark All as Read
+              </button>
+              <button
+                onClick={handleClearNotifications}
+                className="bg-red-600 text-white btn"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear All
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Content */}
+      <div className="px-4 sm:px-6 py-6">
+        <div className="space-y-6">
 
       {/* Search and Filters */}
       <div className="card p-4">
@@ -473,6 +481,8 @@ const Notifications = () => {
               <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1"></span>
             </button>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>

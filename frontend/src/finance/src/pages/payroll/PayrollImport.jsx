@@ -13,6 +13,8 @@ const PayrollImport = () => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [results, setResults] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState([]);
   const { addNotification } = useNotifications();
 
   const handleDrag = useCallback((e) => {
@@ -126,6 +128,11 @@ const PayrollImport = () => {
 
       const isValidationError = response.success === false;
       const hasErrors = response.errors && response.errors.length > 0;
+
+      if (isValidationError && hasErrors) {
+        setUploadErrors(response.errors);
+        setShowErrorModal(true);
+      }
 
       addNotification({
         type: isValidationError ? 'error' : (hasErrors ? 'warning' : 'success'),
@@ -488,6 +495,45 @@ const PayrollImport = () => {
           </div>
         )}
       </div>
+
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col font-sans">
+            <div className="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+              <h3 className="text-xl font-bold text-red-600 dark:text-red-400 flex items-center">
+                <AlertCircle className="h-6 w-6 mr-2" />
+                Validation Errors
+              </h3>
+              <button 
+                onClick={() => setShowErrorModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <ul className="space-y-3">
+                {uploadErrors.map((err, index) => (
+                  <li key={index} className="flex items-start bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-200 p-3 rounded-lg border border-red-100 dark:border-red-800/20 text-sm">
+                    <span className="mr-2 mt-0.5">•</span>
+                    <span>{err}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button 
+                onClick={() => setShowErrorModal(false)}
+                className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

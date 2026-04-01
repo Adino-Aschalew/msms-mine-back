@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { FileText, Download, Calendar, Filter, TrendingUp, DollarSign, PieChart, BarChart, Eye, Users } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import PayrollReport from '../../components/reports/PayrollReport';
 
 const Reports = () => {
   const { theme } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [selectedReport, setSelectedReport] = useState('all');
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'payroll'
 
   const reports = [
     {
@@ -91,8 +93,39 @@ const Reports = () => {
         </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Tab Navigation */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm ${
+                activeTab === 'overview'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('payroll')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm ${
+                activeTab === 'payroll'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Payroll Reports
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' ? (
+        <>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -251,6 +284,10 @@ const Reports = () => {
           ))}
         </div>
       </div>
+        </>
+      ) : (
+        <PayrollReport />
+      )}
     </div>
   );
 };

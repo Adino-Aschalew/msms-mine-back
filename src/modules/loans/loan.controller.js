@@ -21,7 +21,9 @@ class LoanController {
     } catch (error) {
       console.error('Apply for loan error:', error);
       
-      if (error.message.includes('not eligible') || error.message.includes('required')) {
+      if (error.message.includes('not eligible') || 
+          error.message.includes('required') || 
+          error.message.includes('pending loan')) {
         return res.status(400).json({
           success: false,
           message: error.message

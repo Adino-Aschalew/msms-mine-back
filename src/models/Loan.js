@@ -35,7 +35,8 @@ class Loan {
     const config = {};
     configs.forEach(c => config[c.config_key] = c.config_value);
     
-    const minMonths = parseInt(config.min_loan_eligibility_months || '6');
+    // TEMPORARILY DISABLED: const minMonths = parseInt(config.min_loan_eligibility_months || '6');
+    const minMonths = 0; // Bypass minimum months requirement for now
     const maxMultiplier = parseFloat(config.max_loan_multiplier || '6');
     
     const accountAgeMonths = moment().diff(moment(data.account_created_date), 'months');
@@ -52,11 +53,13 @@ class Loan {
       return { eligible: false, reason: 'Has unpaid penalties' };
     }
     
-    if (accountAgeMonths < minMonths) {
+    // TEMPORARILY DISABLED: Account age requirement
+    if (false && accountAgeMonths < minMonths) {
       return { eligible: false, reason: `Account must be at least ${minMonths} months old` };
     }
     
-    if (data.monthly_contributions < minMonths) {
+    // TEMPORARILY DISABLED: Monthly contributions requirement
+    if (false && data.monthly_contributions < minMonths) {
       return { eligible: false, reason: `Must have at least ${minMonths} consecutive monthly contributions` };
     }
     

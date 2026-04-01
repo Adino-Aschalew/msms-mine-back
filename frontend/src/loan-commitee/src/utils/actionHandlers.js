@@ -1,7 +1,7 @@
 // Central action handlers for all website functionality
 
 import { exportReport } from './exportUtils.js';
-import { loanCommitteeAPI } from '../../../shared/services/loansAPI';
+import { committeeAPI } from '../services/committeeAPI';
 
 export const actionHandlers = {
   // Navigation actions
@@ -106,30 +106,41 @@ export const actionHandlers = {
   approveLoan: async (loanId, payload = {}) => {
     console.log(`Approving loan: ${loanId}`, payload);
     try {
-      const response = await loanCommitteeAPI.approveLoan(loanId, payload);
-      return { success: true, loanId };
+      const response = await committeeAPI.reviewApplication(loanId, {
+        action: 'APPROVE',
+        notes: payload.notes || 'Approved by Loan Committee',
+        approved_amount: payload.approvedAmount,
+        approved_term_months: payload.approvedTerm
+      });
+      return { success: true, loanId, data: response.data };
     } catch (error) {
       console.error('Error approving loan:', error);
-      return { success: false, error: error.response?.data?.message || error.message };
+      return { success: false, error: error.message };
     }
   },
 
   rejectLoan: async (loanId, reason) => {
     console.log(`Rejecting loan: ${loanId}, reason: ${reason}`);
     try {
-      const response = await loanCommitteeAPI.rejectLoan(loanId, { notes: reason });
-      return { success: true, loanId };
+      const response = await committeeAPI.reviewApplication(loanId, {
+        action: 'REJECT',
+        notes: reason || 'Rejected by Loan Committee'
+      });
+      return { success: true, loanId, data: response.data };
     } catch (error) {
       console.error('Error rejecting loan:', error);
-      return { success: false, error: error.response?.data?.message || error.message };
+      return { success: false, error: error.message };
     }
   },
 
   suspendLoan: async (loanId) => {
     console.log(`Suspending loan: ${loanId}`);
     try {
-      const response = await loanCommitteeAPI.reviewApplication(loanId, { decision: 'request_more_info' });
-      return { success: true, loanId };
+      const response = await committeeAPI.reviewApplication(loanId, { 
+        action: 'REQUEST_MORE_INFO',
+        notes: 'Additional information requested'
+      });
+      return { success: true, loanId, data: response.data };
     } catch (error) {
       console.error('Error suspending loan:', error);
       return { success: false, error: error.response?.data?.message || error.message };

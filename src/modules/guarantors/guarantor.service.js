@@ -115,8 +115,8 @@ class GuarantorService {
       const selectQuery = `
         SELECT 
           g.*,
-          la.loan_amount,
-          la.loan_purpose,
+          la.requested_amount,
+          la.purpose,
           u.username as applicant_username,
           ep.first_name as applicant_first_name,
           ep.last_name as applicant_last_name
@@ -153,8 +153,8 @@ class GuarantorService {
       const selectQuery = `
         SELECT 
           g.*,
-          la.loan_amount,
-          la.loan_purpose,
+          la.requested_amount,
+          la.purpose,
           la.status as application_status,
           u.username as applicant_username,
           ep.first_name as applicant_first_name,
@@ -332,8 +332,8 @@ class GuarantorService {
       const [guarantors] = await query(`
         SELECT 
           g.*,
-          la.loan_amount,
-          la.loan_purpose,
+          la.requested_amount,
+          la.purpose,
           u.username as applicant_username,
           ep.first_name as applicant_first_name,
           ep.last_name as applicant_last_name
@@ -413,7 +413,7 @@ class GuarantorService {
       
       // Check if user has pending applications
       const [pendingApplications] = await query(`
-        SELECT COUNT(*) as count, SUM(loan_amount) as total_amount
+        SELECT COUNT(*) as count, SUM(requested_amount) as total_amount
         FROM loan_applications
         WHERE user_id = ? AND status IN ('PENDING', 'UNDER_REVIEW')
       `, [userId]);

@@ -69,11 +69,8 @@ class SalarySyncService {
   static async processPayrollRecord(connection, record, batchId) {
     const employee_id = record['Employee ID'] || record.employee_id;
     const gross_salary = parseFloat(record['Gross Salary'] || record.salary || record.gross_salary || 0);
-    const savings_deduction = parseFloat(record['Savings Deduction'] || record.savings || 0);
-    const loan_deduction = parseFloat(record['Loan Deduction'] || record.loan_payment || 0);
-    const net_salary = parseFloat(record['Net Salary'] || record.net_pay || (gross_salary - savings_deduction - loan_deduction));
     
-    // Validate employee exists
+    // Validate employee exists and get their details
     const [employees] = await connection.execute(
       'SELECT id, username FROM users WHERE employee_id = ?',
       [employee_id]
@@ -85,7 +82,43 @@ class SalarySyncService {
     
     const userId = employees[0].id;
     
-    // Insert payroll detail
+    // AUTOMATICALLY CALCULATE DEDUCTIONS
+    
+    // 1. Get employee's savings account and calculate savings deduction
+    let savings_deduction = 0;
+    const [savingsAccount] = await connection.execute(
+      'SELECT * FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"',
+      [userId]
+    );
+    
+    if (savingsAccount && savingsAccount[0]) {
+      const account = savingsAccount[0];
+      if (account.savings_type === 'PERCENTAGE') {
+        savings_deduction = gross_salary * (account.saving_percentage / 100);
+      } else if (account.savings_type === 'FIXED_AMOUNT') {
+        savings_deduction = account.fixed_amount;
+      }
+    }
+    
+    // 2. Get employee's active loans and calculate loan deduction
+    let loan_deduction = 0;
+    const [activeLoans] = await connection.execute(
+      'SELECT * FROM loans WHERE user_id = ? AND status = "ACTIVE"',
+      [userId]
+    );
+    
+    if (activeLoans && activeLoans.length > 0) {
+      // Sum up all monthly loan repayments
+      loan_deduction = activeLoans.reduce((total, loan) => {
+        return total + parseFloat(loan.monthly_deduction || 0);
+      }, 0);
+    }
+    
+    // 3. Calculate net salary
+    const total_deductions = savings_deduction + loan_deduction;
+    const net_salary = gross_salary - total_deductions;
+    
+    // Insert payroll detail with calculated values
     const payrollInsertQuery = `
       INSERT INTO payroll_details (
         payroll_batch_id, user_id, employee_id, gross_salary, net_salary, 
@@ -94,8 +127,6 @@ class SalarySyncService {
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PAID', NOW())
     `;
-    
-    const total_deductions = savings_deduction + loan_deduction;
     
     await connection.execute(payrollInsertQuery, [
       batchId,
@@ -119,11 +150,21 @@ class SalarySyncService {
       await this.processLoanDeductionFromPayroll(connection, userId, loan_deduction, `PAYROLL_BATCH_${batchId}`);
     }
     
-    // Send notification to employee
+    // Send notification to employee with breakdown
+    let notificationMessage = `Your payroll for this period has been processed.\n`;
+    notificationMessage += `Gross Salary: ${gross_salary}\n`;
+    if (savings_deduction > 0) {
+      notificationMessage += `Savings Deduction: ${savings_deduction} (auto-calculated)\n`;
+    }
+    if (loan_deduction > 0) {
+      notificationMessage += `Loan Deduction: ${loan_deduction} (auto-calculated)\n`;
+    }
+    notificationMessage += `Net Amount: ${net_salary}`;
+    
     await NotificationService.createNotification(
       userId,
       'Payroll Processed',
-      `Your payroll for this period has been processed. Net amount: ${net_salary}. Savings deduction: ${savings_deduction} has been deposited to your account.`,
+      notificationMessage,
       'INFO'
     );
     
@@ -359,6 +400,148 @@ class SalarySyncService {
     } catch (error) {
       throw error;
     }
+  }
+
+  static async generatePayrollReport(batchId = null, dateRange = null) {
+    try {
+      let whereClause = 'WHERE 1=1';
+      let params = [];
+      
+      if (batchId) {
+        whereClause += ' AND pd.payroll_batch_id = ?';
+        params.push(batchId);
+      }
+      
+      if (dateRange && dateRange.startDate && dateRange.endDate) {
+        whereClause += ' AND pb.payroll_date BETWEEN ? AND ?';
+        params.push(dateRange.startDate, dateRange.endDate);
+      }
+      
+      const query = `
+        SELECT 
+          pd.employee_id,
+          ep.first_name,
+          ep.last_name,
+          pd.gross_salary,
+          pd.savings_deduction as savings,
+          pd.loan_repayment_deduction as loan,
+          pd.net_salary,
+          DATE(pb.payroll_date) as payroll_date,
+          pb.batch_name,
+          pd.payment_status
+        FROM payroll_details pd
+        INNER JOIN payroll_batches pb ON pd.payroll_batch_id = pb.id
+        INNER JOIN users u ON pd.user_id = u.id
+        INNER JOIN employee_profiles ep ON u.id = ep.user_id
+        ${whereClause}
+        ORDER BY pb.payroll_date DESC, ep.last_name, ep.first_name
+      `;
+      
+      const { query: dbQuery } = require('../config/database');
+      
+      const result = await dbQuery(query, params);
+      const records = result && result[0] ? result[0] : [];
+      
+      return {
+        success: true,
+        data: records,
+        total: records ? records.length : 0,
+        generated_at: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error generating payroll report:', error);
+      throw error;
+    }
+  }
+
+  static async downloadPayrollReport(format = 'csv', batchId = null, dateRange = null) {
+    try {
+      const reportData = await this.generatePayrollReport(batchId, dateRange);
+      
+      if (format === 'csv') {
+        return this.generateCSVReport(reportData.data);
+      } else if (format === 'excel') {
+        return this.generateExcelReport(reportData.data);
+      } else {
+        throw new Error('Unsupported format. Use csv or excel.');
+      }
+    } catch (error) {
+      console.error('Error downloading payroll report:', error);
+      throw error;
+    }
+  }
+
+  static generateCSVReport(data) {
+    const { Parser } = require('json2csv');
+    
+    const fields = [
+      { label: 'Employee ID', value: 'employee_id' },
+      { label: 'First Name', value: 'first_name' },
+      { label: 'Last Name', value: 'last_name' },
+      { label: 'Gross Salary', value: 'gross_salary' },
+      { label: 'Savings Deduction', value: 'savings' },
+      { label: 'Loan Deduction', value: 'loan' },
+      { label: 'Net Salary', value: 'net_salary' },
+      { label: 'Payroll Date', value: 'payroll_date' },
+      { label: 'Batch Name', value: 'batch_name' },
+      { label: 'Payment Status', value: 'payment_status' }
+    ];
+    
+    const json2csvParser = new Parser({ fields });
+    const csv = json2csvParser.parse(data);
+    
+    return {
+      filename: `payroll_report_${new Date().toISOString().split('T')[0]}.csv`,
+      content: csv,
+      mimeType: 'text/csv'
+    };
+  }
+
+  static async generateExcelReport(data) {
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Payroll Report');
+    
+    // Define columns
+    worksheet.columns = [
+      { header: 'Employee ID', key: 'employee_id', width: 15 },
+      { header: 'First Name', key: 'first_name', width: 15 },
+      { header: 'Last Name', key: 'last_name', width: 15 },
+      { header: 'Gross Salary', key: 'gross_salary', width: 15 },
+      { header: 'Savings Deduction', key: 'savings', width: 18 },
+      { header: 'Loan Deduction', key: 'loan', width: 15 },
+      { header: 'Net Salary', key: 'net_salary', width: 12 },
+      { header: 'Payroll Date', key: 'payroll_date', width: 15 },
+      { header: 'Batch Name', key: 'batch_name', width: 20 },
+      { header: 'Payment Status', key: 'payment_status', width: 15 }
+    ];
+    
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    
+    // Add data
+    data.forEach(record => {
+      worksheet.addRow(record);
+    });
+    
+    // Format currency columns
+    ['gross_salary', 'savings', 'loan', 'net_salary'].forEach(key => {
+      worksheet.getColumn(key).numFmt = '#,##0.00';
+    });
+    
+    // Generate buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    return {
+      filename: `payroll_report_${new Date().toISOString().split('T')[0]}.xlsx`,
+      content: buffer,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
   }
 }
 

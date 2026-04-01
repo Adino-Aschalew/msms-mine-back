@@ -258,6 +258,63 @@ class PayrollController {
       });
     }
   }
+
+  static async exportBatch(req, res) {
+    try {
+      const { batchId } = req.params;
+      
+      const batch = await Payroll.getPayrollBatch(batchId);
+      if (!batch) {
+        return res.status(404).json({ success: false, message: 'Payroll batch not found' });
+      }
+      
+      // Get all details for this batch without pagination limit
+      const result = await Payroll.getPayrollDetails(batchId, 1, 1000000);
+      const records = result.details;
+      
+      const ExcelJS = require('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Payroll Report');
+      
+      worksheet.columns = [
+        { header: 'Employee ID', key: 'employee_id', width: 15 },
+        { header: 'First Name', key: 'first_name', width: 20 },
+        { header: 'Last Name', key: 'last_name', width: 20 },
+        { header: 'Gross Salary', key: 'gross_salary', width: 15 },
+        { header: 'Saving Amount', key: 'saving', width: 18 },
+        { header: 'Deduction Amount', key: 'deduction', width: 20 },
+        { header: 'Net Salary', key: 'net_salary', width: 15 },
+        { header: 'Date', key: 'date', width: 15 }
+      ];
+      
+      worksheet.getRow(1).font = { bold: true };
+      
+      records.forEach(record => {
+        const payrollDateObj = batch.payroll_date ? new Date(batch.payroll_date) : 
+                              (record.created_at ? new Date(record.created_at) : new Date());
+        
+        worksheet.addRow({
+          employee_id: record.employee_id,
+          first_name: record.first_name,
+          last_name: record.last_name,
+          gross_salary: record.gross_salary,
+          saving: record.savings_deduction,
+          deduction: record.loan_repayment_deduction,
+          net_salary: record.net_salary,
+          date: payrollDateObj.toISOString().split('T')[0]
+        });
+      });
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=payroll-report-${batchId}.xlsx`);
+      
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (error) {
+      console.error('Export batch error:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  }
   
   static async validateBatch(req, res) {
     try {

@@ -41,13 +41,14 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
     job_grade VARCHAR(50) NOT NULL,
     job_title VARCHAR(100) NULL,
     job_role VARCHAR(100) NULL,
-    salary DECIMAL(15,2) NULL,
+    salary DECIMAL(15,2) NOT NULL,
     employment_status ENUM('ACTIVE','INACTIVE','TERMINATED') NOT NULL DEFAULT 'ACTIVE',
     status ENUM('active','inactive') DEFAULT 'active',
     hire_date DATE NOT NULL,
     phone VARCHAR(20) NULL,
     phone_number VARCHAR(20) NULL,
     address TEXT NULL,
+    profile_picture VARCHAR(500) NULL,
     committee_level INT DEFAULT 1,
     max_loan_amount DECIMAL(15,2) DEFAULT 100000.00,
     hr_verified BOOLEAN DEFAULT FALSE,
@@ -59,7 +60,9 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
     INDEX idx_employee_id (employee_id),
     INDEX idx_employment_status (employment_status),
     INDEX idx_hr_verified (hr_verified),
-    INDEX idx_department (department)
+    INDEX idx_department (department),
+    INDEX idx_profile_picture (profile_picture),
+    INDEX idx_salary (salary)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -304,11 +307,13 @@ CREATE TABLE IF NOT EXISTS payroll_batches (
     total_employees INT NOT NULL,
     total_amount DECIMAL(15,2) NOT NULL,
     payroll_date DATE NOT NULL,
-    status ENUM('UPLOADED','VALIDATED','CONFIRMED','PROCESSED') DEFAULT 'UPLOADED',
+    status ENUM('UPLOADED','VALIDATED','CONFIRMED','PROCESSED','REVERSED') DEFAULT 'UPLOADED',
     file_path VARCHAR(500) NOT NULL,
     cloudinary_url VARCHAR(500) NULL,
     public_id VARCHAR(255) NULL,
     validation_errors TEXT NULL,
+    payroll_month INT NULL,
+    payroll_year INT NULL,
     confirmed_by INT NULL,
     confirmed_date TIMESTAMP NULL,
     processed_date TIMESTAMP NULL,
@@ -320,7 +325,9 @@ CREATE TABLE IF NOT EXISTS payroll_batches (
     INDEX idx_payroll_date (payroll_date),
     INDEX idx_status (status),
     INDEX idx_confirmed_by (confirmed_by),
-    INDEX idx_cloudinary_url (cloudinary_url)
+    INDEX idx_cloudinary_url (cloudinary_url),
+    INDEX idx_payroll_month (payroll_month),
+    INDEX idx_payroll_year (payroll_year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -466,20 +473,44 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_notification_type (notification_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+CREATE TABLE IF NOT EXISTS savings_update_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    old_percentage DECIMAL(5,2) NOT NULL,
+    new_percentage DECIMAL(5,2) NOT NULL,
+    reason TEXT NULL,
+    status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+    reviewed_by INT NULL,
+    review_date TIMESTAMP NULL,
+    review_comments TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_user_id (user_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Migration: Update Payroll and Savings Change Workflow
+-- Note: The following ALTER TABLE statements are now included in the main schema above
+-- They are kept here for reference and for existing databases that need updating
 
--- Update payroll_batches status to include REVERSED
-ALTER TABLE payroll_batches MODIFY COLUMN status ENUM('UPLOADED','VALIDATED','CONFIRMED','PROCESSED','REVERSED') DEFAULT 'UPLOADED';
-
--- Add columns for month and year to facilitate duplicate prevention
-ALTER TABLE payroll_batches ADD COLUMN IF NOT EXISTS payroll_month INT;
-ALTER TABLE payroll_batches ADD COLUMN IF NOT EXISTS payroll_year INT;
-
--- Update existing records to populate month and year
+-- Update existing records to populate month and year (for existing databases)
 UPDATE payroll_batches SET 
     payroll_month = MONTH(payroll_date),
     payroll_year = YEAR(payroll_date)
 WHERE payroll_month IS NULL;
+
+-- Update existing users to not require password change (except employees)
+UPDATE users 
+SET password_change_required = FALSE 
+WHERE role IN ('SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE', 'ADMIN');
+
+-- Ensure all new employees will require password change
+UPDATE users 
+SET password_change_required = TRUE 
+WHERE role = 'EMPLOYEE';
 
 -- Initial Seed Data
 INSERT INTO users

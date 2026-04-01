@@ -107,19 +107,25 @@ router.put('/payroll/batches/:batchId/reverse', auditMiddleware('PAYROLL_BATCH_R
 router.get('/payroll/batches', PayrollController.getBatches);
 router.get('/payroll/batches/:batchId', PayrollController.getBatch);
 router.get('/payroll/batches/:batchId/details', PayrollController.getBatchDetails);
+router.get('/payroll/batches/:batchId/export', auditMiddleware('PAYROLL_BATCH_EXPORT'), PayrollController.exportBatch);
 router.get('/payroll/history/:userId', PayrollController.getEmployeePayrollHistory);
 router.get('/payroll/stats', PayrollController.getPayrollStats);
 router.get('/payroll/template', PayrollController.downloadBatchTemplate);
 
 // Financial reports
-router.get('/reports/:reportType', FinanceController.getFinancialReports);
 router.get('/reports/cash-flow', FinanceController.getCashFlowReport);
 router.get('/reports/profit-loss', FinanceController.getProfitLossReport);
 router.get('/reports/loan-portfolio', FinanceController.getLoanPortfolio);
 router.get('/reports/savings-summary', FinanceController.getSavingsSummary);
 
+// Payroll reports (must come before generic :reportType route)
+router.get('/reports/payroll', FinanceController.getPayrollReport);
+router.get('/reports/payroll/download', FinanceController.downloadPayrollReport);
+
+// Generic report handler (must come after specific routes)
+router.get('/reports/:reportType', FinanceController.getFinancialReports);
+
 // Report export
-router.get('/export/:reportType', FinanceController.exportFinancialReport);
 
 // System health
 router.get('/health', FinanceController.getSystemHealth);

@@ -54,10 +54,11 @@ class CommitteeService {
           ep.job_grade,
           ep.employment_status,
           ep.hire_date,
+          ep.salary as monthly_income,
           DATEDIFF(NOW(), ep.hire_date) as days_employed,
           (SELECT current_balance FROM savings_accounts WHERE user_id = la.user_id LIMIT 1) as savings_balance,
           (SELECT COUNT(*) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as existing_loans,
-          (SELECT AVG(l.outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
+          (SELECT AVG(outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
           (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count
         FROM loan_applications la
         LEFT JOIN users u ON la.user_id = u.id
@@ -73,12 +74,12 @@ class CommitteeService {
       ]);
       
       // Calculate risk scores for each application
-      const applicationsWithRisk = await Promise.all(
+      const applicationsWithRisk = applications.length > 0 ? await Promise.all(
         applications.map(async (app) => {
           const riskScore = await this.calculateRiskScore(app);
           return { ...app, risk_score: riskScore.score, risk_level: riskScore.level };
         })
-      );
+      ) : [];
       
       return {
         applications: applicationsWithRisk,
@@ -656,19 +657,30 @@ class CommitteeService {
 
       const selectQuery = `
         SELECT 
-          la.id,
-          CONCAT(ep.first_name, ' ', ep.last_name) as employee,
+          la.*,
+          u.username,
+          u.email,
+          ep.first_name,
+          ep.last_name,
           ep.department,
-          la.approved_amount as approvedAmount,
-          la.reviewed_at as approvedDate,
-          l.monthly_repayment as installmentAmount,
-          l.duration_months as repaymentPeriod,
-          la.status
+          ep.job_grade,
+          ep.employment_status,
+          ep.hire_date,
+          ep.salary as monthly_income,
+          DATEDIFF(NOW(), ep.hire_date) as days_employed,
+          (SELECT current_balance FROM savings_accounts WHERE user_id = la.user_id LIMIT 1) as savings_balance,
+          (SELECT COUNT(*) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as existing_loans,
+          (SELECT AVG(outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
+          (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count,
+          l.monthly_repayment,
+          l.duration_months,
+          l.outstanding_balance
         FROM loan_applications la
-        LEFT JOIN employee_profiles ep ON la.user_id = ep.user_id
+        LEFT JOIN users u ON la.user_id = u.id
+        LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         LEFT JOIN loans l ON la.id = l.loan_application_id
         ${whereClause}
-        ORDER BY la.reviewed_at DESC
+        ORDER BY la.review_date DESC
         LIMIT ? OFFSET ?
       `;
 

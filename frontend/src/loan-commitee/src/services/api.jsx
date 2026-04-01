@@ -42,37 +42,47 @@ api.interceptors.response.use(
 export const loanAPI = {
   // Get all loan requests
   getLoanRequests: (params = {}) => {
-    return api.get('/loans', { params });
+    return api.get('/loans/applications', { params });
   },
 
   // Get loan request by ID
   getLoanById: (id) => {
-    return api.get(`/loans/${id}`);
+    return api.get(`/loans/applications/${id}`);
   },
 
-  // Create new loan request
+  // Create new loan request (Employee handles this usually, but keep for fallback)
   createLoanRequest: (loanData) => {
-    return api.post('/loans', loanData);
+    return api.post('/loans/apply', loanData);
   },
 
-  // Update loan request
+  // Update loan request (Doesn't exist natively on backend, map to apply if needed or remove)
   updateLoanRequest: (id, loanData) => {
-    return api.put(`/loans/${id}`, loanData);
+    return api.put(`/loans/applications/${id}`, loanData);
   },
 
   // Approve loan
   approveLoan: (id, approvalData) => {
-    return api.post(`/loans/${id}/approve`, approvalData);
+    // approvalData usually has { notes, approvedAmount, ... } from UI
+    return api.put(`/loans/applications/${id}/review`, { 
+      action: 'APPROVE', 
+      notes: approvalData.notes || 'Approved by Loan Committee' 
+    });
   },
 
   // Reject loan
   rejectLoan: (id, rejectionData) => {
-    return api.post(`/loans/${id}/reject`, rejectionData);
+    return api.put(`/loans/applications/${id}/review`, { 
+      action: 'REJECT', 
+      notes: rejectionData.notes || rejectionData.reason || 'Rejected by Loan Committee' 
+    });
   },
 
   // Suspend loan
   suspendLoan: (id, suspensionData) => {
-    return api.post(`/loans/${id}/suspend`, suspensionData);
+    return api.put(`/loans/${id}/status`, { 
+      status: 'SUSPENDED',
+      notes: suspensionData.reason || 'Suspended by system'
+    });
   },
 
   // Get loan statistics
@@ -83,29 +93,29 @@ export const loanAPI = {
 
 // Disbursement API endpoints
 export const disbursementAPI = {
-  // Get all disbursements
+  // Get all disbursements (Mapped to loans pending disbursement or all loans)
   getDisbursements: (params = {}) => {
-    return api.get('/disbursements', { params });
+    return api.get('/loans', { params });
   },
 
-  // Get disbursement by ID
+  // Get disbursement by ID (mmaped to getting loan by ID)
   getDisbursementById: (id) => {
-    return api.get(`/disbursements/${id}`);
+    return api.get(`/loans/${id}`);
   },
 
   // Process disbursement
   processDisbursement: (id, disbursementData) => {
-    return api.post(`/disbursements/${id}/process`, disbursementData);
+    return api.put(`/loans/${id}/disburse`, disbursementData);
   },
 
-  // Get repayment schedule
+  // Get repayment schedule (mapped to calculating loan schedule)
   getRepaymentSchedule: (loanId) => {
-    return api.get(`/disbursements/${loanId}/schedule`);
+    return api.get(`/loans/calculate-schedule`, { params: { loanId } });
   },
 
-  // Update repayment status
-  updateRepaymentStatus: (paymentId, statusData) => {
-    return api.put(`/repayments/${paymentId}`, statusData);
+  // Update repayment status (mapped to making a payment)
+  updateRepaymentStatus: (loanId, statusData) => {
+    return api.post(`/loans/${loanId}/pay`, statusData);
   },
 };
 

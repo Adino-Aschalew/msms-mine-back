@@ -18,7 +18,7 @@ import {
   Clock
 } from 'lucide-react';
 
-import { loanCommitteeAPI, loansAPI } from '../../../shared/services/loansAPI';
+import { committeeAPI } from '../services/committeeAPI';
 import { approveLoan, rejectLoan, suspendLoan } from '../utils/actionHandlers';
 
 const LoanDetails = () => {
@@ -38,44 +38,46 @@ const LoanDetails = () => {
     const fetchLoanDetails = async () => {
       try {
         setLoading(true);
-        const data = await loanCommitteeAPI.getApplicationById(id);
-        const app = data.data;
-        const mappedData = {
-          id: app.id,
-          employee: {
-            employeeId: app.employee_id,
-            fullName: `${app.first_name} ${app.last_name}`,
-            department: app.department || 'Not specified',
-            position: app.job_grade || 'Not specified',
-            employmentDate: app.hire_date?.split('T')[0] || 'N/A'
-          },
-          salary: {
-            monthlySalary: parseFloat(app.monthly_income || 0),
-            existingDeductions: parseFloat(app.avg_balance || 0), // Using avg balance as proxy for debt
-            availableSalary: parseFloat(app.monthly_income || 0) * 0.7 // Proxy
-          },
-          savings: {
-            savingsBalance: parseFloat(app.savings_balance || 0),
-            monthlyContribution: (parseFloat(app.total_savings_contributions || 0) / 12) || 0 // Proxy
-          },
-          loanRequest: {
-            loanType: app.purpose || 'Personal',
-            requestedAmount: parseFloat(app.requested_amount || 0),
-            loanPurpose: app.purpose || 'Not specified',
-            loanDuration: app.repayment_duration_months || 24
-          },
-          guarantor: {
-            name: app.guarantor_name || 'Not specified',
-            department: 'Not specified',
-            salary: parseFloat(app.guarantor_monthly_income || 0),
-            savingsBalance: parseFloat(app.guarantor_savings_balance || 0),
-            existingGuarantees: 0
-          },
-          submissionDate: app.created_at?.split('T')[0] || 'N/A',
-          status: app.status?.toLowerCase() || 'pending'
-        };
-        
-        setLoanData(mappedData);
+        const response = await committeeAPI.getApplicationById(id);
+        if (response && response.data && response.data.success) {
+          const app = response.data.data;
+          const mappedData = {
+            id: app.id,
+            employee: {
+              employeeId: app.employee_id,
+              fullName: `${app.first_name} ${app.last_name}`,
+              department: app.department || 'Not specified',
+              position: app.job_grade || 'Not specified',
+              employmentDate: app.hire_date?.split('T')[0] || 'N/A'
+            },
+            salary: {
+              monthlySalary: parseFloat(app.monthly_income || 0),
+              existingDeductions: parseFloat(app.avg_balance || 0), // Using avg balance as proxy for debt
+              availableSalary: parseFloat(app.monthly_income || 0) * 0.7 // Proxy
+            },
+            savings: {
+              savingsBalance: parseFloat(app.savings_balance || 0),
+              monthlyContribution: (parseFloat(app.total_savings_contributions || 0) / 12) || 0 // Proxy
+            },
+            loanRequest: {
+              loanType: app.purpose || 'Personal',
+              requestedAmount: parseFloat(app.requested_amount || 0),
+              loanPurpose: app.purpose || 'Not specified',
+              loanDuration: app.repayment_duration_months || 24
+            },
+            guarantor: {
+              name: app.guarantor_name || 'Not specified',
+              department: 'Not specified',
+              salary: parseFloat(app.guarantor_monthly_income || 0),
+              savingsBalance: parseFloat(app.guarantor_savings_balance || 0),
+              existingGuarantees: 0
+            },
+            submissionDate: app.created_at?.split('T')[0] || 'N/A',
+            status: app.status?.toLowerCase() || 'pending'
+          };
+          
+          setLoanData(mappedData);
+        }
       } catch (err) {
         console.error('Error fetching loan details:', err);
         setError('Failed to load loan details.');
@@ -300,23 +302,23 @@ const LoanDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Guarantor Name</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{loanData.guarantor.name}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{loanData?.guarantor?.name || 'Not specified'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Department</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{loanData.guarantor.department}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{loanData?.guarantor?.department || 'Not specified'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Salary</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">${loanData.guarantor.salary.toLocaleString()}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">${(loanData?.guarantor?.salary || 0).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Savings Balance</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">${loanData.guarantor.savingsBalance.toLocaleString()}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">${(loanData?.guarantor?.savingsBalance || 0).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Existing Guarantees</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{loanData.guarantor.existingGuarantees}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{loanData?.guarantor?.existingGuarantees || 0}</p>
               </div>
             </div>
           </div>

@@ -284,19 +284,27 @@ const PayrollHistory = () => {
       
       // Create CSV headers
       const headers = [
-        'Full Name',
+        'Employee ID',
+        'First Name',
+        'Last Name',
+        'Gross Salary',
+        'Saving Amount',
+        'Deduction Amount',
         'Net Salary',
-        'Status',
-        'Payroll Date'
+        'Date'
       ];
       
       // Create CSV rows from real payroll data
       const csvRows = details.details.map((detail) => [
-        `${detail.first_name || ''} ${detail.last_name || ''}`.trim(),
+        detail.employee_id || '',
+        detail.first_name || '',
+        detail.last_name || '',
+        detail.gross_salary || 0,
+        detail.savings_deduction || 0,
+        detail.loan_repayment_deduction || 0,
         detail.net_salary || 0,
-        detail.employment_status || detail.status || 'Active',
-        selectedImport.payroll_date ? new Date(selectedImport.payroll_date).toLocaleDateString() : 
-        selectedImport.created_at ? new Date(selectedImport.created_at).toLocaleDateString() : 'N/A'
+        selectedImport?.payroll_date ? new Date(selectedImport.payroll_date).toLocaleDateString() : 
+        selectedImport?.created_at ? new Date(selectedImport.created_at).toLocaleDateString() : 'N/A'
       ]);
       
       // Combine headers and rows

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { handleButtonClick } from '../utils/actionHandlers';
 import { exportDashboardReport as exportUtil } from '../utils/exportUtils';
-import { loanCommitteeAPI } from '../../../shared/services/loansAPI';
+import { committeeAPI } from '../services/committeeAPI';
 
 const Dashboard = () => {
   // Compact number formatting function
@@ -36,6 +36,7 @@ const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -44,13 +45,14 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await loanCommitteeAPI.getDashboardData();
-      if (res && res.data) {
-        setDashboardData(res.data);
+      setError(null);
+      const res = await committeeAPI.getDashboardData({ period: selectedPeriod });
+      if (res && res.data && res.data.success) {
+        setDashboardData(res.data.data);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      setError('Failed to fetch loan committee dashboard data');
+      setError('Failed to fetch dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -299,40 +301,48 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Loan Committee Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Welcome back, {user?.first_name || 'Committee Member'}. Loan committee overview and analytics</p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => handlePeriodChange(e.target.value)}
-            className="input w-auto"
-          >
-            <option value="week">Last Week</option>
-            <option value="month">Last Month</option>
-            <option value="quarter">Last Quarter</option>
-            <option value="year">Last Year</option>
-          </select>
-          <button
-            onClick={handleRefresh}
-            className="btn btn-secondary"
-            title="Refresh Data"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleExport}
-            className="btn btn-secondary"
-            title="Export Report"
-          >
-            <Download className="w-4 h-4" />
-          </button>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Loan Committee Dashboard</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">Welcome back, Committee Member. Loan committee overview and analytics</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
+              <select
+                value={selectedPeriod}
+                onChange={(e) => handlePeriodChange(e.target.value)}
+                className="input w-auto"
+              >
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+                <option value="quarter">Last Quarter</option>
+                <option value="year">Last Year</option>
+              </select>
+              <button
+                onClick={handleRefresh}
+                className="btn btn-secondary"
+                title="Refresh Data"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleExport}
+                className="btn btn-secondary"
+                title="Export Report"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Content */}
+      <div className="px-4 sm:px-6 py-6">
+        <div className="space-y-6">
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -488,6 +498,8 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      </div>
+    </div>
     </div>
   );
 };

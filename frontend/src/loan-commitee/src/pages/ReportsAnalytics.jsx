@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loanCommitteeAPI } from '../../../shared/services/loansAPI';
+import { committeeAPI } from '../services/committeeAPI';
 import LoanChart from '../components/charts/LoanChart';
 import {
   Download,
@@ -58,7 +58,7 @@ const ReportsAnalytics = () => {
   const fetchReportsData = async () => {
     try {
       setLoading(true);
-      const res = await loanCommitteeAPI.getReportsData();
+      const res = await committeeAPI.getReportsData();
       if (res && res.data) {
         setReportsData(res.data);
       }
@@ -246,21 +246,23 @@ const ReportsAnalytics = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Reports & Analytics</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Comprehensive loan system analytics and reporting</p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
-          <button
-            onClick={() => handleExport('csv')}
-            className="btn btn-secondary"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </button>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Reports & Analytics</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">Comprehensive loan system analytics and reporting</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
+              <button
+                onClick={() => handleExport('csv')}
+                className="btn btn-secondary"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </button>
           <button
             onClick={() => handleExport('excel')}
             className="btn btn-secondary"
@@ -277,6 +279,12 @@ const ReportsAnalytics = () => {
           </button>
         </div>
       </div>
+      </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 sm:px-6 py-6">
+        <div className="space-y-6">
 
       {/* Filters */}
       <div className="card p-4">
@@ -538,6 +546,9 @@ const ReportsAnalytics = () => {
         </div>
       </div>
     </div>
+    </div>
+    </div>
+
   );
 };
 

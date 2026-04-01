@@ -64,16 +64,16 @@ class FinanceService {
         [loanTransactions] = await query(`
           SELECT 
             COUNT(*) as total_transactions,
-            SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END) as total_payments,
-            SUM(CASE WHEN transaction_type = 'INTEREST' THEN amount ELSE 0 END) as total_interest,
-            SUM(CASE WHEN transaction_type = 'PENALTY' THEN amount ELSE 0 END) as total_penalties,
-            SUM(CASE WHEN transaction_type = 'DISBURSEMENT' THEN amount ELSE 0 END) as total_disbursements
-          FROM loan_transactions 
+            SUM(CASE WHEN status = 'PAID' THEN amount ELSE 0 END) as total_payments,
+            SUM(CASE WHEN status = 'PAID' THEN interest_amount ELSE 0 END) as total_interest,
+            SUM(CASE WHEN status = 'OVERDUE' THEN amount ELSE 0 END) as total_penalties
+          FROM loan_repayments 
           WHERE 1=1
-          ${this.getDateFilter(period, 'transaction_date')}
+          ${this.getDateFilter(period, 'repayment_date')}
         `);
       } catch (error) {
         console.warn('Loan transactions query failed:', error.message);
+        loanTransactions = [{ total_transactions: 0, total_payments: 0, total_interest: 0, total_penalties: 0 }];
         loanTransactions = [{ total_transactions: 0, total_payments: 0, total_interest: 0, total_penalties: 0, total_disbursements: 0 }];
       }
       
@@ -258,16 +258,19 @@ class FinanceService {
           FROM savings_transactions
           UNION ALL
           SELECT 
-            'PAYMENT' as transaction_type, amount, transaction_date
-          FROM loan_transactions
+            'PAYMENT' as transaction_type, amount, repayment_date as transaction_date
+          FROM loan_repayments
+          WHERE status = 'PAID'
           UNION ALL
           SELECT 
-            'INTEREST' as transaction_type, amount, transaction_date
-          FROM savings_transactions
+            'INTEREST' as transaction_type, interest_amount as amount, repayment_date as transaction_date
+          FROM loan_repayments
+          WHERE status = 'PAID' AND interest_amount > 0
           UNION ALL
           SELECT 
-            'PENALTY' as transaction_type, amount, transaction_date
-          FROM loan_transactions
+            'PENALTY' as transaction_type, amount, repayment_date as transaction_date
+          FROM loan_repayments
+          WHERE status = 'OVERDUE'
         ) as transactions
         WHERE 1=1 ${dateFilter}
         GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
@@ -295,11 +298,13 @@ class FinanceService {
           SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date
           FROM savings_transactions
           UNION ALL
-          SELECT 'PAYMENT' as transaction_type, amount, transaction_date
-          FROM loan_transactions
+          SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date
+          FROM loan_repayments
+          WHERE status = 'PAID'
           UNION ALL
-          SELECT 'INTEREST' as transaction_type, amount, transaction_date
-          FROM savings_transactions
+          SELECT 'INTEREST' as transaction_type, interest_amount as amount, repayment_date as transaction_date
+          FROM loan_repayments
+          WHERE status = 'PAID' AND interest_amount > 0
         ) as transactions
         WHERE 1=1 ${dateFilter}
         GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
@@ -316,11 +321,13 @@ class FinanceService {
           SELECT 'WITHDRAWAL' as transaction_type, amount, transaction_date
           FROM savings_transactions
           UNION ALL
-          SELECT 'PENALTY' as transaction_type, amount, transaction_date
-          FROM loan_transactions
+          SELECT 'PENALTY' as transaction_type, amount, repayment_date as transaction_date
+          FROM loan_repayments
+          WHERE status = 'OVERDUE'
           UNION ALL
-          SELECT 'FEES' as transaction_type, amount, transaction_date
-          FROM loan_transactions
+          SELECT 'FEES' as transaction_type, amount, repayment_date as transaction_date
+          FROM loan_repayments
+          WHERE status = 'OVERDUE'
         ) as transactions
         WHERE 1=1 ${dateFilter}
         GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
@@ -572,7 +579,7 @@ class FinanceService {
             lt.amount, 
             'completed' as status,
             CONCAT(ep.first_name, ' ', ep.last_name) as user_name
-          FROM loan_transactions lt
+          FROM loan_repayments lt
           LEFT JOIN loans l ON lt.loan_id = l.id
           LEFT JOIN users u ON l.user_id = u.id
           LEFT JOIN employee_profiles ep ON u.id = ep.user_id
@@ -662,7 +669,7 @@ class FinanceService {
           FROM (
             SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
             UNION ALL
-            SELECT 'PAYMENT' as transaction_type, amount, transaction_date FROM loan_transactions
+            SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
           ) as t
         `);
         
@@ -674,7 +681,7 @@ class FinanceService {
           FROM (
             SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
             UNION ALL
-            SELECT 'PAYMENT' as transaction_type, amount, transaction_date FROM loan_transactions
+            SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
           ) as t
         `);
 
@@ -691,7 +698,7 @@ class FinanceService {
             FROM (
               SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
               UNION ALL
-              SELECT 'PAYMENT' as transaction_type, amount, transaction_date FROM loan_transactions
+              SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
             ) as t2
             GROUP BY period
           ) as t3
@@ -802,14 +809,14 @@ class FinanceService {
           
           SELECT 
             lt.id, 
-            lt.transaction_date as date, 
-            lt.transaction_type as type, 
+            lt.repayment_date as date, 
+            'PAYMENT' as type, 
             'Loan' as category, 
             'Loan Account' as account, 
             lt.amount, 
             'completed' as status,
             CONCAT(COALESCE(ep.first_name, 'Unknown'), ' ', COALESCE(ep.last_name, 'User')) as user_name
-          FROM loan_transactions lt
+          FROM loan_repayments lt
           LEFT JOIN loans l ON lt.loan_id = l.id
           LEFT JOIN users u ON l.user_id = u.id
           LEFT JOIN employee_profiles ep ON u.id = ep.user_id
