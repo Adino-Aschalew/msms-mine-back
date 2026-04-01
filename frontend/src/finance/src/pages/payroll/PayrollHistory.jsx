@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Download, Eye, CheckCircle, AlertCircle, Clock, FileText } from 'lucide-react';
+import { Search, Filter, Download, Eye, CheckCircle, AlertCircle, Clock, FileText, Users, DollarSign, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { financeAPI } from '../../../../shared/services/financeAPI';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 const PayrollHistory = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -10,86 +12,112 @@ const PayrollHistory = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedImport, setSelectedImport] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showProcessModal, setShowProcessModal] = useState(false);
+  const [showReverseModal, setShowReverseModal] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+  const [payrollBatches, setPayrollBatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [pagination, setPagination] = useState(null);
+  const { addNotification } = useNotifications();
   const itemsPerPage = 10;
 
-  const payrollHistory = [
-    {
-      id: 'IMP001',
-      fileName: 'payroll_march_2024.csv',
-      uploadedBy: 'Sarah Johnson',
-      uploadDate: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      totalRecords: 150,
-      successfulRecords: 148,
-      failedRecords: 2,
-      status: 'completed',
-      processingTime: '2.3s',
-    },
-    {
-      id: 'IMP002',
-      fileName: 'payroll_february_2024.csv',
-      uploadedBy: 'Mike Chen',
-      uploadDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
-      totalRecords: 145,
-      successfulRecords: 145,
-      failedRecords: 0,
-      status: 'completed',
-      processingTime: '1.8s',
-    },
-    {
-      id: 'IMP003',
-      fileName: 'payroll_january_2024.csv',
-      uploadedBy: 'Emily Davis',
-      uploadDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14),
-      totalRecords: 142,
-      successfulRecords: 140,
-      failedRecords: 2,
-      status: 'completed',
-      processingTime: '2.1s',
-    },
-    {
-      id: 'IMP004',
-      fileName: 'payroll_december_2023.csv',
-      uploadedBy: 'Sarah Johnson',
-      uploadDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 21),
-      totalRecords: 138,
-      successfulRecords: 135,
-      failedRecords: 3,
-      status: 'completed',
-      processingTime: '2.5s',
-    },
-    {
-      id: 'IMP005',
-      fileName: 'payroll_november_2023.csv',
-      uploadedBy: 'Mike Chen',
-      uploadDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 28),
-      totalRecords: 135,
-      successfulRecords: 0,
-      failedRecords: 135,
-      status: 'failed',
-      processingTime: '0.5s',
-    },
-  ];
+  // Fetch payroll batches from backend
+  const fetchPayrollBatches = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(searchQuery && { search: searchQuery }),
+        ...(dateFilter !== 'all' && { dateFilter })
+      };
 
-  const filteredHistory = payrollHistory.filter(item => {
-    const matchesSearch = item.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.uploadedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    
-    const matchesDate = dateFilter === 'all' || 
-      (dateFilter === 'oldest' && item.uploadDate <= new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)) ||
-      (dateFilter === 'recent' && item.uploadDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
-      (dateFilter === 'new' && item.uploadDate >= new Date(Date.now() - 24 * 60 * 60 * 1000));
-    
-    return matchesSearch && matchesStatus && matchesDate;
+      const response = await financeAPI.getPayrollBatches(params);
+      setPayrollBatches(response.batches || []);
+      setPagination(response.pagination || null);
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Failed to Load',
+        message: 'Could not load payroll history. Please try again.',
+      });
+      console.error('Error fetching payroll batches:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on component mount and when filters change
+  useEffect(() => {
+    fetchPayrollBatches();
+  }, [currentPage, statusFilter, searchQuery, dateFilter]);
+
+  // Helper functions
+  const formatCurrency = (amount) => {
+    if (amount >= 1000000) {
+      return `METB ${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `KETB ${(amount / 1000).toFixed(1)}K`;
+    } else {
+      return `ETB ${amount.toLocaleString()}`;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'UPLOADED':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'VALIDATED':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'CONFIRMED':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'PROCESSED':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'REVERSED':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'UPLOADED':
+        return <Clock className="h-4 w-4" />;
+      case 'VALIDATED':
+        return <Eye className="h-4 w-4" />;
+      case 'CONFIRMED':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'PROCESSED':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'REVERSED':
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  // Filter and pagination logic (backend handles filtering, so just apply search if needed)
+  const displayData = payrollBatches.filter(batch => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      batch.batch_name?.toLowerCase().includes(searchLower) ||
+      batch.upload_username?.toLowerCase().includes(searchLower) ||
+      batch.upload_first_name?.toLowerCase().includes(searchLower) ||
+      batch.upload_last_name?.toLowerCase().includes(searchLower) ||
+      batch.id?.toString().includes(searchLower)
+    );
   });
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+  const totalPages = pagination ? pagination.pages : Math.ceil(displayData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredHistory.slice(startIndex, endIndex);
+  const currentItems = displayData.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -178,31 +206,129 @@ const PayrollHistory = () => {
     }
   };
 
-  const handleViewDetails = (item) => {
-    setSelectedImport(item);
-    setShowDetailsModal(true);
+  const handleViewDetails = async (batch) => {
+    try {
+      // Fetch detailed information for this batch
+      const details = await financeAPI.getPayrollBatchDetails(batch.id);
+      setSelectedImport({ ...batch, details });
+      setShowDetailsModal(true);
+    } catch (error) {
+      addNotification({ type: 'error', title: 'Failed to Load Details', message: 'Could not load batch details.' });
+    }
   };
 
-  const handleDownload = (item) => {
-    // Create sample CSV content for the payroll file
-    const csvContent = `Import ID,Employee ID,Employee Name,Salary,Department,Status
-${item.id},EMP001,John Doe,5000,Engineering,Active
-${item.id},EMP002,Jane Smith,5500,Marketing,Active
-${item.id},EMP003,Bob Johnson,4800,Finance,Active
-${item.id},EMP004,Alice Brown,5200,HR,Active
-${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
+  const handleApprove = async (batch) => {
+    setSelectedBatch(batch);
+    setShowApproveModal(true);
+  };
 
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', item.fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const confirmApprove = async () => {
+    try {
+      setActionLoading(true);
+      await financeAPI.approvePayroll(selectedBatch.id);
+      addNotification({ type: 'success', title: 'Approved', message: 'Payroll batch approved successfully.' });
+      setShowApproveModal(false);
+      setSelectedBatch(null);
+      fetchPayrollBatches(); // Refresh data
+    } catch (error) {
+      addNotification({ type: 'error', title: 'Approval Failed', message: error.message || 'Failed to approve payroll batch' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleProcess = async (batch) => {
+    setSelectedBatch(batch);
+    setShowProcessModal(true);
+  };
+
+  const confirmProcess = async () => {
+    try {
+      setActionLoading(true);
+      await financeAPI.processPayroll(selectedBatch.id);
+      addNotification({ type: 'success', title: 'Processed', message: 'Payroll batch processed successfully. Deductions applied to employee accounts.' });
+      setShowProcessModal(false);
+      setSelectedBatch(null);
+      fetchPayrollBatches(); // Refresh data
+    } catch (error) {
+      addNotification({ type: 'error', title: 'Processing Failed', message: error.message || 'Failed to process payroll batch' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReverse = async (batch) => {
+    setSelectedBatch(batch);
+    setShowReverseModal(true);
+  };
+
+  const confirmReverse = async () => {
+    try {
+      setActionLoading(true);
+      await financeAPI.reversePayroll(selectedBatch.id);
+      addNotification({ type: 'success', title: 'Reversed', message: 'Payroll batch reversed successfully. All deductions have been undone.' });
+      setShowReverseModal(false);
+      setSelectedBatch(null);
+      fetchPayrollBatches(); // Refresh data
+    } catch (error) {
+      addNotification({ type: 'error', title: 'Reversal Failed', message: error.message || 'Failed to reverse payroll batch' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDownload = async (batch) => {
+    try {
+      // Fetch real payroll details for this batch
+      const details = await financeAPI.getPayrollBatchDetails(batch.id);
+      
+      // Create CSV headers
+      const headers = [
+        'Full Name',
+        'Net Salary',
+        'Status',
+        'Payroll Date'
+      ];
+      
+      // Create CSV rows from real payroll data
+      const csvRows = details.details.map((detail) => [
+        `${detail.first_name || ''} ${detail.last_name || ''}`.trim(),
+        detail.net_salary || 0,
+        detail.employment_status || detail.status || 'Active',
+        selectedImport.payroll_date ? new Date(selectedImport.payroll_date).toLocaleDateString() : 
+        selectedImport.created_at ? new Date(selectedImport.created_at).toLocaleDateString() : 'N/A'
+      ]);
+      
+      // Combine headers and rows
+      const csvContent = [headers, ...csvRows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${batch.batch_name}_details.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      addNotification({ 
+        type: 'success', 
+        title: 'Download Complete', 
+        message: `Payroll details for ${batch.batch_name} downloaded successfully.` 
+      });
+      
+    } catch (error) {
+      addNotification({ 
+        type: 'error', 
+        title: 'Download Failed', 
+        message: 'Could not download payroll details.' 
+      });
+    }
   };
 
   return (
@@ -283,7 +409,7 @@ ${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                   <div className="flex items-center">
-                    File Name
+                    Batch Name
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
@@ -293,22 +419,22 @@ ${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                   <div className="flex items-center">
+                    Employees
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                  <div className="flex items-center">
+                    Total Amount
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                  <div className="flex items-center">
                     Upload Date
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                   <div className="flex items-center">
-                    Records
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-                  <div className="flex items-center">
-                    Success Rate
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-                  <div className="flex items-center">
-                    Processing Time
+                    Status
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
@@ -319,140 +445,97 @@ ${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {paginatedData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              {currentItems.map((batch) => (
+                <tr key={batch.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-bold text-blue-800 dark:text-blue-400">IMP</span>
+                        <span className="text-xs font-bold text-blue-800 dark:text-blue-400">BAT</span>
                       </div>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {item.id.slice(-3)}
+                        {batch.id}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {item.fileName}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          CSV • {item.totalRecords} records
-                        </p>
-                      </div>
+                    <div className="text-sm text-gray-900 dark:text-white font-medium">
+                      {batch.batch_name}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {batch.original_name || 'Payroll file'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {item.uploadedBy.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {item.uploadedBy}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Payroll Administrator
-                        </p>
-                      </div>
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      {batch.upload_first_name && batch.upload_last_name 
+                        ? `${batch.upload_first_name} ${batch.upload_last_name}`
+                        : batch.upload_username || 'Unknown'
+                      }
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {item.uploadDate.toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {item.uploadDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-white">
+                    {batch.total_employees || 0}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          {item.totalRecords}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          total records
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {item.successfulRecords}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          successful
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                          {item.totalRecords - item.successfulRecords}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          failed
-                        </p>
-                      </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-white">
+                    {formatCurrency(batch.total_amount || 0)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-white">
+                    {new Date(batch.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(batch.status)}`}>
+                      {getStatusIcon(batch.status)}
+                      <span className="ml-1">{batch.status}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center space-x-1">
-                        <div className={`w-2 h-2 rounded-full ${
-                          item.status === 'completed' ? 'bg-green-500' :
-                          item.status === 'failed' ? 'bg-red-500' :
-                          'bg-yellow-500'
-                        }`} />
-                        <span className={`text-sm font-medium ${
-                          item.status === 'completed' ? 'text-green-800' :
-                          item.status === 'failed' ? 'text-red-800' :
-                          'text-yellow-800'
-                        }`}>
-                          {((item.successfulRecords / item.totalRecords) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        item.status === 'completed' 
-                          ? 'bg-green-100 text-green-800'
-                          : item.status === 'failed'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {getStatusBadge(item.status)}
-                        {item.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {item.processingTime}
-                    </p>
-                    <div className={`w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1`}>
-                      <div className={`h-2 rounded-full ${
-                        parseFloat(item.processingTime) <= 1 ? 'bg-green-500' :
-                        parseFloat(item.processingTime) <= 2 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`} style={{ width: `${(parseFloat(item.processingTime) / 3) * 100}%` }} />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center space-x-2">
                       <button 
-                        onClick={() => handleViewDetails(item)}
-                        className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                        onClick={() => handleViewDetails(batch)}
+                        className="flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={actionLoading}
                       >
                         <Eye className="h-3 w-3 mr-1" />
-                        View Details
+                        View
                       </button>
-                      <button 
-                        onClick={() => handleDownload(item)}
-                        className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
-                      >
-                        <Download className="h-3 w-3 mr-1" />
-                        Download
-                      </button>
+                      {batch.status === 'VALIDATED' && (
+                        <button 
+                          onClick={() => handleApprove(batch)}
+                          className="flex items-center px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                              Approving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Approve
+                            </>
+                          )}
+                        </button>
+                      )}
+                      {batch.status === 'CONFIRMED' && (
+                        <button 
+                          onClick={() => handleProcess(batch)}
+                          className="flex items-center px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Process
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -462,21 +545,26 @@ ${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
         </div>
       </div>
 
-      {filteredHistory.length === 0 && (
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading payroll history...</p>
+        </div>
+      ) : payrollBatches.length === 0 ? (
         <div className="text-center py-8">
           <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            No payroll imports found matching your criteria
+            No payroll batches found
           </p>
         </div>
-      )}
+      ) : null}
       
       {/* Pagination */}
       <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Showing <span className="font-medium text-gray-900 dark:text-white">{filteredHistory.length}</span> of <span className="font-medium text-gray-900 dark:text-white">{payrollHistory.length}</span> results
+              Showing <span className="font-medium text-gray-900 dark:text-white">{displayData.length}</span> of <span className="font-medium text-gray-900 dark:text-white">{pagination?.total || payrollBatches.length}</span> results
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -542,20 +630,27 @@ ${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Import ID</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Batch ID</label>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedImport.id}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">File Name</label>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedImport.fileName}</p>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Batch Name</label>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedImport.batch_name}</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Uploaded By</label>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedImport.uploadedBy}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {selectedImport.upload_first_name && selectedImport.upload_last_name 
+                      ? `${selectedImport.upload_first_name} ${selectedImport.upload_last_name}`
+                      : selectedImport.upload_username || 'Unknown'
+                    }
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Upload Date</label>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedImport.uploadDate.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {new Date(selectedImport.created_at).toLocaleString()}
+                  </p>
                 </div>
               </div>
               
@@ -563,20 +658,28 @@ ${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
                 <div>
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Status</label>
                   <div className="mt-1">
-                    {getStatusBadge(selectedImport.status)}
+                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedImport.status)}`}>
+                      {getStatusIcon(selectedImport.status)}
+                      <span className="ml-1">{selectedImport.status}</span>
+                    </div>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Records</label>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedImport.totalRecords}</p>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Employees</label>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedImport.total_employees || 0}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Successful Records</label>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400">{selectedImport.successfulRecords}</p>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Amount</label>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                    {formatCurrency(selectedImport.total_amount || 0)}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Processing Time</label>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedImport.processingTime}</p>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Payroll Date</label>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {selectedImport.payroll_date ? new Date(selectedImport.payroll_date).toLocaleDateString() : 
+                     selectedImport.created_at ? new Date(selectedImport.created_at).toLocaleDateString() : 'N/A'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -596,6 +699,169 @@ ${item.id},EMP005,Charlie Wilson,4900,Operations,Active`;
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all"
               >
                 Download File
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Confirmation Modal */}
+      {showApproveModal && selectedBatch && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Approve Payroll Batch</h3>
+              <button 
+                onClick={() => setShowApproveModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Are you sure you want to approve payroll batch <span className="font-semibold">{selectedBatch.batch_name}</span>? This will move the batch to confirmed status and make it ready for processing.
+              </p>
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Batch Details:</div>
+                <div className="text-sm text-gray-900 dark:text-white mt-1">
+                  <div>• {selectedBatch.total_employees || 0} employees</div>
+                  <div>• {formatCurrency(selectedBatch.total_amount || 0)} total amount</div>
+                  <div>• Status: {selectedBatch.status}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button 
+                onClick={() => setShowApproveModal(false)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmApprove}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Approving...
+                  </>
+                ) : (
+                  'Approve'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Process Confirmation Modal */}
+      {showProcessModal && selectedBatch && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Process Payroll Batch</h3>
+              <button 
+                onClick={() => setShowProcessModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Are you sure you want to process payroll batch <span className="font-semibold">{selectedBatch.batch_name}</span>? This will apply all deductions to employee accounts and cannot be undone without reversing the batch.
+              </p>
+              <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">⚠️ Important:</div>
+                <div className="text-sm text-yellow-800 dark:text-yellow-200 mt-1">
+                  • Savings deductions will be added to employee accounts<br/>
+                  • Loan repayments will be processed<br/>
+                  • This action affects real financial data
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button 
+                onClick={() => setShowProcessModal(false)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmProcess}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  'Process'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reverse Confirmation Modal */}
+      {showReverseModal && selectedBatch && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Reverse Payroll Batch</h3>
+              <button 
+                onClick={() => setShowReverseModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Are you sure you want to reverse payroll batch <span className="font-semibold">{selectedBatch.batch_name}</span>? This will undo all deductions and transactions.
+              </p>
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                <div className="text-xs text-red-600 dark:text-red-400 font-medium">⚠️ Warning:</div>
+                <div className="text-sm text-red-800 dark:text-red-200 mt-1">
+                  • All savings deductions will be reversed<br/>
+                  • All loan repayments will be reversed<br/>
+                  • Employee account balances will be restored<br/>
+                  • This action cannot be undone
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button 
+                onClick={() => setShowReverseModal(false)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmReverse}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Reversing...
+                  </>
+                ) : (
+                  'Reverse'
+                )}
               </button>
             </div>
           </div>

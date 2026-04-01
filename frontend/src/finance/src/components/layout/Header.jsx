@@ -32,7 +32,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
               
               {/* FiSearch Bar - Desktop */}
               <div className="hidden md:block">
-                <SearchBar />
+                 <h1 className='font-bold text-2xl'>Welcome Back,<span className='text-blue-600'>{user.firstName}</span></h1>
               </div>
               
               {/* Mobile FiSearch Button */}

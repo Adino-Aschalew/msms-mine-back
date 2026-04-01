@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Upload, Download, FileText, CheckCircle, AlertCircle, X, Users, DollarSign, Calendar, Clock, FileSpreadsheet, Database, TrendingUp, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { financeAPI } from '../../../../shared/services/financeAPI';
 import Papa from 'papaparse';
 
 const PayrollImport = () => {
+  const navigate = useNavigate();
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -65,6 +67,16 @@ const PayrollImport = () => {
     } else {
       // For Excel files, we'll show file info and let backend handle parsing
       setPreview([{ 'Employee ID': 'Will be parsed by backend', 'Gross Salary': 'Will be parsed by backend', 'Net Salary': 'Will be parsed by backend' }]);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    if (amount >= 1000000) {
+      return `METB ${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `KETB ${(amount / 1000).toFixed(1)}K`;
+    } else {
+      return `ETB ${amount.toLocaleString()}`;
     }
   };
 
@@ -168,6 +180,10 @@ const PayrollImport = () => {
     setFile(null);
     setPreview(null);
     setResults(null);
+  };
+
+  const viewInHistory = () => {
+    navigate('/finance/payroll/history');
   };
 
   return (
@@ -369,7 +385,7 @@ const PayrollImport = () => {
                 </div>
                 <div className="text-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
-                    {results.amount.toLocaleString()}
+                    {formatCurrency(results.amount)}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Total Net Amount</div>
                 </div>
@@ -406,7 +422,7 @@ const PayrollImport = () => {
                           <td className="px-3 py-2 text-xs text-gray-900 dark:text-gray-300 font-medium">{row.row}</td>
                           <td className="px-3 py-2 text-xs text-gray-900 dark:text-gray-300">{row['Employee ID']}</td>
                           <td className="px-3 py-2 text-xs text-gray-900 dark:text-gray-300">{row['Employee Name']}</td>
-                          <td className="px-3 py-2 text-xs text-gray-900 dark:text-gray-300">${row['Salary']}</td>
+                          <td className="px-3 py-2 text-xs text-gray-900 dark:text-gray-300">{formatCurrency(row['Salary'])}</td>
                           <td className="px-3 py-2">
                             {row.valid ? (
                               <div className="flex items-center text-green-600 dark:text-green-400 font-medium">
@@ -460,7 +476,10 @@ const PayrollImport = () => {
               )}
 
               {(results.status === 'CONFIRMED' || results.status === 'PROCESSED') && (
-                <button className="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700">
+                <button 
+                  onClick={viewInHistory}
+                  className="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700"
+                >
                   <FileText className="h-4 w-4 inline mr-2" />
                   View in History
                 </button>

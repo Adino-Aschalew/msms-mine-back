@@ -375,7 +375,7 @@ const SavingsRequests = () => {
               
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-700">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Original Rate</p>
+                  <p className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em] mb-2">Original Rate</p>
                   <p className="text-3xl font-black text-gray-900 dark:text-white">{selectedRequest.old_percentage}%</p>
                 </div>
                 <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-6 border border-emerald-100 dark:border-emerald-900/30">
@@ -385,7 +385,7 @@ const SavingsRequests = () => {
               </div>
               
               <div className="space-y-3">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Employee Rationale</p>
+                <p className="text-[10px] font-bold text-gray-900 uppercase tracking-[0.2em]">Employee Rationale</p>
                 <div className="p-6 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-dashed border-gray-200 dark:border-gray-600">
                   <p className="text-gray-700 dark:text-gray-300 italic font-medium leading-relaxed">
                     "{selectedRequest.reason || 'No specific rationale provided by the employee for this adjustment.'}"
@@ -395,11 +395,11 @@ const SavingsRequests = () => {
               
               <div className="flex justify-between items-center p-6 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100/50 dark:border-blue-900/30">
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Submission Date</p>
+                  <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-1">Submission Date</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{new Date(selectedRequest.created_at).toLocaleString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Current Status</p>
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1">Current Status</p>
                   <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${getStatusColor(selectedRequest.status)}`}>
                     {getStatusIcon(selectedRequest.status)}
                     {selectedRequest.status}

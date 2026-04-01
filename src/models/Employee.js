@@ -4,7 +4,7 @@ class Employee {
   static async verifyEmployeeFromHR(employeeId) {
     const hrQuery = `
       SELECT employee_id, first_name, last_name, department, job_grade, 
-             employment_status, hire_date, email, phone
+             employment_status, hire_date, email, phone, salary
       FROM hr_database 
       WHERE employee_id = ? AND employment_status = 'ACTIVE'
     `;
@@ -19,17 +19,17 @@ class Employee {
   }
   
   static async createEmployeeProfile(userId, employeeData) {
-    const { employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, phone, address } = employeeData;
+    const { employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, phone, address, salary } = employeeData;
     
     const insertQuery = `
       INSERT INTO employee_profiles 
-      (user_id, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, phone, address)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (user_id, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, phone, address, salary)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     try {
       const result = await query(insertQuery, [
-        userId, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, phone, address
+        userId, employee_id, first_name, last_name, department, job_grade, employment_status, hire_date, phone, address, salary
       ]);
       return result.insertId;
     } catch (error) {

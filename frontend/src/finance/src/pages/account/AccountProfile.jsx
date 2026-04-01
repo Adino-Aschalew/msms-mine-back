@@ -307,7 +307,7 @@ const AccountProfile = () => {
           {/* Centered Content */}
           <div className="flex flex-col items-center text-center">
             <div className="space-y-2 mb-6">
-              <h2 className="text-4xl font-black tracking-tight">{profile.firstName} {profile.lastName}</h2>
+              <h2 className="text-2xl font-bold  tracking-wide">{profile.firstName} {profile.lastName}</h2>
               <p className="text-blue-100 text-xl font-medium tracking-wide opacity-90">{profile.jobTitle}</p>
             </div>
 

@@ -30,8 +30,13 @@ class PayrollController {
     try {
       const uploadUserId = req.userId;
       
+      console.log('=== PAYROLL UPLOAD START ===');
+      console.log('Upload User ID:', uploadUserId);
+      console.log('Request headers:', req.headers);
+      
       if (!req.file) {
         console.error('Upload failed: req.file is missing');
+        console.log('Request body keys:', Object.keys(req.body));
         return res.status(400).json({
           success: false,
           message: 'Payroll file is required and must be in allowed format (CSV/Excel)'
@@ -43,8 +48,10 @@ class PayrollController {
         originalname: req.file.originalname,
         size: req.file.size,
         hasBuffer: !!req.file.buffer,
+        bufferLength: req.file.buffer ? req.file.buffer.length : 0,
         path: req.file.path,
-        secure_url: req.file.secure_url
+        secure_url: req.file.secure_url,
+        mimetype: req.file.mimetype
       });
       
       let cloudinaryUrl = req.file.path || req.file.secure_url || req.file.url;
@@ -53,6 +60,9 @@ class PayrollController {
       // If we only have a buffer (memory storage), upload it manually to Cloudinary
       if (!cloudinaryUrl && req.file.buffer) {
         console.log('Manual upload to Cloudinary from buffer...');
+        console.log('Buffer size:', req.file.buffer.length);
+        console.log('File mimetype:', req.file.mimetype);
+        
         const uploadResult = await new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
             {
@@ -65,6 +75,7 @@ class PayrollController {
                 console.error('Cloudinary manual upload error:', error);
                 reject(error);
               } else {
+                console.log('Cloudinary upload success:', result.secure_url);
                 resolve(result);
               }
             }
@@ -79,6 +90,8 @@ class PayrollController {
         cloudinaryUrl = uploadResult.secure_url;
         publicId = uploadResult.public_id;
         console.log('Manual upload success:', cloudinaryUrl);
+      } else {
+        console.log('Using existing Cloudinary URL:', cloudinaryUrl);
       }
       
       if (!cloudinaryUrl) {
@@ -90,13 +103,28 @@ class PayrollController {
       }
       
       // Process payroll file from Cloudinary URL
+      console.log('=== PROCESSING PAYROLL FILE ===');
+      console.log('Cloudinary URL:', cloudinaryUrl);
+      console.log('Upload User ID:', uploadUserId);
+      console.log('Original Name:', req.file.originalname);
+      console.log('Public ID:', publicId);
+      
       const result = await Payroll.processPayrollFile(cloudinaryUrl, uploadUserId, {
         cloudinaryUrl: cloudinaryUrl,
         originalName: req.file.originalname,
         publicId: publicId
       });
       
+      console.log('=== PAYROLL PROCESSING RESULT ===');
+      console.log('Success:', result.success);
+      console.log('Batch ID:', result.batchId);
+      console.log('Total Employees:', result.totalEmployees);
+      console.log('Total Amount:', result.totalAmount);
+      console.log('Errors:', result.errors);
+      console.log('Warnings:', result.warnings);
+      
       if (result.success) {
+        console.log('=== SENDING SUCCESS RESPONSE ===');
         await auditLog(uploadUserId, 'PAYROLL_UPLOAD', 'payroll_batches', result.batchId, null, { 
           batchName: result.batchName, 
           totalEmployees: result.totalEmployees,
@@ -106,32 +134,45 @@ class PayrollController {
           publicId: req.file.filename
         }, req.ip, req.get('User-Agent'));
         
-        res.json({
+        const responseData = {
           success: true,
           message: 'Payroll uploaded and processed successfully',
           batch_id: result.batchId,
           batch_name: result.batchName,
-          total_employees: result.totalEmployees,
-          total_amount: result.totalAmount,
-          status: 'UPLOADED',
+          total_employees: result.totalEmployees, // Match frontend expectation
+          total_amount: result.totalAmount, // Match frontend expectation
+          status: 'VALIDATED',
           warnings: result.warnings,
-          valid_records_count: result.validRecords,
-          data: result
-        });
+          valid_records_count: result.validRecords ? result.validRecords.length : 0,
+          payroll_details: result.validRecords || [] // Match frontend expectation
+        };
+        
+        console.log('Response data:', responseData);
+        res.json(responseData);
       } else {
+        console.log('=== SENDING ERROR RESPONSE ===');
         await auditLog(uploadUserId, 'PAYROLL_UPLOAD_FAILED', 'payroll_batches', null, null, { 
           fileName: req.file.originalname,
           errors: result.errors,
           cloudinaryUrl: cloudinaryUrl
         }, req.ip, req.get('User-Agent'));
         
-        res.json({
+        const errorResponse = {
           success: false,
           message: 'Payroll validation failed',
           errors: result.errors,
-          total_employees: result.validRecords ? result.validRecords.length : 0,
-          data: result
-        });
+          warnings: result.warnings || [],
+          valid_records_count: result.validRecords ? result.validRecords.length : 0,
+          total_employees: 0,
+          total_amount: 0,
+          batch_id: null,
+          batch_name: null,
+          status: 'FAILED',
+          payroll_details: result.validRecords || [] // Match frontend expectation
+        };
+        
+        console.log('Error response:', errorResponse);
+        res.json(errorResponse);
       }
     } catch (error) {
       console.error('CRITICAL Upload payroll error:', error);
@@ -341,6 +382,8 @@ class PayrollController {
       worksheet.columns = [
         { header: 'Employee ID', key: 'employee_id', width: 15 },
         { header: 'Gross Salary', key: 'gross_salary', width: 15 },
+        { header: 'Savings Deduction', key: 'saving', width: 18 },
+        { header: 'Loan Deduction', key: 'deduction', width: 15 },
         { header: 'Net Salary', key: 'net_salary', width: 15 },
         { header: 'Payroll Date', key: 'payroll_date', width: 15 }
       ];
@@ -348,8 +391,8 @@ class PayrollController {
       worksheet.getRow(1).font = { bold: true };
       
       const sampleData = [
-        { employee_id: 'EMP001', gross_salary: 5000, net_salary: 4500, payroll_date: '2024-01-31' },
-        { employee_id: 'EMP002', gross_salary: 6000, net_salary: 5400, payroll_date: '2024-01-31' }
+        { employee_id: 'EMP001', gross_salary: 5000, saving: 500, deduction: 0, net_salary: 4500, payroll_date: '2024-01-31' },
+        { employee_id: 'EMP002', gross_salary: 6000, saving: 600, deduction: 200, net_salary: 5200, payroll_date: '2024-01-31' }
       ];
       
       sampleData.forEach(data => {

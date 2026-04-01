@@ -10,6 +10,7 @@ class LoanModel {
       loan_term_months,
       interest_rate,
       monthly_payment,
+      monthly_income,
       collateral_description,
       guarantor_details = null,
       reviewed_by = null
@@ -18,13 +19,14 @@ class LoanModel {
     const insertQuery = `
       INSERT INTO loan_applications (
         user_id, employee_id, requested_amount, purpose, repayment_duration_months,
-        status, reviewed_by, created_at
-      ) VALUES (?, ?, ?, ?, ?, 'PENDING', ?, NOW())
+        monthly_income, status, reviewed_by, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, NOW())
     `;
     
     try {
       const result = await query(insertQuery, [
-        user_id, employee_id, loan_amount, loan_purpose, loan_term_months, reviewed_by
+        user_id, employee_id, loan_amount, loan_purpose, loan_term_months, 
+        monthly_income, reviewed_by
       ]);
       
       return result.insertId;

@@ -30,8 +30,65 @@ const upload = multer({
 // Memory storage for immediate processing (e.g. Payroll)
 const memoryUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { 
+    fileSize: 10 * 1024 * 1024, // 10MB
+    files: 1 // Only allow one file at a time
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    const allowedExtensions = ['.csv', '.xlsx', '.xls'];
+    
+    const isValidMimeType = allowedMimes.includes(file.mimetype);
+    const isValidExtension = allowedExtensions.some(ext => 
+      file.originalname.toLowerCase().endsWith(ext)
+    );
+    
+    if (isValidMimeType || isValidExtension) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid file type. Allowed: ${allowedExtensions.join(', ')}`), false);
+    }
+  }
 });
+
+// Add error handling middleware for multer
+const handleMulterError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        success: false,
+        message: 'File too large. Maximum size is 10MB',
+        error: 'LIMIT_FILE_SIZE'
+      });
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only one file allowed at a time',
+        error: 'LIMIT_FILE_COUNT'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: `File upload error: ${error.message}`,
+      error: error.code
+    });
+  }
+  
+  if (error.message.includes('Invalid file type')) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+      error: 'INVALID_FILE_TYPE'
+    });
+  }
+  
+  next(error);
+};
 
 // Financial overview
 router.get('/overview', FinanceController.getFinancialOverview);
@@ -42,7 +99,7 @@ router.get('/analytics', FinanceController.getAnalytics);
 router.get('/budgets/overview', FinanceController.getBudgetOverview);
 
 // Payroll management
-router.post('/payroll/upload', memoryUpload.single('payroll'), auditMiddleware('PAYROLL_UPLOADED'), PayrollController.uploadPayroll);
+router.post('/payroll/upload', handleMulterError, memoryUpload.single('payroll'), auditMiddleware('PAYROLL_UPLOADED'), PayrollController.uploadPayroll);
 router.put('/payroll/batches/:batchId/validate', auditMiddleware('PAYROLL_BATCH_VALIDATE'), PayrollController.validateBatch);
 router.put('/payroll/batches/:batchId/approve', auditMiddleware('PAYROLL_BATCH_APPROVE'), PayrollController.approveBatch);
 router.put('/payroll/batches/:batchId/process', auditMiddleware('PAYROLL_BATCH_PROCESS'), PayrollController.processBatch);

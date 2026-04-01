@@ -6,6 +6,7 @@ class ApiClient {
     this.baseURL = API_BASE_URL;
     this.token = localStorage.getItem('authToken');
     this.refreshToken = localStorage.getItem('refreshToken');
+    console.log('[api] Constructor - Token loaded:', !!this.token);
   }
 
   // Set authentication token
@@ -47,7 +48,34 @@ class ApiClient {
     }
 
     try {
+      console.log('[api] Making request:', {
+        url,
+        method: config.method || 'GET',
+        hasBody: !!config.body,
+        bodyType: config.body instanceof FormData ? 'FormData' : typeof config.body,
+        headers: config.headers,
+        hasAuth: !!config.headers.Authorization
+      });
+      
       const response = await fetch(url, config);
+      
+      // Handle network errors and CORS issues
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText || 'Request failed' };
+        }
+        
+        const error = new Error(errorData.message || `HTTP ${response.status}`);
+        error.status = response.status;
+        error.data = errorData;
+        throw error;
+      }
+      
       const data = await response.json();
 
       // Handle token expiration
@@ -72,6 +100,27 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      
+      // Handle different types of errors
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        // Network error, CORS issue, or server downtime
+        const networkError = new Error('Network error - please check your connection and ensure the server is running');
+        networkError.originalError = error;
+        networkError.isNetworkError = true;
+        networkError.endpoint = endpoint;
+        throw networkError;
+      }
+      
+      if (error.name === 'AbortError') {
+        const timeoutError = new Error('Request timed out');
+        timeoutError.originalError = error;
+        timeoutError.isTimeoutError = true;
+        throw timeoutError;
+      }
+      
+      // Add context to the error
+      error.endpoint = endpoint;
+      error.isApiError = true;
       throw error;
     }
   }

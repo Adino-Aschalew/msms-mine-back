@@ -13,7 +13,7 @@ class LoanService {
       }
       
       // Calculate loan details
-      const { loan_amount, interest_rate, loan_term_months } = applicationData;
+      const { loan_amount, interest_rate, loan_term_months, monthly_income } = applicationData;
       const calculation = await LoanModel.calculateLoanAmount(loan_amount, interest_rate, loan_term_months);
       
       // Get employee_id from eligibility check result
@@ -24,6 +24,7 @@ class LoanService {
         ...applicationData,
         user_id: userId,
         employee_id: employee_id,
+        monthly_payment: calculation.monthlyPayment,
         created_by: userId
       });
       
