@@ -52,7 +52,7 @@ const Profile = () => {
     emergencyContact: 'Jane Committee - Spouse: +1 (555) 987-6543'
   });
 
-  const systemStats = {
+  const [systemStats, setSystemStats] = useState({
     totalLoansReviewed: 1247,
     loansApproved: 892,
     loansRejected: 265,
@@ -62,7 +62,7 @@ const Profile = () => {
     yearsOfService: 4.2,
     currentWorkload: 23,
     pendingReviews: 8
-  };
+  });
 
   const recentActivity = [
     { id: 1, type: 'approved', loanId: 'LN-2024-089', amount: '$45,000', time: '2 hours ago', status: 'completed' },

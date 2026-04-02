@@ -33,6 +33,8 @@ router.get('/meetings/:meetingId', CommitteeController.getCommitteeMeetings);
 
 // Committee management
 router.get('/members', CommitteeController.getCommitteeMembers);
+router.get('/profile', CommitteeController.getProfile);
+router.put('/profile', auditMiddleware('PROFILE_UPDATED'), CommitteeController.updateProfile);
 router.get('/stats', CommitteeController.getCommitteeStats);
 router.get('/workload', CommitteeController.getCommitteeWorkload);
 

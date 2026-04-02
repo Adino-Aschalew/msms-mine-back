@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiMenu,
@@ -23,9 +23,11 @@ import {
   FiMail,
   FiPhone,
   FiMapPin,
+  FiCheckCircle,
 } from 'react-icons/fi';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
+import { committeeAPI } from '../../services/committeeAPI';
 import {
   Calendar,
   Star,
@@ -50,11 +52,36 @@ import {
 
 const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobileSidebar }) => {
   const { theme, toggleTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [notificationDropdown, setNotificationDropdown] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [committeeStats, setCommitteeStats] = useState(null);
+
+  // Fetch profile and stats data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch profile data
+        const profileRes = await committeeAPI.getProfile();
+        if (profileRes.data?.success && profileRes.data?.data) {
+          setProfileData(profileRes.data.data);
+        }
+
+        // Fetch committee stats
+        const statsRes = await committeeAPI.getCommitteeStats();
+        if (statsRes.data?.success && statsRes.data?.data) {
+          setCommitteeStats(statsRes.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching header data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const notifications = [
     { 
@@ -390,10 +417,16 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                     <FiUser className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-base sm:text-lg">John Committee</h3>
-                    <p className="text-xs sm:text-sm text-gray-10 tracking-tight dark:text-gray-100">john@company.com</p>
+                    <h3 className="font-bold text-base sm:text-lg">
+                      {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.username || 'Loading...')}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-10 tracking-tight dark:text-gray-100">
+                      {profileData?.email || user?.email || 'Loading...'}
+                    </p>
                     <div className="flex items-center space-x-2 mt-2">
-                      <span className="px-2 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-medium">Administrator</span>
+                      <span className="px-2 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-medium">
+                        {profileData?.role || user?.role || 'Loading...'}
+                      </span>
                       <span className="px-2 py-1 bg-green-700 rounded-full text-xs font-medium flex items-center">
                         <FiCheckCircle className="w-3 h-3 mr-1" />
                         Verified
@@ -406,16 +439,22 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
               {/* Quick Stats */}
               <div className="grid grid-cols-3 gap-4 p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">247</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {committeeStats?.totalLoansReviewed || '0'}
+                  </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Loans Reviewed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">98%</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {committeeStats?.accuracyRate || '0%'}
+                  </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Approval Rate</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">4.9</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Rating</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {committeeStats?.yearsOfService || '0'}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Years Service</div>
                 </div>
               </div>
 
