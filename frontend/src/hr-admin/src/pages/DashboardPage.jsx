@@ -33,7 +33,7 @@ import SortableWidget from '../components/Dashboard/SortableWidget';
 import SuccessModal from '../components/Dashboard/SuccessModal';
 
 const DashboardPage = () => {
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -43,7 +43,7 @@ const DashboardPage = () => {
     return num.toString();
   };
 
-  // Initial Widgets State
+  
   const initialTopWidgets = [
     {
       id: 'stat-employees',
@@ -76,7 +76,7 @@ const DashboardPage = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { user } = useAuth();
 
-  // Move hooks to the top before any conditional returns
+  
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -93,13 +93,13 @@ const DashboardPage = () => {
       setLoading(true);
       setError(null);
       const response = await hrAPI.getDashboardStats();
-      // Since hrAPI already returns response.data, we check if it's nested or the stats themselves
+      
       const stats = response?.success ? response.data : (response?.data || response);
       setDashboardData(stats || {});
     } catch (err) {
       console.error('HR Dashboard error:', err);
       setError('Failed to fetch HR dashboard data. Please try again.');
-      // Set default data to prevent UI crashes
+      
       setDashboardData({
         totalEmployees: 0,
         activeEmployees: 0,
@@ -121,7 +121,7 @@ const DashboardPage = () => {
     try {
       setUpdating(true);
 
-      // Create stats object to update
+      
       const statsToUpdate = {
         totalEmployees: dashboardData?.totalEmployees || 0,
         activeEmployees: dashboardData?.activeEmployees || 0,
@@ -133,10 +133,10 @@ const DashboardPage = () => {
 
       const response = await hrAPI.updateDashboardStats(statsToUpdate);
 
-      // Refresh dashboard data
+      
       await fetchDashboardData();
 
-      // Show success modal
+      
       setShowSuccessModal(true);
 
     } catch (err) {
@@ -147,7 +147,7 @@ const DashboardPage = () => {
     }
   };
 
-  // Real widgets with backend data
+  
   const dynamicTopWidgets = [
     {
       id: 'stat-employees',
@@ -231,7 +231,7 @@ const DashboardPage = () => {
         </button>
       </div>
 
-      {/* Top STATS Row Editable via Drag-and-Drop */}
+      {}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -252,7 +252,7 @@ const DashboardPage = () => {
         </div>
       </DndContext>
 
-      {/* Analytics & Activity Row Editable via Drag-and-Drop */}
+      {}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -273,7 +273,7 @@ const DashboardPage = () => {
         </div>
       </DndContext>
 
-      {/* Success Modal */}
+      {}
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}

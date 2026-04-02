@@ -69,7 +69,7 @@ const ReportsAnalytics = () => {
     }
   };
 
-  // Chart data
+  
   const monthlyDistributionData = {
     labels: reportsData?.trends?.map(t => t.label) || ['Jan', 'Feb', 'Mar'],
     datasets: [
@@ -190,7 +190,7 @@ const ReportsAnalytics = () => {
     ]
   };
 
-  // Summary statistics
+  
   const summaryStats = [
     {
       title: 'Total Loans This Year',
@@ -226,7 +226,7 @@ const ReportsAnalytics = () => {
     }
   ];
 
-  // Top borrowers
+  
   const topBorrowers = reportsData?.topBorrowers?.map(tb => ({
     name: tb.name,
     department: tb.department || 'Unknown',
@@ -234,7 +234,7 @@ const ReportsAnalytics = () => {
     totalAmount: tb.totalAmount
   })) || [];
 
-  // Guarantor exposure (waiting on backend, mock fallback for frontend display)
+  
   const guarantorExposure = [
     { name: 'Jane Smith', department: 'Marketing', guaranteedAmount: 25000, activeGuarantees: 2 },
     { name: 'Mike Johnson', department: 'Sales', guaranteedAmount: 30000, activeGuarantees: 3 }
@@ -242,12 +242,12 @@ const ReportsAnalytics = () => {
 
   const handleExport = (format) => {
     console.log(`Exporting report as ${format}`);
-    // Implementation for export functionality
+    
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -282,11 +282,11 @@ const ReportsAnalytics = () => {
       </div>
       </div>
 
-      {/* Content */}
+      {}
       <div className="px-4 sm:px-6 py-6">
         <div className="space-y-6">
 
-      {/* Filters */}
+      {}
       <div className="card p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex items-center space-x-4">
@@ -358,7 +358,7 @@ const ReportsAnalytics = () => {
         )}
       </div>
 
-      {/* Summary Statistics */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryStats.map((stat, index) => (
           <div key={index} className="stat-card">
@@ -391,9 +391,9 @@ const ReportsAnalytics = () => {
         ))}
       </div>
 
-      {/* Charts Grid */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly/Yearly Distribution */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             {selectedPeriod === 'month' ? 'Monthly' : 'Yearly'} Loan Distribution
@@ -406,7 +406,7 @@ const ReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Loan Request Rate */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Loan Request Rate
@@ -416,7 +416,7 @@ const ReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Approval Rate */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Approval Rate Trend
@@ -426,7 +426,7 @@ const ReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Department Distribution */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Loan Distribution by Department
@@ -437,9 +437,9 @@ const ReportsAnalytics = () => {
         </div>
       </div>
 
-      {/* Bottom Section */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Loan Size Distribution */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Loan Size Distribution
@@ -449,7 +449,7 @@ const ReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Top Borrowers */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Top Borrowers
@@ -483,7 +483,7 @@ const ReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Guarantor Exposure */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Guarantor Exposure
@@ -518,7 +518,7 @@ const ReportsAnalytics = () => {
         </div>
       </div>
 
-      {/* Repayment Performance */}
+      {}
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Repayment Performance

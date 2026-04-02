@@ -87,7 +87,7 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
       newErrors.push('Password must contain at least one uppercase letter, one lowercase letter, and one number');
     }
 
-    // Loan Committee specific validations
+    
     if (adminType === 'loan-committee') {
       if (formData.max_loan_amount && (isNaN(formData.max_loan_amount) || parseFloat(formData.max_loan_amount) < 0)) {
         newErrors.push('Maximum loan amount must be a positive number');
@@ -111,12 +111,12 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
       let response;
       const submitData = { ...formData };
       
-      // Remove loan committee specific fields if not needed
+      
       if (adminType !== 'loan-committee') {
         delete submitData.committee_level;
         delete submitData.max_loan_amount;
       } else {
-        // Convert max_loan_amount to number if provided
+        
         if (submitData.max_loan_amount) {
           submitData.max_loan_amount = parseFloat(submitData.max_loan_amount);
         }
@@ -142,7 +142,7 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
       alert('Admin created successfully!');
       handleClose();
       
-      // Refresh the parent component
+      
       window.location.reload();
       
     } catch (error) {

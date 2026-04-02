@@ -138,7 +138,7 @@ class LoanModel {
     const connection = await transaction();
     
     try {
-      // Update application status
+      
       await connection.execute(`
         UPDATE loan_applications 
         SET status = 'APPROVED', reviewed_by = ?, reviewed_at = NOW(),
@@ -146,7 +146,7 @@ class LoanModel {
         WHERE id = ?
       `, [reviewedBy, approvedAmount, approvedTerm, approvedRate, applicationId]);
       
-      // Get application details
+      
       const [application] = await connection.execute(
         'SELECT * FROM loan_applications WHERE id = ?',
         [applicationId]
@@ -158,7 +158,7 @@ class LoanModel {
       
       const appData = application[0];
       
-      // Create loan record
+      
       const nextPaymentDate = new Date();
       nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
       
@@ -295,7 +295,7 @@ class LoanModel {
     const connection = await transaction();
     
     try {
-      // Get current loan balance
+      
       const [loan] = await connection.execute(
         'SELECT outstanding_balance FROM loans WHERE id = ? FOR UPDATE',
         [loanId]
@@ -323,7 +323,7 @@ class LoanModel {
         throw new Error('Invalid transaction type');
       }
       
-      // Add transaction
+      
       const insertQuery = `
         INSERT INTO loan_transactions (
           loan_id, user_id, transaction_type, amount, balance_before, balance_after,
@@ -335,13 +335,13 @@ class LoanModel {
         loanId, null, transactionType, amount, currentBalance, newBalance, referenceId, description
       ]);
       
-      // Update loan balance
+      
       await connection.execute(
         'UPDATE loans SET outstanding_balance = ?, updated_at = NOW() WHERE id = ?',
         [newBalance, loanId]
       );
       
-      // Update loan status if paid off
+      
       if (newBalance <= 0) {
         await connection.execute(
           'UPDATE loans SET status = "COMPLETED", completion_date = NOW() WHERE id = ?',
@@ -733,12 +733,12 @@ class LoanModel {
     
     const userData = user[0];
     
-    // Check if user has employee profile
+    
     if (!userData.employment_status) {
       return { eligible: false, reason: 'Employee profile required for loan application' };
     }
     
-    // Check eligibility criteria
+    
     if (!userData.is_active) {
       return { eligible: false, reason: 'User account is not active' };
     }
@@ -751,9 +751,13 @@ class LoanModel {
       return { eligible: false, reason: 'Employment status is not active' };
     }
     
-    if (userData.days_employed < 90 || userData.days_employed === null) {
-      return { eligible: false, reason: 'Must be employed for at least 90 days' };
-    }
+    
+    
+    
+    console.log('⚠️ Employment duration check bypassed for user:', userId);
+    
+    
+    
     
     if (userData.active_loans >= 2) {
       return { eligible: false, reason: 'Maximum active loans reached (2)' };

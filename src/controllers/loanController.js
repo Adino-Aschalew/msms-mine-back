@@ -56,7 +56,7 @@ class LoanController {
         monthly_income
       });
       
-      // Save guarantor information if provided
+      
       if (guarantor_details) {
         try {
           const guarantorData = typeof guarantor_details === 'string' 
@@ -75,7 +75,7 @@ class LoanController {
           });
         } catch (guarantorError) {
           console.error('Error saving guarantor:', guarantorError);
-          // Don't fail the loan application if guarantor save fails
+          
         }
       }
       
@@ -87,7 +87,11 @@ class LoanController {
         data: { applicationId }
       });
     } catch (error) {
-      console.error('Create loan application error:', error);
+      console.error('❌ Create loan application error:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
+      console.error('SQL error:', error.sql);
       res.status(400).json({
         success: false,
         message: error.message || 'Internal server error'

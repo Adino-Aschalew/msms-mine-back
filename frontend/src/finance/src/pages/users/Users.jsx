@@ -20,7 +20,7 @@ const Users = () => {
       lastLogin: '2024-03-15 09:30 AM',
       joinDate: '2022-03-15',
       permissions: ['read', 'write', 'delete', 'admin'],
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face'
+      avatar: 'https://picsum.photos/seed/user1/200/200.jpg',
     },
     {
       id: 2,
@@ -32,7 +32,7 @@ const Users = () => {
       lastLogin: '2024-03-15 08:45 AM',
       joinDate: '2021-08-20',
       permissions: ['read', 'write', 'delete'],
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face'
+      avatar: 'https://picsum.photos/seed/user2/200/200.jpg',
     },
     {
       id: 3,
@@ -44,7 +44,7 @@ const Users = () => {
       lastLogin: '2024-03-14 04:20 PM',
       joinDate: '2020-01-10',
       permissions: ['read', 'write'],
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face'
+      avatar: 'https://picsum.photos/seed/user2/200/200.jpg',
     },
     {
       id: 4,
@@ -56,7 +56,7 @@ const Users = () => {
       lastLogin: '2024-03-10 02:15 PM',
       joinDate: '2023-02-01',
       permissions: ['read'],
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=32&h=32&fit=crop&crop=face'
+      avatar: 'https://picsum.photos/seed/user2/200/200.jpg',
     },
     {
       id: 5,
@@ -68,7 +68,7 @@ const Users = () => {
       lastLogin: '2024-03-15 10:00 AM',
       joinDate: '2021-11-15',
       permissions: ['read', 'write', 'delete', 'admin'],
-      avatar: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=32&h=32&fit=crop&crop=face'
+      avatar: 'https://picsum.photos/seed/user2/200/200.jpg',
     },
     {
       id: 6,
@@ -80,7 +80,7 @@ const Users = () => {
       lastLogin: '2024-03-15 07:30 AM',
       joinDate: '2022-07-01',
       permissions: ['read', 'write', 'delete'],
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'
+      avatar: 'https://picsum.photos/seed/user2/200/200.jpg',
     }
   ];
 
@@ -148,7 +148,7 @@ const Users = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Users & Roles
@@ -158,7 +158,7 @@ const Users = () => {
         </p>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg p-1 shadow-sm">
         <div className="flex space-x-1">
           <button
@@ -186,10 +186,10 @@ const Users = () => {
         </div>
       </div>
 
-      {/* Users Tab */}
+      {}
       {activeTab === 'users' && (
         <>
-          {/* Summary Cards */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
               <div className="flex items-center justify-between">
@@ -240,7 +240,7 @@ const Users = () => {
             </div>
           </div>
 
-          {/* Controls */}
+          {}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
@@ -294,7 +294,7 @@ const Users = () => {
             </div>
           </div>
 
-          {/* Users Table */}
+          {}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -387,7 +387,7 @@ const Users = () => {
         </>
       )}
 
-      {/* Roles Tab */}
+      {}
       {activeTab === 'roles' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {roles.map((role) => (

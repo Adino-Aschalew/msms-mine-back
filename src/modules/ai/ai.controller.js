@@ -26,7 +26,7 @@ class AiController {
     try {
       const { userId, loanAmount, loanTerm } = req.body;
       
-      // Validate input
+      
       if (!userId || !loanAmount || !loanTerm) {
         return res.status(400).json({
           success: false,

@@ -31,7 +31,7 @@ const AccountLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="lg:pl-64">
-        {/* Mobile Header */}
+        {}
         <div className="lg:hidden">
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Account</h1>
@@ -44,7 +44,7 @@ const AccountLayout = () => {
           </div>
         </div>
 
-        {/* Mobile Sidebar Overlay */}
+        {}
         {sidebarOpen && (
           <div
             className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
@@ -52,7 +52,7 @@ const AccountLayout = () => {
           />
         )}
 
-        {/* Sidebar */}
+        {}
         <aside
           className={`
             fixed left-0 top-0 z-50 h-screen w-64 transform border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out dark:border-gray-700 dark:bg-gray-900 lg:translate-x-0 lg:pt-16
@@ -95,7 +95,7 @@ const AccountLayout = () => {
           </nav>
         </aside>
 
-        {/* Main Content */}
+        {}
         <main className="p-4 md:p-6 lg:p-8">
           <Outlet />
         </main>

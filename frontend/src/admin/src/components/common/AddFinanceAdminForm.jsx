@@ -57,7 +57,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
       }));
     }
     
-    // Update role-based permissions when role changes
+    
     if (name === 'role') {
       const selectedRole = financeRoles.find(r => r.value === value);
       if (selectedRole) {
@@ -68,7 +68,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
       }
     }
     
-    // Clear error for this field
+    
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -125,7 +125,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Personal Information */}
+      {}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -178,7 +178,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
 
-      {/* Contact Information */}
+      {}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Contact Information</h3>
         <div>
@@ -207,7 +207,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
 
-      {/* Role and Department */}
+      {}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Role Assignment</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -255,7 +255,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
 
-      {/* Permissions */}
+      {}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Permissions</h3>
         <div className="space-y-3">
@@ -288,7 +288,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
         )}
       </div>
 
-      {/* Security */}
+      {}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Security</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -344,7 +344,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
 
-      {/* Status */}
+      {}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account Status</h3>
         <div className="flex items-center gap-4">
@@ -373,7 +373,7 @@ const AddFinanceAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
 
-      {/* Form Actions */}
+      {}
       <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
         <button
           type="button"

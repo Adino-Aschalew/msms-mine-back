@@ -18,7 +18,7 @@ const DataTable = ({
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter data based on search term
+  
   const filteredData = searchable
     ? data.filter(row =>
         columns.some(column =>
@@ -29,7 +29,7 @@ const DataTable = ({
       )
     : data;
 
-  // Sort data
+  
   const sortedData = React.useMemo(() => {
     if (!sortConfig.key) return filteredData;
 
@@ -54,7 +54,7 @@ const DataTable = ({
     });
   }, [filteredData, sortConfig]);
 
-  // Paginate data
+  
   const paginatedData = pagination
     ? sortedData.slice(
         (currentPage - 1) * pageSize,
@@ -73,7 +73,7 @@ const DataTable = ({
   };
 
   const handleExport = () => {
-    // Simple CSV export
+    
     const headers = columns.map(col => col.Header).join(',');
     const rows = sortedData.map(row =>
       columns.map(col => `"${row[col.accessor] || ''}"`).join(',')
@@ -110,7 +110,7 @@ const DataTable = ({
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg shadow ${className}`}>
-      {/* Header */}
+      {}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           {searchable && (
@@ -140,7 +140,7 @@ const DataTable = ({
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
@@ -205,7 +205,7 @@ const DataTable = ({
         </table>
       </div>
 
-      {/* Pagination */}
+      {}
       {pagination && totalPages > 1 && (
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">

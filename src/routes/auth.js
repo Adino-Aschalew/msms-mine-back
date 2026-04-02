@@ -6,7 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Profile picture upload configuration
+
 const profilePicStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, '../../uploads/profile-pictures');
@@ -35,7 +35,7 @@ const profilePicUpload = multer({
   storage: profilePicStorage,
   fileFilter: profilePicFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 5 * 1024 * 1024 
   }
 });
 

@@ -1,26 +1,26 @@
 import apiClient from './api';
 
 class EnterpriseSavingsAPI {
-  // Get complete savings dashboard data
+  
   static async getSavingsDashboard() {
     const response = await apiClient.get('/savings/dashboard');
     return response.data;
   }
 
-  // Create savings account
+  
   static async createSavingsAccount(savingPercentage = null) {
     const requestBody = savingPercentage ? { saving_percentage: savingPercentage } : {};
     const response = await apiClient.post('/savings/account', requestBody);
     return response.data;
   }
 
-  // Get savings statistics for widgets
+  
   static async getSavingsStatistics() {
     const response = await apiClient.get('/savings/statistics');
     return response.data;
   }
 
-  // Simulate savings changes
+  
   static async simulateSavingsChange(newValue, savingsType, effectiveDate) {
     const response = await apiClient.post('/savings/simulate', {
       newValue,
@@ -30,13 +30,13 @@ class EnterpriseSavingsAPI {
     return response.data;
   }
 
-  // Submit savings change request
+  
   static async submitSavingsRequest(requestData) {
     const response = await apiClient.post('/savings/requests', requestData);
     return response.data;
   }
 
-  // Get savings history
+  
   static async getSavingsHistory(page = 1, limit = 20) {
     const response = await apiClient.get('/savings/history', {
       params: { page, limit }
@@ -44,25 +44,25 @@ class EnterpriseSavingsAPI {
     return response.data;
   }
 
-  // Get system constraints
+  
   static async getSavingsConstraints() {
     const response = await apiClient.get('/savings/constraints');
     return response.data;
   }
 
-  // Get pending requests
+  
   static async getPendingRequests() {
     const response = await apiClient.get('/savings/requests/pending');
     return response.data;
   }
 
-  // Cancel a request
+  
   static async cancelRequest(requestId) {
     const response = await apiClient.delete(`/savings/requests/${requestId}`);
     return response.data;
   }
 
-  // Format currency values
+  
   static formatCurrency(amount) {
     return new Intl.NumberFormat('en-ET', {
       style: 'currency',
@@ -72,7 +72,7 @@ class EnterpriseSavingsAPI {
     }).format(amount);
   }
 
-  // Format compact currency for large numbers
+  
   static formatCompactCurrency(amount) {
     if (amount >= 1000000) {
       return (amount / 1000000).toFixed(2).replace(/\.00$/, '') + 'M ETB';
@@ -83,7 +83,7 @@ class EnterpriseSavingsAPI {
     return this.formatCurrency(amount);
   }
 
-  // Calculate next payroll date
+  
   static getNextPayrollDate() {
     const now = new Date();
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -94,12 +94,12 @@ class EnterpriseSavingsAPI {
     });
   }
 
-  // Get effective date options
+  
   static getEffectiveDateOptions() {
     const options = [];
     const now = new Date();
     
-    // Next payroll cycle
+    
     const nextPayroll = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     options.push({
       value: nextPayroll.toISOString().split('T')[0],
@@ -107,14 +107,14 @@ class EnterpriseSavingsAPI {
       default: true
     });
     
-    // Following month
+    
     const followingMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
     options.push({
       value: followingMonth.toISOString().split('T')[0],
       label: `Following Month (${followingMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
     });
     
-    // Add specific date option
+    
     options.push({
       value: 'custom',
       label: 'Specific Date',
@@ -124,7 +124,7 @@ class EnterpriseSavingsAPI {
     return options;
   }
 
-  // Validate savings input
+  
   static validateSavingsInput(value, type, constraints) {
     const numValue = parseFloat(value);
     
@@ -150,7 +150,7 @@ class EnterpriseSavingsAPI {
     };
   }
 
-  // Get financial health status color and icon
+  
   static getFinancialHealthStatus(status) {
     const statusConfig = {
       SAFE: {
@@ -182,17 +182,17 @@ class EnterpriseSavingsAPI {
     return statusConfig[status] || statusConfig.SAFE;
   }
 
-  // Format percentage display
+  
   static formatPercentage(value) {
     return `${parseFloat(value).toFixed(1)}%`;
   }
 
-  // Calculate projected annual savings
+  
   static calculateProjectedAnnual(monthlyAmount) {
     return monthlyAmount * 12;
   }
 
-  // Get request status configuration
+  
   static getRequestStatusConfig(status) {
     const statusConfig = {
       PENDING: {

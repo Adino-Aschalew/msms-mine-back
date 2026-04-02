@@ -1,4 +1,4 @@
-// Utility functions for downloading files
+
 
 export const downloadFile = (blob, filename, mimeType) => {
   const url = window.URL.createObjectURL(blob);
@@ -12,7 +12,7 @@ export const downloadFile = (blob, filename, mimeType) => {
 };
 
 export const downloadFromResponse = (response, defaultFilename) => {
-  // Extract filename from response headers or use default
+  
   const contentDisposition = response.headers['content-disposition'];
   let filename = defaultFilename;
   

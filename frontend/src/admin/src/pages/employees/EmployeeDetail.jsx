@@ -75,7 +75,7 @@ const EmployeeDetail = ({ employeeId, onBack }) => {
 
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
@@ -133,7 +133,7 @@ const EmployeeDetail = ({ employeeId, onBack }) => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
         <nav className="flex space-x-8">
           {['overview', 'payroll', 'benefits', 'performance'].map((tab) => (
@@ -152,10 +152,10 @@ const EmployeeDetail = ({ employeeId, onBack }) => {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Contact Information */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
             <div className="space-y-3">
@@ -201,7 +201,7 @@ const EmployeeDetail = ({ employeeId, onBack }) => {
             </div>
           </div>
 
-          {/* Employment Information */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Employment Information</h3>
             <div className="space-y-3">

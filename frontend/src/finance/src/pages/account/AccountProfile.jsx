@@ -36,7 +36,7 @@ const AccountProfile = () => {
     confirmPassword: '',
   });
 
-  // Format date for display
+  
   const formatDate = (dateString) => {
     if (!dateString) return '2023';
     try {
@@ -47,7 +47,7 @@ const AccountProfile = () => {
     }
   };
 
-  // Stats data for finance user
+  
   const stats = [
     { label: 'Total Transactions', value: '1,234', icon: Activity, color: 'text-blue-600' },
     { label: 'Account Balance', value: '45.6K', icon: Target, color: 'text-green-600' },
@@ -71,18 +71,18 @@ const AccountProfile = () => {
       setLoading(true);
       const response = await authAPI.getProfile();
       
-      // Handle different response structures
+      
       let profileData = response;
       if (response.data) {
         profileData = response.data;
       }
       
-      // Check if profileData exists and has the expected structure
+      
       if (!profileData) {
         throw new Error('No profile data received');
       }
       
-      // Map backend data to frontend state with proper fallbacks
+      
       setProfile({
         firstName: profileData.first_name || profileData.firstName || '',
         lastName: profileData.last_name || profileData.lastName || '',
@@ -99,7 +99,7 @@ const AccountProfile = () => {
     } catch (err) {
       setError('Failed to load profile data');
       console.error('Profile fetch error:', err);
-      // Set default profile data on error
+      
       setProfile({
         firstName: user?.first_name || '',
         lastName: user?.last_name || '',
@@ -128,7 +128,7 @@ const AccountProfile = () => {
         last_name: profile.lastName,
         phone_number: profile.phone,
         address: profile.location
-        // bio field not supported by backend yet
+        
       };
       
       console.log('Sending update data:', updateData);
@@ -139,11 +139,11 @@ const AccountProfile = () => {
         console.log('Response type:', typeof response);
         console.log('Response keys:', response ? Object.keys(response) : 'Response is null/undefined');
         
-        // Backend returns user data directly, not wrapped in success property
+        
         if (response && (response.id || response.employee_id)) {
           setSuccess('Profile updated successfully!');
           setIsEditing(false);
-          // Refresh profile data
+          
           await fetchProfile();
         } else {
           console.log('Response indicates failure:', response);
@@ -163,7 +163,7 @@ const AccountProfile = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
-    fetchProfile(); // Reset to original values
+    fetchProfile(); 
   };
 
   const handleInputChange = (field, value) => {
@@ -214,7 +214,7 @@ const AccountProfile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -268,12 +268,11 @@ const AccountProfile = () => {
         </div>
       </div>
 
-      {/* Profile Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl shadow-2xl p-8 pt-20 text-white relative">
-          {/* Avatar - Floating on top */}
-          <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-            <div className="relative group">
+      {}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl shadow-2xl p-8 text-white relative">
+          <div className="flex flex-col items-center text-center">
+            <div className="relative group mb-6">
               <div className="w-32 h-32 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border-4 border-white shadow-2xl overflow-hidden">
                 {profile.avatar ? (
                   <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover" />
@@ -282,7 +281,6 @@ const AccountProfile = () => {
                     {profile.firstName.charAt(0)}{profile.lastName.charAt(0)}
                   </span>
                 )}
-                {/* Visual overlay for hover */}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="w-8 h-8 text-white" />
                 </div>
@@ -294,24 +292,12 @@ const AccountProfile = () => {
                 className="hidden"
                 accept="image/*"
               />
-              <button
-                onClick={() => avatarInputRef.current.click()}
-                className="absolute bottom-1 right-1 bg-white text-blue-600 p-2.5 rounded-full shadow-lg hover:bg-blue-50 transition-all transform hover:scale-110 active:scale-90 z-10"
-                title="Change Avatar"
-              >
-                <Camera className="w-5 h-5" />
-              </button>
             </div>
-          </div>
-
-          {/* Centered Content */}
-          <div className="flex flex-col items-center text-center">
-            <div className="space-y-2 mb-6">
-              <h2 className="text-2xl font-bold  tracking-wide">{profile.firstName} {profile.lastName}</h2>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold tracking-wide">{profile.firstName} {profile.lastName}</h2>
               <p className="text-blue-100 text-xl font-medium tracking-wide opacity-90">{profile.jobTitle}</p>
             </div>
-
-            <div className="flex flex-wrap justify-center gap-6 text-sm font-medium">
+            <div className="flex flex-wrap justify-center gap-6 text-sm font-medium mt-6">
               <div className="flex items-center space-x-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition-colors">
                 <Mail className="w-4 h-4 text-blue-200" />
                 <span>{profile.email}</span>
@@ -327,15 +313,14 @@ const AccountProfile = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+      {}
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
@@ -349,10 +334,10 @@ const AccountProfile = () => {
         </div>
       </div>
 
-      {/* Tabs and Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-4 pb-12">
+      {}
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-          {/* Tab Navigation */}
+          {}
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex space-x-8 px-8">
               {tabs.map((tab) => {
@@ -374,9 +359,9 @@ const AccountProfile = () => {
             </div>
           </div>
 
-          {/* Tab Content */}
+          {}
           <div className="p-8">
-            {/* Error and Success Messages */}
+            {}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
                 <p className="text-red-800">{error}</p>
@@ -388,7 +373,7 @@ const AccountProfile = () => {
               </div>
             )}
 
-            {/* Overview Tab */}
+            {}
             {activeTab === 'overview' && (
               <div className="space-y-8">
                 <div>
@@ -502,7 +487,7 @@ const AccountProfile = () => {
               </div>
             )}
 
-            {/* Security Tab */}
+            {}
             {activeTab === 'security' && (
               <div className="space-y-6">
                 <div>
@@ -542,7 +527,7 @@ const AccountProfile = () => {
               </div>
             )}
 
-            {/* Notifications Tab */}
+            {}
             {activeTab === 'notifications' && (
               <div className="space-y-6">
                 <div>
@@ -571,7 +556,7 @@ const AccountProfile = () => {
               </div>
             )}
 
-            {/* Activity Tab */}
+            {}
             {activeTab === 'activity' && (
               <div className="space-y-6">
                 <div>
@@ -605,7 +590,7 @@ const AccountProfile = () => {
         </div>
       </div>
 
-      {/* Password Change Modal */}
+      {}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
@@ -666,6 +651,7 @@ const AccountProfile = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { formatDistanceToNow, isValid, parseISO } from 'date-fns';
 import { financeAPI } from '../../../../shared/services/financeAPI';
 
 const RecentTransactionsTable = ({ limit = 10 }) => {
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -22,12 +22,12 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
       try {
         setLoading(true);
         const response = await financeAPI.getRecentTransactions(limit);
-        // Handle the response structure properly
+        
         const transactionData = response?.data || response || [];
         setTransactions(Array.isArray(transactionData) ? transactionData : []);
       } catch (err) {
         console.error('Failed to fetch transactions:', err);
-        setTransactions([]); // Ensure we always have an array
+        setTransactions([]); 
       } finally {
         setLoading(false);
       }

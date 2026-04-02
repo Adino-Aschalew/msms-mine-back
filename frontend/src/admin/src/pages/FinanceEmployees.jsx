@@ -135,7 +135,7 @@ const FinanceEmployees = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employees</h1>
@@ -153,7 +153,7 @@ const FinanceEmployees = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
@@ -204,7 +204,7 @@ const FinanceEmployees = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
@@ -240,7 +240,7 @@ const FinanceEmployees = () => {
         </div>
       </div>
 
-      {/* Employee Cards */}
+      {}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-2" />
@@ -260,7 +260,7 @@ const FinanceEmployees = () => {
         </div>
       )}
 
-      {/* Employee Details Modal */}
+      {}
       {showDetails && selectedEmployee && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800">
@@ -286,7 +286,7 @@ const FinanceEmployees = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Contact Information */}
+              {}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,7 +321,7 @@ const FinanceEmployees = () => {
                 </div>
               </div>
 
-              {/* Financial Information */}
+              {}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Financial Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -340,7 +340,7 @@ const FinanceEmployees = () => {
                 </div>
               </div>
 
-              {/* Payroll History */}
+              {}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payroll Contribution History</h3>
                 <div className="overflow-x-auto">

@@ -38,13 +38,13 @@ const FinanceAccountProfile = () => {
   };
 
   const handleSave = () => {
-    // Save logic here
+    
     setIsEditing(false);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile</h1>
@@ -80,11 +80,11 @@ const FinanceAccountProfile = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Card */}
+        {}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
             <div className="text-center">
-              {/* Profile Picture */}
+              {}
               <div className="relative inline-block">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl mx-auto">
                   {profileData.firstName[0]}{profileData.lastName[0]}
@@ -131,9 +131,9 @@ const FinanceAccountProfile = () => {
           </div>
         </div>
 
-        {/* Profile Details */}
+        {}
         <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
+          {}
           <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Personal Information</h3>
             
@@ -273,7 +273,7 @@ const FinanceAccountProfile = () => {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {}
           <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Quick Actions</h3>
             

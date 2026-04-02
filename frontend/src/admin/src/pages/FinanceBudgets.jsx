@@ -117,7 +117,7 @@ const FinanceBudgets = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Budget Management</h1>
@@ -135,7 +135,7 @@ const FinanceBudgets = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
@@ -190,7 +190,7 @@ const FinanceBudgets = () => {
         </div>
       </div>
 
-      {/* Budget Overview */}
+      {}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 animate-spin text-blue-500 mb-4" />

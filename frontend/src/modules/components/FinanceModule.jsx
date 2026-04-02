@@ -31,7 +31,7 @@ const FinanceModule = () => {
         <AuthProvider>
           <Routes>
             <Route element={<FinanceLayout />}>
-              <Route index element={<Navigate to="/finance/dashboard" replace />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="transactions" element={<Transactions />} />
               <Route path="transactions/income" element={<Transactions filter="income" />} />
@@ -55,7 +55,7 @@ const FinanceModule = () => {
               <Route path="savings/requests" element={<SavingsRequests />} />
               <Route path="help" element={<Help />} />
             </Route>
-            <Route path="*" element={<Navigate to="/finance/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </AuthProvider>
       </NotificationProvider>

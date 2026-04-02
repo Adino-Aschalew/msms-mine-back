@@ -148,7 +148,7 @@ const SavingsRequests = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
-      {/* Header */}
+      {}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -165,7 +165,7 @@ const SavingsRequests = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
@@ -216,7 +216,7 @@ const SavingsRequests = () => {
         </div>
       </div>
 
-      {/* Search and Filter Controls */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
@@ -245,7 +245,7 @@ const SavingsRequests = () => {
         </div>
       </div>
 
-      {/* Modern Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white uppercase tracking-tight">Recent Requests</h2>
@@ -264,12 +264,12 @@ const SavingsRequests = () => {
                 <div key={request.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
-                      {/* Employee Avatar */}
+                      {}
                       <div className="h-12 w-12 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-full flex items-center justify-center ring-2 ring-blue-100 dark:ring-blue-800">
                         <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       
-                      {/* Employee Info */}
+                      {}
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
                           <p className="text-sm font-bold text-gray-900 dark:text-white uppercase">{request.first_name} {request.last_name}</p>
@@ -282,7 +282,7 @@ const SavingsRequests = () => {
                       </div>
                     </div>
 
-                    {/* Adjustment Info */}
+                    {}
                     <div className="flex items-center space-x-6">
                       <div className="text-center">
                         <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Adjustment</p>
@@ -302,7 +302,7 @@ const SavingsRequests = () => {
                         </p>
                       </div>
 
-                      {/* Actions */}
+                      {}
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleViewDetails(request)}
@@ -335,7 +335,7 @@ const SavingsRequests = () => {
                     </div>
                   </div>
                   
-                  {/* Reason Section */}
+                  {}
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                     <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Reason</p>
                     <p className="text-sm text-gray-700 dark:text-gray-300 italic">
@@ -349,7 +349,7 @@ const SavingsRequests = () => {
         </div>
       </div>
 
-      {/* Detail Modal */}
+      {}
       {showDetailModal && selectedRequest && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
@@ -434,7 +434,7 @@ const SavingsRequests = () => {
         </div>
       )}
 
-      {/* Review Modal */}
+      {}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in duration-200">

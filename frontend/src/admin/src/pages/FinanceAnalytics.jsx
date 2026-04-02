@@ -13,7 +13,7 @@ import {
 import { financeAPI } from '../../../shared/services/financeAPI';
 
 const FinanceAnalytics = () => {
-  const [dateRange, setDateRange] = useState('MONTHLY'); // Use backend periods: DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY
+  const [dateRange, setDateRange] = useState('MONTHLY'); 
   const [selectedMetric, setSelectedMetric] = useState('revenue');
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState(null);
@@ -36,7 +36,7 @@ const FinanceAnalytics = () => {
     }
   };
 
-  // Map backend data to UI metrics
+  
   const getMetrics = () => {
     if (!analyticsData) return [];
     
@@ -48,7 +48,7 @@ const FinanceAnalytics = () => {
         value: `$${overview.savings.total_savings.toLocaleString()}`,
         change: `+${growthRates.revenue}%`,
         trend: 'up',
-        data: [65, 72, 68, 75, 82, 78, 85] // Fallback for trend visualization
+        data: [65, 72, 68, 75, 82, 78, 85] 
       },
       {
         id: 'expenses',
@@ -110,7 +110,7 @@ const FinanceAnalytics = () => {
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{metric.value}</p>
         </div>
 
-        {/* Mini chart */}
+        {}
         <div className="h-16 flex items-end gap-1">
           {metric.data.map((value, index) => (
             <div
@@ -126,7 +126,7 @@ const FinanceAnalytics = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Analytics</h1>
@@ -179,16 +179,16 @@ const FinanceAnalytics = () => {
         </div>
       ) : (
         <>
-          {/* Key Metrics */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {metrics.map((metric) => (
               <MetricCard key={metric.id} metric={metric} />
             ))}
           </div>
 
-          {/* Charts Section */}
+          {}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Revenue vs Expenses Trend */}
+            {}
             <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue vs Expenses Trend</h2>
@@ -205,7 +205,7 @@ const FinanceAnalytics = () => {
               </div>
             </div>
 
-            {/* Expense Breakdown */}
+            {}
             <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Expense Breakdown</h2>
@@ -232,7 +232,7 @@ const FinanceAnalytics = () => {
             </div>
           </div>
 
-          {/* Cash Flow Analysis */}
+          {}
           <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Cash Flow Analysis</h2>

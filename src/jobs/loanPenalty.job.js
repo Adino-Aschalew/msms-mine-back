@@ -16,7 +16,7 @@ class LoanPenaltyJob {
         errors: []
       };
       
-      // Get overdue loans
+      
       const overdueLoans = await this.getOverdueLoans();
       
       console.log(`📊 Found ${overdueLoans.length} overdue loans`);
@@ -31,7 +31,7 @@ class LoanPenaltyJob {
             results.totalAmount += penaltyResult.penaltyAmount;
             results.penalties.push(penaltyResult);
             
-            // Send notification to user
+            
             await NotificationService.createNotification(
               loan.user_id,
               'Loan Penalty Applied',
@@ -54,7 +54,7 @@ class LoanPenaltyJob {
         }
       }
       
-      // Log job completion
+      
       if (adminId) {
         await auditLog(adminId, 'LOAN_PENALTY_JOB', 'penalties', null, null, results, '127.0.0.1', 'System Job');
       }
@@ -98,7 +98,7 @@ class LoanPenaltyJob {
     const overdueDays = loan.overdue_days;
     const outstandingBalance = parseFloat(loan.outstanding_balance);
     
-    // Calculate penalty based on overdue days and balance
+    
     const penaltyRate = this.getPenaltyRate(overdueDays);
     const penaltyAmount = outstandingBalance * penaltyRate;
     
@@ -106,13 +106,13 @@ class LoanPenaltyJob {
       return { penaltyApplied: false, reason: 'No penalty applicable' };
     }
     
-    // Add penalty transaction
+    
     await this.addPenaltyTransaction(loan, penaltyAmount, overdueDays);
     
-    // Update loan balance
+    
     await this.updateLoanBalance(loan.id, outstandingBalance + penaltyAmount);
     
-    // Update loan status if severely overdue
+    
     if (overdueDays > 90) {
       await this.updateLoanStatus(loan.id, 'SEVERELY_OVERDUE');
     } else if (overdueDays > 30 && loan.status === 'ACTIVE') {
@@ -131,17 +131,17 @@ class LoanPenaltyJob {
   }
 
   static getPenaltyRate(overdueDays) {
-    // Penalty rates based on overdue days
+    
     if (overdueDays <= 7) {
-      return 0; // No penalty for 1 week grace period
+      return 0; 
     } else if (overdueDays <= 30) {
-      return 0.01; // 1% for 8-30 days
+      return 0.01; 
     } else if (overdueDays <= 60) {
-      return 0.02; // 2% for 31-60 days
+      return 0.02; 
     } else if (overdueDays <= 90) {
-      return 0.03; // 3% for 61-90 days
+      return 0.03; 
     } else {
-      return 0.05; // 5% for 90+ days
+      return 0.05; 
     }
   }
 
@@ -203,7 +203,7 @@ class LoanPenaltyJob {
   static async schedule() {
     const cron = require('node-cron');
     
-    // Schedule job to run every Sunday at 11 PM
+    
     cron.schedule('0 23 * * 0', async () => {
       try {
         await this.execute();
@@ -240,7 +240,7 @@ class LoanPenaltyJob {
     try {
       const { query } = require('../config/database');
       
-      // Get last execution details from audit logs
+      
       const [lastExecution] = await query(`
         SELECT * FROM audit_logs 
         WHERE action = 'LOAN_PENALTY_JOB' 
@@ -271,11 +271,11 @@ class LoanPenaltyJob {
 
   static getNextRunDate() {
     const now = new Date();
-    const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const currentDay = now.getDay(); 
     
     let daysUntilSunday = (7 - currentDay) % 7;
     if (daysUntilSunday === 0 && now.getHours() >= 23) {
-      daysUntilSunday = 7; // Next Sunday if it's already past 11 PM on Sunday
+      daysUntilSunday = 7; 
     }
     
     const nextRun = new Date(now);
@@ -289,7 +289,7 @@ class LoanPenaltyJob {
     try {
       const { query } = require('../config/database');
       
-      // Get penalty statistics for the last 12 months
+      
       const [stats] = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%Y-%m') as month,
@@ -303,7 +303,7 @@ class LoanPenaltyJob {
         ORDER BY month DESC
       `);
       
-      // Get current overdue loan summary
+      
       const [overdueSummary] = await query(`
         SELECT 
           COUNT(*) as total_overdue,
@@ -342,7 +342,7 @@ class LoanPenaltyJob {
     try {
       const overdueLoans = await this.getOverdueLoans();
       
-      // Group by overdue days ranges
+      
       const report = {
         total_overdue: overdueLoans.length,
         total_balance: overdueLoans.reduce((sum, loan) => sum + parseFloat(loan.outstanding_balance), 0),
@@ -378,7 +378,7 @@ class LoanPenaltyJob {
     try {
       const { query } = require('../config/database');
       
-      // Get penalty transaction details
+      
       const [penalty] = await query(`
         SELECT * FROM loan_transactions 
         WHERE id = ? AND transaction_type = 'PENALTY'
@@ -390,7 +390,7 @@ class LoanPenaltyJob {
       
       const penaltyData = penalty[0];
       
-      // Create waiver transaction
+      
       await query(`
         INSERT INTO loan_transactions (loan_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
         VALUES (?, ?, 'PENALTY_WAIVER', ?, ?, ?, ?, ?, NOW())
@@ -404,17 +404,17 @@ class LoanPenaltyJob {
         `Penalty waived: ${reason}`
       ]);
       
-      // Update loan balance
+      
       await query(`
         UPDATE loans 
         SET outstanding_balance = ?, updated_at = NOW()
         WHERE id = ?
       `, [penaltyData.balance_before, penaltyData.loan_id]);
       
-      // Log waiver
+      
       await auditLog(adminId, 'PENALTY_WAIVER', 'loan_transactions', penaltyId, null, { reason, amount: penaltyData.amount }, '127.0.0.1', 'Admin');
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         penaltyData.user_id,
         'Penalty Waived',
@@ -443,12 +443,12 @@ class LoanPenaltyJob {
   static async validateJobConfiguration() {
     const issues = [];
     
-    // Check if required environment variables are set
+    
     if (!process.env.JWT_SECRET) {
       issues.push('JWT_SECRET environment variable not set');
     }
     
-    // Check database connectivity
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1');
@@ -456,7 +456,7 @@ class LoanPenaltyJob {
       issues.push('Database connectivity failed: ' + error.message);
     }
     
-    // Check if loan tables exist
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1 FROM loans LIMIT 1');

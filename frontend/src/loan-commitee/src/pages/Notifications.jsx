@@ -71,7 +71,7 @@ const Notifications = () => {
     { value: 'system', label: 'System Alerts' }
   ];
 
-  // Dynamic list fetched from backend
+  
 
   const filteredNotifications = notifications.filter(notification => {
     const matchesFilter = selectedFilter === 'all' || notification.type === selectedFilter;
@@ -119,10 +119,10 @@ const Notifications = () => {
   const handleAction = (notification, action) => {
     console.log('Action clicked:', action, notification.id);
     
-    // Mark as read when action is clicked
+    
     handleMarkAsRead(notification.id);
     
-    // Navigate based on notification type and action
+    
     switch (action) {
       case 'View Details':
         handleViewDetails(notification);
@@ -150,26 +150,26 @@ const Notifications = () => {
 
   const handleViewDetails = (notification) => {
     if (notification.loanId) {
-      // Navigate to loan details page
+      
       navigate(`/loan-requests/${notification.loanId}`);
     } else if (notification.reportId) {
-      // Navigate to report details page
+      
       navigate(`/reports/${notification.reportId}`);
     } else {
-      // Default navigation
+      
       navigate('/dashboard');
     }
   };
 
   const handleReview = (notification) => {
     if (notification.loanId) {
-      // Navigate to loan review page
+      
       navigate(`/loan-requests/${notification.loanId}?action=review`);
     } else if (notification.user) {
-      // Navigate to user profile for review
+      
       navigate(`/account/profile?user=${notification.user}`);
     } else {
-      // Default to dashboard
+      
       navigate('/dashboard');
     }
   };
@@ -177,7 +177,7 @@ const Notifications = () => {
   const handleDownloadReceipt = (notification) => {
     if (notification.loanId) {
       console.log('Downloading receipt for loan:', notification.loanId);
-      // In a real app, this would trigger a file download
+      
       alert(`Downloading receipt for loan ${notification.loanId}`);
     }
   };
@@ -185,7 +185,7 @@ const Notifications = () => {
   const handleDownloadReport = (notification) => {
     if (notification.reportId) {
       console.log('Downloading report:', notification.reportId);
-      // In a real app, this would trigger a file download
+      
       alert(`Downloading report ${notification.reportId}`);
     }
   };
@@ -194,17 +194,17 @@ const Notifications = () => {
     if (notification.applicant || notification.user) {
       const person = notification.applicant || notification.user;
       console.log('Contacting:', person);
-      // In a real app, this could open a contact modal or email client
+      
       alert(`Contact ${person} regarding ${notification.loanId || 'this matter'}`);
     }
   };
 
   const handleViewProfile = (notification) => {
     if (notification.user) {
-      // Navigate to user profile
+      
       navigate(`/account/profile?user=${notification.user}`);
     } else if (notification.applicant) {
-      // Navigate to applicant profile
+      
       navigate(`/account/profile?user=${notification.applicant}`);
     }
   };
@@ -237,7 +237,7 @@ const Notifications = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -268,14 +268,14 @@ const Notifications = () => {
         </div>
       </div>
 
-      {/* Content */}
+      {}
       <div className="px-4 sm:px-6 py-6">
         <div className="space-y-6">
 
-      {/* Search and Filters */}
+      {}
       <div className="card p-4">
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
+          {}
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -289,7 +289,7 @@ const Notifications = () => {
             </div>
           </div>
 
-          {/* Filter Toggle */}
+          {}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="btn btn-secondary"
@@ -300,7 +300,7 @@ const Notifications = () => {
           </button>
         </div>
 
-        {/* Advanced Filters */}
+        {}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -322,7 +322,7 @@ const Notifications = () => {
         )}
       </div>
 
-      {/* Results Summary */}
+      {}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Showing {filteredNotifications.length} notifications
@@ -334,7 +334,7 @@ const Notifications = () => {
         </p>
       </div>
 
-      {/* Notifications List */}
+      {}
       <div className="space-y-3">
         {filteredNotifications.map((notification) => (
           <div
@@ -344,12 +344,12 @@ const Notifications = () => {
                           }`}
                         >
                           <div className="flex items-start space-x-4">
-                            {/* Icon */}
+                            {}
                             <div className="p-2 rounded-lg text-primary-600 bg-primary-100 flex-shrink-0">
                               <Bell className="w-4 h-4" />
                             </div>
 
-              {/* Content */}
+              {}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -360,7 +360,7 @@ const Notifications = () => {
                       {notification.message}
                     </p>
                     
-                    {/* Additional Details */}
+                    {}
                     <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
                       {notification.loanId && (
                         <div>Loan ID: <span className="font-medium">{notification.loanId}</span></div>
@@ -398,7 +398,7 @@ const Notifications = () => {
                               </div>
                             </div>
           
-                            {/* Actions */}
+                            {}
                             <div className="flex flex-col items-end space-y-2 ml-4">
                               {!notification.is_read && (
                                 <button
@@ -430,7 +430,7 @@ const Notifications = () => {
         ))}
       </div>
 
-      {/* Empty State */}
+      {}
       {filteredNotifications.length === 0 && (
         <div className="card p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -448,7 +448,7 @@ const Notifications = () => {
         </div>
       )}
 
-      {/* Notification Settings */}
+      {}
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Notification Preferences

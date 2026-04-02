@@ -6,18 +6,18 @@ export default function ViewEmployeeModal({ isOpen, onClose, employee }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {}
       <div 
         className="absolute inset-0 bg-[#0b0e14]/60 backdrop-blur-md transition-opacity duration-300"
         onClick={onClose}
       />
       
-      {/* Modal Content */}
+      {}
       <div 
         className="relative glass-card w-full max-w-3xl rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]"
         role="dialog"
       >
-        {/* Header/Cover */}
+        {}
         <div className="h-40 bg-gradient-to-br from-primary-600 to-indigo-900 relative shrink-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.1),transparent_70%)]"></div>
           <button 
@@ -28,7 +28,7 @@ export default function ViewEmployeeModal({ isOpen, onClose, employee }) {
           </button>
         </div>
 
-        {/* Profile Info Overlay */}
+        {}
         <div className="px-10 pb-10 -mt-16 flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex flex-col md:flex-row gap-8 items-start mb-10">
             <div className="relative shrink-0">
@@ -56,9 +56,9 @@ export default function ViewEmployeeModal({ isOpen, onClose, employee }) {
             </div>
           </div>
 
-          {/* Grid Details */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {/* Contact Information */}
+            {}
             <div className="space-y-6">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                 <Mail size={12} className="text-primary-500" />
@@ -86,7 +86,7 @@ export default function ViewEmployeeModal({ isOpen, onClose, employee }) {
               </div>
             </div>
 
-            {/* Employment Details */}
+            {}
             <div className="space-y-6">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                 <Briefcase size={12} className="text-primary-500" />
@@ -114,7 +114,7 @@ export default function ViewEmployeeModal({ isOpen, onClose, employee }) {
               </div>
             </div>
 
-            {/* Performance & Status */}
+            {}
             <div className="space-y-6">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                 <Award size={12} className="text-amber-500" />
@@ -139,7 +139,7 @@ export default function ViewEmployeeModal({ isOpen, onClose, employee }) {
               </div>
             </div>
 
-            {/* Additional Info */}
+            {}
             <div className="space-y-6">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                 <Clock size={12} className="text-primary-500" />

@@ -65,12 +65,12 @@ const Sessions = () => {
 
   const handleLogoutSession = (sessionId) => {
     console.log('Logging out session:', sessionId);
-    // In a real app, this would call an API to logout the session
+    
   };
 
   const handleLogoutAllSessions = () => {
     console.log('Logging out all sessions');
-    // In a real app, this would call an API to logout all sessions
+    
   };
 
   return (
@@ -81,7 +81,7 @@ const Sessions = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Sessions List */}
+        {}
         <div className="lg:col-span-2">
           <div className="card">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -152,7 +152,7 @@ const Sessions = () => {
           </div>
         </div>
 
-        {/* Security Info */}
+        {}
         <div className="lg:col-span-1">
           <div className="card p-6">
             <div className="flex items-center gap-3 mb-4">

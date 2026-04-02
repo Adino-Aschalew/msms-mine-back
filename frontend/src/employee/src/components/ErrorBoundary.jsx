@@ -17,11 +17,11 @@ class ErrorBoundary extends React.Component {
       errorInfo: errorInfo
     });
 
-    // Log error to an error reporting service
+    
     console.error('Error Boundary caught an error:', error, errorInfo);
     
-    // You could also send this to a service like Sentry
-    // logErrorToService(error, errorInfo);
+    
+    
   }
 
   handleReset = () => {

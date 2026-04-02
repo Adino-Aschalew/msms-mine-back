@@ -52,7 +52,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
       role: formData.role,
       type: formData.type,
       salary: Number(formData.salary),
-      avatar: employee?.avatar || `https://i.pravatar.cc/150?u=${formData.firstName.toLowerCase()}`,
+      avatar: employee?.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
       status: employee?.status || 'Active',
       dateJoined: employee?.dateJoined || new Date().toISOString().split('T')[0],
       performance: employee?.performance || 0,
@@ -64,18 +64,18 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {}
       <div 
         className="absolute inset-0 bg-[#0b0e14]/60 backdrop-blur-md transition-opacity duration-300"
         onClick={onClose}
       />
       
-      {/* Modal Content */}
+      {}
       <div 
         className="relative glass-card w-full max-w-2xl rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]"
         role="dialog"
       >
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-8 border-b border-white/5 bg-white/[0.02]">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.2)]">
@@ -99,11 +99,11 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
           </button>
         </div>
 
-        {/* Body */}
+        {}
         <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
           <form id="employee-form" onSubmit={handleSubmit} className="space-y-8">
             
-            {/* Avatar Section */}
+            {}
             <div className="flex items-center gap-8 p-6 rounded-3xl bg-white/[0.02] border border-white/5">
               <div className="relative group">
                 <div className="w-24 h-24 rounded-3xl bg-slate-800 flex items-center justify-center border-2 border-dashed border-slate-700 overflow-hidden transition-all duration-500 group-hover:border-primary-500/50">
@@ -243,7 +243,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
           </form>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="p-8 border-t border-white/5 flex justify-end gap-4 bg-white/[0.02]">
           <button 
             type="button" 

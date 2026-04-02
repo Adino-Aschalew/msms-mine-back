@@ -51,7 +51,7 @@ class CsvUtils {
         ...options
       };
       
-      // Convert buffer to string and parse
+      
       const csvString = buffer.toString('utf8');
       
       csv.parse(csvString, defaultOptions)
@@ -158,7 +158,7 @@ class CsvUtils {
     data.forEach((row, index) => {
       const rowErrors = [];
       
-      // Check each field according to validation rules
+      
       Object.keys(validationRules).forEach(field => {
         const rule = validationRules[field];
         const value = row[field];
@@ -169,7 +169,7 @@ class CsvUtils {
         }
         
         if (value !== undefined && value !== null && value !== '') {
-          // Type validation
+          
           if (rule.type === 'number' && isNaN(Number(value))) {
             rowErrors.push(`${field} must be a number`);
           }
@@ -182,7 +182,7 @@ class CsvUtils {
             rowErrors.push(`${field} must be a valid date`);
           }
           
-          // Range validation
+          
           if (rule.min !== undefined && Number(value) < rule.min) {
             rowErrors.push(`${field} must be at least ${rule.min}`);
           }
@@ -191,7 +191,7 @@ class CsvUtils {
             rowErrors.push(`${field} must be at most ${rule.max}`);
           }
           
-          // Length validation
+          
           if (rule.minLength !== undefined && String(value).length < rule.minLength) {
             rowErrors.push(`${field} must be at least ${rule.minLength} characters`);
           }
@@ -200,12 +200,12 @@ class CsvUtils {
             rowErrors.push(`${field} must be at most ${rule.maxLength} characters`);
           }
           
-          // Pattern validation
+          
           if (rule.pattern && !new RegExp(rule.pattern).test(value)) {
             rowErrors.push(`${field} format is invalid`);
           }
           
-          // Custom validation
+          
           if (rule.validate && typeof rule.validate === 'function') {
             const customError = rule.validate(value);
             if (customError) {
@@ -246,7 +246,7 @@ class CsvUtils {
         if (typeof transform === 'function') {
           transformedRow[field] = transform(row[field], row);
         } else if (typeof transform === 'string') {
-          // Simple field mapping
+          
           transformedRow[transform] = row[field];
           delete transformedRow[field];
         }
@@ -266,7 +266,7 @@ class CsvUtils {
         }
         
         if (typeof filter === 'object' && filter !== null) {
-          // Object filter with operators
+          
           return Object.keys(filter).every(operator => {
             const value = filter[operator];
             
@@ -299,7 +299,7 @@ class CsvUtils {
           });
         }
         
-        // Simple equality check
+        
         return row[field] === filter;
       });
     });
@@ -413,7 +413,7 @@ class CsvUtils {
     const sanitizedFileName = this.sanitizeFileName(fileName);
     const filePath = `./exports/${sanitizedFileName}.csv`;
     
-    // Ensure exports directory exists
+    
     const fs = require('fs');
     const path = require('path');
     const exportsDir = path.dirname(filePath);

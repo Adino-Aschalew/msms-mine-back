@@ -4,15 +4,15 @@ const { auditLog } = require('../../middleware/audit');
 class SavingsService {
   static async createAccount(userId, employeeId, savingPercentage, ip, userAgent) {
     try {
-      // Default to 15% if not provided
+      
       const finalSavingPercentage = savingPercentage || 15;
       
-      // Validate saving percentage
+      
       if (finalSavingPercentage < 15 || finalSavingPercentage > 65) {
         throw new Error('Saving percentage must be between 15% and 65%');
       }
       
-      // Check if account already exists
+      
       console.log('SavingsService.createAccount: checking for existing account for userId:', userId);
       const existingAccount = await SavingsModel.getSavingsAccount(userId);
       if (existingAccount) {
@@ -22,7 +22,7 @@ class SavingsService {
       
       console.log('SavingsService.createAccount: creating new account for userId:', userId, 'employeeId:', employeeId);
       
-      // Create account
+      
       const accountId = await SavingsModel.createSavingsAccount(userId, employeeId, finalSavingPercentage);
       
       await auditLog(userId, 'SAVINGS_ACCOUNT_CREATE', 'savings_accounts', accountId, null, { saving_percentage: finalSavingPercentage }, ip, userAgent);
@@ -68,7 +68,7 @@ class SavingsService {
 
   static async updateSavingPercentage(userId, savingPercentage, ip, userAgent) {
     try {
-      // Validate saving percentage
+      
       if (!savingPercentage || savingPercentage < 15 || savingPercentage > 65) {
         throw new Error('Saving percentage must be between 15% and 65%');
       }
@@ -89,10 +89,10 @@ class SavingsService {
 
   static async getTransactions(userId, page = 1, limit = 10, filters = {}) {
     try {
-      // First check if user has a savings account
+      
       const account = await SavingsModel.getSavingsAccount(userId);
       if (!account) {
-        // Return empty result if no account exists
+        
         return {
           transactions: [],
           pagination: {
@@ -113,12 +113,12 @@ class SavingsService {
 
   static async addContribution(userId, amount, referenceId, description, ip, userAgent) {
     try {
-      // Validate amount
+      
       if (!amount || amount <= 0) {
         throw new Error('Valid amount is required');
       }
       
-      // Get account
+      
       const account = await SavingsModel.getSavingsAccount(userId);
       if (!account) {
         throw new Error('Savings account not found');
@@ -128,7 +128,7 @@ class SavingsService {
         throw new Error('Savings account is not active');
       }
       
-      // Add contribution
+      
       const result = await SavingsModel.addSavingsTransaction(
         account.id,
         userId,
@@ -152,12 +152,12 @@ class SavingsService {
 
   static async withdrawSavings(userId, amount, reason, ip, userAgent) {
     try {
-      // Validate amount
+      
       if (!amount || amount <= 0) {
         throw new Error('Valid amount is required');
       }
       
-      // Get account
+      
       const account = await SavingsModel.getSavingsAccount(userId);
       if (!account) {
         throw new Error('Savings account not found');
@@ -167,17 +167,17 @@ class SavingsService {
         throw new Error('Savings account is not active');
       }
       
-      // Check lock period
+      
       if (account.lock_period_end_date && new Date(account.lock_period_end_date) > new Date()) {
         throw new Error('Savings are still in lock period');
       }
       
-      // Check balance
+      
       if (account.current_balance < amount) {
         throw new Error('Insufficient balance');
       }
       
-      // Process withdrawal
+      
       const result = await SavingsModel.addSavingsTransaction(
         account.id,
         userId,
@@ -299,7 +299,7 @@ class SavingsService {
 
   static async getAccountTransactions(accountId, page = 1, limit = 10, filters = {}) {
     try {
-      // First get the account to find the user ID
+      
       const account = await SavingsModel.getSavingsAccountById(accountId);
       if (!account) {
         throw new Error('Savings account not found');

@@ -2,10 +2,10 @@ const { query, transaction } = require('../../config/database');
 const { auditLog } = require('../../middleware/audit');
 
 class EnterpriseSavingsService {
-  // Get employee's complete savings dashboard data
+  
   static async getEmployeeSavingsDashboard(userId) {
     try {
-      // Get current savings account with version info
+      
       const accountQuery = `
         SELECT 
           sa.*,
@@ -36,7 +36,7 @@ class EnterpriseSavingsService {
 
       const accountData = account[0];
       
-      // Get YTD contributions
+      
       const ytdQuery = `
         SELECT 
           SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as ytd_contributions,
@@ -49,7 +49,7 @@ class EnterpriseSavingsService {
       
       const ytdData = await query(ytdQuery, [userId]);
       
-      // Get last 3 payroll contributions
+      
       const recentQuery = `
         SELECT 
           transaction_date,
@@ -65,7 +65,7 @@ class EnterpriseSavingsService {
       
       const recentContributions = await query(recentQuery, [userId]);
       
-      // Get current loan deductions for financial health calculation
+      
       let loanDeductions = 0;
       try {
         const loanQuery = `
@@ -83,8 +83,9 @@ class EnterpriseSavingsService {
         loanDeductions = 0;
       }
       
-      // Get current salary (from employee profile as fallback)
+      
       let grossSalary = 0;
+      let netSalary = 0;
       try {
         const salaryQuery = `
           SELECT 
@@ -97,20 +98,39 @@ class EnterpriseSavingsService {
         `;
         
         const salaryData = await query(salaryQuery, [userId]);
-        grossSalary = parseFloat(salaryData[0]?.gross_salary || 0);
+        if (salaryData && salaryData.length > 0) {
+          grossSalary = parseFloat(salaryData[0]?.gross_salary || 0);
+          netSalary = parseFloat(salaryData[0]?.net_salary || 0);
+        }
       } catch (error) {
-        // Fallback to employee profile salary
-        const profileSalaryQuery = `
-          SELECT salary as gross_salary
-          FROM employee_profiles 
-          WHERE user_id = ?
-        `;
-        
-        const profileData = await query(profileSalaryQuery, [userId]);
-        grossSalary = parseFloat(profileData[0]?.gross_salary || accountData.current_balance * 4);
+        console.log('Payroll history table not found or error, using fallback:', error.message);
       }
       
-      // Calculate financial health indicators
+      
+      if (grossSalary === 0) {
+        try {
+          const profileSalaryQuery = `
+            SELECT salary as gross_salary
+            FROM employee_profiles 
+            WHERE user_id = ?
+          `;
+          
+          const profileData = await query(profileSalaryQuery, [userId]);
+          if (profileData && profileData.length > 0) {
+            grossSalary = parseFloat(profileData[0]?.gross_salary || 0);
+          }
+        } catch (profileError) {
+          console.log('Employee profile salary lookup failed:', profileError.message);
+        }
+      }
+      
+      
+      if (grossSalary === 0) {
+        grossSalary = parseFloat(accountData.current_balance * 4);
+        netSalary = grossSalary * 0.85; 
+      }
+      
+      
       const currentDeduction = parseFloat(accountData.savings_type === 'PERCENTAGE' 
         ? (grossSalary * accountData.saving_percentage / 100)
         : accountData.fixed_amount || 0
@@ -118,12 +138,12 @@ class EnterpriseSavingsService {
       const totalDeductions = currentDeduction + loanDeductions;
       const deductionRatio = grossSalary > 0 ? (totalDeductions / grossSalary * 100) : 0;
       
-      // Determine financial health status
+      
       let healthStatus = 'SAFE';
       if (deductionRatio > 50) healthStatus = 'RISKY';
       else if (deductionRatio >= 30) healthStatus = 'MODERATE';
       
-      // Check for pending requests
+      
       const pendingQuery = `
         SELECT COUNT(*) as pending_count
         FROM savings_requests 
@@ -188,10 +208,10 @@ class EnterpriseSavingsService {
     }
   }
 
-  // Simulate savings changes with live calculations
+  
   static async simulateSavingsChange(userId, newValue, savingsType, effectiveDate) {
     try {
-      // Get current data
+      
       const currentData = await this.getEmployeeSavingsDashboard(userId);
       
       if (!currentData.hasAccount) {
@@ -201,7 +221,7 @@ class EnterpriseSavingsService {
       const grossSalary = currentData.financialHealth.grossSalary;
       const loanDeductions = currentData.financialHealth.loanDeductions;
       
-      // Calculate new deduction
+      
       const newDeduction = savingsType === 'PERCENTAGE' 
         ? (grossSalary * newValue / 100)
         : newValue;
@@ -210,10 +230,10 @@ class EnterpriseSavingsService {
       const newDeductionRatio = grossSalary > 0 ? (totalDeductions / grossSalary * 100) : 0;
       const newNetSalary = grossSalary - totalDeductions;
       
-      // Get system constraints
+      
       const constraints = await this.getSavingsConstraints();
       
-      // Validate constraints
+      
       const validation = {
         isValid: true,
         violations: []
@@ -246,7 +266,7 @@ class EnterpriseSavingsService {
         });
       }
       
-      // Warnings
+      
       if (newDeductionRatio >= 30 && newDeductionRatio <= 50) {
         validation.violations.push({
           type: 'HIGH_DEDUCTION_WARNING',
@@ -286,7 +306,7 @@ class EnterpriseSavingsService {
     }
   }
 
-  // Submit savings change request
+  
   static async submitSavingsRequest(userId, requestData) {
     return await transaction(async (connection) => {
       const {
@@ -298,7 +318,7 @@ class EnterpriseSavingsService {
         urgencyLevel = 'NORMAL'
       } = requestData;
       
-      // Get current data
+      
       const currentData = await this.getEmployeeSavingsDashboard(userId);
       
       if (!currentData.hasAccount) {
@@ -309,7 +329,7 @@ class EnterpriseSavingsService {
         throw new Error('You already have a pending request. Please wait for it to be processed.');
       }
       
-      // Create the request
+      
       const insertRequestQuery = `
         INSERT INTO savings_requests (
           employee_id, user_id, request_type, old_value, new_value, 
@@ -340,13 +360,13 @@ class EnterpriseSavingsService {
       
       const requestId = requestResult.insertId;
       
-      // Update account's last request date
+      
       await connection.execute(
         'UPDATE savings_accounts SET last_request_date = CURDATE(), total_requests_count = total_requests_count + 1 WHERE user_id = ?',
         [userId]
       );
       
-      // Log the action
+      
       await auditLog(
         userId,
         'REQUEST_CREATED',
@@ -373,7 +393,7 @@ class EnterpriseSavingsService {
     });
   }
 
-  // Get system constraints and configuration
+  
   static async getSavingsConstraints() {
     try {
       const configQuery = `
@@ -406,7 +426,7 @@ class EnterpriseSavingsService {
       
     } catch (error) {
       console.error('Error in getSavingsConstraints:', error);
-      // Return default constraints
+      
       return {
         minSavingsPercentage: 15,
         maxSavingsPercentage: 65,
@@ -416,12 +436,12 @@ class EnterpriseSavingsService {
     }
   }
 
-  // Get employee's savings history
+  
   static async getEmployeeSavingsHistory(userId, page = 1, limit = 20) {
     try {
       const offset = (page - 1) * limit;
       
-      // Get requests history
+      
       const requestsQuery = `
         SELECT 
           sr.*,
@@ -440,7 +460,7 @@ class EnterpriseSavingsService {
       
       const requests = await query(requestsQuery, [userId, limit, offset]);
       
-      // Get versions history
+      
       const versionsQuery = `
         SELECT 
           sv.*,

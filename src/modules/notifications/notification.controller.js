@@ -1,9 +1,7 @@
 const NotificationService = require('../../services/notification.service');
 
 class NotificationController {
-  /**
-   * Get paginated notifications for the logged-in user
-   */
+  
   static async getUserNotifications(req, res) {
     try {
       const userId = req.user.id;
@@ -34,9 +32,7 @@ class NotificationController {
     }
   }
 
-  /**
-   * Mark a specific notification as read
-   */
+  
   static async markAsRead(req, res) {
     try {
       const userId = req.user.id;
@@ -55,9 +51,7 @@ class NotificationController {
     }
   }
 
-  /**
-   * Mark all unread notifications for the user as read
-   */
+  
   static async markAllAsRead(req, res) {
     try {
       const userId = req.user.id;
@@ -75,9 +69,7 @@ class NotificationController {
     }
   }
 
-  /**
-   * Get unread notifications count
-   */
+  
   static async getUnreadCount(req, res) {
     try {
       const userId = req.user.id;
@@ -98,9 +90,7 @@ class NotificationController {
     }
   }
 
-  /**
-   * Delete a notification
-   */
+  
   static async deleteNotification(req, res) {
     try {
       const userId = req.user.id;

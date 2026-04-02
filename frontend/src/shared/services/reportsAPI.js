@@ -1,14 +1,14 @@
 import apiClient from '../services/api';
 
-// Reports API
+
 export const reportsAPI = {
-  // Get report statistics for dashboard
+  
   getStats: async () => {
-    const response = await apiClient.get('/api/reports/stats');
-    return response.data;
+    const response = await apiClient.get('/reports/stats');
+    return response;
   },
 
-  // Get all reports with filtering
+  
   getReports: async (filters = {}) => {
     const params = new URLSearchParams();
     
@@ -24,27 +24,27 @@ export const reportsAPI = {
       params.append('search', filters.search);
     }
     
-    const response = await apiClient.get(`/api/reports?${params.toString()}`);
-    return response.data;
+    const response = await apiClient.get(`/reports?${params.toString()}`);
+    return response;
   },
 
-  // Get report templates
+  
   getTemplates: async () => {
-    const response = await apiClient.get('/api/reports/templates');
-    return response.data;
+    const response = await apiClient.get('/reports/templates');
+    return response;
   },
 
-  // Generate a new report
+  
   generateReport: async (reportType, format = 'json', filters = {}) => {
-    const response = await apiClient.post('/api/reports/generate', {
+    const response = await apiClient.post('/reports/generate', {
       reportType,
       format,
       filters
     });
-    return response.data;
+    return response;
   },
 
-  // Get report history
+  
   getHistory: async (page = 1, limit = 10, filters = {}) => {
     const params = new URLSearchParams();
     params.append('page', page.toString());
@@ -66,23 +66,23 @@ export const reportsAPI = {
       params.append('end_date', filters.end_date);
     }
     
-    const response = await apiClient.get(`/api/reports/history?${params.toString()}`);
-    return response.data;
+    const response = await apiClient.get(`/reports/history?${params.toString()}`);
+    return response;
   },
 
-  // Get specific report by ID
+  
   getReportById: async (reportId) => {
-    const response = await apiClient.get(`/api/reports/history/${reportId}`);
-    return response.data;
+    const response = await apiClient.get(`/reports/history/${reportId}`);
+    return response;
   },
 
-  // Delete a report
+  
   deleteReport: async (reportId) => {
     const response = await apiClient.delete(`/api/reports/history/${reportId}`);
     return response.data;
   },
 
-  // Schedule a report
+  
   scheduleReport: async (reportType, schedule, parameters, recipients) => {
     const response = await apiClient.post('/api/reports/schedule', {
       reportType,
@@ -93,7 +93,7 @@ export const reportsAPI = {
     return response.data;
   },
 
-  // Get scheduled reports
+  
   getScheduledReports: async (page = 1, limit = 10, filters = {}) => {
     const params = new URLSearchParams();
     params.append('page', page.toString());
@@ -111,13 +111,13 @@ export const reportsAPI = {
     return response.data;
   },
 
-  // Cancel scheduled report
+  
   cancelScheduledReport: async (reportId) => {
     const response = await apiClient.delete(`/api/reports/scheduled/${reportId}`);
     return response.data;
   },
 
-  // Get report definitions
+  
   getDefinitions: async () => {
     const response = await apiClient.get('/api/reports/definitions');
     return response.data;

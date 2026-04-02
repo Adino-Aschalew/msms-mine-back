@@ -104,7 +104,7 @@ class SavingsRequest {
         await connection.execute(updateSavingsQuery, [request.new_percentage, request.user_id]);
       }
       
-      // Notify user through centralized service
+      
       await NotificationService.sendSavingsStatusNotification(
         request.user_id,
         requestId,

@@ -1,7 +1,7 @@
 const cloudinary = require('cloudinary').v2;
 const CloudinaryStorage = require('multer-storage-cloudinary');
 
-// Configure Cloudinary
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -9,7 +9,7 @@ cloudinary.config({
   secure: true
 });
 
-// Configure Cloudinary storage for multer (v2.x compatible)
+
 let storage;
 try {
   storage = CloudinaryStorage({
@@ -27,7 +27,7 @@ try {
   console.log('✅ Cloudinary storage initialized successfully');
 } catch (error) {
   console.error('❌ Cloudinary storage initialization failed:', error.message);
-  // Fallback or better let it fail explicitly but with a log
+  
   throw error;
 }
 

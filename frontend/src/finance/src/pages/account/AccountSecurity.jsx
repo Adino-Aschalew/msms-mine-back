@@ -55,7 +55,7 @@ const AccountSecurity = () => {
     setError('');
     setSuccess('');
     
-    // Validation
+    
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError('All password fields are required');
       return;
@@ -81,12 +81,12 @@ const AccountSecurity = () => {
       
       if (response.success) {
         setSuccess('Password changed successfully! You will need to use your new password next time you login.');
-        // Clear form
+        
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
         
-        // Update last password change date
+        
         const today = new Date().toISOString().split('T')[0];
         securitySettings.lastPasswordChange = today;
       } else {
@@ -117,7 +117,7 @@ const AccountSecurity = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Security Settings
@@ -127,7 +127,7 @@ const AccountSecurity = () => {
         </p>
       </div>
 
-      {/* Security Score */}
+      {}
       <div className="card">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -157,14 +157,14 @@ const AccountSecurity = () => {
         </div>
       </div>
 
-      {/* Password Change */}
+      {}
       <div className="card">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Change Password
           </h3>
           
-          {/* Error Message */}
+          {}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <div className="flex">
@@ -174,7 +174,7 @@ const AccountSecurity = () => {
             </div>
           )}
           
-          {/* Success Message */}
+          {}
           {success && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
               <div className="flex">
@@ -298,7 +298,7 @@ const AccountSecurity = () => {
         </div>
       </div>
 
-      {/* Two-Factor Authentication */}
+      {}
       <div className="card">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -366,7 +366,7 @@ const AccountSecurity = () => {
         </div>
       </div>
 
-      {/* Active Sessions */}
+      {}
       <div className="card">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -412,7 +412,7 @@ const AccountSecurity = () => {
         </div>
       </div>
 
-      {/* Security Notifications */}
+      {}
       <div className="card">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

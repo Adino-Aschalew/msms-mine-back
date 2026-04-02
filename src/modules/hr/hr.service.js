@@ -96,7 +96,7 @@ class HrService {
 
   static async verifyEmployee(userId, verifiedBy, ip, userAgent) {
     try {
-      // Check if user exists and is not already verified
+      
       const [user] = await query(`
         SELECT u.*, ep.first_name, ep.last_name, u.email, ep.hr_verified
         FROM users u
@@ -108,21 +108,21 @@ class HrService {
         throw new Error('Employee not found or already verified');
       }
 
-      // Update HR verification status in employee_profiles
+      
       await query(`
         UPDATE employee_profiles 
         SET hr_verified = TRUE, hr_verification_date = NOW(), updated_at = NOW()
         WHERE user_id = ?
       `, [userId]);
 
-      // Log verification
+      
       await auditLog(verifiedBy, 'EMPLOYEE_VERIFIED', 'users', userId, null, {
         employee_id: user.employee_id,
         username: user.username,
         email: user.email
       }, ip, userAgent);
 
-      // Notifications disabled for now - email service not properly configured
+      
       console.log('Employee verified successfully (notifications disabled)');
 
       return {
@@ -146,7 +146,7 @@ class HrService {
         throw new Error('Invalid employment status');
       }
 
-      // Check if user exists
+      
       const [user] = await query(`
         SELECT u.*, ep.first_name, ep.last_name, u.email, ep.employment_status as current_status
         FROM users u
@@ -158,14 +158,14 @@ class HrService {
         throw new Error('User not found');
       }
 
-      // Update employment status
+      
       await query(`
         UPDATE employee_profiles 
         SET employment_status = ?, updated_at = NOW()
         WHERE user_id = ?
       `, [employmentStatus, userId]);
 
-      // If terminating, deactivate user account
+      
       if (employmentStatus === 'TERMINATED') {
         await query(`
           UPDATE users 
@@ -174,13 +174,13 @@ class HrService {
         `, [userId]);
       }
 
-      // Log status change
+      
       await auditLog(updatedBy, 'EMPLOYMENT_STATUS_UPDATE', 'employee_profiles', userId, null, {
         old_status: user.current_status,
         new_status: employmentStatus
       }, ip, userAgent);
 
-      // Notifications disabled for now - email service not properly configured
+      
       console.log('Employment status updated successfully (notifications disabled)');
 
       return {
@@ -202,26 +202,26 @@ class HrService {
     try {
       const { employee_id, username, email, role = 'EMPLOYEE' } = employeeData;
 
-      // Validate required fields (password is no longer required)
+      
       if (!employee_id || !username || !email) {
         throw new Error('Employee ID, username, and email are required');
       }
 
-      // Check if employee_id already exists
+      
       const existing = await query('SELECT id FROM users WHERE employee_id = ?', [employee_id]);
       if (existing && existing.length > 0) {
         throw new Error('Employee ID already exists');
       }
 
-      // Use default password for all new employees
+      
       const defaultPassword = 'BIT##123';
 
-      // Hash default password
+      
       const bcrypt = require('bcryptjs');
       const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
       const password_hash = await bcrypt.hash(defaultPassword, saltRounds);
 
-      // Create user with password change required
+      
       const userResult = await query(`
         INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified, password_change_required, created_at)
         VALUES (?, ?, ?, ?, ?, TRUE, TRUE, TRUE, NOW())
@@ -229,7 +229,7 @@ class HrService {
 
       const userId = userResult.insertId;
 
-      // Create employee profile
+      
       const { first_name, last_name, grandfather_name, phone, address, department, job_grade, job_role, salary, employment_status, hire_date } = profileData;
 
       await query(`
@@ -237,7 +237,7 @@ class HrService {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `, [userId, employee_id, first_name, last_name, grandfather_name || null, department || null, job_grade || null, job_role || null, salary || null, employment_status || 'ACTIVE', hire_date || null, phone || null, address || null]);
 
-      // Log creation
+      
       await auditLog(createdBy, 'EMPLOYEE_CREATED', 'users', userId, null, {
         employee_id,
         username,
@@ -247,7 +247,7 @@ class HrService {
         job_grade
       }, ip, userAgent);
 
-      // Notifications disabled for now - email service not properly configured
+      
       console.log('Employee created successfully (notifications disabled)');
 
       console.log('Employee created successfully:', { userId, employee_id, username, defaultPassword });
@@ -265,7 +265,7 @@ class HrService {
           department,
           job_grade,
           employment_status,
-          defaultPassword: defaultPassword // Include in response for HR reference
+          defaultPassword: defaultPassword 
         }
       };
     } catch (error) {
@@ -275,7 +275,7 @@ class HrService {
 
   static async validateEmployee(employee_id) {
     try {
-      // Mock HR data for demonstration - replace with actual HR database connection
+      
       const mockHREmployees = [
         {
           employee_id: 'EMP001',
@@ -389,13 +389,13 @@ class HrService {
     try {
       const { first_name, last_name, grandfather_name, phone, address, department, job_grade, job_role, salary } = profileData;
 
-      // Check if employee exists
+      
       const [existing] = await query('SELECT id FROM users WHERE id = ?', [userId]);
       if (!existing) {
         throw new Error('Employee not found');
       }
 
-      // Build dynamic update query
+      
       const updateFields = [];
       const params = [];
 
@@ -454,7 +454,7 @@ class HrService {
 
       await query(updateQuery, params);
 
-      // Log update
+      
       await auditLog(updatedBy, 'EMPLOYEE_PROFILE_UPDATE', 'employee_profiles', userId, null, profileData, ip, userAgent);
 
       return { message: 'Employee profile updated successfully' };
@@ -546,21 +546,21 @@ class HrService {
             continue;
           }
 
-          // Update HR verification status
+          
           await query(`
             UPDATE employee_profiles 
             SET hr_verified = TRUE, hr_verification_date = NOW(), updated_at = NOW()
             WHERE user_id = ?
           `, [userId]);
 
-          // Log verification
+          
           await auditLog(verifiedBy, 'EMPLOYEE_VERIFIED', 'users', userId, null, {
             employee_id: user.employee_id,
             username: user.username,
             email: user.email
           }, ip, userAgent);
 
-          // Notifications disabled for now - email service not properly configured
+          
           console.log('Account verified successfully (notifications disabled)');
 
           results.verified.push({
@@ -584,7 +584,7 @@ class HrService {
     try {
       console.log('📊 Fetching HR dashboard stats...');
 
-      // Use simpler queries to avoid potential issues
+      
       let totalEmployees = 0;
       let activeEmployees = 0;
       let verifiedEmployees = 0;
@@ -597,15 +597,15 @@ class HrService {
       let recentActivities = [];
 
       try {
-        // Get total employees
+        
         const [totalResult] = await query('SELECT COUNT(*) as count FROM users WHERE role != ?', ['SUPER_ADMIN']);
         totalEmployees = totalResult?.count || 0;
 
-        // Get active employees
+        
         const [activeResult] = await query('SELECT COUNT(*) as count FROM users WHERE role != ? AND is_active = 1', ['SUPER_ADMIN']);
         activeEmployees = activeResult?.count || 0;
 
-        // Get verified employees
+        
         const [verifiedResult] = await query(`
           SELECT COUNT(*) as count 
           FROM users u 
@@ -614,7 +614,7 @@ class HrService {
         `, ['SUPER_ADMIN']);
         verifiedEmployees = verifiedResult?.count || 0;
 
-        // Get pending verification
+        
         const [pendingResult] = await query(`
           SELECT COUNT(*) as count 
           FROM users u 
@@ -623,7 +623,7 @@ class HrService {
         `, ['SUPER_ADMIN']);
         pendingVerification = pendingResult?.count || 0;
 
-        // Get employment status counts
+        
         const statusResult = await query(`
           SELECT 
             employment_status,
@@ -648,14 +648,14 @@ class HrService {
           }
         });
 
-        // Get departments count
+        
         const [deptResult] = await query(`
           SELECT COUNT(DISTINCT department) as count 
           FROM employee_profiles 
           WHERE department IS NOT NULL
         `);
         departments = deptResult?.count || 0;
-        // Get job grades count
+        
         const [gradeResult] = await query(`
           SELECT COUNT(DISTINCT job_grade) as count 
           FROM employee_profiles 
@@ -663,7 +663,7 @@ class HrService {
         `);
         jobGrades = gradeResult?.count || 0;
 
-        // Get recent activities from audit logs including target user names
+        
         const activitiesResult = await query(`
           SELECT 
             al.id,
@@ -765,8 +765,8 @@ class HrService {
       console.error('Error details:', error.message);
       console.error('Stack trace:', error.stack);
 
-      // Return default values to prevent complete failure
-      // Return empty stats on error to prevent UI crash but avoid showing mock data
+      
+      
       return {
         totalEmployees: 0,
         activeEmployees: 0,
@@ -792,16 +792,16 @@ class HrService {
 
   static async updateDashboardStats(stats, userId, ip, userAgent) {
     try {
-      // For now, we'll just log the update and return the current stats
-      // In a real implementation, you might want to store custom dashboard configurations
+      
+      
       console.log('Dashboard stats update requested by user:', userId, 'with stats:', stats);
 
-      // Log the dashboard update
+      
       await auditLog(userId, 'DASHBOARD_STATS_UPDATED', 'dashboard_stats', null, null, {
         updatedStats: stats
       }, ip, userAgent);
 
-      // Return current stats (in a real app, you might return the updated configuration)
+      
       const currentStats = await this.getDashboardStats();
 
       return {
@@ -882,7 +882,7 @@ class HrService {
 
   static async getDiversityData() {
     try {
-      // Gender diversity based on names (heuristic approach)
+      
       const [genderData] = await query(`
         SELECT 
           CASE 
@@ -896,7 +896,7 @@ class HrService {
         GROUP BY gender
       `);
 
-      // Age group diversity based on hire dates
+      
       const [ageData] = await query(`
         SELECT 
           CASE 
@@ -918,7 +918,7 @@ class HrService {
           END
       `);
 
-      // Department diversity
+      
       const [departmentData] = await query(`
         SELECT 
           ep.department as category,
@@ -929,7 +929,7 @@ class HrService {
         ORDER BY count DESC
       `);
 
-      // Job grade diversity
+      
       const [jobGradeData] = await query(`
         SELECT 
           ep.job_grade as category,
@@ -1045,7 +1045,7 @@ class HrService {
         lastSyncTime: new Date().toISOString()
       };
 
-      // Get all employees from current database
+      
       const [currentEmployees] = await query(`
         SELECT 
           u.id,
@@ -1068,13 +1068,13 @@ class HrService {
         WHERE u.role = 'EMPLOYEE'
       `);
 
-      // Perform data validation and cleanup
+      
       for (const employee of currentEmployees) {
         try {
           let updated = false;
           const updates = [];
 
-          // Validate employee profile completeness
+          
           if (!employee.first_name || !employee.last_name) {
             syncResult.errors.push({
               employeeId: employee.employee_id,
@@ -1083,7 +1083,7 @@ class HrService {
             continue;
           }
 
-          // Check for inactive users who should be terminated
+          
           if (!employee.is_active && employee.employment_status !== 'TERMINATED') {
             await query(`
               UPDATE employee_profiles 
@@ -1094,9 +1094,9 @@ class HrService {
             updated = true;
           }
 
-          // Check for active users with missing verification
+          
           if (employee.is_active && !employee.hr_verified && employee.employment_status === 'ACTIVE') {
-            // Auto-verify long-term active employees (over 30 days)
+            
             const daysSinceHire = employee.hire_date ?
               Math.floor((Date.now() - new Date(employee.hire_date)) / (1000 * 60 * 60 * 24)) : 0;
 
@@ -1111,7 +1111,7 @@ class HrService {
             }
           }
 
-          // Validate department consistency
+          
           if (employee.department) {
             const [deptCheck] = await query(`
               SELECT COUNT(*) as count FROM employee_profiles 
@@ -1119,7 +1119,7 @@ class HrService {
             `, [employee.department, employee.id]);
 
             if (deptCheck[0].count === 0) {
-              // Employee is the only one in this department - might be a typo
+              
               syncResult.errors.push({
                 employeeId: employee.employee_id,
                 error: `Unique department: ${employee.department}`
@@ -1141,7 +1141,7 @@ class HrService {
         }
       }
 
-      // Check for orphaned records (employee_profiles without users)
+      
       const [orphanedProfiles] = await query(`
         SELECT ep.profile_id, ep.employee_id 
         FROM employee_profiles ep 
@@ -1156,7 +1156,7 @@ class HrService {
         });
       }
 
-      // Update system statistics
+      
       const [stats] = await query(`
         SELECT 
           COUNT(*) as total,
@@ -1171,7 +1171,7 @@ class HrService {
       syncResult.activeEmployees = stats[0].active;
       syncResult.verifiedEmployees = stats[0].verified;
 
-      // Log the sync operation
+      
       await auditLog(adminId, 'HR_SYNC', 'hr_sync', null, null, syncResult, ip, userAgent);
 
       return syncResult;
@@ -1197,10 +1197,10 @@ class HrService {
     }
   }
 
-  // Performance Management Methods
+  
   static async getPerformanceStats() {
     try {
-      // Simple stats query with better error handling
+      
       const [stats] = await query(`
         SELECT 
           COUNT(*) as totalReviews,
@@ -1215,7 +1215,7 @@ class HrService {
         WHERE review_period_end >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
       `);
 
-      // Quarterly trend query
+      
       const [quarterlyTrend] = await query(`
         SELECT 
           QUARTER(review_period_end) as quarter,
@@ -1228,7 +1228,7 @@ class HrService {
         ORDER BY year, quarter
       `);
 
-      // Department stats query
+      
       const [departmentStats] = await query(`
         SELECT 
           COALESCE(ep.department, 'Unassigned') as department,
@@ -1264,7 +1264,7 @@ class HrService {
       };
     } catch (error) {
       console.error('Performance stats error:', error.message);
-      // Return empty stats on error
+      
       return {
         totalReviews: 0,
         completedReviews: 0,
@@ -1309,7 +1309,7 @@ class HrService {
       return reviews.map(review => ({
         id: review.id,
         employee: `${review.employee_first_name || ''} ${review.employee_last_name || review.employee_username}`.trim(),
-        role: 'Employee', // This would come from employee_profiles in a real implementation
+        role: 'Employee', 
         date: review.review_period_end,
         type: review.review_type.replace('_', ' '),
         score: review.overall_score,
@@ -1333,7 +1333,7 @@ class HrService {
         comments
       } = reviewData;
 
-      // Calculate overall score from criteria scores
+      
       const overall_score = criteria_scores.reduce((sum, score) => sum + score.score, 0) / criteria_scores.length;
 
       const [result] = await query(`
@@ -1343,7 +1343,7 @@ class HrService {
         ) VALUES (?, ?, ?, ?, ?, ?, 'COMPLETED', ?)
       `, [employee_id, reviewer_id, review_type, review_period_start, review_period_end, overall_score, comments]);
 
-      // Insert individual criteria scores
+      
       for (const criteriaScore of criteria_scores) {
         await query(`
           INSERT INTO performance_scores (review_id, criteria_id, score, comments)
@@ -1357,14 +1357,14 @@ class HrService {
     }
   }
 
-  // Reports Management Methods
+  
   static async getReportsData(reportType = 'payroll') {
     try {
       let data = {};
 
       switch (reportType) {
         case 'payroll':
-          // Simplified payroll data - use user creation dates as fallback
+          
           const monthlyUsersResult = await query(`
             SELECT 
               DATE_FORMAT(u.created_at, '%Y-%m') as month,
@@ -1377,7 +1377,7 @@ class HrService {
             ORDER BY month
           `);
 
-          // Department breakdown
+          
           const deptBreakdownResult = await query(`
             SELECT 
               ep.department,
@@ -1396,19 +1396,19 @@ class HrService {
           data = {
             expenses: Array.isArray(monthlyUsers) ? monthlyUsers.map(e => ({
               month: e.month,
-              amount: e.employee_count * 50000, // Estimated amount
+              amount: e.employee_count * 50000, 
               employeeCount: e.employee_count
             })) : [],
             departmentBreakdown: Array.isArray(deptBreakdown) ? deptBreakdown.map(d => ({
               department: d.department || 'Unassigned',
-              amount: d.employee_count * 50000, // Estimated amount
+              amount: d.employee_count * 50000, 
               employeeCount: d.employee_count
             })) : []
           };
           break;
 
         case 'attendance':
-          // User activity trends
+          
           const [activityTrends] = await query(`
             SELECT 
               DATE(u.created_at) as date,
@@ -1433,7 +1433,7 @@ class HrService {
           break;
 
         case 'performance':
-          // Performance metrics - this should work since we have performance tables
+          
           const [performanceMetrics] = await query(`
             SELECT 
               ep.department,
@@ -1465,7 +1465,7 @@ class HrService {
       return data;
     } catch (error) {
       console.error('Reports data error:', error.message);
-      // Return empty data structure on error
+      
       return {
         expenses: [],
         departmentBreakdown: [],
@@ -1475,10 +1475,10 @@ class HrService {
     }
   }
 
-  // Account Management Methods
+  
   static async getUserProfile(userId) {
     try {
-      // Use the exact same query structure as the working getEmployees method
+      
       const [userProfile] = await query(`
         SELECT 
           u.id,
@@ -1526,18 +1526,18 @@ class HrService {
     try {
       const { first_name, last_name, phone, address } = profileData;
 
-      // Check if employee profile exists
+      
       const [existing] = await query('SELECT user_id FROM employee_profiles WHERE user_id = ?', [userId]);
 
       if (existing && existing.length > 0) {
-        // Update existing profile
+        
         await query(`
           UPDATE employee_profiles 
           SET first_name = ?, last_name = ?, phone = ?, address = ?, updated_at = NOW()
           WHERE user_id = ?
         `, [first_name, last_name, phone, address, userId]);
       } else {
-        // Create new profile
+        
         await query(`
           INSERT INTO employee_profiles (user_id, first_name, last_name, phone, address, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, NOW(), NOW())
@@ -1597,7 +1597,8 @@ class HrService {
         ORDER BY pr.review_date DESC
         LIMIT ? OFFSET ?
       `;
-      const [reviews] = await query(selectQuery, [limit, offset]);
+      const result = await query(selectQuery, [limit, offset]);
+      const reviews = Array.isArray(result) ? result : (result[0] || []);
 
       return (reviews || []).map(r => ({
         id: r.id.toString(),

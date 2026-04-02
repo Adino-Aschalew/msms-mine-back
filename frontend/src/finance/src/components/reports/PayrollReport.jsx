@@ -77,7 +77,7 @@ const PayrollReport = () => {
       
       const response = await financeAPI.downloadPayrollReport(format, activeFilters);
       
-      // Use the download utility
+      
       const defaultFilename = `payroll_report_${new Date().toISOString().split('T')[0]}.${format}`;
       downloadFromResponse(response, defaultFilename);
     } catch (error) {
@@ -107,7 +107,7 @@ const PayrollReport = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
@@ -165,7 +165,7 @@ const PayrollReport = () => {
           </div>
         </div>
 
-        {/* Filters Panel */}
+        {}
         {showFilters && (
           <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -224,7 +224,7 @@ const PayrollReport = () => {
           </div>
         )}
 
-        {/* Search Bar */}
+        {}
         <div className="mt-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -239,7 +239,7 @@ const PayrollReport = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
@@ -302,7 +302,7 @@ const PayrollReport = () => {
         </div>
       </div>
 
-      {/* Data Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

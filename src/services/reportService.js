@@ -22,7 +22,7 @@ class ReportService {
       params.push(end_date);
     }
     
-    // Savings Summary
+    
     const savingsQuery = `
       SELECT 
         COUNT(DISTINCT sa.user_id) as total_savers,
@@ -40,7 +40,7 @@ class ReportService {
       ${department ? 'WHERE ep.department = ?' : ''}
     `;
     
-    // Transaction Summary
+    
     const transactionQuery = `
       SELECT 
         st.transaction_type,
@@ -52,7 +52,7 @@ class ReportService {
       GROUP BY st.transaction_type
     `;
     
-    // Payroll Summary
+    
     const payrollQuery = `
       SELECT 
         COUNT(DISTINCT pb.id) as total_batches,
@@ -86,7 +86,7 @@ class ReportService {
   static async generateFinancialReport(filters = {}) {
     const { start_date, end_date, department } = filters;
     
-    // Portfolio Overview
+    
     const portfolioQuery = `
       SELECT 
         SUM(sa.current_balance) as total_savings,
@@ -104,7 +104,7 @@ class ReportService {
       ${department ? 'WHERE ep.department = ?' : ''}
     `;
     
-    // Monthly Performance
+    
     const monthlyQuery = `
       SELECT 
         DATE_FORMAT(transaction_date, '%Y-%m') as month,
@@ -117,7 +117,7 @@ class ReportService {
       ORDER BY month DESC
     `;
     
-    // Loan Performance
+    
     const loanPerformanceQuery = `
       SELECT 
         COUNT(*) as total_loans,
@@ -180,7 +180,7 @@ class ReportService {
       params.push(table_name);
     }
     
-    // Audit Summary
+    
     const summaryQuery = `
       SELECT 
         COUNT(*) as total_audit_logs,
@@ -194,7 +194,7 @@ class ReportService {
       ${whereClause}
     `;
     
-    // Top Actions
+    
     const topActionsQuery = `
       SELECT 
         al.action,
@@ -207,7 +207,7 @@ class ReportService {
       LIMIT 10
     `;
     
-    // User Activity
+    
     const userActivityQuery = `
       SELECT 
         u.username,
@@ -225,7 +225,7 @@ class ReportService {
       LIMIT 20
     `;
     
-    // Recent Activities
+    
     const recentQuery = `
       SELECT 
         al.*,
@@ -277,7 +277,7 @@ class ReportService {
     
     const forecasts = await query(comparisonQuery, [forecast_type, start_date, end_date]);
     
-    // Get actual data for comparison
+    
     let actualData = [];
     if (forecast_type === 'USER_REGISTRATION') {
       actualData = await query(`
@@ -348,21 +348,21 @@ class ReportService {
       
       doc.pipe(fs.createWriteStream(filePath));
       
-      // Header
+      
       doc.fontSize(20).text(`${reportData.report_type} Report`, { align: 'center' });
       doc.moveDown();
       
-      // Period
+      
       if (reportData.period) {
         doc.fontSize(12).text(`Period: ${reportData.period.start_date || 'N/A'} to ${reportData.period.end_date || 'N/A'}`);
         doc.moveDown();
       }
       
-      // Generated at
+      
       doc.text(`Generated at: ${new Date(reportData.generated_at).toLocaleString()}`);
       doc.moveDown();
       
-      // Report content based on type
+      
       switch (reportData.report_type) {
         case 'OPERATIONAL':
           this.generateOperationalPDF(doc, reportData);
@@ -498,7 +498,7 @@ class ReportService {
   }
   
   static createOperationalExcel(workbook, data) {
-    // Savings Summary Sheet
+    
     const savingsSheet = workbook.addWorksheet('Savings Summary');
     savingsSheet.addRow(['Metric', 'Value']);
     
@@ -513,7 +513,7 @@ class ReportService {
     savingsSheet.addRow(['Closed Accounts', savings.closed_accounts || 0]);
     savingsSheet.addRow(['Average Saving Percentage', (savings.avg_saving_percentage || 0).toFixed(2) + '%']);
     
-    // Transaction Summary Sheet
+    
     const transactionSheet = workbook.addWorksheet('Transaction Summary');
     transactionSheet.addRow(['Transaction Type', 'Count', 'Total Amount', 'Average Amount']);
     
@@ -541,7 +541,7 @@ class ReportService {
     portfolioSheet.addRow(['Total Loan Repaid', portfolio.total_loan_repaid || 0]);
     portfolioSheet.addRow(['Total Interest Earned', portfolio.total_interest_earned || 0]);
     
-    // Monthly Performance Sheet
+    
     const monthlySheet = workbook.addWorksheet('Monthly Performance');
     monthlySheet.addRow(['Month', 'Contributions', 'Interest Paid', 'Contribution Count']);
     
@@ -568,7 +568,7 @@ class ReportService {
     summarySheet.addRow(['Update Actions', summary.update_actions || 0]);
     summarySheet.addRow(['Delete Actions', summary.delete_actions || 0]);
     
-    // Top Actions Sheet
+    
     const actionsSheet = workbook.addWorksheet('Top Actions');
     actionsSheet.addRow(['Action', 'Count', 'Unique Users']);
     
@@ -576,7 +576,7 @@ class ReportService {
       actionsSheet.addRow([action.action, action.count, action.unique_users]);
     });
     
-    // User Activity Sheet
+    
     const userSheet = workbook.addWorksheet('User Activity');
     userSheet.addRow(['Username', 'First Name', 'Last Name', 'Role', 'Action Count', 'Unique Actions', 'Last Activity']);
     
@@ -608,7 +608,7 @@ class ReportService {
       ]);
     });
     
-    // Summary Sheet
+    
     const summarySheet = workbook.addWorksheet('Summary');
     summarySheet.addRow(['Metric', 'Value']);
     summarySheet.addRow(['Forecast Type', data.forecast_type]);

@@ -120,7 +120,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -128,19 +128,19 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         />
       )}
 
-      {/* Sidebar */}
+      {}
       <aside
         className={`fixed top-0 left-0 z-50 w-64 h-full bg-white dark:bg-black border-r border-gray-200 dark:border-gray-700 lg:static lg:z-auto transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo and close button */}
+          {}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                 <FiTrendingUp className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white hidden sm:block">
-                FinanceHub
+                Finance Portal
               </span>
               <span className="text-xl font-bold text-gray-900 dark:text-white sm:hidden">
                 FH
@@ -156,7 +156,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             </button>
           </div>
 
-          {/* Navigation */}
+          {}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -183,24 +183,21 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     <Icon className="h-5 w-5 flex-shrink-0" />
                     <span className="ml-3 flex-1 text-left hidden sm:block">{item.name}</span>
                     {hasChildren && (
-                      <div className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
-                        <FiChevronLeft className="h-4 w-4 hidden sm:block"/>
+                      <div className={`transform text-center justify-center flex transition-transform duration-200 ${isExpanded ? 'rotate-270' : ''}`}>
+                        <FiChevronLeft className="h-4 w-4 text-center hidden sm:block"/>
                         <svg
                           className="h-4 w-4 hidden sm:block"
                           fill="none"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                          strokeWidth={10}
+                          viewBox="0 0 27 27"
                         >
-                          <path d="M9 5l7 7-7 7" />
+                          <path d="M9 5l7 7-7 16" />
                         </svg>
                       </div>
                     )}
                   </NavLink>
 
-                  {/* Submenu */}
+                  {}
                   {hasChildren && isExpanded && (
                     <div className="overflow-hidden">
                       <div className="ml-4 sm:ml-8 mt-1 space-y-1">
@@ -215,7 +212,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                               : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
                           }`}
                           >
-                            <span className="hidden sm:block">{child.name}</span>
+                            <span className="hidden text-sm sm:block">{child.name}</span>
                             <span className="sm:hidden text-xs">{child.name.length > 15 ? child.name.substring(0, 15) + '...' : child.name}</span>
                           </NavLink>
                         ))}
@@ -227,7 +224,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             })}
           </nav>
 
-          {/* Sign out button */}
+          {}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
             <button className="sidebar-item sidebar-item-inactive w-full">
               <FiLogOut className="h-5 w-5" />
@@ -235,7 +232,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <span className="sm:hidden">Sign Out</span>
             </button>
             
-            {/* Mobile close button */}
+            {}
             <button
               onClick={handleCloseSidebar}
               className="lg:hidden w-full flex items-center justify-center px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"

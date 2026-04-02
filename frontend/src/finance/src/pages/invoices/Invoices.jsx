@@ -134,7 +134,7 @@ const Invoices = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Invoices
@@ -144,7 +144,7 @@ const Invoices = () => {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -184,7 +184,7 @@ const Invoices = () => {
         </div>
       </div>
 
-      {/* Controls */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -232,7 +232,7 @@ const Invoices = () => {
         </div>
       </div>
 
-      {/* Invoices Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -353,7 +353,7 @@ const Invoices = () => {
         </div>
       </div>
 
-      {/* Invoice Summary */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Target, 
   TrendingUp, 
@@ -23,14 +23,27 @@ import {
   ArrowDownRight,
   MoreHorizontal
 } from 'lucide-react';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { Line, Pie, Bar } from 'react-chartjs-2';
+import { SafeLineChart, SafePieChart, SafeBarChart } from '../components/Shared/SafeCharts';
 import ScheduleReviewModal from '../components/Performance/ScheduleReviewModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { hrAPI } from '../../../shared/services/hrAPI';
 
 export default function PerformancePage() {
   const { theme } = useTheme();
+  const chartRefs = useRef({});
+
+  
+  useEffect(() => {
+    return () => {
+      
+      Object.values(chartRefs.current).forEach(chart => {
+        if (chart) {
+          chart.destroy();
+        }
+      });
+    };
+  }, []);
+
   const isDark = theme === 'dark';
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,9 +55,8 @@ export default function PerformancePage() {
   const [kpiData, setKpiData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Register Chart.js components once
+  
   useEffect(() => {
-    ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
     fetchData();
   }, []);
 
@@ -106,7 +118,7 @@ export default function PerformancePage() {
     }
   };
 
-  // Chart data for performance trends
+  
   const performanceTrendsData = {
     labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
     datasets: [
@@ -145,7 +157,7 @@ export default function PerformancePage() {
     ]
   };
 
-  // Chart data for department performance
+  
   const departmentPerformanceData = {
     labels: ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations'],
     datasets: [{
@@ -171,7 +183,7 @@ export default function PerformancePage() {
     }]
   };
 
-  // Chart options for dark/light theme
+  
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -248,7 +260,7 @@ export default function PerformancePage() {
     console.log('New review scheduled:', data);
   };
 
-  // Dynamic data fetched from hrAPI
+  
 
   const getKpiColor = (color) => {
     const colors = {
@@ -292,7 +304,7 @@ export default function PerformancePage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Performance Management</h1>
@@ -315,7 +327,7 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpiData.map((kpi, index) => (
           <div key={index} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow">
@@ -343,7 +355,7 @@ export default function PerformancePage() {
         ))}
       </div>
 
-      {/* Performance Reviews Section */}
+      {}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
         <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -402,7 +414,7 @@ export default function PerformancePage() {
           </div>
         </div>
 
-        {/* Grid View */}
+        {}
         {viewMode === 'grid' ? (
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -478,7 +490,7 @@ export default function PerformancePage() {
             </div>
           </div>
         ) : (
-          /* List View */
+          
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-slate-700">
@@ -569,7 +581,7 @@ export default function PerformancePage() {
         )}
       </div>
 
-      {/* Performance Charts Section */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
@@ -582,7 +594,7 @@ export default function PerformancePage() {
             </select>
           </div>
           <div className="h-64">
-            <Bar 
+            <SafeBarChart 
               key="performance-bars"
               data={{
                 labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
@@ -714,7 +726,7 @@ export default function PerformancePage() {
             </button>
           </div>
           <div className="h-64">
-            <Pie 
+            <SafePieChart 
               key="department-pie"
               data={departmentPerformanceData} 
               options={chartOptions} 
@@ -723,7 +735,7 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* Schedule Review Modal */}
+      {}
       <ScheduleReviewModal 
         isOpen={isScheduleOpen} 
         onClose={() => setIsScheduleOpen(false)} 

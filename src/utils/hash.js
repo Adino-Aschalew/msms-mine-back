@@ -57,7 +57,7 @@ class HashUtils {
     hmac.update(JSON.stringify(payload));
     const hash = hmac.digest('hex');
     
-    // Combine payload with hash
+    
     const token = Buffer.from(JSON.stringify(payload)).toString('base64') + '.' + hash;
     return token;
   }
@@ -66,7 +66,7 @@ class HashUtils {
     try {
       const [payloadBase64, hash] = token.split('.');
       
-      // Verify hash
+      
       const crypto = require('crypto');
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(payloadBase64);
@@ -76,7 +76,7 @@ class HashUtils {
         throw new Error('Invalid token hash');
       }
       
-      // Decode payload
+      
       const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString());
       return payload;
     } catch (error) {

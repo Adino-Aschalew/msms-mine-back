@@ -7,7 +7,7 @@ export default function PerformancePage() {
 
   const handleScheduleReview = (data) => {
     console.log('New review scheduled:', data);
-    // In a real app, we would update state or call an API here
+    
   };
 
   return (

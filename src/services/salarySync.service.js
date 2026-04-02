@@ -4,7 +4,7 @@ const NotificationService = require('./notification.service');
 class SalarySyncService {
   static async processPayrollUpload(payrollData, uploadedBy) {
     return transaction(async (connection) => {
-      // Create payroll batch
+      
       const batchInsertQuery = `
         INSERT INTO payroll_batches (batch_name, upload_user_id, total_employees, total_amount, payroll_date, status, file_path, created_at)
         VALUES (?, ?, ?, ?, CURRENT_DATE(), 'UPLOADED', 'csv_upload', NOW())
@@ -24,7 +24,7 @@ class SalarySyncService {
       
       const batchId = batchResult.insertId;
       
-      // Process each payroll record
+      
       let processedCount = 0;
       let errorCount = 0;
       
@@ -36,7 +36,7 @@ class SalarySyncService {
           console.error(`Error processing payroll record for employee ${record['Employee ID'] || record.employee_id}:`, error);
           errorCount++;
           
-          // Log error - assuming payroll_errors or similar exists or we skip for now
+          
           try {
             await connection.execute(`
               INSERT INTO audit_logs (user_id, action, table_name, record_id, new_values, ip_address, user_agent)
@@ -48,7 +48,7 @@ class SalarySyncService {
         }
       }
       
-      // Update batch status
+      
       const status = errorCount === 0 ? 'PROCESSED' : 'PARTIALLY_PROCESSED';
       await connection.execute(`
         UPDATE payroll_batches 
@@ -70,7 +70,7 @@ class SalarySyncService {
     const employee_id = record['Employee ID'] || record.employee_id;
     const gross_salary = parseFloat(record['Gross Salary'] || record.salary || record.gross_salary || 0);
     
-    // Validate employee exists and get their details
+    
     const [employees] = await connection.execute(
       'SELECT id, username FROM users WHERE employee_id = ?',
       [employee_id]
@@ -82,9 +82,9 @@ class SalarySyncService {
     
     const userId = employees[0].id;
     
-    // AUTOMATICALLY CALCULATE DEDUCTIONS
     
-    // 1. Get employee's savings account and calculate savings deduction
+    
+    
     let savings_deduction = 0;
     const [savingsAccount] = await connection.execute(
       'SELECT * FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"',
@@ -100,7 +100,7 @@ class SalarySyncService {
       }
     }
     
-    // 2. Get employee's active loans and calculate loan deduction
+    
     let loan_deduction = 0;
     const [activeLoans] = await connection.execute(
       'SELECT * FROM loans WHERE user_id = ? AND status = "ACTIVE"',
@@ -108,17 +108,17 @@ class SalarySyncService {
     );
     
     if (activeLoans && activeLoans.length > 0) {
-      // Sum up all monthly loan repayments
+      
       loan_deduction = activeLoans.reduce((total, loan) => {
         return total + parseFloat(loan.monthly_deduction || 0);
       }, 0);
     }
     
-    // 3. Calculate net salary
+    
     const total_deductions = savings_deduction + loan_deduction;
     const net_salary = gross_salary - total_deductions;
     
-    // Insert payroll detail with calculated values
+    
     const payrollInsertQuery = `
       INSERT INTO payroll_details (
         payroll_batch_id, user_id, employee_id, gross_salary, net_salary, 
@@ -137,20 +137,20 @@ class SalarySyncService {
       savings_deduction,
       loan_deduction,
       total_deductions,
-      net_salary, // Final amount paid to bank
+      net_salary, 
     ]);
     
-    // Process automatic savings contribution
+    
     if (savings_deduction > 0) {
       await this.processSavingsContribution(connection, userId, savings_deduction, `PAYROLL_BATCH_${batchId}`);
     }
     
-    // Process loan deductions
+    
     if (loan_deduction > 0) {
       await this.processLoanDeductionFromPayroll(connection, userId, loan_deduction, `PAYROLL_BATCH_${batchId}`);
     }
     
-    // Send notification to employee with breakdown
+    
     let notificationMessage = `Your payroll for this period has been processed.\n`;
     notificationMessage += `Gross Salary: ${gross_salary}\n`;
     if (savings_deduction > 0) {
@@ -178,7 +178,7 @@ class SalarySyncService {
   }
 
   static async processSavingsContribution(connection, userId, contributionAmount, batchId) {
-    // Get user's savings account
+    
     const [savingsAccount] = await connection.execute(
       'SELECT * FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"',
       [userId]
@@ -191,7 +191,7 @@ class SalarySyncService {
     
     const account = savingsAccount[0];
     
-    // Add savings transaction
+    
     await connection.execute(`
       INSERT INTO savings_transactions (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, payroll_batch_id, description, transaction_date)
       VALUES (?, ?, 'CONTRIBUTION', ?, ?, ?, ?, ?, NOW())
@@ -205,7 +205,7 @@ class SalarySyncService {
       `Automatic savings contribution from payroll batch ${batchId}`
     ]);
     
-    // Update account balance
+    
     await connection.execute(
       'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
       [account.current_balance + contributionAmount, account.id]
@@ -220,7 +220,7 @@ class SalarySyncService {
   }
 
   static async processLoanDeductionFromPayroll(connection, userId, totalDeduction, batchId) {
-    // Get active loans for this user
+    
     const [loans] = await connection.execute(`
       SELECT * FROM loans 
       WHERE user_id = ? AND status = 'ACTIVE' 
@@ -239,7 +239,7 @@ class SalarySyncService {
 
       const paymentForThisLoan = Math.min(remainingDeduction, loan.outstanding_balance);
       
-      // Process loan payment - Using loan_repayments table
+      
       await connection.execute(`
         INSERT INTO loan_repayments (loan_id, user_id, amount, principal_amount, interest_amount, balance_before, balance_after, payroll_batch_id, status, repayment_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PAID', NOW())
@@ -247,8 +247,8 @@ class SalarySyncService {
         loan.id,
         userId,
         paymentForThisLoan,
-        paymentForThisLoan, // Simplified principal allocation
-        0, // Simplified interest allocation
+        paymentForThisLoan, 
+        0, 
         loan.outstanding_balance,
         loan.outstanding_balance - paymentForThisLoan,
         batchId
@@ -502,7 +502,7 @@ class SalarySyncService {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Payroll Report');
     
-    // Define columns
+    
     worksheet.columns = [
       { header: 'Employee ID', key: 'employee_id', width: 15 },
       { header: 'First Name', key: 'first_name', width: 15 },
@@ -516,7 +516,7 @@ class SalarySyncService {
       { header: 'Payment Status', key: 'payment_status', width: 15 }
     ];
     
-    // Style the header row
+    
     worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).fill = {
       type: 'pattern',
@@ -524,17 +524,17 @@ class SalarySyncService {
       fgColor: { argb: 'FFE0E0E0' }
     };
     
-    // Add data
+    
     data.forEach(record => {
       worksheet.addRow(record);
     });
     
-    // Format currency columns
+    
     ['gross_salary', 'savings', 'loan', 'net_salary'].forEach(key => {
       worksheet.getColumn(key).numFmt = '#,##0.00';
     });
     
-    // Generate buffer
+    
     const buffer = await workbook.xlsx.writeBuffer();
     
     return {

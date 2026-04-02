@@ -5,12 +5,12 @@ import Header from './HeaderNew';
 import CommandPalette from './CommandPalette';
 
 export default function Layout() {
-  // Mobile sidebar states
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Desktop sidebar collapse state
+  
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Close mobile menu on resize to desktop
+  
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -31,7 +31,7 @@ export default function Layout() {
       />
       
       <div className="flex flex-col flex-1 overflow-hidden relative w-full">
-        {/* Sublte Premium Background Glow for Dark Mode */}
+        {}
         <div className="hidden dark:block absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.15),transparent_70%)] pointer-events-none" />
         <div className="hidden dark:block absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.05),transparent_40%)] pointer-events-none" />
         

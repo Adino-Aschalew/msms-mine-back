@@ -52,12 +52,12 @@ const LoanDetails = () => {
             },
             salary: {
               monthlySalary: parseFloat(app.monthly_income || 0),
-              existingDeductions: parseFloat(app.avg_balance || 0), // Using avg balance as proxy for debt
-              availableSalary: parseFloat(app.monthly_income || 0) * 0.7 // Proxy
+              existingDeductions: parseFloat(app.avg_balance || 0), 
+              availableSalary: parseFloat(app.monthly_income || 0) * 0.7 
             },
             savings: {
               savingsBalance: parseFloat(app.savings_balance || 0),
-              monthlyContribution: (parseFloat(app.total_savings_contributions || 0) / 12) || 0 // Proxy
+              monthlyContribution: (parseFloat(app.total_savings_contributions || 0) / 12) || 0 
             },
             loanRequest: {
               loanType: app.purpose || 'Personal',
@@ -92,7 +92,7 @@ const LoanDetails = () => {
   if (error) return <div className="p-6 text-red-600">{error}</div>;
   if (!loanData) return <div className="p-6">No details found.</div>;
 
-  // Eligibility checks
+  
   const eligibilityChecks = [
     {
       rule: 'Salary Rule',
@@ -159,7 +159,7 @@ const LoanDetails = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
@@ -190,10 +190,10 @@ const LoanDetails = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
+        {}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Employee Information */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <User className="w-5 h-5 mr-2" />
@@ -223,7 +223,7 @@ const LoanDetails = () => {
             </div>
           </div>
 
-          {/* Salary Information */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <DollarSign className="w-5 h-5 mr-2" />
@@ -245,7 +245,7 @@ const LoanDetails = () => {
             </div>
           </div>
 
-          {/* Savings Information */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <PiggyBank className="w-5 h-5 mr-2" />
@@ -263,7 +263,7 @@ const LoanDetails = () => {
             </div>
           </div>
 
-          {/* Loan Request Details */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <FileText className="w-5 h-5 mr-2" />
@@ -293,7 +293,7 @@ const LoanDetails = () => {
             </div>
           </div>
 
-          {/* Guarantor Information */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <Shield className="w-5 h-5 mr-2" />
@@ -324,10 +324,10 @@ const LoanDetails = () => {
           </div>
         </div>
 
-        {/* Sidebar */}
+        {}
         <div className="space-y-6">
           
-          {/* Eligibility Check Panel */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <CheckCircle className="w-5 h-5 mr-2" />
@@ -375,7 +375,7 @@ const LoanDetails = () => {
             </div>
           </div>
 
-          {/* Loan Decision Panel */}
+          {}
           {loanData.status === 'pending' && (
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">

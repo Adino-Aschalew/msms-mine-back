@@ -36,7 +36,7 @@ import { handleButtonClick, approveLoan, rejectLoan, suspendLoan } from '../util
 import { exportLoanReport } from '../utils/exportUtils';
 import { committeeAPI } from '../services/committeeAPI';
 
-// Compact money formatter for large amounts
+
 const formatCompactMoney = (amount) => {
   if (amount === 0) return 'ETB 0';
   
@@ -62,7 +62,7 @@ const LoanRequests = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [processingActions, setProcessingActions] = useState(new Set());
   const [modal, setModal] = useState({ show: false, type: '', data: null });
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const [viewMode, setViewMode] = useState('table'); 
   const [selectedRequests, setSelectedRequests] = useState(new Set());
   const [loanRequests, setLoanRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +84,7 @@ const LoanRequests = () => {
       });
       
       if (res && res.data && res.data.success) {
-        // Map backend response to frontend expected fields
+        
         const mappedData = res.data.data.map(app => ({
           id: app.id,
           employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
@@ -109,7 +109,7 @@ const LoanRequests = () => {
     }
   };
 
-  // Functional handlers
+  
   const handleSearch = (term) => {
     setSearchTerm(term);
     handleButtonClick('searchData', term);
@@ -178,7 +178,7 @@ const LoanRequests = () => {
   const handleApprove = async (id) => {
     console.log('Approving loan:', id);
     
-    // Show confirmation modal
+    
     setModal({
       show: true,
       type: 'approve',
@@ -189,7 +189,7 @@ const LoanRequests = () => {
   const handleReject = async (id) => {
     console.log('Rejecting loan:', id);
     
-    // Show reject modal with reason input
+    
     setModal({
       show: true,
       type: 'reject',
@@ -200,14 +200,14 @@ const LoanRequests = () => {
   const handleSuspend = async (id) => {
     console.log('Suspending loan:', id);
     
-    // Find the loan request to check if it can be suspended
+    
     const loan = loanRequests.find(req => req.id === id);
     if (!loan) {
       console.error('Loan not found:', id);
       return;
     }
 
-    // Only suspend approved loans
+    
     if (loan.status !== 'approved') {
       setModal({
         show: true,
@@ -217,7 +217,7 @@ const LoanRequests = () => {
       return;
     }
 
-    // Show suspend modal with reason input
+    
     setModal({
       show: true,
       type: 'suspend',
@@ -226,25 +226,25 @@ const LoanRequests = () => {
   };
 
   const confirmApprove = async (id) => {
-    // Add to processing set
+    
     setProcessingActions(prev => new Set(prev).add(`${id}-approve`));
     
     try {
-      // Find the loan request
+      
       const loan = loanRequests.find(req => req.id === id);
       if (!loan) {
         console.error('Loan not found:', id);
         return;
       }
 
-      // Update loan status to approved using state setter
+      
       setLoanRequests(prev => prev.map(req => 
         req.id === id 
           ? { ...req, status: 'approved', approvalDate: new Date().toISOString().split('T')[0] }
           : req
       ));
       
-      // Call the centralized action handler
+      
       const result = await approveLoan(id);
       if (result.success) {
         console.log(`Loan ${id} approved successfully`);
@@ -255,7 +255,7 @@ const LoanRequests = () => {
         });
       } else {
         console.error('Failed to approve loan:', result.error);
-        // Revert on failure
+        
         setLoanRequests(prev => prev.map(req => 
           req.id === id 
             ? { ...req, status: 'pending' }
@@ -269,7 +269,7 @@ const LoanRequests = () => {
       }
     } catch (error) {
       console.error('Error approving loan:', error);
-      // Revert on error
+      
       setLoanRequests(prev => prev.map(req => 
         req.id === id 
           ? { ...req, status: 'pending' }
@@ -281,7 +281,7 @@ const LoanRequests = () => {
         data: { message: `Error approving loan ${id}: ${error.message}` }
       });
     } finally {
-      // Remove from processing set
+      
       setProcessingActions(prev => {
         const newSet = new Set(prev);
         newSet.delete(`${id}-approve`);
@@ -291,18 +291,18 @@ const LoanRequests = () => {
   };
 
   const confirmReject = async (id, reason) => {
-    // Add to processing set
+    
     setProcessingActions(prev => new Set(prev).add(`${id}-reject`));
     
     try {
-      // Update loan status to rejected using state setter
+      
       setLoanRequests(prev => prev.map(req => 
         req.id === id 
           ? { ...req, status: 'rejected', rejectionDate: new Date().toISOString().split('T')[0], rejectionReason: reason }
           : req
       ));
       
-      // Call the centralized action handler
+      
       const result = await rejectLoan(id, reason);
       if (result.success) {
         console.log(`Loan ${id} rejected successfully`);
@@ -313,7 +313,7 @@ const LoanRequests = () => {
         });
       } else {
         console.error('Failed to reject loan:', result.error);
-        // Revert on failure
+        
         setLoanRequests(prev => prev.map(req => 
           req.id === id 
             ? { ...req, status: 'pending' }
@@ -327,7 +327,7 @@ const LoanRequests = () => {
       }
     } catch (error) {
       console.error('Error rejecting loan:', error);
-      // Revert on error
+      
       setLoanRequests(prev => prev.map(req => 
         req.id === id 
           ? { ...req, status: 'pending' }
@@ -339,7 +339,7 @@ const LoanRequests = () => {
         data: { message: `Error rejecting loan ${id}: ${error.message}` }
       });
     } finally {
-      // Remove from processing set
+      
       setProcessingActions(prev => {
         const newSet = new Set(prev);
         newSet.delete(`${id}-reject`);
@@ -349,18 +349,18 @@ const LoanRequests = () => {
   };
 
   const confirmSuspend = async (id, reason) => {
-    // Add to processing set
+    
     setProcessingActions(prev => new Set(prev).add(`${id}-suspend`));
     
     try {
-      // Update loan status to suspended using state setter
+      
       setLoanRequests(prev => prev.map(req => 
         req.id === id 
           ? { ...req, status: 'suspended', suspensionDate: new Date().toISOString().split('T')[0], suspensionReason: reason }
           : req
       ));
       
-      // Call the centralized action handler
+      
       const result = await suspendLoan(id);
       if (result.success) {
         console.log(`Loan ${id} suspended successfully`);
@@ -371,7 +371,7 @@ const LoanRequests = () => {
         });
       } else {
         console.error('Failed to suspend loan:', result.error);
-        // Revert on failure
+        
         setLoanRequests(prev => prev.map(req => 
           req.id === id 
             ? { ...req, status: 'approved' }
@@ -385,7 +385,7 @@ const LoanRequests = () => {
       }
     } catch (error) {
       console.error('Error suspending loan:', error);
-      // Revert on error
+      
       setLoanRequests(prev => prev.map(req => 
         req.id === id 
           ? { ...req, status: 'approved' }
@@ -397,7 +397,7 @@ const LoanRequests = () => {
         data: { message: `Error suspending loan ${id}: ${error.message}` }
       });
     } finally {
-      // Remove from processing set
+      
       setProcessingActions(prev => {
         const newSet = new Set(prev);
         newSet.delete(`${id}-suspend`);
@@ -418,7 +418,7 @@ const LoanRequests = () => {
   const handleExport = () => {
     console.log('Exporting loan requests');
     
-    // Prepare export data with current filters
+    
     const exportData = {
       generatedAt: new Date().toISOString(),
       filters: {
@@ -428,7 +428,7 @@ const LoanRequests = () => {
         status: selectedStatus,
         amountRange
       },
-      loanRequests: getFilteredRequests(), // Use the filtered requests
+      loanRequests: getFilteredRequests(), 
       summary: {
         totalRequests: loanRequests.length,
         filteredRequests: getFilteredRequests().length,
@@ -436,16 +436,16 @@ const LoanRequests = () => {
       }
     };
 
-    // Call the centralized export utility
+    
     exportLoanReport(exportData);
     
     console.log(`Exported ${getFilteredRequests().length} loan requests`);
   };
 
-  // Filter function for loan requests
+  
   const getFilteredRequests = () => {
     return loanRequests.filter(request => {
-      // Search filter
+      
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         const matchesSearch = 
@@ -457,22 +457,22 @@ const LoanRequests = () => {
         if (!matchesSearch) return false;
       }
 
-      // Department filter
+      
       if (selectedDepartment !== 'all' && request.department.toLowerCase() !== selectedDepartment.toLowerCase()) {
         return false;
       }
 
-      // Loan type filter
+      
       if (selectedLoanType !== 'all' && request.loanType.toLowerCase() !== selectedLoanType.toLowerCase()) {
         return false;
       }
 
-      // Status filter
+      
       if (selectedStatus !== 'all' && request.status !== selectedStatus) {
         return false;
       }
 
-      // Amount range filter
+      
       if (amountRange.min && request.requestedAmount < parseFloat(amountRange.min)) {
         return false;
       }
@@ -486,7 +486,7 @@ const LoanRequests = () => {
 
   const filteredRequests = getFilteredRequests();
 
-  // Calculate statistics
+  
   const stats = {
     total: filteredRequests.length,
     pending: filteredRequests.filter(r => r.status === 'pending').length,
@@ -519,7 +519,7 @@ const LoanRequests = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-6 py-6">
           <div className="flex items-center justify-between">
@@ -554,7 +554,7 @@ const LoanRequests = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {}
       <div className="px-6 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
@@ -607,10 +607,10 @@ const LoanRequests = () => {
         </div>
       </div>
 
-      {/* Enhanced Filters Section */}
+      {}
       <div className="px-6 pb-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* Filter Header */}
+          {}
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -631,7 +631,7 @@ const LoanRequests = () => {
             </div>
           </div>
 
-          {/* Search Bar */}
+          {}
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -653,10 +653,10 @@ const LoanRequests = () => {
             </div>
           </div>
 
-          {/* Quick Filters */}
+          {}
           <div className="px-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Status Filter */}
+              {}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                   <CheckCircle className="w-4 h-4 mr-2 text-gray-500" />
@@ -676,7 +676,7 @@ const LoanRequests = () => {
                 </div>
               </div>
 
-              {/* Loan Type Filter */}
+              {}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                   <CreditCard className="w-4 h-4 mr-2 text-gray-500" />
@@ -696,7 +696,7 @@ const LoanRequests = () => {
                 </div>
               </div>
 
-              {/* Quick Actions */}
+              {}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Actions</label>
                 <div className="flex space-x-2">
@@ -724,7 +724,7 @@ const LoanRequests = () => {
             </div>
           </div>
 
-          {/* Advanced Filters */}
+          {}
           {showFilters && (
             <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
               <div className="space-y-4">
@@ -734,7 +734,7 @@ const LoanRequests = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Min Amount */}
+                  {}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                       <Coins className="w-4 h-4 mr-2 text-gray-500" />
@@ -752,7 +752,7 @@ const LoanRequests = () => {
                     </div>
                   </div>
 
-                  {/* Max Amount */}
+                  {}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                       <Coins className="w-4 h-4 mr-2 text-gray-500" />
@@ -770,7 +770,7 @@ const LoanRequests = () => {
                     </div>
                   </div>
 
-                  {/* Date Range */}
+                  {}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-gray-500" />
@@ -789,7 +789,7 @@ const LoanRequests = () => {
                   </div>
                 </div>
 
-                {/* Filter Tags */}
+                {}
                 <div className="flex flex-wrap gap-2 pt-4">
                   {(selectedStatus !== 'all' || selectedLoanType !== 'all' || amountRange.min || amountRange.max) && (
                     <>
@@ -848,7 +848,7 @@ const LoanRequests = () => {
             </div>
           )}
 
-          {/* Filter Footer */}
+          {}
           <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -880,7 +880,7 @@ const LoanRequests = () => {
         </div>
       </div>
 
-      {/* Results */}
+      {}
       <div className="px-6 pb-6">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -901,7 +901,7 @@ const LoanRequests = () => {
           )}
         </div>
 
-        {/* Table View */}
+        {}
         {viewMode === 'table' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
@@ -1074,7 +1074,7 @@ const LoanRequests = () => {
           </div>
         )}
 
-        {/* Card View */}
+        {}
         {viewMode === 'card' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRequests.map((request) => (
@@ -1196,7 +1196,7 @@ const LoanRequests = () => {
           </div>
         )}
 
-        {/* Empty State */}
+        {}
         {filteredRequests.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1212,11 +1212,11 @@ const LoanRequests = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {}
       {modal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
-            {/* Approve Modal */}
+            {}
             {modal.type === 'approve' && (
               <>
                 <div className="p-6">
@@ -1260,7 +1260,7 @@ const LoanRequests = () => {
               </>
             )}
 
-            {/* Reject Modal */}
+            {}
             {modal.type === 'reject' && (
               <>
                 <div className="p-6">
@@ -1318,7 +1318,7 @@ const LoanRequests = () => {
               </>
             )}
 
-            {/* Suspend Modal */}
+            {}
             {modal.type === 'suspend' && (
               <>
                 <div className="p-6">
@@ -1376,7 +1376,7 @@ const LoanRequests = () => {
               </>
             )}
 
-            {/* Success Modal */}
+            {}
             {modal.type === 'success' && (
               <>
                 <div className="p-6">
@@ -1403,7 +1403,7 @@ const LoanRequests = () => {
               </>
             )}
 
-            {/* Error Modal */}
+            {}
             {modal.type === 'error' && (
               <>
                 <div className="p-6">

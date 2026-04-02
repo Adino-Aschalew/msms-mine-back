@@ -38,11 +38,11 @@ const Preferences = () => {
   };
 
   const handleSave = () => {
-    // Save preferences logic here
+    
     console.log('Preferences saved:', preferences);
     setSaveMessage('Preferences saved successfully!');
     
-    // Clear message after 3 seconds
+    
     setTimeout(() => setSaveMessage(''), 3000);
   };
 
@@ -78,13 +78,13 @@ const Preferences = () => {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* General Preferences */}
+        {}
         <div className="lg:col-span-2">
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">General Preferences</h2>
             
             <div className="space-y-6">
-              {/* Language */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   <Globe className="inline h-4 w-4 mr-2" />
@@ -103,7 +103,7 @@ const Preferences = () => {
                 </select>
               </div>
 
-              {/* Theme */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   <Palette className="inline h-4 w-4 mr-2" />
@@ -134,7 +134,7 @@ const Preferences = () => {
                 </div>
               </div>
 
-              {/* Timezone */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   <Clock className="inline h-4 w-4 mr-2" />
@@ -153,7 +153,7 @@ const Preferences = () => {
                 </select>
               </div>
 
-              {/* Date Format */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Date Format
@@ -170,7 +170,7 @@ const Preferences = () => {
                 </select>
               </div>
 
-              {/* Time Format */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Time Format
@@ -197,7 +197,7 @@ const Preferences = () => {
             </div>
           </div>
 
-          {/* Notification Preferences */}
+          {}
           <div className="card p-6 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
               <Bell className="inline h-5 w-5 mr-2" />
@@ -322,7 +322,7 @@ const Preferences = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {}
         <div className="lg:col-span-1">
           <div className="card p-6">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>

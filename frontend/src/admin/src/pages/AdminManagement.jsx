@@ -17,11 +17,43 @@ const AdminManagement = () => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const response = await adminAPI.getAllAdmins();
-      // Map backend fields to frontend table fields
-      const formattedAdmins = (response.data || []).map(admin => ({
+      console.log('Fetching admins from API...');
+      const response = await adminAPI.getAllUsers();
+      console.log('AdminManagement API response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response success:', response?.success);
+      console.log('Response data:', response?.data);
+      
+      // Handle the response format
+      let adminUsers = [];
+      if (response && response.success && response.data) {
+        adminUsers = response.data;
+        console.log('Using response.data array');
+      } else if (response && Array.isArray(response)) {
+        adminUsers = response;
+        console.log('Using response as direct array');
+      } else if (response && response.data && Array.isArray(response.data)) {
+        adminUsers = response.data;
+        console.log('Using response.data as array');
+      } else {
+        console.error('Unexpected response format:', response);
+        console.error('Response keys:', response ? Object.keys(response) : 'null');
+        setError('Failed to load administrators: Invalid data format');
+        return;
+      }
+      
+      console.log('Admin users from API:', adminUsers);
+      console.log('Admin users count:', adminUsers.length);
+      
+      if (adminUsers.length === 0) {
+        console.log('No admin users found, might be permission issue');
+        setError('No administrators found or insufficient permissions');
+        return;
+      }
+      
+      const formattedAdmins = adminUsers.map(admin => ({
         id: admin.id,
-        name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.employee_id,
+        name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.employee_id || admin.username || 'Unknown',
         first_name: admin.first_name,
         last_name: admin.last_name,
         email: admin.email,
@@ -29,19 +61,34 @@ const AdminManagement = () => {
         status: admin.is_active ? 'active' : 'suspended',
         createdDate: admin.created_at ? new Date(admin.created_at).toISOString().split('T')[0] : 'N/A'
       }));
+      console.log('Formatted admins:', formattedAdmins);
+      console.log('Formatted admins length:', formattedAdmins.length);
       setAdmins(formattedAdmins);
+      setError(null); // Clear any previous error
     } catch (err) {
       console.error('Error fetching admins:', err);
-      setError('Failed to load administrators');
+      console.error('Error status:', err.response?.status);
+      console.error('Error data:', err.response?.data);
+      console.error('Error message:', err.message);
+      
+      if (err.response?.status === 401) {
+        setError('Failed to load administrators: Authentication required');
+      } else if (err.response?.status === 403) {
+        setError('Failed to load administrators: Insufficient permissions');
+      } else if (err.response?.status === 404) {
+        setError('Failed to load administrators: Endpoint not found');
+      } else {
+        setError('Failed to load administrators: ' + (err.message || 'Unknown error'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddAdmin = async (adminData) => {
-    // This will be handled by specific role creation if we use those, 
-    // or we can add a generic createAdmin if needed.
-    // For now, let's refresh the list after creation if the modal handles it.
+    
+    
+    
     fetchAdmins();
     setIsModalOpen(false);
   };

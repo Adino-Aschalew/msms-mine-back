@@ -45,7 +45,7 @@ class AdminController {
         }
         
         if (future_only) {
-          // Only affect future transactions, not existing ones
+          
           await query(`
             INSERT INTO system_configuration (config_key, config_value, config_type, description, is_active)
             VALUES (?, ?, ?, ?, true)
@@ -54,7 +54,7 @@ class AdminController {
             updated_at = NOW()
           `, [config_key, config_value, config.config_type || 'STRING', config.description]);
         } else {
-          // Update existing configuration
+          
           await query(`
             UPDATE system_configuration 
             SET config_value = ?, updated_at = NOW()

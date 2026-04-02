@@ -228,7 +228,7 @@ const Activity = () => {
 
   const handleExportActivity = () => {
     console.log('Exporting activity log');
-    // Implementation for exporting activity log
+    
   };
 
   const formatTimestamp = (timestamp) => {
@@ -238,7 +238,7 @@ const Activity = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Account Activity</h1>
@@ -257,10 +257,10 @@ const Activity = () => {
         </div>
       </div>
 
-      {/* Search and Filters */}
+      {}
       <div className="card p-4">
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
+          {}
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -274,7 +274,7 @@ const Activity = () => {
             </div>
           </div>
 
-          {/* Period Filter */}
+          {}
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -285,7 +285,7 @@ const Activity = () => {
             ))}
           </select>
 
-          {/* Filter Toggle */}
+          {}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="btn btn-secondary"
@@ -296,7 +296,7 @@ const Activity = () => {
           </button>
         </div>
 
-        {/* Advanced Filters */}
+        {}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -318,26 +318,26 @@ const Activity = () => {
         )}
       </div>
 
-      {/* Results Summary */}
+      {}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Showing {filteredActivities.length} activities
         </p>
       </div>
 
-      {/* Activity Timeline */}
+      {}
       <div className="space-y-4">
         {filteredActivities.map((activity) => (
           <div key={activity.id} className="card p-4">
             <div className="flex items-start space-x-4">
-              {/* Activity Icon */}
+              {}
               <div className="flex-shrink-0">
                 <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   {getActivityIcon(activity.type, activity.action)}
                 </div>
               </div>
 
-              {/* Activity Content */}
+              {}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -351,7 +351,7 @@ const Activity = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      {/* Basic Info */}
+                      {}
                       <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
@@ -367,12 +367,12 @@ const Activity = () => {
                         </span>
                       </div>
 
-                      {/* Device Info */}
+                      {}
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         Device: {activity.device}
                       </div>
 
-                      {/* Activity Details */}
+                      {}
                       {activity.details && (
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mt-2">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -398,7 +398,7 @@ const Activity = () => {
         ))}
       </div>
 
-      {/* Empty State */}
+      {}
       {filteredActivities.length === 0 && (
         <div className="card p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -416,7 +416,7 @@ const Activity = () => {
         </div>
       )}
 
-      {/* Activity Statistics */}
+      {}
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Activity Summary

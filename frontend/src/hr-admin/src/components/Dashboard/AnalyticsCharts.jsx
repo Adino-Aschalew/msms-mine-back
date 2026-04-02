@@ -12,6 +12,7 @@ import {
   Filler
 } from 'chart.js';
 import { Line, Pie, Doughnut, Bar } from 'react-chartjs-2';
+import { SafeLineChart, SafePieChart, SafeBarChart } from '../Shared/SafeCharts';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useRef, useEffect } from 'react';
 
@@ -33,7 +34,14 @@ export function DepartmentChart({ data = [] }) {
   const isDark = theme === 'dark';
   const chartRef = useRef(null);
 
-  // Prepare chart data from props or use defaults
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+  }, []);
+
   const chartData = {
     labels: data && data.length > 0 ? data.map(d => d.name || d.department) : ['Engineering', 'Sales', 'Marketing', 'HR', 'Design'],
     datasets: [
@@ -86,7 +94,7 @@ export function AttendanceChart({ data = [] }) {
   const isDark = theme === 'dark';
   const chartRef = useRef(null);
 
-  // Prepare chart data from props or use defaults
+  
   const attendanceData = data && data.length > 0 ? data : [
     { date: 'Mon', present: 98, absent: 2, late: 0 },
     { date: 'Tue', present: 97, absent: 2, late: 1 },
@@ -194,7 +202,7 @@ export function DiversityChart({ data = [] }) {
   const isDark = theme === 'dark';
   const chartRef = useRef(null);
 
-  // Find gender data from the diversity data array
+  
   const genderData = data.find(d => d.category === 'Gender') || {};
   
   const chartData = {

@@ -8,7 +8,7 @@ const Transactions = ({ filter = 'all' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState(filter);
 
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -40,7 +40,7 @@ const Transactions = ({ filter = 'all' }) => {
       const list = response.transactions || [];
       setTransactions(list);
       
-      // Calculate stats from the list (or fetch from a stats API)
+      
       const income = list.filter(t => t.amount > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0);
       const expenses = list.filter(t => t.amount < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
       setStats({ totalIncome: income, totalExpenses: expenses });
@@ -58,7 +58,7 @@ const Transactions = ({ filter = 'all' }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'} mb-2`}>
           Transactions
@@ -68,7 +68,7 @@ const Transactions = ({ filter = 'all' }) => {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
@@ -107,7 +107,7 @@ const Transactions = ({ filter = 'all' }) => {
         </div>
       </div>
 
-      {/* Controls */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -140,7 +140,7 @@ const Transactions = ({ filter = 'all' }) => {
         </div>
       </div>
 
-      {/* Transactions Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

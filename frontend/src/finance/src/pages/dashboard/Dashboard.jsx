@@ -23,9 +23,10 @@ import AccountsOverview from '../../components/widgets/AccountsOverview';
 import DateFilter from '../../components/widgets/DateFilter';
 import { financeAPI } from '../../../../shared/services/financeAPI';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
+import appEvents from '../../../../shared/utils/eventEmitter';
 
 const Dashboard = () => {
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -36,23 +37,51 @@ const Dashboard = () => {
   };
 
   const [dateRange, setDateRange] = useState('30days');
-  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [overviewData, setOverviewData] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
+    
+    
+    const handlePayrollUpdate = (payrollData) => {
+      console.log('Finance Dashboard: Payroll data updated, refreshing...', payrollData);
+      fetchDashboardData();
+    };
+    
+    appEvents.on('payrollDataUpdated', handlePayrollUpdate);
+    
+    
+    return () => {
+      appEvents.off('payrollDataUpdated', handlePayrollUpdate);
+    };
   }, [dateRange]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await financeAPI.getDashboardData({ period: dateRange });
-      setDashboardData(response);
+      console.log('🔄 Finance Dashboard: Fetching data...');
+      const response = await financeAPI.getFinancialOverview(dateRange);
+      console.log('📊 Finance Dashboard Response:', response);
+      console.log('📊 Response structure:', JSON.stringify(response, null, 2));
+      
+      
+      const data = response.data || response;
+      console.log('✅ Processed Overview Data:', data);
+      console.log('💰 Revenue:', data?.revenue);
+      console.log('💸 Expenses:', data?.expenses);
+      console.log('📈 Net Profit:', data?.netProfit);
+      console.log('💵 Cash Balance:', data?.cashBalance);
+      console.log('💳 Accounts Receivable:', data?.accountsReceivable);
+      console.log('💼 Accounts Payable:', data?.accountsPayable);
+      setDashboardData(data);
+      setOverviewData(data);
     } catch (err) {
-      // Check if it's a network/connection error
+      
       if (err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED')) {
         setError('Unable to connect to the server. Please check if the backend is running.');
       } else {
@@ -60,7 +89,7 @@ const Dashboard = () => {
       }
       console.error('Finance Dashboard error:', err);
       
-      // Set fallback data to prevent complete failure
+      
       setDashboardData({
         revenue: 0,
         expenses: 0,
@@ -82,56 +111,56 @@ const Dashboard = () => {
     }
   };
 
-  // Real KPI data from backend
+  
   const kpiData = [
     {
-      title: 'Revenue',
-      value: formatCompactNumber(dashboardData?.revenue || 0),
-      change: `+${dashboardData?.revenueGrowth || '0'}%`,
-      trend: dashboardData?.revenueGrowth >= 0 ? 'up' : 'down',
+      title: 'Total Revenue',
+      value: formatCompactNumber((overviewData?.savings?.total_savings || 0) + (overviewData?.loans?.total_payments || 0)),
+      change: `+${(overviewData?.revenueGrowth || '0')}%`,
+      trend: overviewData?.revenueGrowth >= 0 ? 'up' : 'down',
       icon: DollarSign,
       color: 'green',
     },
     {
-      title: 'Expenses',
-      value: formatCompactNumber(dashboardData?.expenses || 0),
-      change: `+${dashboardData?.expensesGrowth || '0'}%`,
-      trend: dashboardData?.expensesGrowth >= 0 ? 'up' : 'down',
-      icon: CreditCard,
+      title: 'Total Expenses',
+      value: formatCompactNumber((overviewData?.savings?.total_withdrawals || 0) + (overviewData?.payroll?.total_amount || 0)),
+      change: `+${(overviewData?.expensesGrowth || '0')}%`,
+      trend: overviewData?.expensesGrowth >= 0 ? 'up' : 'down',
+      icon: Wallet,
       color: 'red',
     },
     {
       title: 'Net Profit',
-      value: formatCompactNumber(dashboardData?.netProfit || 0),
-      change: `+${dashboardData?.profitGrowth || '0'}%`,
-      trend: dashboardData?.profitGrowth >= 0 ? 'up' : 'down',
+      value: formatCompactNumber(((overviewData?.savings?.total_savings || 0) + (overviewData?.loans?.total_payments || 0)) - ((overviewData?.savings?.total_withdrawals || 0) + (overviewData?.payroll?.total_amount || 0))),
+      change: `+${(overviewData?.profitGrowth || '0')}%`,
+      trend: overviewData?.profitGrowth >= 0 ? 'up' : 'down',
       icon: TrendingUp,
-      color: 'blue',
+      color: 'green',
     },
     {
       title: 'Cash Balance',
-      value: formatCompactNumber(dashboardData?.cashBalance || 0),
-      change: `${dashboardData?.cashChange >= 0 ? '+' : ''}${dashboardData?.cashChange || '0'}%`,
-      trend: dashboardData?.cashChange >= 0 ? 'up' : 'down',
+      value: formatCompactNumber(overviewData?.savings?.total_savings || 0),
+      change: `+${(overviewData?.cashChange || '0')}%`,
+      trend: overviewData?.cashChange >= 0 ? 'up' : 'down',
       icon: Wallet,
       color: 'purple',
     },
     {
       title: 'Accounts Receivable',
-      value: formatCompactNumber(dashboardData?.accountsReceivable || 0),
-      change: `${dashboardData?.receivableChange >= 0 ? '+' : ''}${dashboardData?.receivableChange || '0'}%`,
-      trend: dashboardData?.receivableChange >= 0 ? 'up' : 'down',
+      value: formatCompactNumber(overviewData?.loans?.total_loans || 0),
+      change: (overviewData?.receivableChange >= 0 ? '+' : '') + Math.abs(overviewData?.receivableChange || 0) + '%',
+      trend: overviewData?.receivableChange >= 0 ? 'up' : 'down',
       icon: ArrowUpRight,
       color: 'orange',
     },
     {
       title: 'Accounts Payable',
-      value: formatCompactNumber(dashboardData?.accountsPayable || 0),
-      change: `+${dashboardData?.payableChange || '0'}%`,
-      trend: dashboardData?.payableChange >= 0 ? 'up' : 'down',
+      value: formatCompactNumber(overviewData?.payroll?.total_amount || 0),
+      change: `+${(overviewData?.payableChange || '0')}%`,
+      trend: overviewData?.payableChange >= 0 ? 'up' : 'down',
       icon: ArrowDownRight,
       color: 'yellow',
-    },
+    }
   ];
 
   if (loading) {
@@ -159,7 +188,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -178,7 +207,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Pending Approvals Alert Bar */}
+      {}
       {(pendingPayroll > 0 || pendingSavings > 0) && (
         <div className="flex flex-col md:flex-row gap-4">
           {pendingPayroll > 0 && (
@@ -212,7 +241,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* KPI Cards */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -231,7 +260,7 @@ const Dashboard = () => {
         ))}
       </motion.div>
 
-      {/* Charts Row */}
+      {}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -272,7 +301,7 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
-      {/* Cash Flow Chart */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -292,9 +321,9 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      {/* Bottom Section */}
+      {}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Recent Transactions */}
+        {}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -314,7 +343,7 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Accounts Overview */}
+        {}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}

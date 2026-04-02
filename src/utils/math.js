@@ -109,7 +109,7 @@ class MathUtils {
   static calculateEarlySettlement(balance, annualRate, remainingMonths) {
     const monthlyRate = annualRate / 100 / 12;
     
-    // Calculate present value of remaining payments
+    
     let presentValue = 0;
     for (let i = 1; i <= remainingMonths; i++) {
       const payment = this.calculateLoanPayment(balance, annualRate, remainingMonths);
@@ -146,10 +146,10 @@ class MathUtils {
     const months = yearsToRetirement * 12;
     const monthlyRate = expectedReturn / 100 / 12;
     
-    // Future value of current savings
+    
     const futureValueCurrent = currentSavings * Math.pow(1 + monthlyRate, months);
     
-    // Future value of monthly contributions
+    
     const futureValueContributions = monthlyContribution * 
       ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
     
@@ -201,7 +201,7 @@ class MathUtils {
   }
 
   static calculateIRR(cashFlows, guess = 0.1) {
-    // Simple IRR calculation using Newton-Raphson method
+    
     let rate = guess;
     const maxIterations = 100;
     const tolerance = 0.0001;

@@ -122,7 +122,7 @@ const PayrollDetail = ({ payrollId, onBack }) => {
 
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
@@ -181,7 +181,7 @@ const PayrollDetail = ({ payrollId, onBack }) => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
         <nav className="flex space-x-8">
           {['overview', 'employees', 'breakdown', 'deductions'].map((tab) => (
@@ -200,10 +200,10 @@ const PayrollDetail = ({ payrollId, onBack }) => {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Summary Cards */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
               <div className="flex items-center justify-between">
@@ -254,7 +254,7 @@ const PayrollDetail = ({ payrollId, onBack }) => {
             </div>
           </div>
 
-          {/* Payroll Information */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Payroll Information</h3>
@@ -348,7 +348,7 @@ const PayrollDetail = ({ payrollId, onBack }) => {
 
       {activeTab === 'employees' && (
         <div>
-          {/* Filters */}
+          {}
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -372,7 +372,7 @@ const PayrollDetail = ({ payrollId, onBack }) => {
             </select>
           </div>
 
-          {/* Employee Table */}
+          {}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-900">

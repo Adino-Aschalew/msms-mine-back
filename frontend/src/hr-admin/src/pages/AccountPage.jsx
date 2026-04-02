@@ -35,7 +35,7 @@ export default function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  // Password change state
+  
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -55,7 +55,7 @@ export default function AccountPage() {
       const response = await authAPI.getProfile();
       setProfileData(response.data);
       
-      // Set form data from profile with better field mapping
+      
       setFormData({
         first_name: response.data.first_name || '',
         last_name: response.data.last_name || '',
@@ -74,7 +74,7 @@ export default function AccountPage() {
       setSaving(true);
       await authAPI.updateProfile(formData);
       setIsEditing(false);
-      await fetchUserProfile(); // Refresh data
+      await fetchUserProfile(); 
     } catch (error) {
       console.error('Failed to update profile:', error);
     } finally {
@@ -101,7 +101,7 @@ export default function AccountPage() {
     setPasswordError('');
     setPasswordSuccess('');
     
-    // Validation
+    
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       setPasswordError('All password fields are required');
       return;
@@ -127,7 +127,7 @@ export default function AccountPage() {
       
       if (response.success) {
         setPasswordSuccess('Password changed successfully! You will need to use your new password next time you login.');
-        // Clear form
+        
         setPasswordData({
           currentPassword: '',
           newPassword: '',
@@ -177,7 +177,7 @@ export default function AccountPage() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-8 items-start min-h-[600px]">
-        {/* Navigation Sidebar */}
+        {}
         <div className="w-full md:w-64 shrink-0 flex flex-col gap-2 relative">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -214,15 +214,15 @@ export default function AccountPage() {
           })}
         </div>
 
-        {/* Tab Content Area */}
+        {}
         <div className="flex-1 w-full min-w-0 space-y-6">
           
-          {/* PROFILE TAB */}
+          {}
           {activeTab === 'profile' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
                  <div className="h-40 bg-gradient-to-br from-primary-600 via-primary-500 to-indigo-600 relative">
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?w=1200')] opacity-20 bg-cover bg-center" />
                     <button className="absolute top-4 right-4 px-3 py-1.5 bg-black/30 hover:bg-black/50 text-white rounded-xl backdrop-blur-md transition-all text-[11px] font-bold flex items-center gap-2 border border-white/10 uppercase tracking-widest">
                       <Camera size={14} /> Edit Banner
                     </button>
@@ -232,7 +232,7 @@ export default function AccountPage() {
                       <div className="relative group">
                         <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border-[6px] border-card shadow-2xl group-hover:border-primary-500 transition-all duration-300">
                           <img 
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent((profileData?.user?.first_name || profileData?.user?.username || 'User'))}&background=3b82f6&color=fff&size=180`} 
+                            src={`https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`}
                             alt="Profile" 
                             className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" 
                           />
@@ -353,7 +353,7 @@ export default function AccountPage() {
                           <button
                             onClick={() => {
                               setIsEditing(false);
-                              // Reset form data
+                              
                               if (profileData) {
                                 setFormData({
                                   first_name: profileData.first_name || '',
@@ -389,7 +389,7 @@ export default function AccountPage() {
               </div>
           )}
 
-          {/* SECURITY TAB */}
+          {}
           {activeTab === 'security' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
@@ -399,7 +399,7 @@ export default function AccountPage() {
                 </div>
                 <div className="p-6 flex flex-col md:flex-row gap-8">
                   <div className="flex-1 space-y-4">
-                    {/* Error Message */}
+                    {}
                     {passwordError && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                         <div className="flex">
@@ -409,7 +409,7 @@ export default function AccountPage() {
                       </div>
                     )}
                     
-                    {/* Success Message */}
+                    {}
                     {passwordSuccess && (
                       <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                         <div className="flex">
@@ -503,7 +503,7 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* PREFERENCES TAB */}
+          {}
           {activeTab === 'preferences' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
@@ -596,7 +596,7 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* SESSIONS TAB */}
+          {}
           {activeTab === 'sessions' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
@@ -641,7 +641,7 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* ACTIVITY TAB */}
+          {}
           {activeTab === 'activity' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
@@ -672,7 +672,7 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* DANGER ZONE TAB */}
+          {}
           {activeTab === 'danger' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="bg-rose-50/30 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-xl shadow-sm overflow-hidden p-6 relative">

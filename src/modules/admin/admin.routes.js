@@ -12,22 +12,22 @@ const {
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
+
 router.use(authMiddleware);
 
-// Admin and Super Admin routes
+
 router.get('/dashboard', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getDashboard);
 router.get('/stats', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemStats);
 router.get('/admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getAllAdmins);
 router.get('/activity', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemActivity);
 router.get('/statistics', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getAdminStatistics);
 
-// Generic Admin Management
+
 router.put('/admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.updateAdmin);
 router.put('/admins/:adminId/status', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.toggleAdminStatus);
 router.delete('/admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.deleteAdmin);
 
-// HR Admin Management
+
 router.post('/hr-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateCreateHRAdmin, auditMiddleware('HR_ADMIN_CREATED'), AdminController.createHRAdmin);
 router.get('/hr-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getHRAdmins);
 router.put('/hr-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateUpdateAdmin, auditMiddleware('HR_ADMIN_UPDATED'), AdminController.updateHRAdmin);
@@ -35,7 +35,7 @@ router.delete('/hr-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), a
 router.put('/hr-admins/:adminId/deactivate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('HR_ADMIN_DEACTIVATED'), AdminController.deactivateHRAdmin);
 router.put('/hr-admins/:adminId/activate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('HR_ADMIN_ACTIVATED'), AdminController.activateHRAdmin);
 
-// Loan Committee Admin Management
+
 router.post('/loan-committee-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateCreateLoanCommitteeAdmin, auditMiddleware('LOAN_COMMITTEE_ADMIN_CREATED'), AdminController.createLoanCommitteeAdmin);
 router.get('/loan-committee-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getLoanCommitteeAdmins);
 router.put('/loan-committee-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateUpdateAdmin, auditMiddleware('LOAN_COMMITTEE_ADMIN_UPDATED'), AdminController.updateLoanCommitteeAdmin);
@@ -43,7 +43,7 @@ router.delete('/loan-committee-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 
 router.put('/loan-committee-admins/:adminId/deactivate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('LOAN_COMMITTEE_ADMIN_DEACTIVATED'), AdminController.deactivateLoanCommitteeAdmin);
 router.put('/loan-committee-admins/:adminId/activate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('LOAN_COMMITTEE_ADMIN_ACTIVATED'), AdminController.activateLoanCommitteeAdmin);
 
-// Finance Admin Management
+
 router.post('/finance-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateCreateFinanceAdmin, auditMiddleware('FINANCE_ADMIN_CREATED'), AdminController.createFinanceAdmin);
 router.get('/finance-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getFinanceAdmins);
 router.put('/finance-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateUpdateAdmin, auditMiddleware('FINANCE_ADMIN_UPDATED'), AdminController.updateFinanceAdmin);
@@ -51,7 +51,7 @@ router.delete('/finance-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN'
 router.put('/finance-admins/:adminId/deactivate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('FINANCE_ADMIN_DEACTIVATED'), AdminController.deactivateFinanceAdmin);
 router.put('/finance-admins/:adminId/activate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('FINANCE_ADMIN_ACTIVATED'), AdminController.activateFinanceAdmin);
 
-// Regular Admin Management
+
 router.post('/regular-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateCreateRegularAdmin, auditMiddleware('REGULAR_ADMIN_CREATED'), AdminController.createAdmin);
 router.get('/regular-admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getRegularAdmins);
 router.put('/regular-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), validateUpdateAdmin, auditMiddleware('REGULAR_ADMIN_UPDATED'), AdminController.updateRegularAdmin);
@@ -59,7 +59,7 @@ router.delete('/regular-admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN'
 router.put('/regular-admins/:adminId/deactivate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('REGULAR_ADMIN_DEACTIVATED'), AdminController.deactivateRegularAdmin);
 router.put('/regular-admins/:adminId/activate', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('REGULAR_ADMIN_ACTIVATED'), AdminController.activateRegularAdmin);
 
-// System Management
+
 router.get('/system/health', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemHealth);
 router.get('/system/logs', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemLogs);
 router.post('/system/maintenance', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('MAINTENANCE_MODE_TOGGLE'), AdminController.toggleMaintenanceMode);

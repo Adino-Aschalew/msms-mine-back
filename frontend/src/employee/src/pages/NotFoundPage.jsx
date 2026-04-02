@@ -5,7 +5,7 @@ import { FiHome, FiSearch, FiArrowLeft, FiHelpCircle, FiMail, FiPhone } from 're
 const NotFoundPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -28,11 +28,11 @@ const NotFoundPage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {}
       <div className="flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         <div className="w-full max-w-md sm:max-w-lg lg:max-w-2xl mx-auto text-center">
 
-          {/* 404 Graphic */}
+          {}
           <div className="relative mb-8 sm:mb-12">
             <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
               <span className="text-white text-3xl sm:text-4xl lg:text-6xl font-bold">404</span>
@@ -42,7 +42,7 @@ const NotFoundPage = () => {
             </div>
           </div>
 
-          {/* Error Message */}
+          {}
           <div className="mb-8 sm:mb-12">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Page Not Found
@@ -53,7 +53,7 @@ const NotFoundPage = () => {
             <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto"></div>
           </div>
 
-          {/* Action Buttons */}
+          {}
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-8 sm:mb-12 w-full max-w-xs sm:max-w-md mx-auto">
             <Link
               to="/dashboard"
@@ -70,7 +70,7 @@ const NotFoundPage = () => {
             </button>
           </div>
 
-          {/* Help & Support Card */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
             <div className="text-center mb-6">
               <FiHelpCircle className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
@@ -82,7 +82,7 @@ const NotFoundPage = () => {
               </p>
             </div>
 
-            {/* Support Options */}
+            {}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <Link
                 to="/help"
@@ -101,7 +101,7 @@ const NotFoundPage = () => {
               </a>
             </div>
 
-            {/* Quick Search */}
+            {}
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 text-center">
                 Or search for what you need:
@@ -117,7 +117,7 @@ const NotFoundPage = () => {
             </div>
           </div>
 
-          {/* Footer */}
+          {}
           <div className="mt-8 sm:mt-12 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               If you believe this is an error, please contact our support team.

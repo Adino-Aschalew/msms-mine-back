@@ -36,7 +36,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
   const themeDropdownRef = useRef(null);
   const notificationRef = useRef(null);
 
-  // Mock notifications data
+  
   const [notifications, setNotifications] = useState([
     { 
       id: 1, 
@@ -192,7 +192,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
     <>
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
         <div className="flex h-16 items-center justify-between px-4 md:px-6">
-          {/* Left Section */}
+          {}
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -201,7 +201,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
               <Menu className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </button>
             
-            {/* Search Bar */}
+            {}
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <input
@@ -219,9 +219,9 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
             </div>
           </div>
 
-          {/* Right Section */}
+          {}
           <div className="flex items-center gap-4">
-            {/* Notifications */}
+            {}
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -237,7 +237,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
 
               {notificationsOpen && (
                 <div className="absolute right-0 mt-4 w-96 bg-white rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-gray-200 dark:border-gray-700 dark:bg-gray-800 overflow-hidden animate-in slide-in-from-top-2 duration-300 z-[60]">
-                  {/* Header */}
+                  {}
                   <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div>
                       <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -265,7 +265,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
                     </div>
                   </div>
 
-                  {/* List */}
+                  {}
                   <div className="max-h-[420px] overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
                     {notifications.length > 0 ? (
                       notifications.map(notif => (
@@ -287,14 +287,14 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
                     )}
                   </div>
 
-                  {/* Footer */}
+                  {}
                   <button className="w-full p-4 text-center border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors flex items-center justify-center gap-2">
                       View All Notifications <ChevronRight size={12} />
                     </span>
                   </button>
 
-                  {/* Detail Overlay */}
+                  {}
                   {selectedNotification && (
                     <div className="absolute inset-0 bg-gray-900 dark:bg-gray-800 z-10 p-6 flex flex-col animate-in fade-in zoom-in-95 duration-200">
                       <div className="flex justify-between items-center mb-6">
@@ -344,7 +344,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
               )}
             </div>
 
-            {/* Theme Toggle */}
+            {}
             <div className="relative">
               <button
                 onClick={() => themeOpen ? setThemeOpen(false) : setThemeOpen(true)}
@@ -403,7 +403,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
               )}
             </div>
 
-            {/* Profile Dropdown */}
+            {}
             <div className="relative" ref={profileDropdownRef}>
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
@@ -411,7 +411,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
               >
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center overflow-hidden">
                   <img 
-                    src="https://images.unsplash.com/photo-1472099645785?auto=compress&cs=tinysrgb&dpr=2&w=150&h=150&fit=crop&face=face&auto=format&fit=face-area" 
+                    src="https:
                     alt="Profile" 
                     className="h-full w-full object-cover"
                   />
@@ -423,11 +423,11 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
                   <div className="p-4">
-                    {/* Profile Header */}
+                    {}
                     <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700 mb-4">
                       <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md overflow-hidden">
                         <img 
-                          src="https://images.unsplash.com/photo-1472099645785?auto=compress&cs=tinysrgb&dpr=2&w=150&h=150&fit=crop&face=face&auto=format&fit=face-area" 
+                          src="https:
                           alt="Profile" 
                           className="h-full w-full object-cover"
                         />
@@ -438,7 +438,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
                       </div>
                     </div>
 
-                    {/* Menu Items */}
+                    {}
                     <div className="space-y-2">
                       <Link 
                         to="/account/profile" 
@@ -477,7 +477,7 @@ const FinanceHeader = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
       </header>
 
-      {/* Command Palette */}
+      {}
       {commandPaletteOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-start justify-center pt-[20vh]">
           <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">

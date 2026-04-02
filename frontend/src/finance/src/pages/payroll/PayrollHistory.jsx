@@ -23,7 +23,7 @@ const PayrollHistory = () => {
   const { addNotification } = useNotifications();
   const itemsPerPage = 10;
 
-  // Fetch payroll batches from backend
+  
   const fetchPayrollBatches = async () => {
     try {
       setLoading(true);
@@ -50,12 +50,12 @@ const PayrollHistory = () => {
     }
   };
 
-  // Fetch data on component mount and when filters change
+  
   useEffect(() => {
     fetchPayrollBatches();
   }, [currentPage, statusFilter, searchQuery, dateFilter]);
 
-  // Helper functions
+  
   const formatCurrency = (amount) => {
     if (amount >= 1000000) {
       return `METB ${(amount / 1000000).toFixed(1)}M`;
@@ -100,7 +100,7 @@ const PayrollHistory = () => {
     }
   };
 
-  // Filter and pagination logic (backend handles filtering, so just apply search if needed)
+  
   const displayData = payrollBatches.filter(batch => {
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
@@ -113,7 +113,7 @@ const PayrollHistory = () => {
     );
   });
 
-  // Pagination calculations
+  
   const totalPages = pagination ? pagination.pages : Math.ceil(displayData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -158,7 +158,7 @@ const PayrollHistory = () => {
 
   const exportResults = (format) => {
     if (format === 'csv') {
-      // Create CSV headers
+      
       const headers = [
         'Import ID',
         'File Name', 
@@ -172,7 +172,7 @@ const PayrollHistory = () => {
         'Processing Time'
       ];
       
-      // Create CSV rows from filtered data
+      
       const csvRows = filteredHistory.map(item => [
         item.id,
         item.fileName,
@@ -186,12 +186,12 @@ const PayrollHistory = () => {
         item.processingTime
       ]);
       
-      // Combine headers and rows
+      
       const csvContent = [headers, ...csvRows]
         .map(row => row.map(field => `"${field}"`).join(','))
         .join('\n');
       
-      // Create blob and download
+      
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const timestamp = new Date().toISOString().split('T')[0];
@@ -208,7 +208,7 @@ const PayrollHistory = () => {
 
   const handleViewDetails = async (batch) => {
     try {
-      // Fetch detailed information for this batch
+      
       const details = await financeAPI.getPayrollBatchDetails(batch.id);
       setSelectedImport({ ...batch, details });
       setShowDetailsModal(true);
@@ -229,7 +229,7 @@ const PayrollHistory = () => {
       addNotification({ type: 'success', title: 'Approved', message: 'Payroll batch approved successfully.' });
       setShowApproveModal(false);
       setSelectedBatch(null);
-      fetchPayrollBatches(); // Refresh data
+      fetchPayrollBatches(); 
     } catch (error) {
       addNotification({ type: 'error', title: 'Approval Failed', message: error.message || 'Failed to approve payroll batch' });
     } finally {
@@ -249,7 +249,7 @@ const PayrollHistory = () => {
       addNotification({ type: 'success', title: 'Processed', message: 'Payroll batch processed successfully. Deductions applied to employee accounts.' });
       setShowProcessModal(false);
       setSelectedBatch(null);
-      fetchPayrollBatches(); // Refresh data
+      fetchPayrollBatches(); 
     } catch (error) {
       addNotification({ type: 'error', title: 'Processing Failed', message: error.message || 'Failed to process payroll batch' });
     } finally {
@@ -269,7 +269,7 @@ const PayrollHistory = () => {
       addNotification({ type: 'success', title: 'Reversed', message: 'Payroll batch reversed successfully. All deductions have been undone.' });
       setShowReverseModal(false);
       setSelectedBatch(null);
-      fetchPayrollBatches(); // Refresh data
+      fetchPayrollBatches(); 
     } catch (error) {
       addNotification({ type: 'error', title: 'Reversal Failed', message: error.message || 'Failed to reverse payroll batch' });
     } finally {
@@ -279,10 +279,10 @@ const PayrollHistory = () => {
 
   const handleDownload = async (batch) => {
     try {
-      // Fetch real payroll details for this batch
+      
       const details = await financeAPI.getPayrollBatchDetails(batch.id);
       
-      // Create CSV headers
+      
       const headers = [
         'Employee ID',
         'First Name',
@@ -294,7 +294,7 @@ const PayrollHistory = () => {
         'Date'
       ];
       
-      // Create CSV rows from real payroll data
+      
       const csvRows = details.details.map((detail) => [
         detail.employee_id || '',
         detail.first_name || '',
@@ -307,12 +307,12 @@ const PayrollHistory = () => {
         selectedImport?.created_at ? new Date(selectedImport.created_at).toLocaleDateString() : 'N/A'
       ]);
       
-      // Combine headers and rows
+      
       const csvContent = [headers, ...csvRows]
         .map(row => row.map(field => `"${field}"`).join(','))
         .join('\n');
       
-      // Create blob and download
+      
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -341,7 +341,7 @@ const PayrollHistory = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -362,7 +362,7 @@ const PayrollHistory = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="flex-1">
@@ -404,7 +404,7 @@ const PayrollHistory = () => {
         </div>
       </div>
 
-      {/* History Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -567,7 +567,7 @@ const PayrollHistory = () => {
         </div>
       ) : null}
       
-      {/* Pagination */}
+      {}
       <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -587,7 +587,7 @@ const PayrollHistory = () => {
               Previous
             </button>
             
-            {/* Page Numbers */}
+            {}
             <div className="flex items-center space-x-1">
               {[...Array(totalPages).keys()].map((page) => {
                 const pageNum = page + 1;
@@ -621,7 +621,7 @@ const PayrollHistory = () => {
         </div>
       </div>
 
-      {/* Details Modal */}
+      {}
       {showDetailsModal && selectedImport && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-2xl mx-4 transform transition-all">
@@ -713,7 +713,7 @@ const PayrollHistory = () => {
         </div>
       )}
 
-      {/* Approve Confirmation Modal */}
+      {}
       {showApproveModal && selectedBatch && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
@@ -767,7 +767,7 @@ const PayrollHistory = () => {
         </div>
       )}
 
-      {/* Process Confirmation Modal */}
+      {}
       {showProcessModal && selectedBatch && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
@@ -821,7 +821,7 @@ const PayrollHistory = () => {
         </div>
       )}
 
-      {/* Reverse Confirmation Modal */}
+      {}
       {showReverseModal && selectedBatch && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">

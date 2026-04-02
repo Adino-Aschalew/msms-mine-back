@@ -119,7 +119,7 @@ const Budgets = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Budgets
@@ -129,7 +129,7 @@ const Budgets = () => {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card p-6">
           <div className="flex items-center justify-between">
@@ -180,7 +180,7 @@ const Budgets = () => {
         </div>
       </div>
 
-      {/* Controls */}
+      {}
       <div className="card p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <select
@@ -224,7 +224,7 @@ const Budgets = () => {
         </div>
       </div>
 
-      {/* Budgets Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBudgets.map((budget) => {
           const percentageSpent = (budget.spent / budget.allocated) * 100;
@@ -251,7 +251,7 @@ const Budgets = () => {
                 </span>
               </div>
               
-              {/* Progress Bar */}
+              {}
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-600 dark:text-gray-400">Spent</span>
@@ -267,7 +267,7 @@ const Budgets = () => {
                 </div>
               </div>
               
-              {/* Financial Details */}
+              {}
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Allocated</span>
@@ -291,7 +291,7 @@ const Budgets = () => {
                 </div>
               </div>
               
-              {/* Additional Info */}
+              {}
               <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 mb-4">
                 <div className="flex justify-between">
                   <span>Period:</span>
@@ -307,7 +307,7 @@ const Budgets = () => {
                 </div>
               </div>
               
-              {/* Alert Indicator */}
+              {}
               {percentageSpent >= budget.alertThreshold && (
                 <div className="flex items-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg mb-4">
                   <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mr-2" />
@@ -317,7 +317,7 @@ const Budgets = () => {
                 </div>
               )}
               
-              {/* Action Buttons */}
+              {}
               <div className="flex gap-2">
                 <button className="flex-1 btn btn-outline text-sm">
                   <Eye className="h-4 w-4 mr-1" />
@@ -332,7 +332,7 @@ const Budgets = () => {
         })}
       </div>
 
-      {/* Budget Performance Overview */}
+      {}
       <div className="card p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Budget Performance Overview

@@ -24,7 +24,7 @@ const navItems = [
 export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen }) {
   return (
     <>
-      {/* Mobile Overlay */}
+      {}
       {mobileMenuOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
@@ -32,13 +32,13 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
         />
       )}
 
-      {/* Sidebar Container */}
+      {}
       <aside 
         className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 transition-all duration-300 lg:static lg:translate-x-0 ${
           collapsed ? 'lg:w-20' : 'lg:w-64'
         } ${mobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}`}
       >
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-slate-700 shrink-0">
           {(!collapsed || mobileMenuOpen) && (
             <span className="text-lg font-bold text-gray-900 dark:text-white truncate">
@@ -46,7 +46,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
             </span>
           )}
           
-          {/* Desktop Collapse Toggle */}
+          {}
           <button 
             onClick={() => setCollapsed(!collapsed)}
             className={`hidden lg:flex p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all ${collapsed ? 'mx-auto' : ''}`}
@@ -54,7 +54,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
             {collapsed ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
           </button>
           
-          {/* Mobile Close Button */}
+          {}
           <button 
             onClick={() => setMobileMenuOpen(false)}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400 transition-colors"
@@ -63,11 +63,11 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
           </button>
         </div>
 
-        {/* Navigation */}
+        {}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            // On mobile, force uncollapsed view visually for navigation items
+            
             const visuallyCollapsed = collapsed && !mobileMenuOpen;
             
             return (
@@ -97,11 +97,11 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
           })}
         </nav>
 
-        {/* Footer */}
+        {}
         <div className="p-3 border-t border-gray-200 dark:border-slate-700 shrink-0">
           <button 
             onClick={() => {
-              // Handle logout
+              
               window.location.href = '/login';
             }}
             className={`flex items-center gap-3 w-full px-3 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300 group ${(collapsed && !mobileMenuOpen) ? 'justify-center' : ''}`}

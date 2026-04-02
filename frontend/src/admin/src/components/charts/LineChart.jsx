@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -22,6 +22,16 @@ ChartJS.register(
 );
 
 const LineChart = ({ data, options = {} }) => {
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+  }, []);
+
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -61,7 +71,7 @@ const LineChart = ({ data, options = {} }) => {
 
   return (
     <div className="h-80">
-      <Line data={data} options={{ ...defaultOptions, ...options }} />
+      <Line ref={chartRef} data={data} options={{ ...defaultOptions, ...options }} />
     </div>
   );
 };

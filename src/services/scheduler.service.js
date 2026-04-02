@@ -8,7 +8,7 @@ class SchedulerService {
   static initialize() {
     console.log('🕐 Initializing scheduler service...');
     
-    // Daily at 2 AM - Generate user registration and loan demand forecasts
+    
     cron.schedule('0 2 * * *', async () => {
       try {
         console.log('📊 Running daily analytics forecasts...');
@@ -32,7 +32,7 @@ class SchedulerService {
       timezone: 'UTC'
     });
     
-    // Monthly on 1st at 1 AM - Calculate savings interest and liquidity forecast
+    
     cron.schedule('0 1 1 * *', async () => {
       try {
         console.log('💰 Running monthly interest calculation...');
@@ -53,7 +53,7 @@ class SchedulerService {
       timezone: 'UTC'
     });
     
-    // Weekly on Sunday at 11 PM - Check for missed savings and loan defaults
+    
     cron.schedule('0 23 * * 0', async () => {
       try {
         console.log('🔍 Running weekly compliance checks...');
@@ -75,7 +75,7 @@ class SchedulerService {
       timezone: 'UTC'
     });
     
-    // Quarterly on 1st at 3 AM - Generate risk indicators and comprehensive forecasts
+    
     cron.schedule('0 3 1 */3 *', async () => {
       try {
         console.log('🎯 Running quarterly risk assessment...');
@@ -109,7 +109,7 @@ class SchedulerService {
       timezone: 'UTC'
     });
     
-    // Yearly on January 1st at 4 AM - Generate yearly forecasts and cleanup
+    
     cron.schedule('0 4 1 1 *', async () => {
       try {
         console.log('🗓️  Running yearly analytics...');
@@ -145,7 +145,7 @@ class SchedulerService {
       timezone: 'UTC'
     });
     
-    // Every 6 hours - System health check
+    
     cron.schedule('0 */6 * * *', async () => {
       try {
         console.log('🏥 Running system health check...');
@@ -171,7 +171,7 @@ class SchedulerService {
   
   static async cleanupOldRecords() {
     try {
-      const cleanupDate = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000); // 2 years ago
+      const cleanupDate = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000); 
       
       const deleteQuery = `
         DELETE FROM ai_forecasts 
@@ -191,10 +191,10 @@ class SchedulerService {
     const issues = [];
     
     try {
-      // Check database connectivity
+      
       await query('SELECT 1');
       
-      // Check for stuck payroll batches
+      
       const stuckPayroll = await query(`
         SELECT COUNT(*) as count 
         FROM payroll_batches 
@@ -206,7 +206,7 @@ class SchedulerService {
         issues.push(`${stuckPayroll[0].count} payroll batches stuck in processing`);
       }
       
-      // Check for long-pending loan applications
+      
       const pendingLoans = await query(`
         SELECT COUNT(*) as count 
         FROM loan_applications 
@@ -218,7 +218,7 @@ class SchedulerService {
         issues.push(`${pendingLoans[0].count} loan applications pending for over 14 days`);
       }
       
-      // Check for high penalty accumulation
+      
       const highPenalties = await query(`
         SELECT COUNT(*) as count 
         FROM penalties 

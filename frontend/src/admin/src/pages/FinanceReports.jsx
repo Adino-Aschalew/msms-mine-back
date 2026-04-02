@@ -17,7 +17,7 @@ const FinanceReports = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
 
-  // Mock reports data
+  
   const reports = [
     {
       id: 'RPT-2024-001',
@@ -140,7 +140,7 @@ const FinanceReports = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Reports</h1>
@@ -154,7 +154,7 @@ const FinanceReports = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <button className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700 text-left">
           <div className="flex items-center justify-between mb-4">
@@ -201,7 +201,7 @@ const FinanceReports = () => {
         </button>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
@@ -239,7 +239,7 @@ const FinanceReports = () => {
         </div>
       </div>
 
-      {/* Reports Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredReports.map((report) => (
           <ReportCard key={report.id} report={report} />

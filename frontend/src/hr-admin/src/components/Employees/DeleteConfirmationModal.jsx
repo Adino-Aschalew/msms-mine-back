@@ -5,13 +5,13 @@ export default function DeleteConfirmationModal({ isOpen, onClose, onConfirm, em
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {}
       <div 
         className="absolute inset-0 bg-[#0b0e14]/80 backdrop-blur-md transition-opacity duration-300"
         onClick={onClose}
       />
       
-      {/* Modal Content */}
+      {}
       <div 
         className="relative glass-card w-full max-w-md rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 animate-in zoom-in-95 duration-300 flex flex-col"
         role="dialog"

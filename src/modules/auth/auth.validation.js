@@ -32,7 +32,7 @@ const validateLogin = (req, res, next) => {
     });
   }
   
-  // Validate role
+  
   const normalizedRole = role.toUpperCase();
   const validRoles = ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE', 'LOAN_COMMITTEE', 'EMPLOYEE'];
   
@@ -43,12 +43,12 @@ const validateLogin = (req, res, next) => {
     });
   }
   
-  // Update req.body.role to the normalized version so downstream uses it correctly
+  
   req.body.role = normalizedRole;
   
-  // For non-employee roles, validate format. Allow standard usernames with @ like Admin@2026
+  
   if (normalizedRole !== 'EMPLOYEE') {
-    // Relaxed regex: must contain @ but doesn't need to be a strict email (allows Admin@2026)
+    
     if (!identifier.includes('@')) {
       return res.status(400).json({
         success: false,
@@ -151,7 +151,7 @@ const validateForgotPassword = (req, res, next) => {
     });
   }
   
-  // Relaxed for forgot password as well to correspond with login
+  
   if (!email.includes('@')) {
     return res.status(400).json({
       success: false,

@@ -1,4 +1,5 @@
 import { Line, Bar } from 'react-chartjs-2';
+import { SafeLineChart, SafeBarChart } from '../Shared/SafeCharts';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Award, Target, TrendingUp, AlertTriangle, Calendar, CheckSquare, MoreHorizontal, Eye, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -61,7 +62,7 @@ export function PerformanceCharts() {
     );
   }
 
-  // Prepare chart data from backend
+  
   const quarterlyData = performanceData?.quarterlyTrend || [];
   const departmentData = performanceData?.departmentStats || [];
 
@@ -139,7 +140,7 @@ export function PerformanceCharts() {
         </div>
         <div className="flex-1 min-h-0 relative">
           {quarterlyData.length > 0 ? (
-            <Line data={performanceChartData} options={commonOptions} />
+            <SafeLineChart data={performanceChartData} options={commonOptions} />
           ) : (
             <div className="flex items-center justify-center h-full text-slate-500">
               <div className="text-center">
@@ -159,7 +160,7 @@ export function PerformanceCharts() {
         </div>
         <div className="flex-1 min-h-0 relative">
           {departmentData.length > 0 ? (
-            <Bar data={departmentChartData} options={commonOptions} />
+            <SafeBarChart data={departmentChartData} options={commonOptions} />
           ) : (
             <div className="flex items-center justify-center h-full text-slate-500">
               <div className="text-center">

@@ -1,4 +1,4 @@
-// Format currency values
+
 export const formatCurrency = (amount, currency = 'USD') => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -6,7 +6,7 @@ export const formatCurrency = (amount, currency = 'USD') => {
   }).format(amount);
 };
 
-// Format date strings
+
 export const formatDate = (date, options = {}) => {
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -16,7 +16,7 @@ export const formatDate = (date, options = {}) => {
   }).format(new Date(date));
 };
 
-// Format date with time
+
 export const formatDateTime = (date) => {
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -27,23 +27,23 @@ export const formatDateTime = (date) => {
   }).format(new Date(date));
 };
 
-// Calculate percentage change
+
 export const calculatePercentageChange = (current, previous) => {
   if (previous === 0) return current > 0 ? 100 : 0;
   return ((current - previous) / previous) * 100;
 };
 
-// Format percentage
+
 export const formatPercentage = (value, decimals = 1) => {
   return `${value.toFixed(decimals)}%`;
 };
 
-// Generate color based on value (positive/negative)
+
 export const getValueColor = (value) => {
   return value >= 0 ? 'text-green-600' : 'text-red-600';
 };
 
-// Get status color classes
+
 export const getStatusClasses = (status) => {
   const statusMap = {
     completed: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
@@ -59,18 +59,18 @@ export const getStatusClasses = (status) => {
   return statusMap[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
 };
 
-// Truncate text with ellipsis
+
 export const truncateText = (text, maxLength) => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
 };
 
-// Generate random ID
+
 export const generateId = () => {
   return Math.random().toString(36).substring(2, 9);
 };
 
-// Debounce function
+
 export const debounce = (func, wait) => {
   let timeout;
   return function executedFunction(...args) {
@@ -83,12 +83,12 @@ export const debounce = (func, wait) => {
   };
 };
 
-// Deep clone object
+
 export const deepClone = (obj) => {
   return JSON.parse(JSON.stringify(obj));
 };
 
-// Sort array by key
+
 export const sortByKey = (array, key, direction = 'asc') => {
   return array.sort((a, b) => {
     if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
@@ -97,7 +97,7 @@ export const sortByKey = (array, key, direction = 'asc') => {
   });
 };
 
-// Filter array by search term
+
 export const filterBySearch = (array, searchTerm, keys) => {
   if (!searchTerm) return array;
   
@@ -108,7 +108,7 @@ export const filterBySearch = (array, searchTerm, keys) => {
   );
 };
 
-// Calculate trend data
+
 export const calculateTrend = (data, periods = 7) => {
   if (!data || data.length === 0) return [];
   
@@ -124,7 +124,7 @@ export const calculateTrend = (data, periods = 7) => {
   return result;
 };
 
-// Get file size in human readable format
+
 export const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
   
@@ -135,19 +135,19 @@ export const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-// Validate email format
+
 export const isValidEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// Validate phone number format
+
 export const isValidPhone = (phone) => {
   const phoneRegex = /^[\d\s\-\+\(\)]+$/;
   return phoneRegex.test(phone);
 };
 
-// Get initials from name
+
 export const getInitials = (name) => {
   return name
     .split(' ')
@@ -156,12 +156,12 @@ export const getInitials = (name) => {
     .substring(0, 2);
 };
 
-// Capitalize first letter
+
 export const capitalize = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-// Convert to title case
+
 export const toTitleCase = (str) => {
   return str.replace(/\w\S*/g, (txt) => 
     txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()

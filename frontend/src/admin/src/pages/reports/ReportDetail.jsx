@@ -126,7 +126,7 @@ const ReportDetail = ({ reportId, onBack }) => {
 
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
@@ -189,7 +189,7 @@ const ReportDetail = ({ reportId, onBack }) => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
         <nav className="flex space-x-8">
           {['overview', 'metrics', 'charts', 'schedule'].map((tab) => (
@@ -208,10 +208,10 @@ const ReportDetail = ({ reportId, onBack }) => {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Report Information Cards */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
               <div className="flex items-center justify-between">
@@ -265,7 +265,7 @@ const ReportDetail = ({ reportId, onBack }) => {
             </div>
           </div>
 
-          {/* Report Details */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Report Information</h3>
@@ -386,7 +386,7 @@ const ReportDetail = ({ reportId, onBack }) => {
             </div>
           </div>
 
-          {/* Description */}
+          {}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
             {isEditing ? (
@@ -401,7 +401,7 @@ const ReportDetail = ({ reportId, onBack }) => {
             )}
           </div>
 
-          {/* Tags */}
+          {}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Tags</h3>
             <div className="flex flex-wrap gap-2">

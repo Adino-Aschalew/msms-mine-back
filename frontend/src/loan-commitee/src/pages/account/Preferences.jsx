@@ -62,14 +62,14 @@ const Preferences = () => {
   const [activeTab, setActiveTab] = useState('general');
 
   const [preferences, setPreferences] = useState({
-    // Theme Settings
+    
     theme: 'light',
 
-    // Notification Settings
+    
     emailNotifications: true,
     pushNotifications: false,
     inAppNotifications: true,
-    // Notification Types
+    
     notifyLoanRequests: true,
     notifyApprovals: true,
     notifyRejections: true,
@@ -82,7 +82,7 @@ const Preferences = () => {
     notifyDeadlineReminders: true,
     notifyMaintenanceAlerts: true,
 
-    // Display Settings
+    
     sidebarCollapsed: false,
     showAnimations: true,
     showTooltips: true,
@@ -93,7 +93,7 @@ const Preferences = () => {
     showStatusIndicators: true,
     compactTableRows: false,
 
-    // Privacy & Security
+    
     twoFactorAuth: false,
     sessionTimeout: 60,
     autoLock: false,
@@ -104,7 +104,7 @@ const Preferences = () => {
     shareAnalytics: false,
     publicProfile: false,
 
-    // System Performance
+    
     autoRefresh: true,
     refreshInterval: 30,
     cacheEnabled: true,
@@ -114,7 +114,7 @@ const Preferences = () => {
     prefetchData: false,
     backgroundSync: true,
 
-    // Advanced Settings
+    
     developerMode: false,
     debugMode: false,
     betaFeatures: false,
@@ -124,7 +124,7 @@ const Preferences = () => {
     apiRateLimiting: true,
     advancedLogging: false,
 
-    // Accessibility
+    
     screenReader: false,
     keyboardNavigation: true,
     focusVisible: true,
@@ -134,7 +134,7 @@ const Preferences = () => {
     largeText: false,
     highDPI: true,
 
-    // Backup & Sync
+    
     autoBackup: true,
     backupInterval: 'daily',
     backupLocation: 'cloud',
@@ -197,7 +197,7 @@ const Preferences = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Preferences</h1>
@@ -240,7 +240,7 @@ const Preferences = () => {
         </div>
       </div>
 
-      {/* Unsaved Changes Alert */}
+      {}
       {hasChanges && (
         <div className="card p-4 bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800">
           <div className="flex items-center">
@@ -252,7 +252,7 @@ const Preferences = () => {
         </div>
       )}
 
-      {/* System Info Bar */}
+      {}
       <div className="card p-4 bg-info-50 dark:bg-info-900/20 border-info-200 dark:border-info-800">
         <div className="flex flex-wrap items-center justify-between">
           <div className="flex items-center space-x-6 text-sm">
@@ -281,7 +281,7 @@ const Preferences = () => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-1 overflow-x-auto">
           {[
@@ -305,10 +305,10 @@ const Preferences = () => {
         </nav>
       </div>
 
-      {/* General Tab */}
+      {}
       {activeTab === 'general' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Theme Settings */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
               <Palette className="w-5 h-5 mr-2" />
@@ -345,10 +345,10 @@ const Preferences = () => {
         </div>
       )}
 
-      {/* Notifications Tab */}
+      {}
       {activeTab === 'notifications' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Notification Channels */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
               <Bell className="w-5 h-5 mr-2" />
@@ -442,7 +442,7 @@ const Preferences = () => {
             </div>
           </div>
 
-          {/* Notification Types */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
               <FileText className="w-5 h-5 mr-2" />

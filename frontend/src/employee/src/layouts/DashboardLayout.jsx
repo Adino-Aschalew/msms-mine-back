@@ -9,13 +9,13 @@ const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (!isAuthenticated) {
-    // This shouldn't happen with our protected routes, but just in case
+    
     return <div>Please login to access this page.</div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-      {/* Mobile Sidebar Overlay - Higher z-index than navbar */}
+      {}
       {sidebarOpen && (
         <>
           <div 
@@ -28,19 +28,19 @@ const DashboardLayout = () => {
         </>
       )}
       
-      {/* Desktop Sidebar */}
+      {}
       <div className="hidden lg:block lg:fixed lg:inset-y-0 lg:left-0 lg:z-40">
         <Sidebar isOpen={true} onClose={() => setSidebarOpen(false)} />
       </div>
       
-      {/* Main Content Area */}
+      {}
       <div className="flex-1 flex flex-col min-h-0 lg:ml-64">
-        {/* Fixed Header - Lower z-index than mobile sidebar */}
+        {}
         <div className="sticky top-0 z-40 lg:z-40">
           <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         </div>
         
-        {/* Scrollable Content */}
+        {}
         <main className="flex-1 p-6 overflow-y-auto">
           <Outlet />
         </main>

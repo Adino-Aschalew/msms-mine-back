@@ -15,6 +15,8 @@ import AccountActivity from '../../loan-commitee/src/pages/account/Activity';
 import AccountPreferences from '../../loan-commitee/src/pages/account/Preferences';
 
 const LoanModule = () => {
+  console.log('[loan-module] LoanModule component rendering...');
+  
   const [theme, setTheme] = React.useState('light');
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
@@ -35,8 +37,8 @@ const LoanModule = () => {
   return (
     <ThemeProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/loan-committee/dashboard" replace />} />
-        <Route path="/dashboard" element={
+        <Route path="/" element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={
           <Layout
             theme={theme}
             toggleTheme={toggleTheme}
@@ -168,7 +170,7 @@ const LoanModule = () => {
             <AccountPreferences />
           </Layout>
         } />
-        <Route path="*" element={<Navigate to="/loan-committee/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </ThemeProvider>
   );

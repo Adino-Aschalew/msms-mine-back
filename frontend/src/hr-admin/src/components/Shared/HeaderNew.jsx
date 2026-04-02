@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSearch, FiBell, FiSun, FiMoon, FiUser, FiMenu, FiLogOut, FiX, FiSettings, FiCheck, FiChevronDown, FiUser as FiUserIcon, FiLogOut as FiLogoutIcon } from 'react-icons/fi';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { hrAPI } from '../../../../shared/services/hrAPI';
+import NotificationDropdown from '../Notifications/NotificationDropdown';
 
 export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
   const { theme, toggleTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [profileData, setProfileData] = useState(null);
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -64,6 +67,33 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await hrAPI.getUserProfile();
+        console.log('HeaderNew - Full API response:', response);
+        console.log('HeaderNew - Response structure:', JSON.stringify(response, null, 2));
+        
+        if (response.success && response.data) {
+          const data = response.data;
+          const user = data.user || {}; 
+          setProfileData(user);
+          console.log('HeaderNew - Profile data:', user);
+          console.log('HeaderNew - Available fields:', Object.keys(user));
+        } else {
+          console.log('HeaderNew - Response success check failed:', response);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
   const handleMarkAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
@@ -86,7 +116,7 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
     }
   };
 
-  // Close dropdowns when clicking outside
+  
   React.useEffect(() => {
     const handleClickOutside = (event) => {
       if (isNotifOpen && !event.target.closest('.notification-dropdown')) {
@@ -122,7 +152,7 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-          {/* Notifications */}
+          {}
           <div className="relative notification-dropdown">
             <button 
               onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -138,10 +168,10 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
               )}
             </button>
             
-            {/* Notification Dropdown */}
+            {}
             {isNotifOpen && (
               <div className="absolute top-full right-0 mt-2 w-96 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 overflow-hidden z-50">
-                {/* Header */}
+                {}
                 <div className="p-4 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
@@ -165,7 +195,7 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
                   )}
                 </div>
 
-                {/* Notifications List */}
+                {}
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.slice(0, 4).map(notif => (
                     <div
@@ -198,7 +228,7 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
                   ))}
                 </div>
 
-                {/* Footer */}
+                {}
                 <div className="p-3 border-t border-gray-200 dark:border-slate-700">
                   <button 
                     onClick={handleViewAllNotifications}
@@ -211,7 +241,7 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
             )}
           </div>
           
-          {/* Theme Toggle */}
+          {}
           <button 
             onClick={toggleTheme}
             className="p-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
@@ -222,39 +252,57 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
 
           <div className="h-6 w-px bg-gray-200 dark:bg-slate-600 mx-1 hidden sm:block"></div>
 
-          {/* User Profile Dropdown */}
+          {}
           <div className="relative profile-dropdown">
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
-                HR
+                {profileData?.first_name?.[0] || profileData?.firstName?.[0] || user?.username?.[0] || 'H'}
               </div>
               <div className="hidden md:block text-left">
-                <div className="text-sm font-medium text-gray-900 dark:text-white">HR Admin</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Administrator</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  {profileData?.first_name && profileData?.last_name 
+                    ? `${profileData.first_name} ${profileData.last_name}` 
+                    : profileData?.firstName && profileData?.lastName 
+                    ? `${profileData.firstName} ${profileData.lastName}`
+                    : user?.username || 'HR Admin'
+                  }
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {profileData?.role || user?.role || 'Administrator'}
+                </div>
               </div>
               <FiChevronDown className={`text-gray-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} size={16} />
             </button>
 
-            {/* Profile Dropdown Menu */}
+            {}
             {isProfileOpen && (
               <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 overflow-hidden z-50">
-                {/* Profile Header */}
+                {}
                 <div className="p-4 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
-                      HR
+                      {profileData?.first_name?.[0] || profileData?.firstName?.[0] || user?.username?.[0] || 'H'}
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">HR Admin</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">hr.admin@company.com</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">
+                        {profileData?.first_name && profileData?.last_name 
+                          ? `${profileData.first_name} ${profileData.last_name}` 
+                          : profileData?.firstName && profileData?.lastName 
+                          ? `${profileData.firstName} ${profileData.lastName}`
+                          : user?.username || 'HR Admin'
+                        }
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {profileData?.email || user?.email || 'hr.admin@company.com'}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Menu Items */}
+                {}
                 <div className="py-2">
                   <button 
                     onClick={() => {
@@ -283,11 +331,11 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
         </div>
       </header>
 
-      {/* All Notifications Modal */}
+      {}
       {showAllNotifications && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            {/* Modal Header */}
+            {}
             <div className="p-6 border-b border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">All Notifications</h2>
@@ -314,7 +362,7 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
               )}
             </div>
 
-            {/* Notifications List */}
+            {}
             <div className="overflow-y-auto max-h-[60vh]">
               {notifications.map(notif => (
                 <div
@@ -349,7 +397,7 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
               ))}
             </div>
 
-            {/* Modal Footer */}
+            {}
             <div className="p-4 border-t border-gray-200 dark:border-slate-700">
               <button 
                 onClick={() => setShowAllNotifications(false)}

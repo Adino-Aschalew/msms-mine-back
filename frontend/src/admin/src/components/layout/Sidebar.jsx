@@ -26,7 +26,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
@@ -34,7 +34,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         />
       )}
 
-      {/* Sidebar */}
+      {}
       <aside
         className={`
           fixed left-0 top-0 z-50 h-screen w-64 transform border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out dark:border-gray-700 dark:bg-gray-900 lg:translate-x-0
@@ -77,7 +77,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <button 
               onClick={() => {
                 console.log('Logout clicked');
-                // Handle logout logic here
+                
                 setIsOpen(false);
               }}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-all hover:bg-red-50 dark:hover:bg-red-900/10"

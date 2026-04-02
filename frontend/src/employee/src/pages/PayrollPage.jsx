@@ -5,7 +5,7 @@ import { savingsAPI } from '../../../shared/services/savingsAPI';
 import { loansAPI } from '../../../shared/services/loansAPI';
 
 const PayrollPage = () => {
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -53,7 +53,7 @@ const PayrollPage = () => {
           loading: false
         });
 
-        // Simulate history based on real hire date if no real history exists
+        
         const hireDate = new Date(eProfile.hire_date || new Date());
         const monthsSinceHire = Math.min(12, Math.floor((new Date() - hireDate) / (1000 * 60 * 60 * 24 * 30)));
         
@@ -66,7 +66,7 @@ const PayrollPage = () => {
             month: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
             salary,
             savingsDeduction: (salary * savingsRate) / 100,
-            loanDeduction: i === 0 ? loanDeduction : 0, // Assume loan started recently
+            loanDeduction: i === 0 ? loanDeduction : 0, 
             otherDeductions: 0,
             netPay: salary - ((salary * savingsRate) / 100) - (i === 0 ? loanDeduction : 0),
             payDate: new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0],
@@ -128,7 +128,7 @@ const PayrollPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header Section */}
+      {}
       <div className="w-full bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -151,7 +151,7 @@ const PayrollPage = () => {
 
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* System Level Stats Cards */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="stat-card">
             <div className="flex items-center justify-between w-full">
@@ -226,9 +226,9 @@ const PayrollPage = () => {
           </div>
         </div>
 
-        {/* Main Content Grid */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Payroll History Table */}
+          {}
           <div className="lg:col-span-2">
             <div className="card shadow-lg">
               <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-600">
@@ -325,9 +325,9 @@ const PayrollPage = () => {
             </div>
           </div>
 
-          {/* Sidebar Cards */}
+          {}
           <div className="space-y-6">
-            {/* Current Month Breakdown */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                 <FiPieChart className="mr-2 text-blue-600 dark:text-blue-400" />
@@ -384,7 +384,7 @@ const PayrollPage = () => {
               </div>
             </div>
 
-            {/* Yearly Summary */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                 <FiBarChart2 className="mr-2 text-green-600 dark:text-green-400" />
@@ -418,7 +418,7 @@ const PayrollPage = () => {
               </div>
             </div>
 
-            {/* Financial Insights */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                 <FiTrendingUp className="mr-2 text-indigo-600 dark:text-indigo-400" />

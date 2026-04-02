@@ -4,7 +4,7 @@ const { query } = require('../config/database');
 class NotificationService {
   static async sendEmail(to, subject, message, options = {}) {
     try {
-      // Check if email configuration is available
+      
       if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.log('Email configuration not found, skipping email send');
         return { success: false, message: 'Email not configured' };
@@ -30,36 +30,36 @@ class NotificationService {
 
       const result = await transporter.sendMail(mailOptions);
       
-      // Log email notification
+      
       await this.logNotification('EMAIL', to, subject, message, 'SENT');
       
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error('Email send error:', error);
       
-      // Log failed email
+      
       await this.logNotification('EMAIL', to, subject, message, 'FAILED', error.message);
       
-      // Don't throw error, just return failure
+      
       return { success: false, message: `Failed to send email: ${error.message}` };
     }
   }
 
   static async sendSMS(phoneNumber, message, options = {}) {
     try {
-      // Placeholder for SMS integration
-      // In a real implementation, you would integrate with an SMS service like Twilio, AWS SNS, etc.
+      
+      
       
       console.log(`SMS to ${phoneNumber}: ${message}`);
       
-      // Log SMS notification
+      
       await this.logNotification('SMS', phoneNumber, 'SMS Notification', message, 'SENT');
       
       return { success: true, messageId: `sms_${Date.now()}` };
     } catch (error) {
       console.error('SMS send error:', error);
       
-      // Log failed SMS
+      
       await this.logNotification('SMS', phoneNumber, 'SMS Notification', message, 'FAILED', error.message);
       
       throw new Error(`Failed to send SMS: ${error.message}`);
@@ -68,19 +68,19 @@ class NotificationService {
 
   static async sendPushNotification(userId, title, message, data = {}) {
     try {
-      // Placeholder for push notification integration
-      // In a real implementation, you would integrate with Firebase Cloud Messaging, Apple Push Notification Service, etc.
+      
+      
       
       console.log(`Push notification to user ${userId}: ${title} - ${message}`);
       
-      // Log push notification
+      
       await this.logNotification('PUSH', userId, title, message, 'SENT', null, data);
       
       return { success: true, messageId: `push_${Date.now()}` };
     } catch (error) {
       console.error('Push notification error:', error);
       
-      // Log failed push notification
+      
       await this.logNotification('PUSH', userId, title, message, 'FAILED', error.message, data);
       
       throw new Error(`Failed to send push notification: ${error.message}`);
@@ -292,7 +292,7 @@ class NotificationService {
     
     await this.createNotification(userId, subject, message, status === 'APPROVED' ? 'SUCCESS' : 'DANGER');
     
-    // Get user email and send email notification
+    
     const userQuery = 'SELECT email, first_name FROM users u LEFT JOIN employee_profiles ep ON u.id = ep.user_id WHERE u.id = ?';
     const userArr = await query(userQuery, [userId]);
     const user = userArr[0];

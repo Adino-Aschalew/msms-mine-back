@@ -3,7 +3,7 @@ const { auditLog } = require('../../middleware/audit');
 const { query } = require('../../config/database');
 
 class EnterpriseSavingsController {
-  // Get employee's complete savings dashboard
+  
   static async getSavingsDashboard(req, res) {
     try {
       const userId = req.userId;
@@ -24,13 +24,13 @@ class EnterpriseSavingsController {
     }
   }
 
-  // Simulate savings changes with live calculations
+  
   static async simulateSavingsChange(req, res) {
     try {
       const userId = req.userId;
       const { newValue, savingsType, effectiveDate } = req.body;
       
-      // Validate input
+      
       if (!newValue || !savingsType || !effectiveDate) {
         return res.status(400).json({
           success: false,
@@ -66,7 +66,7 @@ class EnterpriseSavingsController {
     }
   }
 
-  // Submit savings change request
+  
   static async submitSavingsRequest(req, res) {
     try {
       const userId = req.userId;
@@ -79,7 +79,7 @@ class EnterpriseSavingsController {
         urgencyLevel = 'NORMAL'
       } = req.body;
       
-      // Validate input
+      
       if (!newValue || !savingsType || !effectiveDate || !reason || !simulationResult) {
         return res.status(400).json({
           success: false,
@@ -96,7 +96,7 @@ class EnterpriseSavingsController {
         urgencyLevel
       });
       
-      // Log the submission
+      
       await auditLog(
         userId,
         'REQUEST_SUBMITTED',
@@ -127,7 +127,7 @@ class EnterpriseSavingsController {
     }
   }
 
-  // Get employee's savings history
+  
   static async getSavingsHistory(req, res) {
     try {
       const userId = req.userId;
@@ -150,7 +150,7 @@ class EnterpriseSavingsController {
     }
   }
 
-  // Get system constraints and configuration
+  
   static async getSavingsConstraints(req, res) {
     try {
       const constraints = await EnterpriseSavingsService.getSavingsConstraints();
@@ -169,7 +169,7 @@ class EnterpriseSavingsController {
     }
   }
 
-  // Get employee's pending requests
+  
   static async getPendingRequests(req, res) {
     try {
       const userId = req.userId;
@@ -216,13 +216,13 @@ class EnterpriseSavingsController {
     }
   }
 
-  // Cancel a pending request
+  
   static async cancelRequest(req, res) {
     try {
       const userId = req.userId;
       const { requestId } = req.params;
       
-      // Check if request exists and belongs to user
+      
       const requestQuery = `
         SELECT * FROM savings_requests 
         WHERE id = ? AND user_id = ? AND status IN ('PENDING', 'UNDER_REVIEW')
@@ -237,13 +237,13 @@ class EnterpriseSavingsController {
         });
       }
       
-      // Update request status
+      
       await query(
         'UPDATE savings_requests SET status = ?, updated_at = NOW() WHERE id = ?',
         ['CANCELLED', requestId]
       );
       
-      // Log the cancellation
+      
       await auditLog(
         userId,
         'REQUEST_CANCELLED',
@@ -269,12 +269,12 @@ class EnterpriseSavingsController {
     }
   }
 
-  // Get savings statistics for dashboard widgets
+  
   static async getSavingsStatistics(req, res) {
     try {
       const userId = req.userId;
       
-      // Get comprehensive statistics
+      
       const statsQuery = `
         SELECT 
           sa.current_balance,
@@ -306,7 +306,7 @@ class EnterpriseSavingsController {
         });
       }
       
-      // Get monthly contribution trend (last 6 months)
+      
       const trendQuery = `
         SELECT 
           DATE_FORMAT(transaction_date, '%Y-%m') as month,

@@ -3,7 +3,7 @@ const { query, transaction } = require('../../config/database');
 class SavingsModel {
   static async createSavingsAccount(userId, employeeId, savingPercentage) {
     return await transaction(async (connection) => {
-      // 1. Create account
+      
       const [accountResult] = await connection.execute(
         `INSERT INTO savings_accounts (user_id, employee_id, saving_percentage, account_status, created_at)
          VALUES (?, ?, ?, 'ACTIVE', NOW())`,
@@ -12,7 +12,7 @@ class SavingsModel {
       
       const accountId = accountResult.insertId;
       
-      // 2. Create initial version
+      
       const [versionResult] = await connection.execute(
         `INSERT INTO savings_versions (user_id, version_number, savings_type, savings_value, status, effective_date, activated_at)
          VALUES (?, 1, 'PERCENTAGE', ?, 'ACTIVE', CURDATE(), NOW())`,
@@ -21,7 +21,7 @@ class SavingsModel {
       
       const versionId = versionResult.insertId;
       
-      // 3. Link version to account
+      
       await connection.execute(
         'UPDATE savings_accounts SET current_version_id = ? WHERE id = ?',
         [versionId, accountId]
@@ -72,7 +72,7 @@ class SavingsModel {
     console.log('addSavingsTransaction called with:', { accountId, userId, transactionType, amount, referenceId, description });
     
     return await transaction(async (connection) => {
-      // Get current balance
+      
       const [account] = await connection.execute(
         'SELECT current_balance FROM savings_accounts WHERE id = ? FOR UPDATE',
         [accountId]
@@ -96,7 +96,7 @@ class SavingsModel {
         throw new Error('Invalid transaction type');
       }
       
-      // Add transaction
+      
       const insertTransactionQuery = `
         INSERT INTO savings_transactions (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
@@ -106,7 +106,7 @@ class SavingsModel {
         accountId, userId, transactionType, amount, currentBalance, newBalance, referenceId || null, description || null
       ]);
       
-      // Update account balance
+      
       await connection.execute(
         'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
         [newBalance, accountId]
@@ -268,11 +268,11 @@ class SavingsModel {
   }
 
   static async processMonthlyInterest() {
-    const interestRate = 0.05; // 5% annual interest
+    const interestRate = 0.05; 
     const connection = await transaction();
     
     try {
-      // Get all active accounts
+      
       const [accounts] = await connection.execute(
         'SELECT id, user_id, current_balance FROM savings_accounts WHERE account_status = "ACTIVE"'
       );
@@ -315,11 +315,11 @@ class SavingsModel {
   }
 
   static async checkMissedSavings() {
-    const penaltyRate = 0.02; // 2% penalty
+    const penaltyRate = 0.02; 
     const connection = await transaction();
     
     try {
-      // This is a simplified version - in reality, you'd check against expected monthly contributions
+      
       const [accounts] = await connection.execute(
         'SELECT id, user_id, current_balance FROM savings_accounts WHERE account_status = "ACTIVE"'
       );
@@ -329,9 +329,9 @@ class SavingsModel {
         totalPenalty: 0
       };
       
-      // For demonstration, we'll assume some accounts missed their savings
-      // In a real implementation, you'd have a more sophisticated logic
-      for (const account of accounts.slice(0, 2)) { // Just demo with first 2 accounts
+      
+      
+      for (const account of accounts.slice(0, 2)) { 
         try {
           const penaltyAmount = account.current_balance * penaltyRate;
           

@@ -15,18 +15,18 @@ class MonthlySavingsJob {
         errors: []
       };
       
-      // Get all active savings accounts
+      
       const { accounts } = await SavingsService.getAllAccounts(1, 1000, { account_status: 'ACTIVE' });
       
       console.log(`📊 Found ${accounts.length} active savings accounts`);
       
       for (const account of accounts) {
         try {
-          // Calculate monthly contribution based on salary
+          
           const contributionAmount = await this.calculateMonthlyContribution(account);
           
           if (contributionAmount > 0) {
-            // Add automatic contribution
+            
             const contributionResult = await SavingsService.addContribution(
               account.user_id,
               contributionAmount,
@@ -40,7 +40,7 @@ class MonthlySavingsJob {
             results.totalContributions++;
             results.totalAmount += contributionAmount;
             
-            // Send notification to user
+            
             await NotificationService.createNotification(
               account.user_id,
               'Monthly Savings Processed',
@@ -61,7 +61,7 @@ class MonthlySavingsJob {
           
           console.error(`❌ Failed to process savings for user ${account.user_id}:`, error);
           
-          // Log error notification
+          
           await NotificationService.createNotification(
             account.user_id,
             'Savings Processing Error',
@@ -71,7 +71,7 @@ class MonthlySavingsJob {
         }
       }
       
-      // Log job completion
+      
       if (adminId) {
         await auditLog(adminId, 'MONTHLY_SAVINGS_JOB', 'savings_accounts', null, null, results, '127.0.0.1', 'System Job');
       }
@@ -88,7 +88,7 @@ class MonthlySavingsJob {
 
   static async calculateMonthlyContribution(account) {
     try {
-      // Get user's latest payroll record
+      
       const { query } = require('../config/database');
       const [payroll] = await query(`
         SELECT net_salary 
@@ -108,7 +108,7 @@ class MonthlySavingsJob {
       
       const contributionAmount = (netSalary * savingPercentage) / 100;
       
-      // Ensure minimum contribution of 100
+      
       const minimumContribution = 100;
       return Math.max(contributionAmount, minimumContribution);
       
@@ -121,7 +121,7 @@ class MonthlySavingsJob {
   static async schedule() {
     const cron = require('node-cron');
     
-    // Schedule job to run on the 25th of every month at 2 AM
+    
     cron.schedule('0 2 25 * *', async () => {
       try {
         await this.execute();
@@ -158,7 +158,7 @@ class MonthlySavingsJob {
     try {
       const { query } = require('../config/database');
       
-      // Get last execution details from audit logs
+      
       const [lastExecution] = await query(`
         SELECT * FROM audit_logs 
         WHERE action = 'MONTHLY_SAVINGS_JOB' 
@@ -193,7 +193,7 @@ class MonthlySavingsJob {
     
     let nextRun = new Date(now.getFullYear(), now.getMonth(), 25, 2, 0, 0, 0);
     
-    // If the 25th has passed this month, schedule for next month
+    
     if (currentDay > 25) {
       nextRun = new Date(now.getFullYear(), now.getMonth() + 1, 25, 2, 0, 0, 0);
     }
@@ -204,7 +204,7 @@ class MonthlySavingsJob {
   static async validateJobConfiguration() {
     const issues = [];
     
-    // Check if required environment variables are set
+    
     if (!process.env.JWT_SECRET) {
       issues.push('JWT_SECRET environment variable not set');
     }
@@ -213,7 +213,7 @@ class MonthlySavingsJob {
       issues.push('Database configuration not found');
     }
     
-    // Check database connectivity
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1');
@@ -221,7 +221,7 @@ class MonthlySavingsJob {
       issues.push('Database connectivity failed: ' + error.message);
     }
     
-    // Check if savings tables exist
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1 FROM savings_accounts LIMIT 1');
@@ -240,7 +240,7 @@ class MonthlySavingsJob {
     try {
       const { query } = require('../config/database');
       
-      // Get statistics for the last 12 months
+      
       const [stats] = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%Y-%m') as month,

@@ -24,7 +24,7 @@ class AiService {
           throw new Error('Invalid prediction type');
       }
       
-      // Log prediction request
+      
       await auditLog(userId, 'AI_PREDICTION_GENERATED', 'ai_predictions', null, null, {
         predictionType,
         parameters,
@@ -45,7 +45,7 @@ class AiService {
 
   static async getRiskAssessment(userId, loanAmount, loanTerm) {
     try {
-      // Validate input parameters
+      
       if (!userId || !loanAmount || !loanTerm) {
         throw new Error('Missing required parameters: userId, loanAmount, and loanTerm are required');
       }
@@ -54,7 +54,7 @@ class AiService {
         throw new Error('Invalid parameter types: userId, loanAmount, and loanTerm must be numbers');
       }
       
-      // Get user data
+      
       const [userData] = await query(`
         SELECT 
           u.id,
@@ -77,7 +77,7 @@ class AiService {
       `, [userId]);
       
       if (!userData || !userData[0]) {
-        // Create a mock user for testing if no user exists
+        
         console.log(`User ${userId} not found, creating mock data for testing`);
         const mockUser = {
           id: userId,
@@ -110,7 +110,7 @@ class AiService {
 
   static calculateRiskAssessmentFromData(user, loanAmount, loanTerm) {
     try {
-      // Calculate risk factors
+      
       const riskFactors = {
         employment_stability: this.calculateEmploymentStability(user),
         financial_stability: this.calculateFinancialStability(user),
@@ -119,10 +119,10 @@ class AiService {
         employment_duration: this.calculateEmploymentDuration(user.days_employed),
       };
       
-      // Calculate overall risk score
+      
       const riskScore = this.calculateOverallRiskScore(riskFactors);
       
-      // Generate risk assessment
+      
       const assessment = {
         user_id: user.id,
         loan_amount: loanAmount,
@@ -307,21 +307,21 @@ class AiService {
 
   static async trainModel(modelType, trainingData, userId) {
     try {
-      // Simulate model training
+      
       const trainingResult = {
         model_type: modelType,
         training_samples: trainingData.length,
         accuracy: this.simulateTrainingAccuracy(),
-        training_time: Math.random() * 1000 + 500, // 500-1500ms
+        training_time: Math.random() * 1000 + 500, 
         model_version: 'v2.1.0',
         trained_by: userId,
         trained_at: new Date().toISOString()
       };
       
-      // Log model training
+      
       await auditLog(userId, 'AI_MODEL_TRAINED', 'ai_models', null, null, trainingResult, '127.0.0.1', 'AI Service');
       
-      // Send notification to admin
+      
       await NotificationService.createNotification(
         userId,
         'AI Model Training Completed',
@@ -340,7 +340,7 @@ class AiService {
 
   static async getModelStatus(modelType) {
     try {
-      // Simulate model status
+      
       const status = {
         model_type: modelType,
         status: 'ACTIVE',
@@ -363,7 +363,7 @@ class AiService {
     }
   }
 
-  // Helper methods for risk assessment
+  
   static calculateEmploymentStability(user) {
     let score = 0;
     
@@ -514,16 +514,16 @@ class AiService {
   }
 
   static calculateConfidence(predictions) {
-    // Simulate confidence calculation
-    return 0.75 + Math.random() * 0.2; // 75-95% confidence
+    
+    return 0.75 + Math.random() * 0.2; 
   }
 
   static simulateTrainingAccuracy() {
-    // Simulate training accuracy
-    return 0.85 + Math.random() * 0.1; // 85-95% accuracy
+    
+    return 0.85 + Math.random() * 0.1; 
   }
 
-  // Placeholder methods for other AI functions
+  
   static async predictLoanDefaults(parameters) {
     return {
       predictions: [

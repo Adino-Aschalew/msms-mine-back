@@ -28,7 +28,8 @@ import { committeeAPI } from '../services/committeeAPI';
 import { formatETB } from '../utils/helpers';
 
 const Dashboard = () => {
-  // Compact number formatting function using ETB
+  console.log('[committee] Dashboard component rendering...');
+  
   const formatCompactNumber = (num) => formatETB(num);
 
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -52,23 +53,32 @@ const Dashboard = () => {
       console.log('Dashboard API response:', res);
       console.log('Response data:', res.data);
       
-      if (res && res.data && res.data.success) {
-        console.log('Setting dashboard data:', res.data.data);
-        setDashboardData(res.data.data);
+      if (res && res.success && res.data) {
+        console.log('Setting dashboard data:', res.data);
+        setDashboardData(res.data);
       } else {
         console.error('Unexpected response format:', res);
+        console.error('Response structure:', {
+          hasRes: !!res,
+          hasSuccess: !!res?.success,
+          hasData: !!res?.data,
+          successValue: res?.success
+        });
         setError('Failed to fetch dashboard data: Unexpected response format');
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       console.error('Error response:', error.response);
-      setError('Failed to fetch dashboard data. Please try again.');
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      console.error('Error message:', error.message);
+      setError(`Failed to fetch dashboard data: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Functional handlers
+  
   const handleRefresh = () => {
     fetchDashboardData();
     handleButtonClick('refreshData', 'dashboard');
@@ -103,11 +113,11 @@ const Dashboard = () => {
     handleButtonClick('searchData', query);
   };
 
-  // Quick action handlers for loan requests
+  
   const handleQuickApprove = async (loanId) => {
     try {
       await committeeAPI.approveLoan(loanId, { quick_approve: true });
-      fetchDashboardData(); // Refresh data
+      fetchDashboardData(); 
       setFeedbackModal({
         isOpen: true,
         type: 'success',
@@ -128,7 +138,7 @@ const Dashboard = () => {
   const handleQuickReject = async (loanId) => {
     try {
       await committeeAPI.rejectLoan(loanId, { quick_reject: true });
-      fetchDashboardData(); // Refresh data
+      fetchDashboardData(); 
       setFeedbackModal({
         isOpen: true,
         type: 'success',
@@ -253,11 +263,11 @@ const Dashboard = () => {
   const calculateSizeDist = () => {
     if (!Array.isArray(dashboardData?.sizeDistribution)) return { labels: [], dataset: [] };
     const order = ['< 5K ETB', '5K-10K ETB', '10K-20K ETB', '20K-50K ETB', '> 50K ETB'];
-    // Merge backend data with default zeros
+    
     const distMap = { '< 5K ETB': 0, '5K-10K ETB': 0, '10K-20K ETB': 0, '20K-50K ETB': 0, '> 50K ETB': 0 };
     let total = 0;
     dashboardData.sizeDistribution.forEach(d => {
-      // Map old dollar categories to new ETB categories
+      
       const categoryMap = {
         '< $5K': '< 5K ETB',
         '$5K-$10K': '5K-10K ETB',
@@ -294,7 +304,7 @@ const Dashboard = () => {
     ]
   };
 
-  // Format amount to ETB with K/M suffix
+  
   const formatETBLocal = (amount) => formatETB(amount);
 
   const recentRequests = Array.isArray(dashboardData?.recentRequests) ? dashboardData.recentRequests.map(req => ({
@@ -310,7 +320,7 @@ const Dashboard = () => {
     status: req.status.toLowerCase()
   })) : [];
 
-  // Real activity feed from backend
+  
   const activityFeed = Array.isArray(dashboardData?.recentActivity) ? dashboardData.recentActivity.map((activity, index) => ({
     id: index + 1,
     type: activity.action?.toLowerCase() || 'unknown',
@@ -383,7 +393,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900/20 dark:to-indigo-900/20">
-      {/* System-Level Header */}
+      {}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -430,20 +440,20 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Content */}
+      {}
       <div className="px-4 sm:px-6 py-6">
         <div className="space-y-6">
 
-      {/* Statistics Cards */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
 
-      {/* Charts Row */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Distribution */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Monthly Loan Distribution
@@ -453,7 +463,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Loan Growth Trend */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Portfolio Growth Trend
@@ -464,9 +474,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Bottom Row */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Loan Requests */}
+        {}
         <div className="lg:col-span-2 card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -570,7 +580,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Activity Feed */}
+        {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Recent Activity
@@ -595,7 +605,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Loan Size Distribution */}
+      {}
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Loan Size Distribution
@@ -625,7 +635,7 @@ const Dashboard = () => {
       </div>
     </div>
 
-    {/* Request Detail Modal */}
+    {}
     <Modal
       isOpen={isModalOpen}
       onClose={handleCloseModal}
@@ -634,7 +644,7 @@ const Dashboard = () => {
     >
       {selectedRequest && (
         <div className="space-y-6">
-          {/* Request ID and Status */}
+          {}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Hash className="w-5 h-5 text-gray-500" />
@@ -646,7 +656,7 @@ const Dashboard = () => {
             </span>
           </div>
 
-          {/* Employee Info */}
+          {}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
               <User className="w-4 h-4" />
@@ -664,7 +674,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Loan Details */}
+          {}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
@@ -700,7 +710,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {}
           {selectedRequest.status === 'pending' && (
             <div className="flex gap-3 pt-4 border-t">
               <button
@@ -729,7 +739,7 @@ const Dashboard = () => {
       )}
     </Modal>
 
-    {/* Feedback Modal */}
+    {}
     <Modal
       isOpen={feedbackModal.isOpen}
       onClose={closeFeedbackModal}

@@ -75,7 +75,7 @@ const MySavingsDashboard = () => {
       await EnterpriseSavingsAPI.submitSavingsRequest(requestData);
       setShowRequestForm(false);
       setSimulationData(null);
-      loadDashboardData(); // Refresh data
+      loadDashboardData(); 
     } catch (err) {
       setError(err.message || 'Failed to submit request');
     }
@@ -84,14 +84,14 @@ const MySavingsDashboard = () => {
   const handleActivate = async () => {
     try {
       setLoading(true);
-      const result = await EnterpriseSavingsAPI.createSavingsAccount(); // Use default 15%
+      const result = await EnterpriseSavingsAPI.createSavingsAccount(); 
       
-      // Show success message with applied percentage
+      
       const message = result.is_default 
         ? `Savings account activated successfully with ${result.saving_percentage}% default contribution rate!` 
         : `Savings account activated successfully with ${result.saving_percentage}% contribution rate!`;
       
-      // You could add a toast notification here if you have one
+      
       console.log(message);
       
       await loadDashboardData();
@@ -159,7 +159,7 @@ const MySavingsDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Savings Dashboard</h1>
@@ -187,7 +187,7 @@ const MySavingsDashboard = () => {
         </div>
       </div>
 
-      {/* Current Savings Display */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -266,7 +266,7 @@ const MySavingsDashboard = () => {
         </div>
       </div>
 
-      {/* Financial Health Indicator */}
+      {}
       <div className={`bg-white dark:bg-gray-800 rounded-xl border p-6 ${
         financialHealth.status === 'SAFE' ? 'border-emerald-200 dark:border-emerald-700/50' :
         financialHealth.status === 'MODERATE' ? 'border-amber-200 dark:border-amber-700/50' :
@@ -345,7 +345,7 @@ const MySavingsDashboard = () => {
         )}
       </div>
 
-      {/* Recent Contributions */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -391,7 +391,7 @@ const MySavingsDashboard = () => {
         )}
       </div>
 
-      {/* Request Form Modal */}
+      {}
       {showRequestForm && (
         <SavingsRequestForm
           onClose={() => setShowRequestForm(false)}
@@ -406,7 +406,7 @@ const MySavingsDashboard = () => {
   );
 };
 
-// Savings Request Form Component
+
 const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constraints, simulationData }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -474,7 +474,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
+        {}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -495,7 +495,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
             </button>
           </div>
           
-          {/* Progress Indicator */}
+          {}
           <div className="flex items-center space-x-2 mt-6">
             {[1, 2, 3].map((s) => (
               <React.Fragment key={s}>
@@ -522,11 +522,11 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
           </div>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1 overflow-y-auto p-6">
           {step === 1 && (
             <div className="space-y-6">
-              {/* Savings Type Selection */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Savings Configuration
@@ -591,7 +591,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 </div>
               </div>
 
-              {/* Effective Date */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Effective Date
@@ -643,7 +643,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 </div>
               </div>
 
-              {/* Reason and Urgency */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Request Details
@@ -706,7 +706,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 Impact Analysis
               </h3>
               
-              {/* Comparison Cards */}
+              {}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 p-6 rounded-xl border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center justify-between mb-4">
@@ -743,7 +743,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 </div>
               </div>
 
-              {/* Monthly Impact */}
+              {}
               <div className={`p-6 rounded-xl border-2 ${
                 simulationData.impact.monthlyDifference > 0 
                   ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-700' 
@@ -768,7 +768,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 </div>
               </div>
 
-              {/* Financial Health Warning */}
+              {}
               {simulationData.validation && !simulationData.validation.isValid && (
                 <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-700 p-6 rounded-xl">
                   <div className="flex items-start space-x-3">
@@ -791,7 +791,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 </div>
               )}
 
-              {/* Projected Annual Savings */}
+              {}
               <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 p-6 rounded-xl border border-purple-200 dark:border-purple-600">
                 <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-2">Projected Annual Savings</h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -818,7 +818,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 Confirm Your Request
               </h3>
               
-              {/* Request Summary */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Request Summary</h4>
                 <div className="space-y-3">
@@ -873,7 +873,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 </div>
               </div>
 
-              {/* Important Notes */}
+              {}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 p-6 rounded-xl">
                 <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Important Information</h4>
                 <ul className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
@@ -904,7 +904,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                 </ul>
               </div>
 
-              {/* Reason Confirmation */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your Reason:</p>
                 <p className="text-gray-900 dark:text-gray-100 italic">"{formData.reason}"</p>
@@ -913,7 +913,7 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
           )}
         </div>
 
-        {/* Footer */}
+        {}
         <div className="border-t border-gray-200 dark:border-gray-700 p-6">
           <div className="flex justify-between items-center">
             <button

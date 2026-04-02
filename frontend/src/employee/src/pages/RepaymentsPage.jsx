@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { FiCreditCard, FiTrendingDown, FiCalendar, FiDownload, FiEye, FiCheck, FiX, FiAlertCircle } from 'react-icons/fi';
 import { LineChart } from '../components/Shared/Chart';
 import { loansAPI } from '../../../shared/services/loansAPI';
+import appEvents from '../../../shared/utils/eventEmitter';
 
 const RepaymentsPage = () => {
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -22,7 +23,22 @@ const RepaymentsPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    fetchData();
+    
+    
+    const handleLoanApproved = () => {
+      console.log('🔄 Loan approved event received, refreshing repayments page...');
+      fetchData();
+    };
+    
+    appEvents.on('loanApproved', handleLoanApproved);
+    
+    return () => {
+      appEvents.off('loanApproved', handleLoanApproved);
+    };
+  }, []);
+  
+  const fetchData = async () => {
       try {
         setLoading(true);
         const [loansRes, transRes] = await Promise.all([
@@ -41,8 +57,6 @@ const RepaymentsPage = () => {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
 
   const repaymentSummary = {
     totalLoanBalance: loans.reduce((sum, l) => sum + parseFloat(l.loan_amount || 0), 0),
@@ -67,32 +81,81 @@ const RepaymentsPage = () => {
     date: t.transaction_date || t.created_at,
     loanId: t.loan_id.toString(),
     installmentAmount: parseFloat(t.amount),
-    principal: parseFloat(t.amount) * 0.9, // Approximation if not split in DB
-    interest: parseFloat(t.amount) * 0.1,  // Approximation if not split in DB
+    principal: parseFloat(t.amount) * 0.9, 
+    interest: parseFloat(t.amount) * 0.1,  
     remainingBalance: parseFloat(t.balance_after_transaction || 0),
     status: 'paid',
   }));
 
-  const repaymentSchedule = []; // Simplified: usually calculated based on loan start date
+  const repaymentSchedule = []; 
 
-  const loanBalanceData = {
-    labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
-    datasets: loans.filter(l => l.status === 'ACTIVE').map((l, index) => {
+  
+  const generateLoanBalanceData = () => {
+    const activeLoansList = loans.filter(l => l.status === 'ACTIVE');
+    if (activeLoansList.length === 0) {
+      return { labels: [], datasets: [] };
+    }
+    
+    
+    const labels = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(date.toLocaleString('default', { month: 'short' }));
+    }
+    
+    const datasets = activeLoansList.map((l, index) => {
       const principal = parseFloat(l.loan_amount || 0);
-      const paid = parseFloat(l.paid_amount || 0);
       const remaining = parseFloat(l.outstanding_balance || 0);
+      const monthlyPayment = parseFloat(l.monthly_repayment || l.monthly_payment || 0);
+      const loanStartDate = new Date(l.created_at || l.disbursement_date);
       
-      // Plot a simple trend for demo purposes (last month balance, current month balance)
+      
+      const data = labels.map((_, i) => {
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        
+        
+        if (monthDate < loanStartDate) {
+          return 0;
+        }
+        
+        
+        const monthsSinceStart = Math.max(0, 
+          (monthDate.getFullYear() - loanStartDate.getFullYear()) * 12 + 
+          (monthDate.getMonth() - loanStartDate.getMonth())
+        );
+        
+        
+        const repaymentsBeforeMonth = history.filter(t => {
+          const transDate = new Date(t.transaction_date || t.created_at);
+          return t.loan_id === l.id && 
+                 t.transaction_type === 'REPAYMENT' &&
+                 transDate <= monthDate;
+        }).reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+        
+        
+        let balanceAtMonth = principal - repaymentsBeforeMonth;
+        
+        
+        balanceAtMonth = Math.max(0, Math.max(remaining, balanceAtMonth));
+        
+        return balanceAtMonth;
+      });
+      
       return {
         label: `${l.purpose || 'Personal'} Loan`,
-        data: [principal, principal, principal, principal, principal - (paid/2), remaining],
+        data,
         borderColor: index === 0 ? 'rgb(59, 130, 246)' : 'rgb(16, 185, 129)',
         backgroundColor: index === 0 ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
         tension: 0.4,
         fill: true,
       };
-    })
+    });
+    
+    return { labels, datasets };
   };
+
+  const loanBalanceData = generateLoanBalanceData();
 
   const calculateProgress = (approvedAmount, remainingBalance) => {
     if (approvedAmount === 0) return 0;

@@ -19,7 +19,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 // 10MB
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 
   }
 });
 
@@ -57,7 +57,7 @@ class PayrollController {
       let cloudinaryUrl = req.file.path || req.file.secure_url || req.file.url;
       let publicId = req.file.filename;
       
-      // If we only have a buffer (memory storage), upload it manually to Cloudinary
+      
       if (!cloudinaryUrl && req.file.buffer) {
         console.log('Manual upload to Cloudinary from buffer...');
         console.log('Buffer size:', req.file.buffer.length);
@@ -102,7 +102,7 @@ class PayrollController {
         });
       }
       
-      // Process payroll file from Cloudinary URL
+      
       console.log('=== PROCESSING PAYROLL FILE ===');
       console.log('Cloudinary URL:', cloudinaryUrl);
       console.log('Upload User ID:', uploadUserId);
@@ -139,12 +139,12 @@ class PayrollController {
           message: 'Payroll uploaded and processed successfully',
           batch_id: result.batchId,
           batch_name: result.batchName,
-          total_employees: result.totalEmployees, // Match frontend expectation
-          total_amount: result.totalAmount, // Match frontend expectation
+          total_employees: result.totalEmployees, 
+          total_amount: result.totalAmount, 
           status: 'VALIDATED',
           warnings: result.warnings,
           valid_records_count: result.validRecords ? result.validRecords.length : 0,
-          payroll_details: result.validRecords || [] // Match frontend expectation
+          payroll_details: result.validRecords || [] 
         };
         
         console.log('Response data:', responseData);
@@ -168,7 +168,7 @@ class PayrollController {
           batch_id: null,
           batch_name: null,
           status: 'FAILED',
-          payroll_details: result.validRecords || [] // Match frontend expectation
+          payroll_details: result.validRecords || [] 
         };
         
         console.log('Error response:', errorResponse);
@@ -268,7 +268,7 @@ class PayrollController {
         return res.status(404).json({ success: false, message: 'Payroll batch not found' });
       }
       
-      // Get all details for this batch without pagination limit
+      
       const result = await Payroll.getPayrollDetails(batchId, 1, 1000000);
       const records = result.details;
       

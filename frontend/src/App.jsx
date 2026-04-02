@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './shared/contexts/AuthContext';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 import PasswordChangeModal from './shared/components/PasswordChangeModal';
 
-// Lazy Loaded Modules
+
 const AdminModule = React.lazy(() => import('./modules/components/AdminModule'));
 const HrModule = React.lazy(() => import('./modules/components/HrModule'));
 const FinanceModule = React.lazy(() => import('./modules/components/FinanceModule'));
@@ -42,14 +42,11 @@ function AppContent() {
           }
         >
           <Routes>
-            {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-            {/* Default redirect */}
             <Route path="/" element={<Navigate to="/login" replace />} />
 
-            {/* Protected routes */}
             <Route
               path="/admin/*"
               element={
@@ -95,13 +92,10 @@ function AppContent() {
               }
             />
 
-            {/* Fallback */}
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </React.Suspense>
       </Router>
-
-      {/* Password Change Modal */}
       <PasswordChangeModal
         isOpen={showPasswordChangeModal}
         onClose={() => setShowPasswordChangeModal(false)}

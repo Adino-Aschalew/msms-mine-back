@@ -62,7 +62,7 @@ const Analytics = () => {
   const applyFilters = (filters) => {
     setActiveFilters(filters);
     setShowFilters(false);
-    // Update selectedPeriod to match filter date range
+    
     if (filters.dateRange !== selectedPeriod) {
       setSelectedPeriod(filters.dateRange);
     }
@@ -111,7 +111,7 @@ const Analytics = () => {
         break;
     }
 
-    // Create blob and download
+    
     const blob = new Blob([content], { type: mimeType });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -124,28 +124,28 @@ const Analytics = () => {
   };
 
   const downloadChart = (chart) => {
-    // Create a canvas for chart visualization
+    
     const canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 500;
     const ctx = canvas.getContext('2d');
     
-    // Background
+    
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Add title
+    
     ctx.fillStyle = '#1f2937';
     ctx.font = 'bold 24px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(chart.title, canvas.width / 2, 40);
     
-    // Add description
+    
     ctx.font = '14px Arial';
     ctx.fillStyle = '#6b7280';
     ctx.fillText(chart.description, canvas.width / 2, 65);
     
-    // Draw different chart types
+    
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2 + 20;
     const radius = 120;
@@ -173,10 +173,10 @@ const Analytics = () => {
         drawDefaultChart(ctx, centerX, centerY, radius, chart);
     }
     
-    // Add legend
+    
     drawLegend(ctx, chart.data, canvas.width - 150, 100);
     
-    // Download the canvas as image
+    
     canvas.toBlob((blob) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -198,7 +198,7 @@ const Analytics = () => {
       const value = parseFloat(item.value || item.amount || item.revenue || item.inflow || 0) || 1;
       const sliceAngle = (value / total) * 2 * Math.PI;
       
-      // Draw pie slice
+      
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
@@ -223,7 +223,7 @@ const Analytics = () => {
       const value = parseFloat(item.value || item.amount || item.revenue || item.inflow || 0) || 1;
       const sliceAngle = (value / total) * 2 * Math.PI;
       
-      // Draw donut slice
+      
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
       ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
@@ -244,7 +244,7 @@ const Analytics = () => {
       y: centerY - (parseFloat(item.value || item.amount || item.revenue || item.inflow || 0) || 50) + 50
     }));
     
-    // Draw grid lines
+    
     ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 5; i++) {
@@ -255,7 +255,7 @@ const Analytics = () => {
       ctx.stroke();
     }
     
-    // Draw line
+    
     ctx.strokeStyle = '#3b82f6';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -268,7 +268,7 @@ const Analytics = () => {
     });
     ctx.stroke();
     
-    // Draw points
+    
     points.forEach(point => {
       ctx.beginPath();
       ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
@@ -290,7 +290,7 @@ const Analytics = () => {
       const x = centerX - radius + (index * (radius * 2 / data.slice(0, 6).length)) + barWidth * 0.2;
       const y = centerY + radius - barHeight;
       
-      // Draw bar
+      
       ctx.fillStyle = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6];
       ctx.fillRect(x, y, barWidth, barHeight);
     });
@@ -302,7 +302,7 @@ const Analytics = () => {
       y: centerY - (parseFloat(item.value || item.amount || item.revenue || item.inflow || 0) || 50) + 50
     }));
     
-    // Draw area
+    
     ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
     ctx.beginPath();
     ctx.moveTo(points[0].x, centerY + radius);
@@ -313,7 +313,7 @@ const Analytics = () => {
     ctx.closePath();
     ctx.fill();
     
-    // Draw line on top
+    
     ctx.strokeStyle = '#3b82f6';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -328,9 +328,9 @@ const Analytics = () => {
   };
 
   const drawComboChart = (ctx, centerX, centerY, radius, data) => {
-    // Draw bars first
+    
     drawBarChart(ctx, centerX, centerY, radius, data);
-    // Then draw line on top
+    
     drawLineChart(ctx, centerX, centerY, radius, data);
   };
 
@@ -345,11 +345,11 @@ const Analytics = () => {
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
     
     data.slice(0, 4).forEach((item, index) => {
-      // Color box
+      
       ctx.fillStyle = colors[index % colors.length];
       ctx.fillRect(startX, startY + (index * 25), 15, 15);
       
-      // Label
+      
       ctx.fillStyle = '#374151';
       ctx.font = '12px Arial';
       ctx.textAlign = 'left';
@@ -391,7 +391,7 @@ const Analytics = () => {
       data: (analyticsData?.monthlyCashFlow || []).map(cf => ({
         month: cf.period,
         inflow: cf.savings_in + cf.loan_payments + cf.savings_interest,
-        outflow: Math.abs(cf.savings_out || 0) + Math.abs(cf.loan_penalties || 0) + (analyticsData?.expenses / 12), // Distributed payroll estimate
+        outflow: Math.abs(cf.savings_out || 0) + Math.abs(cf.loan_penalties || 0) + (analyticsData?.expenses / 12), 
         net: (cf.savings_in + cf.loan_payments + cf.savings_interest) - (Math.abs(cf.savings_out || 0) + Math.abs(cf.loan_penalties || 0))
       }))
     }
@@ -418,7 +418,7 @@ const Analytics = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -451,9 +451,9 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Modern Analytics Dashboard */}
+      {}
       <div className="space-y-6">
-        {/* Quick Stats Bar */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: 'Revenue', value: `${(analyticsData?.revenue || 0).toLocaleString()} ETB`, change: `+${analyticsData?.revenueGrowth || 0}%`, color: 'blue' },
@@ -475,7 +475,7 @@ const Analytics = () => {
           ))}
         </div>
 
-        {/* Enhanced View Toggle */}
+        {}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
@@ -520,11 +520,11 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Charts Grid */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {chartData.map((chart) => (
             <div key={chart.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-              {/* Chart Header */}
+              {}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-start justify-between">
                   <div>
@@ -557,7 +557,7 @@ const Analytics = () => {
                 </div>
               </div>
 
-              {/* Chart Visualization */}
+              {}
               <div className={`p-6 bg-gray-50 dark:bg-gray-900/50 transition-all duration-300 ${
                 expandedCharts.has(chart.id) ? 'h-96' : 'h-64'
               }`}>
@@ -581,7 +581,7 @@ const Analytics = () => {
                 </div>
               </div>
 
-              {/* Insights */}
+              {}
               <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-wrap gap-1">
                   {chart.insights.map((insight, index) => (
@@ -595,7 +595,7 @@ const Analytics = () => {
                 </div>
               </div>
 
-              {/* Data Preview */}
+              {}
               <div className="px-4 pb-4">
                 <div className="grid grid-cols-3 gap-2">
                   {chart.data.slice(0, 3).map((item, index) => (
@@ -618,7 +618,7 @@ const Analytics = () => {
           ))}
         </div>
 
-        {/* View Chart Modal */}
+        {}
         {showViewModal && selectedChart && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -694,7 +694,7 @@ const Analytics = () => {
           </div>
         )}
 
-        {/* Export Chart Modal */}
+        {}
         {showExportModal && selectedChart && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-2xl w-full mx-4">
@@ -796,7 +796,7 @@ const Analytics = () => {
           </div>
         )}
 
-        {/* AI Insights */}
+        {}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
@@ -862,7 +862,7 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Predictive Analytics */}
+        {}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
@@ -885,7 +885,7 @@ const Analytics = () => {
 
           <div className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Revenue Forecast */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700/50">
                 <div className="text-center mb-4">
                   <DollarSign className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
@@ -915,7 +915,7 @@ const Analytics = () => {
                 </div>
               </div>
 
-              {/* Goal Achievement */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700/50">
                 <div className="text-center mb-4">
                   <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
@@ -945,7 +945,7 @@ const Analytics = () => {
                 </div>
               </div>
 
-              {/* Risk Assessment */}
+              {}
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700/50">
                 <div className="text-center mb-4">
                   <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
@@ -997,7 +997,7 @@ const Analytics = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Layout Options */}
+            {}
             <div className="space-y-4">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Layout Options</h4>
               <div className="space-y-3">
@@ -1049,7 +1049,7 @@ const Analytics = () => {
               </div>
             </div>
 
-            {/* Display Preferences */}
+            {}
             <div className="space-y-4">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Display Preferences</h4>
               <div className="space-y-3">
@@ -1094,7 +1094,7 @@ const Analytics = () => {
             </div>
           </div>
 
-          {/* Customize Actions */}
+          {}
           <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <button 

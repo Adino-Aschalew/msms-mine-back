@@ -23,13 +23,13 @@ import { financeAPI } from '../../../shared/services/financeAPI';
 const FinancePayrollImport = () => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState('idle'); // idle, uploading, success, error
+  const [uploadStatus, setUploadStatus] = useState('idle'); 
   const [validationResults, setValidationResults] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef(null);
 
-  // Mock payroll data template (real CSV would be better)
+  
   const payrollTemplate = [
     ['Employee ID', 'Employee Name', 'Salary', 'Savings Contribution', 'Tax', 'Net Pay', 'Payroll Date'],
     ['EMP001', 'John Smith', '5000', '500', '750', '3750', '2024-03-15'],
@@ -82,7 +82,7 @@ const FinancePayrollImport = () => {
       const response = await financeAPI.uploadPayroll(selectedFile);
       
       if (response.success) {
-        // Backend returns result in data
+        
         const result = response.data;
         setValidationResults({
           totalRecords: result.totalProcessed || result.processedCount || 0,
@@ -153,7 +153,7 @@ const FinancePayrollImport = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Import Payroll</h1>
@@ -168,7 +168,7 @@ const FinancePayrollImport = () => {
         </button>
       </div>
 
-      {/* Upload Section */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl border border-gray-200 p-8 dark:bg-gray-800 dark:border-gray-700">
@@ -275,7 +275,7 @@ const FinancePayrollImport = () => {
           </div>
         </div>
 
-        {/* Instructions */}
+        {}
         <div className="space-y-6">
           <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Import Instructions</h3>
@@ -339,10 +339,10 @@ const FinancePayrollImport = () => {
         </div>
       </div>
 
-      {/* Validation Results */}
+      {}
       {validationResults && (
         <div className="space-y-6">
-          {/* Summary Cards */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
               <div className="flex items-center justify-between">
@@ -395,7 +395,7 @@ const FinancePayrollImport = () => {
             </div>
           </div>
 
-          {/* Failed Records */}
+          {}
           {validationResults.failed.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -453,7 +453,7 @@ const FinancePayrollImport = () => {
             </div>
           )}
 
-          {/* Successful Records */}
+          {}
           {validationResults.processedRecords.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">

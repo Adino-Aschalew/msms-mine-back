@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   User, 
   Mail, 
@@ -21,22 +21,84 @@ import {
   Smartphone,
   Monitor
 } from 'lucide-react';
+import { hrAPI } from '../../../shared/services/hrAPI';
+import { useAuth } from '../../../shared/contexts/AuthContext';
 
 export default function AccountPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@company.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main St, City, State 12345',
-    department: 'Engineering',
-    role: 'Senior Developer',
-    employeeId: 'EMP-001',
-    joinDate: '2021-03-15',
-    manager: 'Sarah Jenkins'
+    first_Name: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    department: '',
+    role: '',
+    employeeId: '',
+    joinDate: '',
+    manager: ''
   });
+
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await hrAPI.getUserProfile();
+        console.log('Full API response:', response);
+        console.log('Response structure:', JSON.stringify(response, null, 2));
+        
+        
+        const data = response.data || response;
+        const user = data.user || {}; 
+        
+        if (user && Object.keys(user).length > 0) {
+          console.log('Profile data object:', data);
+          console.log('User object:', user);
+          console.log('Available fields:', Object.keys(user));
+          console.log('All user properties:', JSON.stringify(user, null, 2));
+          
+          setProfileData(user);
+          setFormData({
+            first_Name: user.first_name || user.firstName || user.first_Name || user.username?.split('@')[0] || '',
+            lastName: user.last_name || user.lastName || user.username?.split('@')[0] || '',
+            email: user.email || '',
+            phone: user.phone || user.phone_number || '',
+            address: user.address || '',
+            department: user.department || '',
+            role: user.role || user.job_grade || '',
+            employeeId: user.employee_id || user.employeeId || user.id || '',
+            joinDate: user.hire_date || user.joinDate || user.join_date || '',
+            manager: user.manager || ''
+          });
+          console.log('AccountPage - Profile data:', user);
+          console.log('AccountPage - Form data after setting:', formData);
+        } else {
+          console.log('No user data found in response:', response);
+          
+          
+          try {
+            const employeeResponse = await hrAPI.getEmployeeStats();
+            console.log('Employee profile response:', employeeResponse);
+          } catch (empError) {
+            console.log('Could not fetch employee profile:', empError);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -83,11 +145,20 @@ export default function AccountPage() {
   };
 
   const renderTabContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading profile...</span>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'profile':
         return (
           <div className="space-y-6">
-            {/* Profile Header */}
+            {}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h3>
@@ -109,11 +180,11 @@ export default function AccountPage() {
                 </button>
               </div>
 
-              {/* Avatar Section */}
+              {}
               <div className="flex items-center gap-6 mb-6">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-                    {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+                    {formData.first_Name.charAt(0)}{formData.lastName.charAt(0)}
                   </div>
                   {isEditing && (
                     <button className="absolute bottom-0 right-0 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
@@ -123,13 +194,13 @@ export default function AccountPage() {
                 </div>
                 <div>
                   <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {formData.firstName} {formData.lastName}
+                    {formData.first_Name} {formData.lastName}
                   </h4>
                   <p className="text-gray-600 dark:text-gray-400">{formData.role}</p>
                 </div>
               </div>
 
-              {/* Form Fields */}
+              {}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -137,8 +208,8 @@ export default function AccountPage() {
                   </label>
                   <input
                     type="text"
-                    value={formData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    value={formData.first_Name}
+                    onChange={(e) => handleInputChange('first_Name', e.target.value)}
                     disabled={!isEditing}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   />
@@ -212,7 +283,7 @@ export default function AccountPage() {
               )}
             </div>
 
-            {/* Work Information */}
+            {}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Work Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -279,7 +350,7 @@ export default function AccountPage() {
       case 'security':
         return (
           <div className="space-y-6">
-            {/* Password Change */}
+            {}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Change Password</h3>
               <div className="space-y-4">
@@ -322,7 +393,7 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* Two-Factor Authentication */}
+            {}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Two-Factor Authentication</h3>
               <div className="space-y-4">
@@ -353,7 +424,7 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* Active Sessions */}
+            {}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Active Sessions</h3>
               <div className="space-y-3">
@@ -508,7 +579,7 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Account Settings</h1>
@@ -519,7 +590,7 @@ export default function AccountPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar */}
+        {}
         <div className="lg:w-64">
           <nav className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-2">
             {tabs.map((tab) => (
@@ -539,7 +610,7 @@ export default function AccountPage() {
           </nav>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1">
           {renderTabContent()}
         </div>

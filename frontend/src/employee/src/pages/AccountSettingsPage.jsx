@@ -25,7 +25,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 
-// Modern Section Component
+
 const Section = ({ title, description, children, icon: Icon }) => (
   <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
     <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/30 dark:to-gray-800/30">
@@ -41,7 +41,7 @@ const Section = ({ title, description, children, icon: Icon }) => (
   </div>
 );
 
-// Modern Toggle Component
+
 const Toggle = ({ label, description, checked, onChange }) => (
   <div className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
     <div>
@@ -120,7 +120,7 @@ const AccountSettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
+      {}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4">
@@ -136,7 +136,7 @@ const AccountSettingsPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tab Bar */}
+        {}
         <div className="flex gap-2 bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -158,7 +158,7 @@ const AccountSettingsPage = () => {
           })}
         </div>
 
-      {/* Appearance Tab */}
+      {}
       {activeTab === 'appearance' && (
         <div className="space-y-4">
           <Section title="Theme" description="Choose how the interface looks">
@@ -192,7 +192,7 @@ const AccountSettingsPage = () => {
         </div>
       )}
 
-      {/* Notifications Tab */}
+      {}
       {activeTab === 'notifications' && (
         <div className="space-y-4">
           <Section title="In-App Alerts" description="Receive alerts inside the dashboard">
@@ -211,7 +211,7 @@ const AccountSettingsPage = () => {
         </div>
       )}
 
-      {/* Security Tab */}
+      {}
       {activeTab === 'security' && (
         <div className="space-y-4">
           <Section title="Change Password" description="Update your login credentials">
@@ -284,7 +284,7 @@ const AccountSettingsPage = () => {
         </div>
       )}
 
-      {/* Data Tab */}
+      {}
       {activeTab === 'data' && (
         <div className="space-y-4">
           <Section title="Export Your Data" description="Download a copy of your account data">

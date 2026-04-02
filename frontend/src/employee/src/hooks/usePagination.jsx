@@ -18,7 +18,7 @@ export const usePagination = (initialPage = 1, initialPageSize = 10) => {
 
   const changePageSize = useCallback((newPageSize) => {
     setPageSize(newPageSize);
-    setCurrentPage(1); // Reset to first page when changing page size
+    setCurrentPage(1); 
   }, []);
 
   const reset = useCallback(() => {

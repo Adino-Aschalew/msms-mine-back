@@ -233,7 +233,7 @@ class AuthController {
         });
       }
       
-      // Validate file type
+      
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(req.file.mimetype)) {
         return res.status(400).json({
@@ -242,7 +242,7 @@ class AuthController {
         });
       }
       
-      // Validate file size (max 5MB)
+      
       const maxSize = 5 * 1024 * 1024;
       if (req.file.size > maxSize) {
         return res.status(400).json({

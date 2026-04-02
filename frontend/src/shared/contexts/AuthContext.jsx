@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/authAPI';
 
-// Role definitions
+
 export const ROLES = {
   ADMIN: 'admin',
   HR: 'hr',
@@ -10,7 +10,7 @@ export const ROLES = {
   EMPLOYEE: 'employee'
 };
 
-// Role permissions for routing
+
 export const ROLE_PERMISSIONS = {
   [ROLES.ADMIN]: ['/admin/*'],
   [ROLES.HR]: ['/hr/*'],
@@ -55,16 +55,16 @@ export const AuthProvider = ({ children }) => {
         userId: response?.user?.id,
       });
       
-      // Set tokens in API client
+      
       const apiClient = (await import('../services/api')).default;
       apiClient.setTokens(response.token, response.refreshToken);
       console.log('[auth] tokens saved to api client + localStorage');
       
-      // Set user data
+      
       setUser(response.user);
       console.log('[auth] user state scheduled', { role: response?.user?.role });
       
-      // Check if password change is required
+      
       if (response.user.password_change_required) {
         setIsForcedPasswordChange(true);
         setShowPasswordChangeModal(true);
@@ -84,12 +84,12 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       console.log('[auth] logout called');
-      // Clear tokens from API client
+      
       const apiClient = (await import('../services/api')).default;
       apiClient.clearTokens();
       console.log('[auth] tokens cleared');
       
-      // Clear user state
+      
       setUser(null);
       setError(null);
     } catch (err) {
@@ -102,15 +102,15 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await authAPI.updateProfile(updates);
       
-      // The API client returns the data directly, not wrapped in a response object
+      
       if (response && response.data) {
-        // If response has data property, use it
+        
         setUser(response.data);
       } else if (response) {
-        // If response is the user data directly, use it
+        
         setUser(response);
       } else {
-        // Fallback: refresh the user profile from server
+        
         await refreshUserProfile();
       }
       
@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Profile refresh error:', err);
       console.log('[auth] refreshUserProfile failed -> logout', err);
-      // If token refresh fails, logout user
+      
       await logout();
     }
   };

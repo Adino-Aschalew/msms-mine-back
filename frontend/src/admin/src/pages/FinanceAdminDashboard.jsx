@@ -32,7 +32,7 @@ const FinanceAdminDashboard = () => {
   const [dateRange, setDateRange] = useState('30days');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Finance Admin KPI Data
+  
   const adminKpiData = [
     {
       title: 'Total Finance Users',
@@ -90,7 +90,7 @@ const FinanceAdminDashboard = () => {
     }
   ];
 
-  // Recent Admin Activities
+  
   const adminActivities = [
     {
       type: 'admin_added',
@@ -119,7 +119,7 @@ const FinanceAdminDashboard = () => {
     }
   ];
 
-  // Pending Approvals
+  
   const pendingApprovals = [
     {
       id: 'APP001',
@@ -150,7 +150,7 @@ const FinanceAdminDashboard = () => {
     }
   ];
 
-  // Department Performance
+  
   const departmentPerformance = [
     {
       name: 'Engineering',
@@ -205,7 +205,7 @@ const FinanceAdminDashboard = () => {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -233,18 +233,18 @@ const FinanceAdminDashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {adminKpiData.map((kpi, index) => (
           <KPICard key={index} {...kpi} />
         ))}
       </div>
 
-      {/* Main Content Grid */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - 2/3 width */}
+        {}
         <div className="lg:col-span-2 space-y-6">
-          {/* Pending Approvals */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
@@ -298,7 +298,7 @@ const FinanceAdminDashboard = () => {
             </div>
           </div>
 
-          {/* Department Performance */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Department Performance</h2>
@@ -349,7 +349,7 @@ const FinanceAdminDashboard = () => {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Actions</h2>
@@ -377,12 +377,12 @@ const FinanceAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Right Column - 1/3 width */}
+        {}
         <div className="space-y-6">
-          {/* Admin Activity */}
+          {}
           <AdminActivityPanel activities={adminActivities} />
 
-          {/* System Status */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">System Status</h2>
@@ -421,7 +421,7 @@ const FinanceAdminDashboard = () => {
             </div>
           </div>
 
-          {/* Recent Alerts */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Alerts</h2>

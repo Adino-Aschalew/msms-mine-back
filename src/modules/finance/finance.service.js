@@ -9,7 +9,7 @@ class FinanceService {
       const loanDateFilter = this.getDateFilter(period, 'created_at');
       const payrollDateFilter = this.getDateFilter(period, 'created_at');
       
-      // Get total savings and loans with fallback
+      
       let savingsTotals, loanTotals, savingsTransactions, loanTransactions, payrollSummary;
       
       try {
@@ -43,7 +43,7 @@ class FinanceService {
         loanTotals = [{ total_loans: 0, active_loans: 0, avg_loan_balance: 0, overdue_loans: 0 }];
       }
       
-      // Get transaction summaries with fallback
+      
       try {
         [savingsTransactions] = await query(`
           SELECT 
@@ -57,7 +57,22 @@ class FinanceService {
         `);
       } catch (error) {
         console.warn('Savings transactions query failed:', error.message);
-        savingsTransactions = [{ total_transactions: 0, total_contributions: 0, total_withdrawals: 0, total_interest: 0 }];
+        
+        try {
+          [savingsTransactions] = await query(`
+            SELECT 
+              COUNT(*) as total_transactions,
+              SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as total_contributions,
+              SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN amount ELSE 0 END) as total_withdrawals,
+              0 as total_interest
+            FROM savings_transactions 
+            WHERE 1=1
+            ${this.getDateFilter(period, 'transaction_date')}
+          `);
+        } catch (fallbackError) {
+          console.warn('Fallback savings transactions query also failed:', fallbackError.message);
+          savingsTransactions = [{ total_transactions: 0, total_contributions: 0, total_withdrawals: 0, total_interest: 0 }];
+        }
       }
       
       try {
@@ -77,7 +92,7 @@ class FinanceService {
         loanTransactions = [{ total_transactions: 0, total_payments: 0, total_interest: 0, total_penalties: 0, total_disbursements: 0 }];
       }
       
-      // Get payroll summary with fallback
+      
       try {
         [payrollSummary] = await query(`
           SELECT 
@@ -136,7 +151,7 @@ class FinanceService {
       };
     } catch (error) {
       console.error('Financial overview error:', error);
-      // Return complete fallback data
+      
       return {
         period,
         total_assets: 0,
@@ -181,7 +196,7 @@ class FinanceService {
       const SalarySyncService = require('../../services/salarySync.service');
       const result = await SalarySyncService.processPayrollUpload(payrollData, uploadedBy);
       
-      // Log payroll processing
+      
       await auditLog(uploadedBy, 'PAYROLL_PROCESSED', 'payroll_batches', result.batchId, null, payrollData, '127.0.0.1', 'System');
       
       return result;
@@ -287,7 +302,7 @@ class FinanceService {
     try {
       const dateFilter = this.getDateFilter(period, 'transaction_date');
       
-      // Get income and expenses
+      
       const [incomeData] = await query(`
         SELECT 
           DATE_FORMAT(transaction_date, '%Y-%m') as period,
@@ -390,7 +405,7 @@ class FinanceService {
         ORDER BY l.created_at DESC
       `, params);
       
-      // Calculate portfolio metrics
+      
       const portfolio = {
         total_loans: loans.reduce((sum, loan) => sum + parseFloat(loan.remaining_balance), 0),
         active_loans: loans.filter(loan => loan.status === 'ACTIVE').length,
@@ -520,7 +535,7 @@ class FinanceService {
         employees: employees.map(emp => ({
           ...emp,
           name: `${emp.first_name} ${emp.last_name}`,
-          salary: emp.salary || 50000 // Fallback for demonstration if salary not in DB
+          salary: emp.salary || 50000 
         })),
         pagination: {
           page: parseInt(page),
@@ -543,7 +558,7 @@ class FinanceService {
       if (filters.type && filters.type !== 'all') {
         const type = filters.type === 'Income' ? 'CONTRIBUTION' : 'WITHDRAWAL';
         whereClause += ' AND type = ?';
-        params.push(filters.type); // This might need mapping to backend types
+        params.push(filters.type); 
       }
 
       if (filters.search) {
@@ -596,8 +611,8 @@ class FinanceService {
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit)
-          // Total count is tricky with UNION ALL and where clause in a subquery for pagination
-          // but for now we'll just return the results
+          
+          
         }
       };
     } catch (error) {
@@ -627,7 +642,7 @@ class FinanceService {
     try {
       const overview = await this.getFinancialOverview(period);
       
-      // Safely get cash flow data with fallback
+      
       let cashFlow = [];
       try {
         cashFlow = await this.getCashFlowReport(period);
@@ -636,7 +651,7 @@ class FinanceService {
         cashFlow = [];
       }
       
-      // Get pending approval counts
+      
       let pendingPayrolls = 0;
       let pendingSavingsRequests = 0;
       
@@ -650,7 +665,7 @@ class FinanceService {
         console.warn('Pending counts query failed:', countError.message);
       }
 
-      // Saving Analyzer Data
+      
       let analyzerData = {
         monthSaving: 0,
         monthLoan: 0,
@@ -661,7 +676,7 @@ class FinanceService {
       };
 
       try {
-        // Current month totals
+        
         const [monthTotals] = await query(`
           SELECT 
             COALESCE(SUM(CASE WHEN transaction_type = 'CONTRIBUTION' AND DATE_FORMAT(transaction_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END), 0) as month_saving,
@@ -673,7 +688,7 @@ class FinanceService {
           ) as t
         `);
         
-        // Year totals
+        
         const [yearTotals] = await query(`
           SELECT 
             COALESCE(SUM(CASE WHEN transaction_type = 'CONTRIBUTION' AND YEAR(transaction_date) = YEAR(CURDATE()) THEN amount ELSE 0 END), 0) as year_saving,
@@ -685,7 +700,7 @@ class FinanceService {
           ) as t
         `);
 
-        // Historical Highs (by month)
+        
         const [highs] = await query(`
           SELECT 
             MAX(monthly_saving) as high_saving,
@@ -716,7 +731,7 @@ class FinanceService {
         console.warn('Saving analyzer query failed:', analyzerError.message);
       }
 
-      // Calculate expense distribution with safe handled NULLs
+      
       let expenses = [];
       try {
         [expenses] = await query(`
@@ -738,7 +753,7 @@ class FinanceService {
         ];
       }
 
-      // Safe calculations with fallbacks
+      
       const totalContributions = parseFloat(overview.transactions?.savings?.total_contributions || 0);
       const totalPayments = parseFloat(overview.transactions?.loans?.total_payments || 0);
       const totalWithdrawals = parseFloat(overview.transactions?.savings?.total_withdrawals || 0);
@@ -748,7 +763,7 @@ class FinanceService {
         revenue: totalContributions + totalPayments,
         expenses: totalWithdrawals + totalPayroll,
         netProfit: (totalContributions + totalPayments) - (totalWithdrawals + totalPayroll),
-        revenueGrowth: 15.5, // These could be calculated by comparing with previous period
+        revenueGrowth: 15.5, 
         expensesGrowth: 8.2,
         profitGrowth: 12.7,
         cashBalance: parseFloat(overview.total_assets || 0),
@@ -767,7 +782,7 @@ class FinanceService {
       };
     } catch (error) {
       console.error('Analytics service error:', error);
-      // Return fallback data if everything fails
+      
       return {
         revenue: 0,
         expenses: 0,
@@ -828,7 +843,7 @@ class FinanceService {
       return transactions;
     } catch (error) {
       console.error('Get recent transactions error:', error);
-      // Return fallback data to prevent complete failure
+      
       return [
         {
           id: 0,

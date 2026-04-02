@@ -25,7 +25,7 @@ const SavingsPage = () => {
     monthlyDeduction: 0,
     totalContributions: 0,
     interestEarned: 0,
-    interestRate: 7, // Based on schema.sql system_configuration default
+    interestRate: 7, 
     salary: 0,
     hasAccount: false,
   });
@@ -52,7 +52,7 @@ const SavingsPage = () => {
       let currentBalance = 0;
 
       try {
-        // Get savings account data (summary includes extra stats)
+        
         const response = await savingsAPI.getSavingsAccount();
         const account = response?.data;
 
@@ -67,7 +67,7 @@ const SavingsPage = () => {
             monthlyDeduction: (currentSalary * rate / 100),
             totalContributions: parseFloat(account.total_contributions || 0),
             interestEarned: parseFloat(account.interest_earned || 0),
-            interestRate: 7, // This could be fetched from system_configuration if needed
+            interestRate: 7, 
             salary: currentSalary,
             hasAccount: true,
           });
@@ -93,7 +93,7 @@ const SavingsPage = () => {
       }
 
       try {
-        // Get payroll history (contributions)
+        
         const result = await savingsAPI.getSavingsTransactions(1, 20);
         const transactions = result?.transactions || [];
 
@@ -103,7 +103,7 @@ const SavingsPage = () => {
             id: t.id,
             date: t.transaction_date,
             payrollMonth: new Date(t.transaction_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-            salary: currentSalary, // Assuming current salary for history display
+            salary: currentSalary, 
             savingPercentage: t.saving_percentage || 0,
             deductionAmount: parseFloat(t.amount),
             balance: parseFloat(t.balance_after)
@@ -116,7 +116,7 @@ const SavingsPage = () => {
       }
 
       try {
-        // Get withdrawal requests
+        
         const result = await savingsAPI.getSavingsTransactions(1, 10, { transaction_type: 'WITHDRAWAL' });
         const transactions = result?.transactions || [];
 
@@ -124,7 +124,7 @@ const SavingsPage = () => {
           id: `WDL-${t.id}`,
           date: t.transaction_date,
           amount: parseFloat(t.amount),
-          status: 'approved', // Transactions in the log are already processed
+          status: 'approved', 
           adminNotes: t.description
         })));
       } catch (withdrawalError) {
@@ -132,11 +132,11 @@ const SavingsPage = () => {
         setWithdrawalRequests([]);
       }
 
-      // Generate growth data based on real balance
+      
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const growthData = months.map((_, index) => {
         if (currentBalance === 0) return 0;
-        // Simple visualization: show growth up to current balance
+        
         const monthlyGrowth = (currentBalance / 12);
         return Math.max(0, (monthlyGrowth * (index + 1)));
       });
@@ -242,7 +242,7 @@ const SavingsPage = () => {
         <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your payroll-deducted savings</p>
       </div>
 
-      {/* Show message if no savings account exists */}
+      {}
       {!loading && !savingsData.hasAccount && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-8 mb-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -261,12 +261,12 @@ const SavingsPage = () => {
               onClick={async () => {
                 try {
                   setLoading(true);
-                  await savingsAPI.createSavingsAccount(); // Use default 15%
+                  await savingsAPI.createSavingsAccount(); 
                   setShowActivationSuccess(true);
                   await loadSavingsData();
                 } catch (err) {
                   if (err.message.includes('already exists')) {
-                    // Gracefully handle if account was already created but not loaded
+                    
                     await loadSavingsData();
                     setShowActivationSuccess(true);
                   } else {
@@ -445,7 +445,7 @@ const SavingsPage = () => {
                 </div>
               )}
 
-              {/* Success Modal */}
+              {}
               {showSavingSuccess && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
                   <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-10 max-w-sm w-full mx-4 text-center animate-in zoom-in-95 duration-200">
@@ -477,7 +477,7 @@ const SavingsPage = () => {
 
           {activeTab === 'withdrawal' && (
             <div className="space-y-8">
-              {/* Hero Section */}
+              {}
               <div className="bg-gray-800 rounded-2xl shadow-lg p-8 text-white">
                 <div className="text-center">
                   <div className="mb-6">
@@ -504,7 +504,7 @@ const SavingsPage = () => {
                 </div>
               </div>
 
-              {/* Important Notice */}
+              {}
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6">
                 <div className="flex items-start space-x-4">
                   <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
@@ -560,7 +560,7 @@ const SavingsPage = () => {
                     </div>
 
                     <form onSubmit={handleWithdrawalSubmit} className="p-6 space-y-6">
-                      {/* Current Balance Display */}
+                      {}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                           Current Savings Balance
@@ -583,7 +583,7 @@ const SavingsPage = () => {
                         </div>
                       </div>
 
-                      {/* Reason for Withdrawal */}
+                      {}
                       <div>
                         <label htmlFor="reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                           Reason for Withdrawal <span className="text-red-500">*</span>
@@ -607,7 +607,7 @@ const SavingsPage = () => {
                         </p>
                       </div>
 
-                      {/* Supporting Document */}
+                      {}
                       <div>
                         <label htmlFor="document" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                           Supporting Document <span className="text-gray-500">(Optional)</span>
@@ -636,7 +636,7 @@ const SavingsPage = () => {
                         </div>
                       </div>
 
-                      {/* Bank Account Confirmation */}
+                      {}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                           Bank Account Confirmation
@@ -656,7 +656,7 @@ const SavingsPage = () => {
                         </div>
                       </div>
 
-                      {/* Terms and Conditions */}
+                      {}
                       <div>
                         <label className="flex items-start space-x-3 cursor-pointer">
                           <input
@@ -676,7 +676,7 @@ const SavingsPage = () => {
                         </label>
                       </div>
 
-                      {/* Action Buttons */}
+                      {}
                       <div className="flex space-x-4 pt-4">
                         <button
                           type="button"
@@ -697,7 +697,7 @@ const SavingsPage = () => {
                 </div>
               )}
 
-              {/* Withdrawal Requests History */}
+              {}
               {withdrawalRequests.length > 0 && (
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-6">
@@ -831,7 +831,7 @@ const SavingsPage = () => {
         </div>
       </div>
 
-      {/* Activation Success Modal */}
+      {}
       {showActivationSuccess && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-300">
           <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl p-10 max-w-sm w-full mx-4 text-center border border-gray-100 dark:border-gray-700 animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">

@@ -1,11 +1,11 @@
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Load environment variables
+
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const productionConfig = {
-  // Database
+  
   database: {
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT) || 3307,
@@ -20,24 +20,24 @@ const productionConfig = {
     reconnectDelay: 2000
   },
   
-  // JWT
+  
   jwt: {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     algorithm: 'HS256'
   },
   
-  // Server
+  
   server: {
     port: process.env.PORT || 3001,
     host: '0.0.0.0',
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: process.env.CORS_ORIGIN || 'http:
       credentials: true
     }
   },
   
-  // Security
+  
   security: {
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
     rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
@@ -45,14 +45,14 @@ const productionConfig = {
     sessionSecret: process.env.SESSION_SECRET
   },
   
-  // File Upload
+  
   upload: {
-    maxSize: parseInt(process.env.UPLOAD_MAX_SIZE) || 10485760, // 10MB
+    maxSize: parseInt(process.env.UPLOAD_MAX_SIZE) || 10485760, 
     allowedTypes: (process.env.UPLOAD_ALLOWED_TYPES || 'csv,xlsx,xls').split(','),
     destination: 'uploads/'
   },
   
-  // Email
+  
   email: {
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT) || 587,
@@ -64,21 +64,21 @@ const productionConfig = {
     from: process.env.FROM_EMAIL
   },
   
-  // System
+  
   system: {
     name: process.env.SYSTEM_NAME || 'Microfinance System',
     version: process.env.SYSTEM_VERSION || '1.0.0',
     environment: process.env.NODE_ENV || 'production'
   },
   
-  // Logging
+  
   logging: {
     level: process.env.LOG_LEVEL || 'info',
     file: process.env.LOG_FILE || 'logs/app.log'
   }
 };
 
-// Validate required environment variables
+
 const requiredEnvVars = [
   'DB_HOST',
   'DB_USER', 

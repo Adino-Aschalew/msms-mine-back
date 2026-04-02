@@ -119,7 +119,7 @@ class JwtUtils {
         throw new Error('Invalid token type');
       }
 
-      // Check if token is not too old (24 hours)
+      
       const tokenAge = Date.now() - decoded.timestamp;
       if (tokenAge > 24 * 60 * 60 * 1000) {
         throw new Error('Token has expired');

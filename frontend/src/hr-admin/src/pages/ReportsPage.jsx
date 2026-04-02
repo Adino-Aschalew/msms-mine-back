@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FileText, Download, Calendar, Filter, FileSpreadsheet, FileIcon as FilePdf, Users, Clock, TrendingUp, CheckCircle, AlertCircle, ChevronRight, Zap } from 'lucide-react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { SafeLineChart, SafeBarChart } from '../components/Shared/SafeCharts';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { useTheme } from '../contexts/ThemeContext';
 import { hrAPI } from '../../../shared/services/hrAPI';
@@ -22,6 +23,19 @@ ChartJS.register(
 export default function ReportsPage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const chartRefs = useRef({});
+  
+  
+  useEffect(() => {
+    return () => {
+      
+      Object.values(chartRefs.current).forEach(chart => {
+        if (chart) {
+          chart.destroy();
+        }
+      });
+    };
+  }, []);
   const [reportType, setReportType] = useState('payroll');
   const [isGenerated, setIsGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -98,7 +112,7 @@ export default function ReportsPage() {
     }, 2000);
   };
 
-  // Dynamic Chart Styles based on Theme
+  
   const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -124,7 +138,7 @@ export default function ReportsPage() {
     }
   };
 
-  // Prepare chart data from backend
+  
   const getPayrollExpensesData = () => {
     if (!reportsData?.expenses || reportsData.expenses.length === 0) {
       return {
@@ -287,7 +301,7 @@ export default function ReportsPage() {
                 <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Expenditure Trend</span>
               </div>
-              <Bar data={payrollChartData} options={commonOptions} />
+              <SafeBarChart data={payrollChartData} options={commonOptions} />
             </div>
 
             <div className="mt-10 glass-card border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
@@ -338,7 +352,7 @@ export default function ReportsPage() {
             </div>
 
             <div className="h-[320px] w-full mt-10 p-8 glass-card border border-white/10 rounded-[2.5rem] shadow-2xl">
-              <Line data={attendanceChartData} options={commonOptions} />
+              <SafeLineChart data={attendanceChartData} options={commonOptions} />
             </div>
           </div>
         );
@@ -402,7 +416,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Report Configuration Sidebar */}
+        {}
         <div className="lg:col-span-5 xl:col-span-4 glass-card border border-white/10 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] overflow-hidden h-fit flex flex-col group">
           <div className="p-8 border-b border-white/5 bg-white/[0.02] relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-primary-500/20 transition-all duration-700"></div>
@@ -521,7 +535,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Report Preview Panel */}
+        {}
         <div className={`lg:col-span-7 xl:col-span-8 glass-card rounded-[3rem] min-h-[700px] p-12 transition-all duration-1000 relative overflow-hidden shadow-[0_64px_128px_-32px_rgba(0,0,0,0.5)] ${isGenerated ? 'bg-[#0b0e14] border border-white/10' : 'border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center text-center'}`}>
           {!isGenerated && !isGenerating && (
             <div className="animate-in fade-in zoom-in-95 duration-1000 max-w-sm">

@@ -41,7 +41,7 @@ export default function ReportsPage() {
 
   const fetchReportsData = async () => {
     try {
-      // Fetch real reports data from backend
+      
       const response = await hrAPI.getReportsData('payroll');
       console.log('Reports data:', response.data);
     } catch (error) {
@@ -156,7 +156,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
@@ -176,7 +176,7 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {quickStats.map((stat, index) => (
           <div key={index} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
@@ -193,7 +193,7 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {/* Report Generation Section */}
+      {}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
           <FileText className="text-blue-500" size={20} />
@@ -242,7 +242,7 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Reports Table */}
+      {}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
         <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -352,7 +352,7 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Analytics Charts Section */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">

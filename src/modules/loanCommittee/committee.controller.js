@@ -259,7 +259,7 @@ class CommitteeController {
     try {
       const applications = await CommitteeService.getPendingApplications(1, 100, {});
       
-      // Analyze risk distribution
+      
       const riskDistribution = {
         LOW: applications.applications.filter(app => app.risk_level === 'LOW').length,
         MEDIUM: applications.applications.filter(app => app.risk_level === 'MEDIUM').length,
@@ -267,10 +267,10 @@ class CommitteeController {
         CRITICAL: applications.applications.filter(app => app.risk_level === 'CRITICAL').length
       };
       
-      // Calculate average risk score
+      
       const avgRiskScore = applications.applications.reduce((sum, app) => sum + app.risk_score, 0) / applications.applications.length;
       
-      // Get applications by department
+      
       const departmentRisks = {};
       applications.applications.forEach(app => {
         if (!departmentRisks[app.department]) {
@@ -325,7 +325,7 @@ class CommitteeController {
         ORDER BY period DESC
       `);
       
-      // Calculate approval rates
+      
       const approvalTrends = trends.map(trend => ({
         ...trend,
         approval_rate: trend.total_applications > 0 ? (trend.approved_applications / trend.total_applications) * 100 : 0,
@@ -349,7 +349,7 @@ class CommitteeController {
     try {
       console.log('=== FETCHING DASHBOARD DATA ===');
       
-      // 1. Stats
+      
       const stats = await query(`
         SELECT 
           COUNT(*) as total_requests,
@@ -361,7 +361,7 @@ class CommitteeController {
       `);
       console.log('Stats query result:', stats);
       
-      // Check all loan applications to see what's in the table
+      
       const allApplications = await query(`SELECT id, status, created_at FROM loan_applications LIMIT 5`);
       console.log('Sample loan applications:', allApplications);
       
@@ -371,7 +371,7 @@ class CommitteeController {
       `);
       console.log('Portfolio query result:', portfolio);
 
-      // 2. Monthly Distribution (Trends)
+      
       const trends = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%b') as label,
@@ -383,7 +383,7 @@ class CommitteeController {
         ORDER BY MONTH(created_at) ASC
       `);
 
-      // 3. Loan Growth Data
+      
       const growth = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%b') as label,
@@ -394,7 +394,7 @@ class CommitteeController {
         ORDER BY MONTH(created_at) ASC
       `);
 
-      // 4. Recent Requests
+      
       const recentRequests = await query(`
         SELECT 
           la.id,
@@ -422,7 +422,7 @@ class CommitteeController {
         LIMIT 5
       `);
 
-      // 5. Loan Size Distribution
+      
       const sizeDistribution = await query(`
         SELECT 
           CASE 
@@ -649,7 +649,7 @@ class CommitteeController {
     try {
       const userId = req.userId;
       
-      // Get user profile data
+      
       const userData = await query(`
         SELECT 
           u.id,
@@ -683,7 +683,7 @@ class CommitteeController {
 
       const profile = userData[0];
 
-      // Provide default expertise and certifications since tables don't exist
+      
       const expertise = ['Risk Assessment', 'Corporate Finance', 'Financial Analysis'];
       const certifications = ['CFA Level III', 'Financial Risk Manager'];
 
@@ -716,7 +716,7 @@ class CommitteeController {
         bio
       } = req.body;
 
-      // Update users table (only email can be updated)
+      
       if (email) {
         await query(`
           UPDATE users 
@@ -727,7 +727,7 @@ class CommitteeController {
         `, [email, userId]);
       }
 
-      // Update employee_profiles table
+      
       const existingProfile = await query(
         'SELECT id FROM employee_profiles WHERE user_id = ?', 
         [userId]
@@ -768,7 +768,7 @@ class CommitteeController {
     try {
       const userId = req.userId;
       
-      // Get committee member statistics
+      
       const stats = await query(`
         SELECT 
           COUNT(CASE WHEN la.status = 'APPROVED' AND la.reviewed_by = ? THEN 1 ELSE 0 END) as loans_approved,
@@ -782,7 +782,7 @@ class CommitteeController {
         WHERE la.reviewed_by = ? AND la.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
       `, [userId, userId, userId, userId, userId, userId]);
 
-      // Get current workload
+      
       const workload = await query(`
         SELECT 
           COUNT(CASE WHEN la.status = 'PENDING' AND la.reviewed_by = ? THEN 1 ELSE 0 END) as current_workload,

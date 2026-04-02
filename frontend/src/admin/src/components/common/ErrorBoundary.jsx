@@ -28,7 +28,7 @@ class ErrorBoundary extends React.Component {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
           <div className="max-w-lg w-full">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center">
-              {/* Error Icon */}
+              {}
               <div className="mx-auto mb-6">
                 <div className="relative">
                   <div className="h-20 w-20 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
@@ -38,18 +38,18 @@ class ErrorBoundary extends React.Component {
                 </div>
               </div>
 
-              {/* Error Title */}
+              {}
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
                 Oops! Something went wrong
               </h1>
               
-              {/* Error Description */}
+              {}
               <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
                 We're sorry, but something unexpected happened. 
                 Our team has been notified and is working to fix this issue.
               </p>
 
-              {/* Error Details (Development Only) */}
+              {}
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mb-8 text-left">
                   <summary className="cursor-pointer inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 hover:text-gray-900 dark:hover:text-white transition-colors">
@@ -66,7 +66,7 @@ class ErrorBoundary extends React.Component {
                 </details>
               )}
 
-              {/* Action Buttons */}
+              {}
               <div className="space-y-3">
                 <button
                   onClick={this.handleRetry}
@@ -95,7 +95,7 @@ class ErrorBoundary extends React.Component {
                 </div>
               </div>
 
-              {/* Support Link */}
+              {}
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   Still having trouble?

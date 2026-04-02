@@ -33,14 +33,14 @@ const Profile = () => {
   };
 
   const handleSave = () => {
-    // Save profile logic here
+    
     console.log('Profile saved:', profileData);
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset to original data
+    
     setProfileData({
       fullName: 'John Doe',
       email: 'john.doe@example.com',
@@ -59,7 +59,7 @@ const Profile = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Profile Picture Section */}
+        {}
         <div className="lg:col-span-1">
           <div className="card p-6">
             <div className="text-center">
@@ -80,58 +80,7 @@ const Profile = () => {
                     <Camera className="h-4 w-4 text-white" />
                     <input
                       type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-              
-              <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
-                {profileData.fullName}
-              </h3>
-              <p className="text-sm text-gray-500">{profileData.role}</p>
-              
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Member Since</span>
-                  <span className="text-gray-900 dark:text-white">{profileData.joinDate}</span>
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-2">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={handleSave}
-                      className="btn-primary w-full flex items-center justify-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      Save Changes
-                    </button>
-                    <button
-                      onClick={handleCancel}
-                      className="btn-secondary w-full"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="btn-primary w-full flex items-center justify-center gap-2"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                    Edit Profile
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Profile Information */}
+                      accept="image}
         <div className="lg:col-span-2">
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Profile Information</h2>

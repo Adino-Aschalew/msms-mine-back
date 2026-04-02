@@ -201,7 +201,7 @@ const Help = () => {
 
   return (
     <div className="min-h-screen bg-black dark:from-black dark:to-black w-full">
-      {/* Hero Section */}
+      {}
       <div className="bg-black text-white">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
@@ -228,7 +228,7 @@ const Help = () => {
       </div>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
-        {/* Quick Stats */}
+        {}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           <div className="bg-white dark:bg-black rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between mb-2">
@@ -264,7 +264,7 @@ const Help = () => {
           </div>
         </div>
 
-        {/* Category Filter */}
+        {}
         <div className="mb-8">
           <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-6">
             <div className="flex flex-wrap gap-3">
@@ -291,7 +291,7 @@ const Help = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Help Articles */}
+          {}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
               <div className="p-6">
@@ -374,7 +374,7 @@ const Help = () => {
             </div>
           </div>
 
-          {/* FAQs */}
+          {}
           <div className="space-y-6">
             <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
               <div className="p-6">
@@ -430,7 +430,7 @@ const Help = () => {
           </div>
         </div>
 
-        {/* Support Options */}
+        {}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
             <div className="p-6">
@@ -498,7 +498,7 @@ const Help = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {}
           <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">

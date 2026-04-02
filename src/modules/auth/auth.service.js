@@ -6,7 +6,7 @@ const { query } = require('../../config/database');
 const { auditLog } = require('../../middleware/audit');
 const HrService = require('../hr/hr.service');
 
-// Load environment variables from project root
+
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 class AuthService {
@@ -16,33 +16,33 @@ class AuthService {
         throw new Error('Email address is required');
       }
 
-      // Find user by email
+      
       const user = await this.findByEmail(email);
       if (!user) {
-        // Don't reveal if email exists or not for security
+        
         return {
           success: true,
           message: 'If an account with this email exists, password reset instructions have been sent.'
         };
       }
 
-      // Generate reset token
+      
       const resetToken = crypto.randomBytes(32).toString('hex');
-      const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); 
 
-      // Store reset token in database
+      
       await query(`
         UPDATE users 
         SET reset_token = ?, reset_token_expiry = ? 
         WHERE id = ?
       `, [resetToken, resetTokenExpiry, user.id]);
 
-      // TODO: Send email with reset token
-      // For now, just log it (in production, use email service)
+      
+      
       console.log(`Password reset token for ${email}: ${resetToken}`);
       console.log(`Reset link: http://localhost:3000/reset-password?token=${resetToken}`);
 
-      // Log the password reset request
+      
       await auditLog(user.id, 'PASSWORD_RESET_REQUEST', 'users', user.id, null, { email }, ip, userAgent);
 
       return {
@@ -66,7 +66,7 @@ class AuthService {
         throw new Error('Password must be at least 8 characters long');
       }
 
-      // Find user by reset token
+      
       const users = await query(`
         SELECT id, email, reset_token_expiry 
         FROM users 
@@ -79,17 +79,17 @@ class AuthService {
 
       const user = users[0];
 
-      // Hash new password
+      
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // Update password and clear reset token
+      
       await query(`
         UPDATE users 
         SET password = ?, reset_token = NULL, reset_token_expiry = NULL, updated_at = NOW()
         WHERE id = ?
       `, [hashedPassword, user.id]);
 
-      // Log the password reset
+      
       await auditLog(user.id, 'PASSWORD_RESET', 'users', user.id, null, { email: user.email }, ip, userAgent);
 
       return {
@@ -113,9 +113,9 @@ class AuthService {
 
       let user;
       
-      // Auto-detect login mode: email => admin/staff, employee_id => employee
+      
       if (identifier.includes('@')) {
-        // Email login: HR, ADMIN, FINANCE_ADMIN, LOAN_COMMITTEE
+        
         console.log('Attempting email-based login for:', identifier);
         user = await this.findByEmail(identifier);
         console.log('Email-based login, found user:', user ? `YES (role: ${user.role})` : 'NO');
@@ -124,13 +124,13 @@ class AuthService {
           throw new Error('Employees must log in with their Employee ID, not email');
         }
         
-        // Allow admin/staff users to log in with email
+        
         if (user && ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'].includes(user.role)) {
-          // Admin users can log in with email - this is correct
+          
           console.log('Admin/Staff login successful with email');
         }
       } else {
-        // Employee ID login
+        
         console.log('Attempting employee ID login for:', identifier);
         user = await this.findByEmployeeId(identifier.toUpperCase());
         console.log('Employee ID login, found user:', user ? `YES (role: ${user.role})` : 'NO');
@@ -146,7 +146,7 @@ class AuthService {
         throw new Error('Invalid credentials. Please check your username/ID and password.');
       }
       
-      // Verify password
+      
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
       
       if (!isValidPassword) {
@@ -157,10 +157,10 @@ class AuthService {
       
       console.log('Login successful for user:', user.id, 'role:', user.role);
       
-      // Update last login
+      
       await query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
       
-      // Create audit log
+      
       await auditLog(user.id, 'LOGIN_SUCCESS', 'users', null, null, { identifier }, ip, userAgent);
       
       const token = jwt.sign(
@@ -227,14 +227,14 @@ class AuthService {
 
   static async getProfile(userId) {
     try {
-      // Get user data from users table
+      
       const user = await this.findById(userId);
       
       if (!user) {
         throw new Error('User not found');
       }
 
-      // Get employee profile data from employee_profiles table
+      
       const employeeProfile = await query(`
         SELECT phone_number, address, department, job_title
         FROM employee_profiles 
@@ -284,7 +284,7 @@ class AuthService {
     }
   }
 
-  // Helper methods
+  
   static async findByEmployeeId(employee_id) {
     const selectQuery = `
       SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
@@ -415,15 +415,15 @@ class AuthService {
     } = profileData;
 
     try {
-      // 1. Update the users table (only names - email and role are not editable)
+      
       await query(`
         UPDATE users 
         SET first_name = ?, last_name = ?, updated_at = NOW()
         WHERE id = ?
       `, [first_name, last_name, userId]);
 
-      // 2. Update the employee_profiles table (phone, names, address)
-      // Check if profile exists first
+      
+      
       const profiles = await query('SELECT user_id FROM employee_profiles WHERE user_id = ?', [userId]);
       
       if (profiles.length > 0) {
@@ -433,19 +433,19 @@ class AuthService {
           WHERE user_id = ?
         `, [first_name, last_name, phone_number, address || null, userId]);
       } else {
-        // If profile doesn't exist, create it (should not happen if user is an employee)
+        
         await query(`
           INSERT INTO employee_profiles (user_id, first_name, last_name, phone_number, address)
           VALUES (?, ?, ?, ?, ?)
         `, [userId, first_name, last_name, phone_number, address || null]);
       }
 
-      // 3. Log the change
+      
       await auditLog(userId, 'PROFILE_UPDATED', 'users', userId, null, { 
         updated_fields: Object.keys(profileData) 
       }, ip, userAgent);
 
-      // 4. Get the updated user data
+      
       const updatedUserData = await this.getProfile(userId);
 
       return {
@@ -469,7 +469,7 @@ class AuthService {
         throw new Error('New password must be at least 8 characters long');
       }
 
-      // Get user with current password
+      
       const users = await query(`
         SELECT id, password_hash, password_change_required
         FROM users 
@@ -482,17 +482,17 @@ class AuthService {
 
       const user = users[0];
 
-      // Verify current password
+      
       const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
       if (!isValidPassword) {
         throw new Error('Current password is incorrect');
       }
 
-      // Hash new password
+      
       const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
       const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
 
-      // Update password and remove password change requirement
+      
       await query(`
         UPDATE users 
         SET password_hash = ?, password_change_required = FALSE, updated_at = NOW()
@@ -515,7 +515,7 @@ class AuthService {
         throw new Error('New password must be at least 8 characters long');
       }
 
-      // Get user
+      
       const users = await query(`
         SELECT id, password_change_required
         FROM users 
@@ -526,24 +526,24 @@ class AuthService {
         throw new Error('User not found');
       }
 
-      // Hash new password
+      
       const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
       const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
 
-      // Update password and remove password change requirement
+      
       await query(`
         UPDATE users 
         SET password_hash = ?, password_change_required = FALSE, updated_at = NOW()
         WHERE id = ?
       `, [newPasswordHash, userId]);
 
-      // Log the password change
+      
       await auditLog(userId, 'PASSWORD_CHANGED', 'users', userId, null, { 
         password_change_required: false,
         forced_change: true
       }, ip, userAgent);
 
-      // Notification disabled for now - email service not properly configured
+      
       console.log('Password force changed successfully (notifications disabled)');
 
       return {

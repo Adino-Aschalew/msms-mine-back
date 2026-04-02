@@ -92,7 +92,7 @@ const selfOrRoleCheck = (allowedRoles) => {
     const targetUserId = req.params.userId || req.params.id || req.body.user_id;
     console.log('SelfOrRoleCheck middleware - targetUserId:', targetUserId);
     
-    // If targetUserId is undefined, this means user is accessing their own profile
+    
     const isOwnProfile = !targetUserId;
     console.log('SelfOrRoleCheck middleware - isOwnProfile:', isOwnProfile);
     

@@ -118,7 +118,7 @@ const TransactionsTable = ({ transactions, onAddTransaction }) => {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-      {/* Table Header */}
+      {}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
@@ -183,7 +183,7 @@ const TransactionsTable = ({ transactions, onAddTransaction }) => {
         </div>
       </div>
 
-      {/* Summary Bar */}
+      {}
       <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-6 text-sm">
           <div className="flex items-center gap-2">
@@ -203,7 +203,7 @@ const TransactionsTable = ({ transactions, onAddTransaction }) => {
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-900">
@@ -338,7 +338,7 @@ const TransactionsTable = ({ transactions, onAddTransaction }) => {
         </table>
       </div>
 
-      {/* Pagination */}
+      {}
       <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-gray-400">

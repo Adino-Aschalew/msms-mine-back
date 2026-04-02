@@ -37,13 +37,13 @@ const SavingAnalyzer = ({ dashboardData }) => {
       {
         label: 'Savings (ETB)',
         data: [analyzer.monthSaving, analyzer.highSaving, analyzer.yearSaving],
-        backgroundColor: 'rgba(34, 197, 94, 0.8)', // Emerald
+        backgroundColor: 'rgba(34, 197, 94, 0.8)', 
         borderRadius: 8,
       },
       {
         label: 'Loans (ETB)',
         data: [analyzer.monthLoan, analyzer.highLoan, analyzer.yearLoan],
-        backgroundColor: 'rgba(59, 130, 246, 0.8)', // Blue
+        backgroundColor: 'rgba(59, 130, 246, 0.8)', 
         borderRadius: 8,
       }
     ],

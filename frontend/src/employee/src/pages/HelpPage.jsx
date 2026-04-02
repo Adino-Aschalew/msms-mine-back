@@ -169,7 +169,7 @@ const HelpPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Hero Section */}
+      {}
       <div className="dark:bg-gray-600 btn bg-gray-100 text-white flex-cols justify-center items-center w-full">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
           <div className="w-full max-w-7xl mx-auto text-center">
@@ -181,7 +181,7 @@ const HelpPage = () => {
               </p>
             </div>
 
-            {/* Enhanced Search */}
+            {}
             <div className="max-w-2xl mx-auto">
               <div className="relative">
                 <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
@@ -201,7 +201,7 @@ const HelpPage = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center mb-8">
@@ -251,7 +251,7 @@ const HelpPage = () => {
         </div>
       </div>
 
-      {/* FAQ Section */}
+      {}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center mb-8">

@@ -10,7 +10,7 @@ export default function PerformancePage() {
     console.log('New review scheduled:', data);
   };
 
-  // Mock data for KPI cards
+  
   const kpiData = [
     {
       title: 'Overall Performance',
@@ -62,7 +62,7 @@ export default function PerformancePage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Performance Management</h1>
@@ -79,7 +79,7 @@ export default function PerformancePage() {
         </button>
       </div>
 
-      {/* KPI Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpiData.map((kpi, index) => (
           <div key={index} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
@@ -105,7 +105,7 @@ export default function PerformancePage() {
         ))}
       </div>
 
-      {/* Performance Charts Section */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
@@ -144,7 +144,7 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* Performance Metrics Table */}
+      {}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
         <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -317,7 +317,7 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* Schedule Review Modal */}
+      {}
       <ScheduleReviewModal 
         isOpen={isScheduleOpen} 
         onClose={() => setIsScheduleOpen(false)} 

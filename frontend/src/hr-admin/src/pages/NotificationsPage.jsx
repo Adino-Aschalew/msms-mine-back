@@ -62,7 +62,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="glass-card rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col">
-        {/* Filters & Search Toolbar */}
+        {}
         <div className="p-8 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row justify-between items-stretch md:items-center gap-6">
           <div className="flex bg-slate-100 dark:bg-white/5 p-1.5 rounded-2xl">
             {['all', 'unread', 'read'].map(f => (
@@ -91,7 +91,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* Notifications List */}
+        {}
         <div className="divide-y divide-white/5">
           {filteredNotifications.length > 0 ? (
             filteredNotifications.map(notif => (

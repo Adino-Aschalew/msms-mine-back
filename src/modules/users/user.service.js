@@ -7,11 +7,11 @@ class UserService {
     try {
       const { employee_id, username, email, password, role = 'EMPLOYEE' } = userData;
       
-      // Hash password
+      
       const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
       const password_hash = await bcrypt.hash(password, saltRounds);
       
-      // Create user with profile
+      
       const userId = await UserModel.createWithProfile(
         { employee_id, username, email, password_hash, role },
         profileData || {}
@@ -51,7 +51,7 @@ class UserService {
         throw new Error('User not found');
       }
 
-      // Remove sensitive data
+      
       delete user.password_hash;
       
       return user;
@@ -62,13 +62,13 @@ class UserService {
 
   static async updateUser(userId, userData, ip, userAgent) {
     try {
-      // Check if user exists
+      
       const existingUser = await UserModel.findById(userId);
       if (!existingUser) {
         throw new Error('User not found');
       }
 
-      // Update user
+      
       await UserModel.updateUser(userId, userData);
 
       await auditLog(null, 'USER_UPDATED', 'users', userId, null, userData, ip, userAgent);
@@ -81,13 +81,13 @@ class UserService {
 
   static async updateUserProfile(userId, profileData, ip, userAgent) {
     try {
-      // Check if user exists
+      
       const existingUser = await UserModel.findById(userId);
       if (!existingUser) {
         throw new Error('User not found');
       }
 
-      // Update profile
+      
       await UserModel.updateProfile(userId, profileData);
 
       await auditLog(userId, 'PROFILE_UPDATED', 'employee_profiles', userId, null, profileData, ip, userAgent);
@@ -100,7 +100,7 @@ class UserService {
 
   static async deactivateUser(userId, ip, userAgent) {
     try {
-      // Check if user exists
+      
       const existingUser = await UserModel.findById(userId);
       if (!existingUser) {
         throw new Error('User not found');
@@ -118,7 +118,7 @@ class UserService {
 
   static async activateUser(userId, ip, userAgent) {
     try {
-      // Check if user exists (including inactive)
+      
       const allUsers = await UserModel.getAllUsersWithInactive(1, 1, { is_active: false });
       const userToActivate = allUsers.users.find(u => u.id == userId);
       
@@ -138,7 +138,7 @@ class UserService {
 
   static async deleteUser(userId, ip, userAgent) {
     try {
-      // Check if user exists
+      
       const existingUser = await UserModel.findById(userId);
       if (!existingUser) {
         throw new Error('User not found');
@@ -156,13 +156,13 @@ class UserService {
 
   static async resetUserPassword(userId, newPassword, ip, userAgent) {
     try {
-      // Check if user exists
+      
       const existingUser = await UserModel.findById(userId);
       if (!existingUser) {
         throw new Error('User not found');
       }
 
-      // Hash new password
+      
       const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
       const password_hash = await bcrypt.hash(newPassword, saltRounds);
 

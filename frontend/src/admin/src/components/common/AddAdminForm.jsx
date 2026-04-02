@@ -8,7 +8,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
     firstName: '',
     lastName: '',
     email: '',
-    phoneNumber: '', // New field
+    phoneNumber: '', 
     role: 'admin',
     password: '',
     confirmPassword: '',
@@ -124,7 +124,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Name Fields */}
+      {}
       <div className="grid grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
@@ -171,7 +171,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
       
-      {/* Email */}
+      {}
       <div>
         <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
           <Mail className="h-4 w-4 text-blue-600" />
@@ -194,7 +194,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
         )}
       </div>
 
-      {/* Phone Number */}
+      {}
       <div>
         <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
           <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,7 +219,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
         )}
       </div>
       
-      {/* Role */}
+      {}
       <div>
         <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
           <Shield className="h-4 w-4 text-blue-600" />
@@ -245,7 +245,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
       
-      {/* Password Fields */}
+      {}
       <div className="grid grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
@@ -292,7 +292,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
       
-      {/* Status */}
+      {}
       <div>
         <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
           Account Status
@@ -323,7 +323,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
         </div>
       </div>
       
-      {/* Action Buttons */}
+      {}
       <div className="flex gap-4 pt-6">
         <button
           onClick={onClose}

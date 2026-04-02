@@ -3,7 +3,7 @@ export const employeesData = [
     id: 'EMP-001',
     name: 'Sarah Jenkins',
     email: 'sarah.j@company.com',
-    avatar: 'https://i.pravatar.cc/150?u=sarah',
+    avatar: 'https:
     department: 'Engineering',
     role: 'Senior Software Engineer',
     type: 'Full-time',
@@ -19,7 +19,7 @@ export const employeesData = [
     id: 'EMP-002',
     name: 'Michael Chen',
     email: 'michael.c@company.com',
-    avatar: 'https://i.pravatar.cc/150?u=michael',
+    avatar: 'https:
     department: 'Sales',
     role: 'Account Executive',
     type: 'Full-time',
@@ -35,7 +35,7 @@ export const employeesData = [
     id: 'EMP-003',
     name: 'Emma Davis',
     email: 'emma.d@company.com',
-    avatar: 'https://i.pravatar.cc/150?u=emma',
+    avatar: 'https:
     department: 'Marketing',
     role: 'Marketing Manager',
     type: 'Full-time',
@@ -51,7 +51,7 @@ export const employeesData = [
     id: 'EMP-004',
     name: 'David Smith',
     email: 'david.s@company.com',
-    avatar: 'https://i.pravatar.cc/150?u=david',
+    avatar: 'https:
     department: 'Engineering',
     role: 'Frontend Developer',
     type: 'Contract',
@@ -67,7 +67,7 @@ export const employeesData = [
     id: 'EMP-005',
     name: 'Alex Johnson',
     email: 'alex.j@company.com',
-    avatar: 'https://i.pravatar.cc/150?u=alex',
+    avatar: 'https:
     department: 'HR',
     role: 'HR Specialist',
     type: 'Full-time',
@@ -83,7 +83,7 @@ export const employeesData = [
     id: 'EMP-006',
     name: 'Olivia Martinez',
     email: 'olivia.m@company.com',
-    avatar: 'https://i.pravatar.cc/150?u=olivia',
+    avatar: 'https:
     department: 'Design',
     role: 'Product Designer',
     type: 'Part-time',
@@ -99,7 +99,7 @@ export const employeesData = [
     id: 'EMP-007',
     name: 'James Wilson',
     email: 'james.w@company.com',
-    avatar: 'https://i.pravatar.cc/150?u=james',
+    avatar: 'https:
     department: 'Engineering',
     role: 'DevOps Engineer',
     type: 'Full-time',

@@ -29,7 +29,7 @@ export default function NotificationDropdown({ isOpen, onClose }) {
     onClose();
   };
 
-  // Close on outside click
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,7 +47,7 @@ export default function NotificationDropdown({ isOpen, onClose }) {
       ref={dropdownRef}
       className="absolute top-full right-0 mt-4 w-96 glass-card rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden animate-in slide-in-from-top-2 duration-300 z-[60]"
     >
-      {/* Header */}
+      {}
       <div className="p-5 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
         <div>
           <h3 className="text-base font-black text-foreground tracking-tight flex items-center gap-2">
@@ -75,7 +75,7 @@ export default function NotificationDropdown({ isOpen, onClose }) {
         </div>
       </div>
 
-      {/* List */}
+      {}
       <div className="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-white/5">
         {notifications.length > 0 ? (
           notifications.map(notif => (
@@ -97,7 +97,7 @@ export default function NotificationDropdown({ isOpen, onClose }) {
         )}
       </div>
 
-      {/* Footer */}
+      {}
       <button 
         onClick={handleViewAll}
         className="w-full p-4 text-center border-t border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors group"
@@ -107,7 +107,7 @@ export default function NotificationDropdown({ isOpen, onClose }) {
         </span>
       </button>
 
-      {/* Detail Overlay/Modal (Simulated inside dropdown for now) */}
+      {}
       {selectedNotification && (
         <div className="absolute inset-0 bg-[#0b0e14] z-10 p-6 flex flex-col animate-in fade-in zoom-in-95 duration-200">
           <div className="flex justify-between items-center mb-6">

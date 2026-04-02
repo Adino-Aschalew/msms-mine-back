@@ -5,7 +5,7 @@ const Accounts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Mock data
+  
   const accounts = [
     {
       id: 1,
@@ -43,7 +43,7 @@ const Accounts = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Accounts</h1>
@@ -55,7 +55,7 @@ const Accounts = () => {
         </button>
       </div>
 
-      {/* Search and Filters */}
+      {}
       <div className="flex gap-4 items-center">
         <div className="flex-1 relative">
           <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -76,7 +76,7 @@ const Accounts = () => {
         </button>
       </div>
 
-      {/* Accounts Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredAccounts.map((account) => (
           <div key={account.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">

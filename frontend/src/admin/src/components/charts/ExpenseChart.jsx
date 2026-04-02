@@ -17,7 +17,7 @@ const ExpenseChart = ({ categories }) => {
         </button>
       </div>
 
-      {/* Chart Placeholder */}
+      {}
       <div className="h-48 flex items-center justify-center text-gray-500 dark:text-gray-400 mb-6">
         <div className="text-center">
           <PieChart className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -26,7 +26,7 @@ const ExpenseChart = ({ categories }) => {
         </div>
       </div>
 
-      {/* Category List */}
+      {}
       <div className="space-y-3">
         {categories?.map((category, index) => (
           <div key={category.name} className="flex items-center justify-between">
@@ -49,7 +49,7 @@ const ExpenseChart = ({ categories }) => {
         ))}
       </div>
 
-      {/* Total */}
+      {}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Expenses</span>

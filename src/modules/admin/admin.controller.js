@@ -3,17 +3,17 @@ const bcrypt = require('bcryptjs');
 const { generateEmployeeId } = require('../../utils/helpers');
 
 class AdminController {
-  // Dashboard Overview
+  
   static async getDashboard(req, res) {
     try {
-      // Get basic counts
+      
       const totalUsersResult = await query('SELECT COUNT(*) as count FROM users');
       const totalAdminsResult = await query("SELECT COUNT(*) as count FROM users WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE')");
       const totalLoansResult = await query('SELECT COUNT(*) as count FROM loan_applications');
       const totalSavingsResult = await query('SELECT COUNT(*) as count FROM savings_accounts WHERE is_active = 1');
       const pendingApplicationsResult = await query('SELECT COUNT(*) as count FROM loan_applications WHERE status = "pending"');
       
-      // Calculate growth (comparing current 30 days vs previous 30 days)
+      
       const userGrowthResult = await query(`
         SELECT 
           (SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as current_30,
@@ -38,7 +38,7 @@ class AdminController {
         return (growth >= 0 ? '+' : '') + growth.toFixed(1) + '%';
       };
 
-      // Get recent activity
+      
       let recentActivity = [];
       try {
         recentActivity = await query(`
@@ -86,7 +86,7 @@ class AdminController {
     }
   }
 
-  // System Statistics
+  
   static async getSystemStats(req, res) {
     try {
       const [
@@ -159,7 +159,7 @@ class AdminController {
     }
   }
 
-  // Get All Admins
+  
   static async getAllAdmins(req, res) {
     try {
       const [admins] = await pool.execute(`
@@ -198,7 +198,7 @@ class AdminController {
     }
   }
 
-  // Create HR Admin
+  
   static async createHRAdmin(req, res) {
     try {
       const {
@@ -212,7 +212,7 @@ class AdminController {
         password
       } = req.body;
 
-      // Check if employee ID already exists
+      
       const [existingUser] = await pool.execute(
         'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
@@ -225,7 +225,7 @@ class AdminController {
         });
       }
 
-      // Check if email already exists
+      
       const [existingEmail] = await pool.execute(
         'SELECT id FROM users WHERE email = ?',
         [email]
@@ -238,10 +238,10 @@ class AdminController {
         });
       }
 
-      // Hash password
+      
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Create user
+      
       const [result] = await pool.execute(`
         INSERT INTO users (
           employee_id, username, first_name, last_name, email, phone_number,
@@ -251,7 +251,7 @@ class AdminController {
 
       const userId = result.insertId;
 
-      // Create employee profile
+      
       await pool.execute(`
         INSERT INTO employee_profiles (
           user_id, employee_id, first_name, last_name,
@@ -281,7 +281,7 @@ class AdminController {
     }
   }
 
-  // Create Loan Committee Admin
+  
   static async createLoanCommitteeAdmin(req, res) {
     try {
       const {
@@ -297,7 +297,7 @@ class AdminController {
         password
       } = req.body;
 
-      // Check if employee ID already exists
+      
       const [existingUser] = await pool.execute(
         'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
@@ -310,7 +310,7 @@ class AdminController {
         });
       }
 
-      // Check if email already exists
+      
       const [existingEmail] = await pool.execute(
         'SELECT id FROM users WHERE email = ?',
         [email]
@@ -323,10 +323,10 @@ class AdminController {
         });
       }
 
-      // Hash password
+      
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Create user
+      
       const [result] = await pool.execute(`
         INSERT INTO users (
           employee_id, username, first_name, last_name, email, phone_number,
@@ -336,7 +336,7 @@ class AdminController {
 
       const userId = result.insertId;
 
-      // Create employee profile
+      
       await pool.execute(`
         INSERT INTO employee_profiles (
           user_id, employee_id, first_name, last_name,
@@ -369,7 +369,7 @@ class AdminController {
     }
   }
 
-  // Get HR Admins
+  
   static async getHRAdmins(req, res) {
     try {
       const [hrAdmins] = await pool.execute(`
@@ -405,7 +405,7 @@ class AdminController {
     }
   }
 
-  // Get Loan Committee Admins
+  
   static async getLoanCommitteeAdmins(req, res) {
     try {
       const loanAdmins = await query(`
@@ -435,13 +435,13 @@ class AdminController {
     }
   }
 
-  // Update HR Admin
+  
   static async updateHRAdmin(req, res) {
     try {
       const { adminId } = req.params;
       const updates = req.body;
 
-      // Check if admin exists and is HR
+      
       const [admin] = await pool.execute(
         'SELECT user_id FROM users WHERE user_id = ? AND role = "HR"',
         [adminId]
@@ -454,7 +454,7 @@ class AdminController {
         });
       }
 
-      // Update user table
+      
       const userFields = [];
       const userValues = [];
       
@@ -483,7 +483,7 @@ class AdminController {
         );
       }
 
-      // Update employee profile
+      
       const profileFields = [];
       const profileValues = [];
       
@@ -518,13 +518,13 @@ class AdminController {
     }
   }
 
-  // Update Loan Committee Admin
+  
   static async updateLoanCommitteeAdmin(req, res) {
     try {
       const { adminId } = req.params;
       const updates = req.body;
 
-      // Check if admin exists and is LOAN_COMMITTEE
+      
       const [admin] = await pool.execute(
         'SELECT user_id FROM users WHERE user_id = ? AND role = "LOAN_COMMITTEE"',
         [adminId]
@@ -537,7 +537,7 @@ class AdminController {
         });
       }
 
-      // Update user table
+      
       const userFields = [];
       const userValues = [];
       
@@ -566,7 +566,7 @@ class AdminController {
         );
       }
 
-      // Update employee profile
+      
       const profileFields = [];
       const profileValues = [];
       
@@ -609,7 +609,7 @@ class AdminController {
     }
   }
 
-  // Deactivate HR Admin
+  
   static async deactivateHRAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -640,7 +640,7 @@ class AdminController {
     }
   }
 
-  // Activate HR Admin
+  
   static async activateHRAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -671,7 +671,7 @@ class AdminController {
     }
   }
 
-  // Deactivate Loan Committee Admin
+  
   static async deactivateLoanCommitteeAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -702,7 +702,7 @@ class AdminController {
     }
   }
 
-  // Activate Loan Committee Admin
+  
   static async activateLoanCommitteeAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -733,23 +733,23 @@ class AdminController {
     }
   }
 
-  // Delete HR Admin
+  
   static async deleteHRAdmin(req, res) {
     try {
       const { adminId } = req.params;
 
-      // Start transaction
+      
       const connection = await pool.getConnection();
       await connection.beginTransaction();
 
       try {
-        // Delete from employee_profiles
+        
         await connection.execute(
           'DELETE FROM employee_profiles WHERE user_id = ?',
           [adminId]
         );
 
-        // Delete from users
+        
         const [result] = await connection.execute(
           'DELETE FROM users WHERE id = ? AND role = "HR"',
           [adminId]
@@ -785,23 +785,23 @@ class AdminController {
     }
   }
 
-  // Delete Loan Committee Admin
+  
   static async deleteLoanCommitteeAdmin(req, res) {
     try {
       const { adminId } = req.params;
 
-      // Start transaction
+      
       const connection = await pool.getConnection();
       await connection.beginTransaction();
 
       try {
-        // Delete from employee_profiles
+        
         await connection.execute(
           'DELETE FROM employee_profiles WHERE user_id = ?',
           [adminId]
         );
 
-        // Delete from users
+        
         const [result] = await connection.execute(
           'DELETE FROM users WHERE id = ? AND role = "LOAN_COMMITTEE"',
           [adminId]
@@ -837,7 +837,7 @@ class AdminController {
     }
   }
 
-  // Get System Activity
+  
   static async getSystemActivity(req, res) {
     try {
       const { limit = 50, page = 1 } = req.query;
@@ -884,13 +884,13 @@ class AdminController {
     }
   }
 
-  // Get System Health
+  
   static async getSystemHealth(req, res) {
     try {
-      // Check database connection
+      
       const dbCheck = await query('SELECT 1 as health');
 
-      // Get system info
+      
       const systemInfo = await query(`
         SELECT 
           COUNT(*) as total_users,
@@ -930,7 +930,7 @@ class AdminController {
     }
   }
 
-  // Get System Logs
+  
   static async getSystemLogs(req, res) {
     try {
       const { level = 'all', limit = 100, page = 1 } = req.query;
@@ -970,7 +970,7 @@ class AdminController {
     }
   }
 
-  // Create Finance Admin
+  
   static async createFinanceAdmin(req, res) {
     try {
       const {
@@ -984,7 +984,7 @@ class AdminController {
         password
       } = req.body;
 
-      // Check if employee ID already exists
+      
       const [existingUser] = await pool.execute(
         'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
@@ -997,7 +997,7 @@ class AdminController {
         });
       }
 
-      // Check if email already exists
+      
       const [existingEmail] = await pool.execute(
         'SELECT id FROM users WHERE email = ?',
         [email]
@@ -1010,10 +1010,10 @@ class AdminController {
         });
       }
 
-      // Hash password
+      
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Create user
+      
       const [result] = await pool.execute(`
         INSERT INTO users (
           employee_id, username, first_name, last_name, email, phone_number,
@@ -1023,7 +1023,7 @@ class AdminController {
 
       const userId = result.insertId;
 
-      // Create employee profile
+      
       await pool.execute(`
         INSERT INTO employee_profiles (
           user_id, employee_id, first_name, last_name,
@@ -1053,7 +1053,7 @@ class AdminController {
     }
   }
 
-  // Create Admin (Regular Admin)
+  
   static async createAdmin(req, res) {
     try {
       const {
@@ -1067,7 +1067,7 @@ class AdminController {
         password
       } = req.body;
 
-      // Check if employee ID already exists
+      
       const [existingUser] = await pool.execute(
         'SELECT id FROM users WHERE employee_id = ?',
         [employee_id]
@@ -1080,7 +1080,7 @@ class AdminController {
         });
       }
 
-      // Check if email already exists
+      
       const [existingEmail] = await pool.execute(
         'SELECT id FROM users WHERE email = ?',
         [email]
@@ -1093,10 +1093,10 @@ class AdminController {
         });
       }
 
-      // Hash password
+      
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Create user
+      
       const [result] = await pool.execute(`
         INSERT INTO users (
           employee_id, username, first_name, last_name, email, phone_number,
@@ -1106,7 +1106,7 @@ class AdminController {
 
       const userId = result.insertId;
 
-      // Create employee profile
+      
       await pool.execute(`
         INSERT INTO employee_profiles (
           user_id, employee_id, first_name, last_name,
@@ -1136,7 +1136,7 @@ class AdminController {
     }
   }
 
-  // Get Finance Admins
+  
   static async getFinanceAdmins(req, res) {
     try {
       const [financeAdmins] = await pool.execute(`
@@ -1172,7 +1172,7 @@ class AdminController {
     }
   }
 
-  // Get Regular Admins
+  
   static async getRegularAdmins(req, res) {
     try {
       const [admins] = await pool.execute(`
@@ -1208,13 +1208,13 @@ class AdminController {
     }
   }
 
-  // Update Finance Admin
+  
   static async updateFinanceAdmin(req, res) {
     try {
       const { adminId } = req.params;
       const updates = req.body;
 
-      // Check if admin exists and is FINANCE_ADMIN
+      
       const [admin] = await pool.execute(
         'SELECT id FROM users WHERE id = ? AND role = "FINANCE_ADMIN"',
         [adminId]
@@ -1227,7 +1227,7 @@ class AdminController {
         });
       }
 
-      // Update user table
+      
       const userFields = [];
       const userValues = [];
       
@@ -1256,7 +1256,7 @@ class AdminController {
         );
       }
 
-      // Update employee profile
+      
       const profileFields = [];
       const profileValues = [];
       
@@ -1291,13 +1291,13 @@ class AdminController {
     }
   }
 
-  // Update Regular Admin
+  
   static async updateRegularAdmin(req, res) {
     try {
       const { adminId } = req.params;
       const updates = req.body;
 
-      // Check if admin exists and is ADMIN
+      
       const [admin] = await pool.execute(
         'SELECT id FROM users WHERE id = ? AND role = "ADMIN"',
         [adminId]
@@ -1310,7 +1310,7 @@ class AdminController {
         });
       }
 
-      // Update user table
+      
       const userFields = [];
       const userValues = [];
       
@@ -1339,7 +1339,7 @@ class AdminController {
         );
       }
 
-      // Update employee profile
+      
       const profileFields = [];
       const profileValues = [];
       
@@ -1374,7 +1374,7 @@ class AdminController {
     }
   }
 
-  // Deactivate Finance Admin
+  
   static async deactivateFinanceAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -1405,7 +1405,7 @@ class AdminController {
     }
   }
 
-  // Activate Finance Admin
+  
   static async activateFinanceAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -1436,7 +1436,7 @@ class AdminController {
     }
   }
 
-  // Deactivate Regular Admin
+  
   static async deactivateRegularAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -1467,7 +1467,7 @@ class AdminController {
     }
   }
 
-  // Activate Regular Admin
+  
   static async activateRegularAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -1498,23 +1498,23 @@ class AdminController {
     }
   }
 
-  // Delete Finance Admin
+  
   static async deleteFinanceAdmin(req, res) {
     try {
       const { adminId } = req.params;
 
-      // Start transaction
+      
       const connection = await pool.getConnection();
       await connection.beginTransaction();
 
       try {
-        // Delete from employee_profiles
+        
         await connection.execute(
           'DELETE FROM employee_profiles WHERE user_id = ?',
           [adminId]
         );
 
-        // Delete from users
+        
         const [result] = await connection.execute(
           'DELETE FROM users WHERE id = ? AND role = "FINANCE_ADMIN"',
           [adminId]
@@ -1550,23 +1550,23 @@ class AdminController {
     }
   }
 
-  // Delete Regular Admin
+  
   static async deleteRegularAdmin(req, res) {
     try {
       const { adminId } = req.params;
 
-      // Start transaction
+      
       const connection = await pool.getConnection();
       await connection.beginTransaction();
 
       try {
-        // Delete from employee_profiles
+        
         await connection.execute(
           'DELETE FROM employee_profiles WHERE user_id = ?',
           [adminId]
         );
 
-        // Delete from users
+        
         const [result] = await connection.execute(
           'DELETE FROM users WHERE id = ? AND role = "ADMIN"',
           [adminId]
@@ -1602,7 +1602,7 @@ class AdminController {
     }
   }
 
-  // Get Admin Statistics
+  
   static async getAdminStatistics(req, res) {
     try {
       const [stats] = await pool.execute(`
@@ -1648,7 +1648,7 @@ class AdminController {
     }
   }
 
-  // Update Admin (Generic)
+  
   static async updateAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -1671,7 +1671,7 @@ class AdminController {
     }
   }
 
-  // Toggle Admin Status (Generic)
+  
   static async toggleAdminStatus(req, res) {
     try {
       const { adminId } = req.params;
@@ -1693,7 +1693,7 @@ class AdminController {
     }
   }
 
-  // Delete Admin (Generic)
+  
   static async deleteAdmin(req, res) {
     try {
       const { adminId } = req.params;
@@ -1724,14 +1724,14 @@ class AdminController {
     }
   }
 
-  // Toggle Maintenance Mode
+  
   static async toggleMaintenanceMode(req, res) {
     try {
       const { enabled } = req.body;
 
-      // This would typically update a configuration file or database table
-      // For now, we'll just return a success response
-      // In a real implementation, you might want to store this in Redis or a settings table
+      
+      
+      
 
       res.json({
         success: true,

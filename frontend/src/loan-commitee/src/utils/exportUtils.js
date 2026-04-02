@@ -1,4 +1,4 @@
-// Export utility functions for all pages
+
 
 export const exportReport = (data, filename, format = 'json') => {
   console.log('exportReport called with:', { data, filename, format });
@@ -21,8 +21,8 @@ export const exportReport = (data, filename, format = 'json') => {
       filename = filename.endsWith('.txt') ? filename : `${filename}.txt`;
       break;
     case 'pdf':
-      // For PDF, we would need a library like jsPDF
-      // For now, we'll create a text representation
+      
+      
       content = convertToText(data);
       mimeType = 'text/plain';
       filename = filename.endsWith('.txt') ? filename : `${filename}.txt`;
@@ -35,7 +35,7 @@ export const exportReport = (data, filename, format = 'json') => {
 
   console.log('File prepared:', { filename, mimeType, contentLength: content.length });
 
-  // Create and download file
+  
   try {
     const blob = new Blob([content], { type: mimeType });
     const url = window.URL.createObjectURL(blob);
@@ -56,7 +56,7 @@ export const exportReport = (data, filename, format = 'json') => {
 const convertToCSV = (data) => {
   if (!data || typeof data !== 'object') return '';
   
-  // Handle array of objects (like activity logs)
+  
   if (Array.isArray(data)) {
     if (data.length === 0) return '';
     
@@ -65,7 +65,7 @@ const convertToCSV = (data) => {
     const csvRows = data.map(item => 
       headers.map(header => {
         const value = item[header];
-        // Handle values that might contain commas or quotes
+        
         if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
           return `"${value.replace(/"/g, '""')}"`;
         }
@@ -76,7 +76,7 @@ const convertToCSV = (data) => {
     return `${csvHeaders}\n${csvRows.join('\n')}`;
   }
   
-  // Handle single object
+  
   if (typeof data === 'object' && !Array.isArray(data)) {
     const headers = Object.keys(data);
     const csvHeaders = headers.join(',');
@@ -125,7 +125,7 @@ const convertToText = (data) => {
   return text;
 };
 
-// Specific export functions for different page types
+
 export const exportSecurityReport = (securityData, format = 'json') => {
   const filename = `security-report-${new Date().toISOString().split('T')[0]}`;
   exportReport(securityData, filename, format);
@@ -152,7 +152,7 @@ export const exportPreferencesReport = (preferencesData, format = 'json') => {
   exportReport(preferencesData, filename, format);
 };
 
-// Generic export modal component data
+
 export const getExportOptions = () => [
   { value: 'json', label: 'JSON', description: 'Machine-readable format' },
   { value: 'csv', label: 'CSV', description: 'Spreadsheet compatible' },

@@ -17,7 +17,7 @@ const Account = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const [profileImage, setProfileImage] = useState('https://images.unsplash.com/photo-1472099645785?auto=compress&cs=tinysrgb&dpr=2&w=150&h=150&fit=crop&face=face&auto=format&fit=face-area');
+  const [profileImage, setProfileImage] = useState('https://i.pravatar.cc/150?img=1');
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -33,7 +33,12 @@ const Account = () => {
     confirmPassword: ''
   });
 
-  // Load user data on mount and when user changes
+  
+  useEffect(() => {
+    // Fetch fresh user data from API
+    refreshUserProfile();
+  }, []);
+
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -82,8 +87,8 @@ const Account = () => {
       setIsEditing(false);
       showStatus('success', 'Your profile has been updated successfully.');
       
-      // The user context will automatically refresh and update the form data
-      // through the useEffect that depends on user changes
+      
+      
     } catch (error) {
       showStatus('error', error.message || 'Failed to update profile');
     } finally {
@@ -124,11 +129,8 @@ const Account = () => {
     }
   };
 
-
-
   const renderProfileTab = () => (
     <div className="space-y-6">
-      {/* Profile Header */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white">
         <div className="flex items-center gap-8">
           <div className="relative">
@@ -141,35 +143,24 @@ const Account = () => {
               type="file"
               id="profile-image-upload"
               accept="image/*"
-              onChange={handleImageUpload}
               className="hidden"
+              onChange={handleImageUpload}
             />
+            <label 
+              htmlFor="profile-image-upload"
+              className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors"
+            >
+              <Camera className="w-4 h-4" />
+            </label>
           </div>
-          <div className="flex-1">
-            <h2 className="text-3xl font-bold mb-3">{formData.first_name} {formData.last_name}</h2>
-            <p className="text-blue-100 mb-6 text-lg tracking-wider uppercase font-black">{formData.role}</p>
-            <div className="flex items-center gap-6 mb-6">
-              <div>
-                <p className="text-base text-blue-100">Member Since</p>
-                <p className="text-xl font-medium">
-                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <label
-                htmlFor="profile-image-upload"
-                className="flex items-center gap-3 px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg transition-colors duration-200 cursor-pointer text-base font-medium"
-              >
-                <Camera className="h-5 w-5" />
-                Change Photo
-              </label>
-            </div>
+          
+          <div>
+            <h2 className="text-2xl font-bold">{user?.first_name} {user?.last_name}</h2>
+            <p className="text-blue-100">{user?.job_title}</p>
           </div>
         </div>
       </div>
 
-      {/* Profile Information */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-8">Profile Information</h3>
         
@@ -571,7 +562,7 @@ const Account = () => {
         )}
       </AnimatePresence>
       <div className="w-full max-w-full px-4 py-8">
-        {/* Header */}
+        {}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-tight">Account Settings</h1>
@@ -588,7 +579,7 @@ const Account = () => {
           )}
         </div>
 
-        {/* Navigation Tabs */}
+        {}
         <div className="border-b border-gray-200 dark:border-gray-700 mb-8">
           <nav className="flex space-x-1 sm:space-x-2 md:space-x-4 lg:space-x-8">
             {[
@@ -614,7 +605,6 @@ const Account = () => {
           </nav>
         </div>
 
-        {/* Content */}
         <div className="space-y-8">
           {activeTab === 'profile' && renderProfileTab()}
           {activeTab === 'security' && renderSecurityTab()}

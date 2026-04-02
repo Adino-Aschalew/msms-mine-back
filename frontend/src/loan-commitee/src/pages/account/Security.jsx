@@ -213,7 +213,7 @@ const Security = () => {
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
     
-    // Validate passwords
+    
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert('New passwords do not match!');
       return;
@@ -224,13 +224,13 @@ const Security = () => {
       return;
     }
     
-    // Simulate password change
+    
     console.log('Password change submitted:', passwordForm);
     setShowPasswordForm(false);
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setShowPasswordModal(true); // Show success modal
+    setShowPasswordModal(true); 
     
-    // Update last password change date
+    
     securitySettings.lastPasswordChange = new Date().toISOString().split('T')[0];
   };
 
@@ -249,7 +249,7 @@ const Security = () => {
 
   const handleSessionTerminate = (sessionId) => {
     console.log('Terminating session:', sessionId);
-    // Remove session from activeSessions
+    
     const sessionIndex = activeSessions.findIndex(s => s.id === sessionId);
     if (sessionIndex > -1) {
       activeSessions.splice(sessionIndex, 1);
@@ -305,7 +305,7 @@ const Security = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Security Center</h1>
@@ -325,7 +325,7 @@ const Security = () => {
         </div>
       </div>
 
-      {/* Security Score Overview */}
+      {}
       <div className="card p-6 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 border-primary-200 dark:border-primary-700">
         <div className="flex items-center justify-between">
           <div>
@@ -354,7 +354,7 @@ const Security = () => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8">
           {[
@@ -378,10 +378,10 @@ const Security = () => {
         </nav>
       </div>
 
-      {/* Overview Tab */}
+      {}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Security Metrics */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
@@ -428,7 +428,7 @@ const Security = () => {
             </div>
           </div>
 
-          {/* Security Features */}
+          {}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
@@ -467,7 +467,7 @@ const Security = () => {
               </div>
             </div>
 
-            {/* Security Recommendations */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
                 Security Recommendations
@@ -505,10 +505,10 @@ const Security = () => {
         </div>
       )}
 
-      {/* Authentication Tab */}
+      {}
       {activeTab === 'authentication' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Password Management */}
+          {}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -625,7 +625,7 @@ const Security = () => {
             )}
           </div>
 
-          {/* Two-Factor Authentication */}
+          {}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -707,7 +707,7 @@ const Security = () => {
         </div>
       )}
 
-      {/* Sessions Tab */}
+      {}
       {activeTab === 'sessions' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-6">
@@ -782,7 +782,7 @@ const Security = () => {
         </div>
       )}
 
-      {/* Activity Tab */}
+      {}
       {activeTab === 'activity' && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-6">
@@ -874,10 +874,10 @@ const Security = () => {
         </div>
       )}
 
-      {/* Threats Tab */}
+      {}
       {activeTab === 'threats' && (
         <div className="space-y-6">
-          {/* Threat Overview */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="card p-4 border-danger-200 dark:border-danger-800">
               <div className="flex items-center justify-between mb-2">
@@ -907,7 +907,7 @@ const Security = () => {
             </div>
           </div>
 
-          {/* Recent Threats */}
+          {}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -968,7 +968,7 @@ const Security = () => {
         </div>
       )}
 
-      {/* Password Success Modal */}
+      {}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
@@ -993,7 +993,7 @@ const Security = () => {
         </div>
       )}
 
-      {/* Export Report Modal */}
+      {}
       {showExportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">

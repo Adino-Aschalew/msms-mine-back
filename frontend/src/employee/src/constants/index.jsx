@@ -163,15 +163,15 @@ export const FILE_TYPE_LABELS = {
   [FILE_TYPES.PNG]: 'PNG',
 };
 
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; 
 
 export const ELIGIBILITY_RULES = {
-  MIN_EMPLOYMENT_DURATION: 6, // months
-  MAX_SAVINGS_MULTIPLIER: 2, // loan amount <= 2x savings
-  MAX_SALARY_PERCENTAGE: 40, // installment <= 40% of salary
-  MIN_SAVING_RATE: 15, // percentage
-  MAX_SAVING_RATE: 65, // percentage
-  INTEREST_RATE: 5, // percentage
+  MIN_EMPLOYMENT_DURATION: 6, 
+  MAX_SAVINGS_MULTIPLIER: 2, 
+  MAX_SALARY_PERCENTAGE: 40, 
+  MIN_SAVING_RATE: 15, 
+  MAX_SAVING_RATE: 65, 
+  INTEREST_RATE: 5, 
 };
 
 export const ROUTES = {

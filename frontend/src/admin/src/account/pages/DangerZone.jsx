@@ -10,7 +10,7 @@ const DangerZone = () => {
   const handleDeactivateAccount = () => {
     if (confirmationText === 'DEACTIVATE' && password) {
       console.log('Account deactivated');
-      // In a real app, this would call an API to deactivate the account
+      
       setConfirmationText('');
       setPassword('');
       setActionType(null);
@@ -20,7 +20,7 @@ const DangerZone = () => {
   const handleDeleteAccount = () => {
     if (confirmationText === 'DELETE' && password) {
       console.log('Account deleted');
-      // In a real app, this would call an API to delete the account
+      
       setConfirmationText('');
       setPassword('');
       setActionType(null);
@@ -34,7 +34,7 @@ const DangerZone = () => {
         <p className="text-gray-600 dark:text-gray-400">Irreversible and critical account actions.</p>
       </div>
 
-      {/* Warning Banner */}
+      {}
       <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
         <div className="flex gap-3">
           <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -51,7 +51,7 @@ const DangerZone = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Deactivate Account */}
+        {}
         <div className="card p-6">
           <div className="flex items-start gap-4">
             <div className="rounded-lg bg-yellow-100 p-3 dark:bg-yellow-900/20">
@@ -144,7 +144,7 @@ const DangerZone = () => {
           </div>
         </div>
 
-        {/* Delete Account */}
+        {}
         <div className="card p-6">
           <div className="flex items-start gap-4">
             <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/20">
@@ -239,7 +239,7 @@ const DangerZone = () => {
         </div>
       </div>
 
-      {/* Additional Information */}
+      {}
       <div className="card p-6">
         <div className="flex items-start gap-3">
           <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />

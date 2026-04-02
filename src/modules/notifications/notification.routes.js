@@ -4,7 +4,7 @@ const { authMiddleware } = require('../../middleware/auth');
 
 const router = express.Router();
 
-// Apply authentication middleware to all notification routes
+
 router.use(authMiddleware);
 
 router.get('/', NotificationController.getUserNotifications);

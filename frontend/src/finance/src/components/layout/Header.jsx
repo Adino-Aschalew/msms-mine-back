@@ -16,13 +16,13 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <>
-      {/* Header */}
+      {}
       <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Left side */}
+            {}
             <div className="flex items-center space-x-4">
-              {/* Mobile menu button */}
+              {}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 transition-colors"
@@ -30,23 +30,14 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 <FiMenu className="h-6 w-6" />
               </button>
               
-              {/* FiSearch Bar - Desktop */}
-              <div className="hidden md:block">
-                 <h1 className='font-bold text-2xl'>Welcome Back,<span className='text-blue-600'>{user?.firstName || 'User'}</span></h1>
-              </div>
-              
-              {/* Mobile FiSearch Button */}
-              <button
-                onClick={() => setShowSearch(true)}
-                className="md:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 transition-colors"
-              >
-                <FiSearch className="h-5 w-5" />
-              </button>
+             <p className="mt-1 text-sm text-gray-500 dark:text-white">
+            Welcome back, {user?.first_name || 'Finance Admin'}
+          </p>
             </div>
 
-            {/* Right side */}
+            {}
             <div className="flex items-center space-x-2">
-              {/* Theme Toggle Button */}
+              {}
               <div className="relative">
                 <button
                   onClick={toggleTheme}
@@ -65,7 +56,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 </button>
               </div>
 
-              {/* Notifications */}
+              {}
               <div className="relative">
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
@@ -87,7 +78,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 )}
               </div>
 
-              {/* User Profile */}
+              {}
               <div className="relative">
                 <button
                   onClick={() => setShowProfile(!showProfile)}
@@ -109,7 +100,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 
                 {showProfile && (
                   <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-black rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-                    {/* Profile Header */}
+                    {}
                     <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center space-x-3">
                         <img
@@ -132,7 +123,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                       </div>
                     </div>
                     
-                    {/* FiMenu Items */}
+                    {}
                     <div className="py-2">
                       <a
                         href="/account/profile"
@@ -158,7 +149,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
       </header>
 
-      {/* Global FiSearch Modal */}
+      {}
       {showSearch && (
         <SearchBar
           isOpen={showSearch}

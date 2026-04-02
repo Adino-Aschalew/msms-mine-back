@@ -49,7 +49,7 @@ const BudgetDetail = ({ budgetId, onBack }) => {
 
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
@@ -97,7 +97,7 @@ const BudgetDetail = ({ budgetId, onBack }) => {
         </div>
       </div>
 
-      {/* Budget Overview Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
           <div className="flex items-center justify-between">
@@ -148,7 +148,7 @@ const BudgetDetail = ({ budgetId, onBack }) => {
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -169,7 +169,7 @@ const BudgetDetail = ({ budgetId, onBack }) => {
         </div>
       </div>
 
-      {/* Budget Details Form */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -252,7 +252,7 @@ const BudgetDetail = ({ budgetId, onBack }) => {
         </div>
       </div>
 
-      {/* Metadata */}
+      {}
       <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div>

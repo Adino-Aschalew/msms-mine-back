@@ -23,7 +23,7 @@ const LoanRequestPage = () => {
   const navigate = useNavigate();
   const [selectedLoanType, setSelectedLoanType] = useState(null);
 
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -78,21 +78,41 @@ const LoanRequestPage = () => {
   useEffect(() => {
     const fetchProfileAndSavings = async () => {
       try {
-        const [profileRes, savingsRes] = await Promise.all([
+        const [profileRes, savingsRes, savingsTransRes] = await Promise.all([
           employeeAPI.getProfile(),
           savingsAPI.getSavingsAccount().catch(() => null),
+          savingsAPI.getSavingsTransactions(1, 100).catch(() => ({ transactions: [] })),
         ]);
 
         const profileData = profileRes?.data || profileRes;
         const eProfile = profileData?.employeeProfile || profileData?.employee_profile || {};
         const savingsData = savingsRes?.data || savingsRes;
+        const savingsTransactions = savingsTransRes?.transactions || [];
+
+        console.log('Loan Request - Savings data:', savingsData);
+        console.log('Loan Request - Savings transactions:', savingsTransactions);
+
+        
+        const actualSavingsBalance = savingsTransactions.reduce((sum, transaction) => {
+          if (transaction.transaction_type === 'CONTRIBUTION' || transaction.transaction_type === 'DEPOSIT') {
+            return sum + parseFloat(transaction.amount || 0);
+          }
+          if (transaction.transaction_type === 'WITHDRAWAL') {
+            return sum - parseFloat(transaction.amount || 0);
+          }
+          return sum;
+        }, 0);
+
+        const savingsBalance = actualSavingsBalance > 0 ? actualSavingsBalance : parseFloat(savingsData?.total_contributions || savingsData?.current_balance || 0);
 
         const hireDateStr = eProfile.hire_date || eProfile.created_at;
         const hireDate = hireDateStr ? new Date(hireDateStr) : new Date();
         const daysEmployed = Math.floor((new Date() - hireDate) / (1000 * 60 * 60 * 24));
 
+        console.log('Loan Request - Calculated savings balance:', savingsBalance);
+
         setEmployeeData({
-          savingsBalance: parseFloat(savingsData?.current_balance || 0),
+          savingsBalance: savingsBalance,
           salary: parseFloat(eProfile.salary || 0),
           employmentDuration: Math.floor(daysEmployed / 30),
           loading: false,
@@ -124,8 +144,8 @@ const LoanRequestPage = () => {
     setEligibility({
       savingsBalance: amount <= employeeData.savingsBalance * 2,
       salaryRule: monthlyInstallment <= employeeData.salary * 0.4,
-      // TEMPORARILY DISABLED: employmentDuration: employeeData.employmentDuration >= 6,
-      employmentDuration: true, // Bypass 6-month requirement for now
+      
+      employmentDuration: true, 
       guarantorInfo:
         formData.guarantorType === 'internal'
           ? !!(formData.guarantor.employeeId && formData.guarantor.relationship)
@@ -139,7 +159,7 @@ const LoanRequestPage = () => {
   const handleGuarantorChange = (field, value) =>
     setFormData((prev) => ({ ...prev, guarantor: { ...prev.guarantor, [field]: value } }));
 
-  // Simple employee ID input - no validation
+  
   const handleEmployeeIdChange = (employeeId) => {
     handleGuarantorChange('employeeId', employeeId);
   };
@@ -190,14 +210,24 @@ const LoanRequestPage = () => {
       await loansAPI.applyForLoan(payload);
       setSubmitSuccess(true);
     } catch (error) {
-      console.error('Error applying for loan:', error);
-      console.log('Error data:', error.data);
-      console.log('Error message from data:', error.data?.message);
-      console.log('Error message direct:', error.message);
+      console.error('❌ Error applying for loan:', error);
+      console.log('📋 Error details:', {
+        message: error.message,
+        status: error.status,
+        data: error.data,
+        response: error.response,
+        stack: error.stack
+      });
+      console.log('🔍 Error data:', error.data);
+      console.log('🔍 Error response:', error.response);
+      console.log('🔍 Error status:', error.status);
+      console.log('🔍 Error message from data:', error.data?.message);
+      console.log('🔍 Error message direct:', error.message);
+      console.log('🔍 Full error object:', JSON.stringify(error, null, 2));
       
       const errorMessage = error.data?.message || error.message || 'Failed to submit loan request.';
       
-      // Check if error is about pending loan applications
+      
       if (errorMessage.includes('pending loan applications') || 
           errorMessage.includes('Has pending loan') ||
           errorMessage.includes('Has pending loan applications')) {
@@ -246,7 +276,7 @@ const LoanRequestPage = () => {
 
   return (
     <div className="w-full px-4 py-8">
-      {/* Header */}
+      {}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -258,7 +288,7 @@ const LoanRequestPage = () => {
           </div>
         </div>
         
-        {/* Progress Indicator */}
+        {}
         <div className="mt-6">
           <div className="flex items-center px-60 mb-4">
             <div className={`flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg transition-all duration-300 z-10 ${
@@ -326,7 +356,7 @@ const LoanRequestPage = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Profile Stats Overview */}
+        {}
         <div className={`${cardCls} mb-8`}>
           <div className={headerCls}>
             <h2 className={sectionTitleCls}>
@@ -375,7 +405,7 @@ const LoanRequestPage = () => {
           </div>
         </div>
 
-        {/* Loan Information Category */}
+        {}
         <div className={`${cardCls} mb-6`}>
           <div className={headerCls}>
             <h2 className={sectionTitleCls}>
@@ -467,7 +497,7 @@ const LoanRequestPage = () => {
           </div>
         </div>
 
-        {/* Guarantor Details Category */}
+        {}
         <div className={`${cardCls} mb-6`}>
           <div className={headerCls}>
             <h2 className={sectionTitleCls}>
@@ -632,7 +662,7 @@ const LoanRequestPage = () => {
           </div>
         </div>
 
-        {/* Verification & Action Bar */}
+        {}
         <div className={`${cardCls} p-6`}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
@@ -719,7 +749,7 @@ const LoanRequestPage = () => {
         </div>
       </form>
 
-      {/* Pending Loan Modal */}
+      {}
       {showPendingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all">

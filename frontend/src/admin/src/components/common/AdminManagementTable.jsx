@@ -7,7 +7,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [activeModal, setActiveModal] = useState(null); // 'view', 'edit', 'delete', 'suspend'
+  const [activeModal, setActiveModal] = useState(null); 
   const [editFormData, setEditFormData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const itemsPerPage = 10;
@@ -85,7 +85,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
   };
 
   const handleExportData = () => {
-    // Get filtered data based on current search and status filter
+    
     const exportData = filteredAdmins.map(admin => ({
       'ID': admin.id,
       'Name': admin.name,
@@ -95,14 +95,14 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
       'Created Date': admin.createdDate
     }));
 
-    // Convert to CSV
+    
     const csvHeaders = Object.keys(exportData[0]).join(',');
     const csvData = exportData.map(row => 
       Object.values(row).map(value => `"${value}"`).join(',')
     ).join('\n');
     const csv = `${csvHeaders}\n${csvData}`;
 
-    // Create download link
+    
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -116,7 +116,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
 
   return (
     <div className="space-y-6">
-      {/* Header Actions */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Admin Management</h2>
         <div className="flex gap-3">
@@ -134,7 +134,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -162,7 +162,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
         </div>
       </div>
 
-      {/* Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -308,7 +308,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
           </table>
         </div>
 
-        {/* Pagination */}
+        {}
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
@@ -365,7 +365,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
         </div>
       </div>
 
-      {/* Modals */}
+      {}
       {activeModal && selectedAdmin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
@@ -373,7 +373,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
             onClick={closeModal} 
           />
           <div className="relative z-50 w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-            {/* Modal Header */}
+            {}
             <div className={`px-6 py-4 ${
               activeModal === 'delete' ? 'bg-gradient-to-r from-red-600 to-red-700' :
               activeModal === 'suspend' ? 'bg-gradient-to-r from-yellow-600 to-yellow-700' :
@@ -396,7 +396,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
               </div>
             </div>
             
-            {/* Modal Content */}
+            {}
             <div className="p-6">
               {activeModal === 'view' && (
                 <div className="space-y-4">
@@ -517,7 +517,7 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
                 </div>
               )}
 
-              {/* Modal Actions */}
+              {}
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={closeModal}

@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
+import { formatDate } from 'date-fns';
 
-// Toast Notification
+
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => { const timer = setTimeout(onClose, 3000); return () => clearTimeout(timer); }, [onClose]);
   return (
@@ -18,7 +19,7 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-// Input Component
+
 const InputField = ({ label, value, onChange, disabled, type = 'text', icon: Icon, textarea = false }) => (
   <div className="group">
     <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">{label}</label>
@@ -35,20 +36,20 @@ const InputField = ({ label, value, onChange, disabled, type = 'text', icon: Ico
   </div>
 );
 
-// Stat Card
+
 const StatCard = ({ label, value, icon: Icon, color = 'blue' }) => {
-  const colors = { blue: 'bg-blue-50 text-blue-600 border-blue-200', green: 'bg-emerald-50 text-emerald-600 border-emerald-200', purple: 'bg-purple-50 text-purple-600 border-purple-200', orange: 'bg-orange-50 text-orange-600 border-orange-200' };
+  const colors = { blue: 'bg-white text-blue-600 border-blue-500', green: 'text-emerald-600 border-emerald-500', purple: 'text-purple-600 border-purple-500', orange: 'text-orange-600 border-orange-500' };
   return (
     <div className={`p-6 rounded-2xl border-2 ${colors[color]} transition-transform hover:scale-105`}>
       <div className="flex items-center justify-between">
-        <div><p className="text-sm font-medium opacity-80">{label}</p><p className="text-2xl font-black mt-1">{value}</p></div>
-        <Icon className="w-8 h-8 opacity-60" />
+        <div><p className="text-sm font-medium opacity-80">{label}</p><p className="text-2xl font-bold mt-1">{value}</p></div>
+        <Icon className="w-8 h-8 " />
       </div>
     </div>
   );
 };
 
-// Modal
+
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
   return (
@@ -137,13 +138,13 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-12">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Header */}
+      {}
       <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl"><User className="w-6 h-6 text-white" /></div>
-              <div><h1 className="text-2xl font-black">My Profile</h1><p className="text-sm text-gray-500">Manage your personal information</p></div>
+              <div><h1 className="text-2xl font-bold">My Profile</h1><p className="text-sm text-gray-500">Manage your personal information</p></div>
             </div>
             <button onClick={() => isEditing ? handleCancel() : setIsEditing(true)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${isEditing ? 'bg-gray-100 text-gray-700' : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg'}`}>
               {isEditing ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}{isEditing ? 'Cancel' : 'Edit Profile'}
@@ -152,44 +153,30 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Hero */}
+      {}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-3xl shadow-2xl overflow-hidden relative">
+        <div className="bg-gradient-to-br from-blue-500 via-blue-900 to-blue-600 rounded-3xl shadow-2xl overflow-hidden relative">
           <div className="absolute inset-0 bg-black/10" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2" />
           <div className="relative px-8 py-12 pt-32 text-center">
             <div className="absolute -top-16 left-1/2 -translate-x-1/2">
               <div className="relative">
-                <div className="w-36 h-36 bg-white rounded-full p-1 shadow-2xl">
-                  <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                    {user?.avatar ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" /> : <span className="text-5xl font-black text-gray-400">{formData.fullName.charAt(0)}</span>}
+                <div className="w-36 h-36 bg-white rounded-full shadow-2xl">
+                  <div className="w-full h-full bg-gradient-to-br from-blue-800 to-blue-400 rounded-full flex items-center justify-center border-4 border-white">
+                    {user?.avatar ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" /> : <span className="text-5xl font-bold text-white">{formData.fullName.charAt(0)}</span>}
                   </div>
                 </div>
                 <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
-                <button onClick={() => avatarInputRef.current?.click()} className="absolute bottom-2 right-2 bg-white text-gray-700 p-2.5 rounded-full shadow-lg hover:bg-gray-50 transition-all hover:scale-110">
-                  <Camera className="w-5 h-5" />
+                <button onClick={() => avatarInputRef.current?.click()} className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50">
+                  <Camera className="w-4 h-4 text-gray-600" />
                 </button>
               </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-3xl font-black text-white">{formData.fullName}</h2>
-              <div className="flex items-center justify-center gap-2">
-                <BadgeCheck className="w-5 h-5 text-blue-200" />
-                <p className="text-xl text-white/90 font-medium">{formData.position}</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 mt-6">
-              {[{ icon: Mail, value: formData.email }, { icon: Phone, value: formData.phone }, { icon: MapPin, value: formData.address }].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white/90">
-                  <item.icon className="w-4 h-4" /><span className="text-sm font-medium">{item.value}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
+      {}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Department" value={formData.department} icon={Building} color="blue" />
@@ -199,10 +186,10 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-          {/* Tabs */}
+          {}
           <div className="border-b border-gray-100">
             <div className="flex gap-1 p-2">
               {tabs.map((tab) => {
@@ -293,7 +280,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Password Modal */}
+      {}
       <Modal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} title="Change Password">
         <form onSubmit={handlePasswordSubmit} className="space-y-5">
           {[{ key: 'currentPassword', label: 'Current' }, { key: 'newPassword', label: 'New' }, { key: 'confirmPassword', label: 'Confirm' }].map(({ key, label }) => (

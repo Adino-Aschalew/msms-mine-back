@@ -20,6 +20,12 @@ const LoginPage = () => {
 
   const getRoleRedirectPathFromUser = (user) => {
     const role = user?.role ? String(user.role).toUpperCase().trim() : '';
+    console.log('[login] role mapping', { 
+      originalRole: user?.role, 
+      normalizedRole: role, 
+      typeof: typeof user?.role 
+    });
+    
     switch (role) {
       case 'ADMIN':
       case 'SUPER_ADMIN':
@@ -30,10 +36,12 @@ const LoginPage = () => {
       case 'FINANCE':
         return '/finance';
       case 'LOAN_COMMITTEE':
+        console.log('[login] matched LOAN_COMMITTEE, returning /loan-committee');
         return '/loan-committee';
       case 'EMPLOYEE':
         return '/employee';
       default:
+        console.log('[login] no role match, returning /login');
         return '/login';
     }
   };
@@ -43,7 +51,7 @@ const LoginPage = () => {
     if (error) setError('');
   };
 
-  // Detect whether input looks like an email (admin) or employee ID
+  
   const isEmailMode = formData.identifier.includes('@');
 
   const handleSubmit = async (e) => {
@@ -62,12 +70,14 @@ const LoginPage = () => {
 
     try {
       console.log('[login] submit', { identifier: formData.identifier, isEmailMode, from });
-      // Pass the identifier and let the backend figure out the role
-      // We hint the role based on identifier format: email => admin roles, text => employee
+      
+      
       const inferredRole = isEmailMode ? 'admin' : 'employee';
       const loggedInUser = await login(formData, inferredRole);
+      console.log('[login] user object received:', loggedInUser);
       const redirectPath = from !== '/' ? from : getRoleRedirectPathFromUser(loggedInUser);
-      console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role });
+      console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role, from });
+      console.log('[login] about to navigate to:', redirectPath);
       navigate(redirectPath, { replace: true });
     } catch (err) {
       console.log('[login] error', err);
@@ -79,7 +89,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#0a0f1c]">
-      {/* Animated background orbs */}
+      {}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute rounded-full blur-3xl opacity-20 animate-pulse"
@@ -107,7 +117,7 @@ const LoginPage = () => {
             animation: 'pulse 6s ease-in-out infinite'
           }}
         />
-        {/* Grid lines */}
+        {}
         <div
           className="absolute inset-0 opacity-5"
           style={{
@@ -117,7 +127,7 @@ const LoginPage = () => {
         />
       </div>
 
-      {/* Card */}
+      {}
       <div
         className="relative w-full max-w-md mx-4"
         style={{
@@ -129,14 +139,13 @@ const LoginPage = () => {
           padding: '48px 40px'
         }}
       >
-        {/* Logo / Brand */}
         <div className="text-center mb-2">
           <div
             className="inline-flex items-center justify-center mb-4 rounded-full"
             style={{
               width: '100px', height: '100px',
               border: '2px solid #ffffff',
-              backgroundImage: 'url("https://addisfortune.news/wp-content/uploads/2022/08/Bahirdar-university.jpg")',
+              backgroundImage: 'url("https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2070")',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               boxShadow: '0 8px 32px rgba(59,130,246,0.35)'
@@ -156,7 +165,7 @@ const LoginPage = () => {
         <h1 className='text-white text-xl font-bold mb-4 items-center justify-center text-center mt-0'>Welcome to MSMS Portal</h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Identifier field */}
+          {}
           <div>
             <label
               htmlFor="identifier"
@@ -204,7 +213,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Password field */}
+          {}
           <div>
             <label
               htmlFor="password"
@@ -257,7 +266,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Error message */}
+          {}
           {error && (
             <div
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
@@ -272,7 +281,7 @@ const LoginPage = () => {
             </div>
           )}
 
-          {/* Submit button */}
+          {}
           <button
             type="submit"
             disabled={loading}
@@ -312,7 +321,7 @@ const LoginPage = () => {
           </button>
         </form>
 
-        {/* Footer */}
+        {}
         <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center justify-between text-xs" style={{ color: 'rgba(100,116,139,1)' }}>
             <span>© 2026 MSMS · All rights reserved</span>

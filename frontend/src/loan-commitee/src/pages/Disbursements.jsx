@@ -35,7 +35,7 @@ import {
 import { committeeAPI } from '../services/committeeAPI';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 
-// Compact money formatter for large amounts
+
 const formatCompactMoney = (amount) => {
   if (amount === 0) return 'ETB 0';
   
@@ -51,7 +51,7 @@ const formatCompactMoney = (amount) => {
   }
 };
 
-// Safe money formatter that handles zero values
+
 const formatMoney = (amount) => {
   if (amount === 0 || amount === '0') return 'ETB 0';
   
@@ -73,7 +73,7 @@ const Disbursements = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [showRepaymentSchedule, setShowRepaymentSchedule] = useState(false);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const [viewMode, setViewMode] = useState('table'); 
   const [selectedDisbursements, setSelectedDisbursements] = useState(new Set());
   const [processingActions, setProcessingActions] = useState(new Set());
   const [modal, setModal] = useState({ show: false, type: '', data: null });
@@ -86,7 +86,7 @@ const Disbursements = () => {
       setLoading(true);
       const res = await committeeAPI.getApprovedApplications();
       if (res && res.data && res.data.success) {
-        // Map backend response to frontend expected format for disbursements
+        
         const mappedData = res.data.data.map(app => ({
           id: app.id,
           employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
@@ -143,7 +143,7 @@ const Disbursements = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Calculate statistics
+  
   const stats = {
     total: filteredDisbursements.length,
     pending: filteredDisbursements.filter(d => d.status === 'pending').length,
@@ -174,7 +174,7 @@ const Disbursements = () => {
   };
 
   const handleDisburse = async (id) => {
-    // Add to processing set
+    
     setProcessingActions(prev => new Set(prev).add(`${id}-disburse`));
     
     try {
@@ -183,14 +183,14 @@ const Disbursements = () => {
         notes: 'Loan disbursed by committee'
       });
       
-      // Update local state
+      
       setDisbursements(prev => prev.map(d => 
         d.id === id 
           ? { ...d, status: 'disbursed', disbursementDate: new Date().toISOString().split('T')[0] }
           : d
       ));
       
-      // Show success modal
+      
       setModal({
         show: true,
         type: 'success',
@@ -200,14 +200,14 @@ const Disbursements = () => {
       console.log(`Disbursement ${id} processed successfully`);
     } catch (error) {
       console.error('Error processing disbursement:', error);
-      // Show error modal
+      
       setModal({
         show: true,
         type: 'error',
         data: { message: `Error processing disbursement ${id}: ${error.message}` }
       });
     } finally {
-      // Remove from processing set
+      
       setProcessingActions(prev => {
         const newSet = new Set(prev);
         newSet.delete(`${id}-disburse`);
@@ -241,7 +241,7 @@ const Disbursements = () => {
 
   const handleDownloadAgreement = (loanId) => {
     console.log('Downloading agreement for:', loanId);
-    // Implementation for downloading agreement
+    
   };
 
   const handleViewSchedule = (loan) => {
@@ -251,7 +251,7 @@ const Disbursements = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -283,7 +283,7 @@ const Disbursements = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {}
       <div className="px-6 py-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
@@ -336,10 +336,10 @@ const Disbursements = () => {
         </div>
       </div>
 
-      {/* Enhanced Filters Section */}
+      {}
       <div className="px-4 sm:px-6 pb-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* Filter Header */}
+          {}
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-3">
@@ -360,7 +360,7 @@ const Disbursements = () => {
             </div>
           </div>
 
-          {/* Search Bar */}
+          {}
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
               <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -382,10 +382,10 @@ const Disbursements = () => {
             </div>
           </div>
 
-          {/* Quick Filters */}
+          {}
           <div className="px-4 sm:px-6 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Status Filter */}
+              {}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                   <CheckCircle className="w-4 h-4 mr-2 text-gray-500" />
@@ -405,7 +405,7 @@ const Disbursements = () => {
                 </div>
               </div>
 
-              {/* Quick Actions */}
+              {}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Actions</label>
                 <div className="flex space-x-2">
@@ -431,7 +431,7 @@ const Disbursements = () => {
             </div>
           </div>
 
-          {/* Filter Footer */}
+          {}
           <div className="px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -461,7 +461,7 @@ const Disbursements = () => {
         </div>
       </div>
 
-      {/* Results */}
+      {}
       <div className="px-4 sm:px-6 pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -482,7 +482,7 @@ const Disbursements = () => {
           )}
         </div>
 
-        {/* Table View */}
+        {}
         {viewMode === 'table' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
@@ -628,7 +628,7 @@ const Disbursements = () => {
           </div>
         )}
 
-        {/* Card View */}
+        {}
         {viewMode === 'card' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredDisbursements.map((disbursement) => (
@@ -727,7 +727,7 @@ const Disbursements = () => {
           </div>
         )}
 
-        {/* Empty State */}
+        {}
         {filteredDisbursements.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -743,11 +743,11 @@ const Disbursements = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {}
       {modal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
-            {/* Success Modal */}
+            {}
             {modal.type === 'success' && (
               <>
                 <div className="p-6">
@@ -772,7 +772,7 @@ const Disbursements = () => {
               </>
             )}
 
-            {/* Error Modal */}
+            {}
             {modal.type === 'error' && (
               <>
                 <div className="p-6">
@@ -800,7 +800,7 @@ const Disbursements = () => {
         </div>
       )}
 
-      {/* Disbursements Table */}
+      {}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -908,7 +908,7 @@ const Disbursements = () => {
         </div>
       </div>
 
-      {/* Repayment Schedule Modal */}
+      {}
       {showRepaymentSchedule && selectedLoan && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
@@ -932,7 +932,7 @@ const Disbursements = () => {
             </div>
 
             <div className="p-6">
-              {/* Loan Summary */}
+              {}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
@@ -960,7 +960,7 @@ const Disbursements = () => {
                 </div>
               </div>
 
-              {/* Schedule Table */}
+              {}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700">
@@ -1020,7 +1020,7 @@ const Disbursements = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {}
       {filteredDisbursements.length === 0 && (
         <div className="card p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">

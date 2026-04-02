@@ -48,18 +48,18 @@ const Modal = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
+        {}
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
           onClick={handleBackdropClick}
         />
 
-        {/* Modal */}
+        {}
         <div className={`
           relative w-full rounded-lg bg-white dark:bg-gray-800 shadow-xl 
           transform transition-all ${sizeClasses[size]} ${className}
         `}>
-          {/* Header */}
+          {}
           {(title || showCloseButton) && (
             <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
               {title && (
@@ -78,7 +78,7 @@ const Modal = ({
             </div>
           )}
 
-          {/* Body */}
+          {}
           <div className="px-6 py-4">
             {children}
           </div>

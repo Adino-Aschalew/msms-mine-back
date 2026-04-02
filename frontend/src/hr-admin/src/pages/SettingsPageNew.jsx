@@ -434,7 +434,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
@@ -455,7 +455,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar */}
+        {}
         <div className="lg:w-64">
           <nav className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-2">
             {tabs.map((tab) => (
@@ -475,7 +475,7 @@ export default function SettingsPage() {
           </nav>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1">
           {renderTabContent()}
         </div>

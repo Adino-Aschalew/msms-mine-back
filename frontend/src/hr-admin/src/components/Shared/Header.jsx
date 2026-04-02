@@ -1,15 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiSearch, FiBell, FiSun, FiMoon, FiUser, FiMenu, FiLogOut } from 'react-icons/fi';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { committeeAPI } from '../../../../loan-commitee/src/services/committeeAPI';
 import NotificationDropdown from '../Notifications/NotificationDropdown';
 
 export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
   const { theme, toggleTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await committeeAPI.getProfile();
+        if (response.data?.success && response.data?.data) {
+          setProfileData(response.data.data);
+          console.log('Header - Profile data:', response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  
+  console.log('Header - User data:', user);
 
   return (
     <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-sidebar-border/50 dark:border-white/5 glass z-20 shrink-0 transition-all duration-500">
@@ -65,8 +89,17 @@ export default function Header({ setMobileMenuOpen, mobileMenuOpen }) {
             <FiUser size={18} />
           </div>
           <div className="hidden md:flex flex-col items-start leading-tight">
-            <span className="text-sm font-bold">HR Admin</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Premium</span>
+            <span className="text-sm font-bold">
+              {profileData?.first_name && profileData?.last_name 
+                ? `${profileData.first_name} ${profileData.last_name}` 
+                : profileData?.firstName && profileData?.lastName 
+                ? `${profileData.firstName} ${profileData.lastName}`
+                : user?.username || 'HR Admin'
+              }
+            </span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              {profileData?.role || user?.role || 'Administrator'}
+            </span>
           </div>
         </button>
         

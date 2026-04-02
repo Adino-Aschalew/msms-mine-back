@@ -73,7 +73,7 @@ class CommitteeService {
         query(selectQuery, [...params, limit, offset])
       ]);
       
-      // Calculate risk scores for each application
+      
       const applicationsWithRisk = applications.length > 0 ? await Promise.all(
         applications.map(async (app) => {
           const riskScore = await this.calculateRiskScore(app);
@@ -136,12 +136,12 @@ class CommitteeService {
         throw new Error('Loan application not found');
       }
       
-      // Parse guarantor details
+      
       if (application.guarantor_details) {
         application.guarantor_details = JSON.parse(application.guarantor_details);
       }
       
-      // Calculate risk score
+      
       const riskScore = await this.calculateRiskScore(application);
       application.risk_score = riskScore.score;
       application.risk_level = riskScore.level;
@@ -157,14 +157,14 @@ class CommitteeService {
       let score = 0;
       let deductions = [];
       
-      // Employment stability (30 points)
+      
       if (application.employment_status === 'ACTIVE') {
         score += 30;
       } else {
         deductions.push('Not actively employed');
       }
       
-      // Employment duration (25 points)
+      
       if (application.days_employed >= 365) {
         score += 25;
       } else if (application.days_employed >= 180) {
@@ -177,7 +177,7 @@ class CommitteeService {
         deductions.push('Insufficient employment duration');
       }
       
-      // Salary/Income Grade mapping (20 points)
+      
       const monthlyIncome = parseFloat(application.monthly_income || 0);
       let incomeGrade = 0;
       if (monthlyIncome >= 20000) incomeGrade = 5;
@@ -198,9 +198,9 @@ class CommitteeService {
         deductions.push('Low salary grade');
       }
       
-      // Loan amount ratio (15 points)
+      
       const monthlyIncomeForRisk = parseFloat(application.monthly_income || 1000);
-      const loanRatio = application.requested_amount / (monthlyIncomeForRisk * 12); // Ratio against annual income
+      const loanRatio = application.requested_amount / (monthlyIncomeForRisk * 12); 
       
       if (loanRatio <= 0.3) {
         score += 15;
@@ -212,7 +212,7 @@ class CommitteeService {
         deductions.push('Requested amount too high for income');
       }
       
-      // Existing loans (10 points)
+      
       if (application.existing_loans === 0) {
         score += 10;
       } else if (application.existing_loans === 1) {
@@ -222,7 +222,7 @@ class CommitteeService {
         deductions.push('Multiple existing loans');
       }
       
-      // Payment history (10 points)
+      
       if (application.approved_count > 0) {
         if (application.avg_balance < 5000) {
           score += 10;
@@ -234,7 +234,7 @@ class CommitteeService {
         }
       }
       
-      // Determine risk level
+      
       let level;
       if (score >= 80) {
         level = 'LOW';
@@ -256,7 +256,7 @@ class CommitteeService {
     try {
       let { decision, action, notes, approved_amount, approved_term_months, approved_interest_rate, conditions } = reviewData;
       
-      // Support both 'decision' and 'action' parameters
+      
       const actionType = (decision || action || '').toString().toLowerCase();
       
       const application = await this.getApplicationById(applicationId);
@@ -307,7 +307,7 @@ class CommitteeService {
       });
       
       const result = await transaction(async (connection) => {
-        // Get application details first to use original values if not provided
+        
         const [applications] = await connection.execute('SELECT * FROM loan_applications WHERE id = ?', [applicationId]);
         const application = applications[0];
         
@@ -315,10 +315,10 @@ class CommitteeService {
           throw new Error('Application not found');
         }
         
-        // Use application's original values if approval parameters are not provided
+        
         const finalAmount = approvedAmount || application.requested_amount;
         const finalTerm = approvedTerm || application.repayment_duration_months;
-        const finalRate = approvedRate || 5.0; // Default 5% interest rate
+        const finalRate = approvedRate || 5.0; 
         const finalConditions = conditions || [];
         
         console.log('Using values:', {
@@ -328,7 +328,7 @@ class CommitteeService {
           finalConditions
         });
         
-        // Update application status
+        
         const updateQuery = `
           UPDATE loan_applications 
           SET status = 'APPROVED', reviewed_by = ?, review_date = NOW(), review_comments = ?
@@ -347,7 +347,7 @@ class CommitteeService {
         
         console.log('Application found:', application);
         
-        // Create loan record - match schema: principal_amount, interest_rate, total_interest, total_repayment, monthly_repayment, remaining_balance, maturity_date
+        
         const monthlyRepayment = finalAmount * (1 + finalRate/100) / finalTerm;
         const totalInterest = finalAmount * (finalRate/100);
         const totalRepayment = finalAmount + totalInterest;
@@ -387,7 +387,7 @@ class CommitteeService {
       
       const application = result.application;
       
-      // Log approval
+      
       await auditLog(reviewedBy, 'LOAN_COMMITTEE_APPROVED', 'loan_applications', applicationId, null, {
         approved_amount: approvedAmount,
         approved_term_months: approvedTerm,
@@ -395,7 +395,7 @@ class CommitteeService {
         conditions
       }, ip, userAgent);
       
-      // Send notifications
+      
       await NotificationService.createNotification(
         application.user_id,
         'Loan Application Approved by Committee',
@@ -403,7 +403,7 @@ class CommitteeService {
         'SUCCESS'
       );
       
-      // Send email
+      
       if (application.email) {
         await NotificationService.sendEmail(
           application.email,
@@ -452,10 +452,10 @@ class CommitteeService {
       
       const application = await this.getApplicationById(applicationId);
       
-      // Log rejection
+      
       await auditLog(reviewedBy, 'LOAN_COMMITTEE_REJECTED', 'loan_applications', applicationId, null, { reason }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         application.user_id,
         'Loan Application Rejected by Committee',
@@ -463,7 +463,7 @@ class CommitteeService {
         'ERROR'
       );
       
-      // Send email
+      
       if (application.email) {
         await NotificationService.sendEmail(
           application.email,
@@ -499,10 +499,10 @@ class CommitteeService {
       
       const application = await this.getApplicationById(applicationId);
       
-      // Log request
+      
       await auditLog(reviewedBy, 'LOAN_COMMITTEE_MORE_INFO', 'loan_applications', applicationId, null, { requestedInfo }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         application.user_id,
         'Additional Information Requested',
@@ -583,10 +583,10 @@ class CommitteeService {
       
       const result = await query(insertQuery, [title, description, meeting_date, location, JSON.stringify(agenda || []), createdBy]);
       
-      // Log meeting creation
+      
       await auditLog(createdBy, 'COMMITTEE_MEETING_CREATED', 'committee_meetings', result.insertId, null, meetingData, ip, userAgent);
       
-      // Send notifications to committee members
+      
       const committeeMembers = await this.getCommitteeMembers();
       
       for (const member of committeeMembers) {

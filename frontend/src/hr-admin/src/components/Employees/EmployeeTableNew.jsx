@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-// Modal Components
+
 import EmployeeModalNew from './EmployeeModalNew';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import ViewEmployeeModal from './ViewEmployeeModal';
@@ -30,7 +30,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Modal States
+  
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -69,7 +69,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
       let valA = a[sortConfig.key];
       let valB = b[sortConfig.key];
 
-      // Handle special case for name field
+      
       if (sortConfig.key === 'name') {
         valA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
         valB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
@@ -114,7 +114,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
     return 'bg-red-500';
   };
 
-  // Handlers
+  
   const openView = (emp) => {
     setSelectedEmployee(emp);
     setIsViewOpen(true);
@@ -140,7 +140,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden">
-      {/* Table Toolbar */}
+      {}
       <div className="p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex flex-col lg:flex-row gap-4 justify-between items-center">
           <div className="relative w-full lg:max-w-md">
@@ -183,7 +183,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
         </div>
       </div>
 
-      {/* Table Container */}
+      {}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
@@ -322,7 +322,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
         </table>
       </div>
 
-      {/* Pagination */}
+      {}
       {paginatedData.length > 0 && (
         <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
           <div className="text-sm text-gray-700 dark:text-gray-300">
@@ -344,7 +344,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
                 const pageNum = i + 1;
                 const isActive = currentPage === pageNum;
 
-                // Show a limited range of pages if there are many
+                
                 if (pageCount > 7) {
                   if (
                     pageNum === 1 ||
@@ -398,7 +398,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
         </div>
       )}
 
-      {/* Modals */}
+      {}
       <ViewEmployeeModal
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}

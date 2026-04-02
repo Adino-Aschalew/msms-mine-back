@@ -119,7 +119,7 @@ class DateUtils {
     const end = moment(endDate);
 
     while (currentDate.isSameOrBefore(end)) {
-      // Monday to Friday are working days (1-5 in moment.js)
+      
       if (currentDate.isoWeekday() <= 5) {
         workingDays++;
       }
@@ -135,9 +135,9 @@ class DateUtils {
     const end = moment(endDate);
 
     while (currentDate.isSameOrBefore(end)) {
-      // Check if it's a weekday (Monday-Friday)
+      
       if (currentDate.isoWeekday() <= 5) {
-        // Check if it's not a holiday
+        
         const isHoliday = holidays.some(holiday => 
           moment(holiday).isSame(currentDate, 'day')
         );
@@ -159,7 +159,7 @@ class DateUtils {
     while (workingDaysAdded < days) {
       currentDate.add(1, 'day');
       
-      // Check if it's a weekday (Monday-Friday)
+      
       if (currentDate.isoWeekday() <= 5) {
         workingDaysAdded++;
       }
@@ -212,7 +212,7 @@ class DateUtils {
   static getFiscalYear(date, fiscalYearStartMonth = 7) {
     const dateMoment = moment(date);
     const year = dateMoment.year();
-    const month = dateMoment.month() + 1; // moment months are 0-indexed
+    const month = dateMoment.month() + 1; 
     
     if (month >= fiscalYearStartMonth) {
       return `${year}-${year + 1}`;
@@ -257,7 +257,7 @@ class DateUtils {
   static getLoanRepaymentDate(disbursementDate, paymentDay = 1) {
     const disbursementMoment = moment(disbursementDate);
     
-    // If disbursement is after payment day, first payment is next month
+    
     if (disbursementMoment.date() > paymentDay) {
       return disbursementMoment.add(1, 'month').date(paymentDay).toDate();
     } else {

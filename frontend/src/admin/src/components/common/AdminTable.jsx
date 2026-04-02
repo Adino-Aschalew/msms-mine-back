@@ -22,7 +22,7 @@ const AdminTable = ({ admins }) => {
 
   return (
     <div className="card">
-      {/* Detail Modal */}
+      {}
       {selectedAdmin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">

@@ -36,7 +36,7 @@ const AccountProfile = () => {
     confirmPassword: '',
   });
 
-  // Stats data for finance user
+  
   const stats = [
     { label: 'Total Transactions', value: '1,234', icon: Activity, color: 'text-blue-600' },
     { label: 'Account Balance', value: '45.6KETB', icon: Target, color: 'text-green-600' },
@@ -60,18 +60,18 @@ const AccountProfile = () => {
       setLoading(true);
       const response = await authAPI.getProfile();
       
-      // Handle different response structures
+      
       let profileData = response;
       if (response.data) {
         profileData = response.data;
       }
       
-      // Check if profileData exists and has the expected structure
+      
       if (!profileData) {
         throw new Error('No profile data received');
       }
       
-      // Map backend data to frontend state with proper fallbacks
+      
       setProfile({
         firstName: profileData.first_name || profileData.firstName || '',
         lastName: profileData.last_name || profileData.lastName || '',
@@ -88,7 +88,7 @@ const AccountProfile = () => {
     } catch (err) {
       setError('Failed to load profile data');
       console.error('Profile fetch error:', err);
-      // Set default profile data on error
+      
       setProfile({
         firstName: user?.first_name || '',
         lastName: user?.last_name || '',
@@ -125,7 +125,7 @@ const AccountProfile = () => {
       if (response.success) {
         setSuccess('Profile updated successfully!');
         setIsEditing(false);
-        // Refresh profile data
+        
         await fetchProfile();
       } else {
         setError(response.message || 'Failed to update profile');
@@ -139,7 +139,7 @@ const AccountProfile = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
-    fetchProfile(); // Reset to original values
+    fetchProfile(); 
   };
 
   const handleAvatarChange = (e) => {
@@ -149,7 +149,7 @@ const AccountProfile = () => {
       reader.onloadend = () => {
         const newAvatar = reader.result;
         setProfile({...profile, avatar: newAvatar});
-        // Update global user profile to sync with header
+        
         updateProfile({ avatar: newAvatar });
       };
       reader.readAsDataURL(file);
@@ -205,7 +205,7 @@ const AccountProfile = () => {
   return (
     <div className="p-8 min-h-screen bg-gray-50 dark:bg-slate-900">
       <div className="w-full">
-        {/* Error Message */}
+        {}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex">
@@ -215,7 +215,7 @@ const AccountProfile = () => {
           </div>
         )}
         
-        {/* Success Message */}
+        {}
         {success && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex">
@@ -225,7 +225,7 @@ const AccountProfile = () => {
           </div>
         )}
         
-        {/* Header */}
+        {}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
@@ -291,12 +291,12 @@ const AccountProfile = () => {
           </div>
         </div>
 
-        {/* Profile Card */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Left Column - Profile Info */}
+          {}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-lg p-8">
-              {/* Avatar Section */}
+              {}
               <div className="flex flex-col items-center">
                 <div className="relative mb-6">
                   <img
@@ -309,47 +309,12 @@ const AccountProfile = () => {
                       <Camera className="h-5 w-5 text-white" />
                       <input
                         type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-                </div>
-                
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {profile.firstName} {profile.lastName}
-                  </h2>
-                  <div className="flex items-center justify-center text-gray-600 mb-2">
-                    <Briefcase className="h-4 w-4 mr-2" />
-                    {profile.jobTitle}
-                  </div>
-                  <div className="flex items-center justify-center text-gray-600">
-                    <Building className="h-4 w-4 mr-2" />
-                    {profile.department}
-                  </div>
-                </div>
-
-                <div className="w-full p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                  <div className="flex items-center text-center">
-                    <Calendar className="h-5 w-5 text-blue-600 mr-3" />
-                    <div className='flex justify-center gap-32 text-center items-center'>
-                      <p className="text-sm font-semibold text-blue-900">Member since</p>
-                      <p className="text-xs text-blue-700">{new Date(profile.joinDate).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Form Fields */}
+                        accept="image}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Personal Information</h3>
               
-              {/* Profile Information */}
+              {}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -496,7 +461,7 @@ const AccountProfile = () => {
           </div>
         </div>
 
-        {/* Account Activity */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -565,7 +530,7 @@ const AccountProfile = () => {
             </div>
           </div>
 
-          {/* Account Stats */}
+          {}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Account Stats</h3>

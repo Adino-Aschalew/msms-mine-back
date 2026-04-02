@@ -5,7 +5,7 @@ class InterestService {
     const connection = await transaction();
     
     try {
-      // Get account details
+      
       const [account] = await connection.execute(
         'SELECT * FROM savings_accounts WHERE id = ? AND account_status = "ACTIVE"',
         [accountId]
@@ -22,11 +22,11 @@ class InterestService {
         return { interestAmount: 0, message: 'No interest calculated for zero or negative balance' };
       }
       
-      // Calculate monthly interest (5% annual rate divided by 12)
+      
       const monthlyInterestRate = interestRate / 12;
       const interestAmount = currentBalance * monthlyInterestRate;
       
-      // Add interest transaction
+      
       await connection.execute(`
         INSERT INTO savings_transactions (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
         VALUES (?, ?, 'INTEREST', ?, ?, ?, ?, ?, NOW())
@@ -40,7 +40,7 @@ class InterestService {
         `Monthly interest payment - ${(interestRate * 100).toFixed(2)}% annual rate`
       ]);
       
-      // Update account balance
+      
       await connection.execute(
         'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
         [currentBalance + interestAmount, accountId]
@@ -62,7 +62,7 @@ class InterestService {
 
   static async calculateLoanInterest(loanId, overdueDays = 0) {
     try {
-      // Get loan details
+      
       const [loan] = await query(
         'SELECT * FROM loans WHERE id = ? AND status IN ("ACTIVE", "OVERDUE")',
         [loanId]
@@ -80,13 +80,13 @@ class InterestService {
         return { interestAmount: 0, message: 'No interest calculated for paid-off loan' };
       }
       
-      // Calculate monthly interest
+      
       const monthlyInterestRate = interestRate / 12 / 100;
       let interestAmount = outstandingBalance * monthlyInterestRate;
       
-      // Add penalty interest if overdue
+      
       if (overdueDays > 0) {
-        const penaltyRate = 0.02; // 2% penalty rate
+        const penaltyRate = 0.02; 
         const penaltyInterest = outstandingBalance * penaltyRate * (overdueDays / 30);
         interestAmount += penaltyInterest;
       }
@@ -108,7 +108,7 @@ class InterestService {
     const connection = await transaction();
     
     try {
-      // Get all active savings accounts
+      
       const [accounts] = await connection.execute(
         'SELECT * FROM savings_accounts WHERE account_status = "ACTIVE" AND current_balance > 0'
       );
@@ -127,7 +127,7 @@ class InterestService {
           const interestAmount = currentBalance * monthlyInterestRate;
           
           if (interestAmount > 0) {
-            // Add interest transaction
+            
             await connection.execute(`
               INSERT INTO savings_transactions (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
               VALUES (?, ?, 'INTEREST', ?, ?, ?, ?, ?, NOW())
@@ -141,7 +141,7 @@ class InterestService {
               `Monthly interest payment - ${(interestRate * 100).toFixed(2)}% annual rate`
             ]);
             
-            // Update account balance
+            
             await connection.execute(
               'UPDATE savings_accounts SET current_balance = ?, updated_at = NOW() WHERE id = ?',
               [currentBalance + interestAmount, account.id]
@@ -176,7 +176,7 @@ class InterestService {
     const connection = await transaction();
     
     try {
-      // Get all active and overdue loans
+      
       const [loans] = await connection.execute(`
         SELECT l.*, DATEDIFF(NOW(), l.next_payment_date) as overdue_days
         FROM loans l 
@@ -196,17 +196,17 @@ class InterestService {
           const interestRate = parseFloat(loan.interest_rate);
           const overdueDays = loan.overdue_days > 0 ? loan.overdue_days : 0;
           
-          // Calculate monthly interest
+          
           const monthlyInterestRate = interestRate / 12 / 100;
           let interestAmount = outstandingBalance * monthlyInterestRate;
           
-          // Add penalty interest if overdue
+          
           if (overdueDays > 0) {
-            const penaltyRate = 0.02; // 2% penalty rate
+            const penaltyRate = 0.02; 
             const penaltyInterest = outstandingBalance * penaltyRate * (overdueDays / 30);
             interestAmount += penaltyInterest;
             
-            // Update loan status to overdue if not already
+            
             if (loan.status === 'ACTIVE') {
               await connection.execute(
                 'UPDATE loans SET status = "OVERDUE", updated_at = NOW() WHERE id = ?',
@@ -216,7 +216,7 @@ class InterestService {
           }
           
           if (interestAmount > 0) {
-            // Add interest transaction
+            
             await connection.execute(`
               INSERT INTO loan_transactions (loan_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, transaction_date)
               VALUES (?, ?, 'INTEREST', ?, ?, ?, ?, ?, NOW())
@@ -230,7 +230,7 @@ class InterestService {
               `Monthly interest - ${interestRate}% annual rate${overdueDays > 0 ? ` + penalty for ${overdueDays} days overdue` : ''}`
             ]);
             
-            // Update loan balance
+            
             await connection.execute(
               'UPDATE loans SET outstanding_balance = ?, updated_at = NOW() WHERE id = ?',
               [outstandingBalance + interestAmount, loan.id]
@@ -328,7 +328,7 @@ class InterestService {
           dateFormat = '%Y-%m';
       }
       
-      // Savings interest summary
+      
       const savingsQuery = `
         SELECT 
           DATE_FORMAT(transaction_date, '${dateFormat}') as period,
@@ -341,7 +341,7 @@ class InterestService {
         LIMIT 12
       `;
       
-      // Loan interest summary
+      
       const loanQuery = `
         SELECT 
           DATE_FORMAT(transaction_date, '${dateFormat}') as period,
@@ -371,7 +371,7 @@ class InterestService {
 
   static async updateInterestRates(savingsRate, loanRate) {
     try {
-      // Update default interest rates in system settings
+      
       await query(`
         INSERT INTO system_settings (setting_key, setting_value, updated_at)
         VALUES ('DEFAULT_SAVINGS_INTEREST_RATE', ?, NOW())

@@ -16,7 +16,7 @@ class HrController {
         is_active: req.query.is_active
       };
       
-      // Remove undefined filters
+      
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
       
       const result = await HrService.getEmployees(filters);
@@ -151,7 +151,7 @@ class HrController {
         salary: salary
       };
       
-      // Remove undefined values to avoid overwriting with null if unintentional
+      
       Object.keys(profileData).forEach(key => profileData[key] === undefined && delete profileData[key]);
       
       const result = await HrService.updateEmployeeProfile(userId, profileData, adminId, ip, userAgent);
@@ -263,7 +263,7 @@ class HrController {
         employee_id: employeeId || `EMP${Date.now().toString().slice(-6)}`,
         username: email,
         email: email,
-        role: 'EMPLOYEE' // SECURITY: All users created via HR dashboard are categorized as 'EMPLOYEE'
+        role: 'EMPLOYEE' 
       };
       
       const profileData = {
@@ -274,13 +274,13 @@ class HrController {
         address: address,
         department: department,
         job_grade: type,
-        job_role: role || jobRole, // Display role/job title
+        job_role: role || jobRole, 
         salary: salary,
         employment_status: status === 'Active' ? 'ACTIVE' : (status === 'Inactive' ? 'INACTIVE' : status.toUpperCase()),
         hire_date: joinDate
       };
       
-      // Validate required fields
+      
       if (!employeeData.employee_id || !employeeData.username || !employeeData.email) {
         return res.status(400).json({
           success: false,
@@ -534,8 +534,8 @@ class HrController {
     try {
       const userId = req.userId;
       
-      // For now, return basic user info from auth middleware
-      // We can enhance this later once the profile service is debugged
+      
+      
       res.json({
         success: true,
         data: {

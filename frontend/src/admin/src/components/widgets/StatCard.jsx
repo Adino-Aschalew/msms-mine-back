@@ -39,7 +39,7 @@ const StatCard = ({ title, value, change, changeType, icon, color, trend }) => {
         <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
       </div>
 
-      {/* Mini trend chart */}
+      {}
       <div className="h-12 flex items-end gap-1">
         {trend.map((value, index) => (
           <div

@@ -49,7 +49,7 @@ const Employees = () => {
       const list = response.employees || response.data?.employees || [];
       setEmployees(list);
       
-      // Calculate summary stats
+      
       const salary = list.reduce((sum, emp) => sum + parseFloat(emp.salary || 0), 0);
       const savings = list.reduce((sum, emp) => sum + parseFloat(emp.savingsBalance || 0), 0);
       const active = list.filter(emp => emp.status === 'active' || emp.is_active).length;
@@ -70,7 +70,7 @@ const Employees = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Employees
@@ -80,7 +80,7 @@ const Employees = () => {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
@@ -120,7 +120,7 @@ const Employees = () => {
         </div>
       </div>
 
-      {/* Controls */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -165,7 +165,7 @@ const Employees = () => {
         </div>
       </div>
 
-      {/* Employees Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

@@ -50,14 +50,14 @@ const ModuleNavigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-8">
-            {/* Logo */}
+            {}
             <div className="flex-shrink-0 flex items-center">
               <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 Microfinance
               </span>
             </div>
 
-            {/* Module Navigation */}
+            {}
             <div className="hidden md:flex space-x-4">
               {allModules.map((module) => (
                 <Link
@@ -75,7 +75,7 @@ const ModuleNavigation = () => {
             </div>
           </div>
 
-          {/* User Menu */}
+          {}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">

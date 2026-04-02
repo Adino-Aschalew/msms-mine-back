@@ -7,16 +7,16 @@ const dbConfig = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'microfinance_system',
-  port: process.env.DB_PORT || 3306, // Standard MySQL port
+  port: process.env.DB_PORT || 3306, 
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // Remove problematic options that might cause connection issues
-  // acquireTimeout: 60000,
-  // timeout: 60000,
+  
+  
+  
   reconnect: true,
   charset: 'utf8mb4',
-  // Add connection retry logic
+  
   enableKeepAlive: true,
   keepAliveInitialDelay: 0
 };

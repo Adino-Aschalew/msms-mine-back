@@ -7,29 +7,41 @@ const { query } = require('../../config/database');
 class LoanService {
   static async applyForLoan(applicationData, userId, ip, userAgent) {
     try {
-      // Check eligibility first
+      console.log('📝 LoanService.applyForLoan called with:', { applicationData, userId });
+      
+      
+      console.log('🔍 Checking eligibility...');
       const eligibility = await LoanModel.checkEligibility(userId);
+      console.log('✅ Eligibility result:', eligibility);
+      
       if (!eligibility.eligible) {
+        console.log('❌ User not eligible:', eligibility.reason);
         throw new Error(eligibility.reason);
       }
       
-      // Calculate loan details
+      
+      console.log('🧮 Calculating loan details...');
       const { loan_amount, interest_rate, loan_term_months } = applicationData;
       const calculation = await LoanModel.calculateLoanAmount(loan_amount, interest_rate, loan_term_months);
+      console.log('✅ Calculation result:', calculation);
       
-      // Get employee_id from eligibility check result
+      
       const employee_id = eligibility.employee_id;
+      console.log('👤 Employee ID:', employee_id);
       
-      // Get user's monthly income from their profile
+      
+      console.log('💰 Getting user profile...');
       const [userProfile] = await query(`
         SELECT ep.salary
         FROM employee_profiles ep
         WHERE ep.user_id = ?
       `, [userId]);
+      console.log('✅ User profile:', userProfile);
       
       const user_monthly_income = userProfile?.salary || 0;
       
-      // Create loan application
+      
+      console.log('📝 Creating loan application...');
       const applicationId = await LoanModel.createLoanApplication({
         ...applicationData,
         user_id: userId,
@@ -38,16 +50,17 @@ class LoanService {
         monthly_income: user_monthly_income,
         created_by: userId
       });
+      console.log('✅ Application created with ID:', applicationId);
       
-      // Save guarantor information
+      
       if (applicationData.guarantor_details) {
         await this.saveGuarantorInformation(applicationId, userId, applicationData.guarantor_details);
       }
       
-      // Log application
+      
       await auditLog(userId, 'LOAN_APPLICATION_CREATED', 'loan_applications', applicationId, null, applicationData, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         userId,
         'Loan Application Submitted',
@@ -55,16 +68,25 @@ class LoanService {
         'INFO'
       );
       
-      // Send notification to loan committee
-      const committeeMembers = await CommitteeService.getCommitteeMembers();
-      for (const member of committeeMembers) {
-        await NotificationService.createNotification(
-          member.user_id,
-          'New Loan Application',
-          `New loan application submitted for ${loan_amount}.`,
-          'INFO',
-          { employee_id: employee_id }
-        );
+      
+      try {
+        const committeeMembers = await CommitteeService.getCommitteeMembers();
+        console.log('📋 Committee members:', committeeMembers);
+        
+        if (committeeMembers && Array.isArray(committeeMembers)) {
+          for (const member of committeeMembers) {
+            await NotificationService.createNotification(
+              member.user_id,
+              'New Loan Application',
+              `A new loan application for ${loan_amount} requires your review.`,
+              'INFO'
+            );
+          }
+        } else {
+          console.log('⚠️ No committee members found or invalid data');
+        }
+      } catch (committeeError) {
+        console.log('⚠️ Error notifying committee:', committeeError.message);
       }
       
       return {
@@ -94,7 +116,7 @@ class LoanService {
         throw new Error('Loan application not found');
       }
       
-      // Parse guarantor details if exists
+      
       if (application.guarantor_details) {
         application.guarantor_details = JSON.parse(application.guarantor_details);
       }
@@ -149,14 +171,14 @@ class LoanService {
       
       const application = await LoanModel.getLoanApplicationById(applicationId);
       
-      // Log approval
+      
       await auditLog(reviewedBy, 'LOAN_APPLICATION_APPROVED', 'loan_applications', applicationId, null, {
         approved_amount: approvedAmount,
         approved_term_months: approvedTerm,
         approved_interest_rate: approvedRate
       }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         application.user_id,
         'Loan Application Approved',
@@ -164,7 +186,7 @@ class LoanService {
         'SUCCESS'
       );
       
-      // Send email notification
+      
       if (application.email) {
         await NotificationService.sendEmail(
           application.email,
@@ -207,10 +229,10 @@ class LoanService {
       
       const application = await LoanModel.getLoanApplicationById(applicationId);
       
-      // Log rejection
+      
       await auditLog(reviewedBy, 'LOAN_APPLICATION_REJECTED', 'loan_applications', applicationId, null, { reason }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         application.user_id,
         'Loan Application Rejected',
@@ -218,7 +240,7 @@ class LoanService {
         'ERROR'
       );
       
-      // Send email notification
+      
       if (application.email) {
         await NotificationService.sendEmail(
           application.email,
@@ -279,18 +301,18 @@ class LoanService {
         throw new Error('Loan has already been disbursed');
       }
       
-      // Add disbursement transaction
+      
       const transaction = await LoanModel.addLoanTransaction(
         loanId, 'DISBURSEMENT', loan.loan_amount, `DISBURSEMENT_${Date.now()}`, 'Loan disbursement'
       );
       
-      // Update loan status
+      
       await LoanModel.updateLoanStatus(loanId, 'DISBURSED');
       
-      // Log disbursement
+      
       await auditLog(disbursedBy, 'LOAN_DISBURSED', 'loans', loanId, null, { amount: loan.loan_amount }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         loan.user_id,
         'Loan Disbursed',
@@ -328,12 +350,12 @@ class LoanService {
         throw new Error('Payment amount exceeds outstanding balance');
       }
       
-      // Add payment transaction
+      
       const transaction = await LoanModel.addLoanTransaction(
         loanId, 'PAYMENT', paymentAmount, `PAYMENT_${Date.now()}`, `Loan payment via ${paymentMethod}`
       );
       
-      // Update next payment date if not fully paid
+      
       if (transaction.newBalance > 0) {
         const nextPaymentDate = new Date(loan.next_payment_date);
         nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
@@ -341,13 +363,13 @@ class LoanService {
         await query('UPDATE loans SET next_payment_date = ? WHERE id = ?', [nextPaymentDate, loanId]);
       }
       
-      // Log payment
+      
       await auditLog(userId, 'LOAN_PAYMENT', 'loan_transactions', transaction.transactionId, null, { 
         amount: paymentAmount, 
         payment_method: paymentMethod 
       }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         loan.user_id,
         'Loan Payment Received',
@@ -413,7 +435,7 @@ class LoanService {
     try {
       const calculation = await LoanModel.calculateLoanAmount(loanAmount, interestRate, termMonths);
       
-      // Generate amortization schedule
+      
       const schedule = [];
       let balance = loanAmount;
       const monthlyRate = interestRate / 100 / 12;
@@ -483,13 +505,13 @@ class LoanService {
         throw new Error('Failed to update loan status');
       }
       
-      // Log status change
+      
       await auditLog(updatedBy, 'LOAN_STATUS_UPDATE', 'loans', loanId, null, { 
         old_status: loan.status, 
         new_status: status 
       }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         loan.user_id,
         'Loan Status Updated',
@@ -530,14 +552,14 @@ class LoanService {
       let score = 0;
       let deductions = [];
       
-      // Employment status (30 points)
+      
       if (userData.is_active && userData.email_verified && userData.employment_status === 'ACTIVE') {
         score += 30;
       } else {
         deductions.push('Not eligible for employment status');
       }
       
-      // Employment duration (25 points)
+      
       if (userData.days_employed >= 365) {
         score += 25;
       } else if (userData.days_employed >= 180) {
@@ -548,7 +570,7 @@ class LoanService {
         deductions.push('Insufficient employment duration');
       }
       
-      // Salary grade (20 points)
+      
       if (userData.salary_grade >= 5) {
         score += 20;
       } else if (userData.salary_grade >= 3) {
@@ -559,7 +581,7 @@ class LoanService {
         deductions.push('Low salary grade');
       }
       
-      // Current loans (15 points)
+      
       if (userData.active_loans === 0) {
         score += 15;
       } else if (userData.active_loans === 1) {
@@ -569,7 +591,7 @@ class LoanService {
         deductions.push('Multiple active loans');
       }
       
-      // Payment history (10 points)
+      
       if (userData.approved_loans > 0 && userData.avg_balance < 10000) {
         score += 10;
       } else if (userData.approved_loans > 0 && userData.avg_balance < 50000) {
@@ -591,31 +613,31 @@ class LoanService {
 
   static async saveGuarantorInformation(loanApplicationId, userId, guarantorDetails) {
     try {
-      // Parse guarantor details if it's a string
+      
       const guarantorData = typeof guarantorDetails === 'string' 
         ? JSON.parse(guarantorDetails) 
         : guarantorDetails;
 
       const { type, employeeId, fullName, email, phoneNumber, employer, relationship } = guarantorData;
 
-      // Prepare guarantor record
+      
       const guarantorRecord = {
         loan_application_id: loanApplicationId,
         user_id: userId,
-        guarantor_type: type.toUpperCase(), // 'INTERNAL' or 'EXTERNAL'
+        guarantor_type: type.toUpperCase(), 
         guarantor_name: fullName || '',
         guarantor_id: employeeId || '',
         relationship: relationship || '',
-        monthly_income: 0, // Default value, can be updated later
+        monthly_income: 0, 
         contact_phone: phoneNumber || '',
         contact_email: email || '',
-        address: '', // Default value
-        is_approved: null, // Not approved yet
+        address: '', 
+        is_approved: null, 
         approved_by: null,
         approval_date: null
       };
 
-      // Insert guarantor record
+      
       const insertQuery = `
         INSERT INTO guarantors (
           loan_application_id, user_id, guarantor_type, guarantor_name, 
@@ -644,8 +666,8 @@ class LoanService {
       console.log('Guarantor information saved successfully for loan application:', loanApplicationId);
     } catch (error) {
       console.error('Error saving guarantor information:', error);
-      // Don't throw error here to avoid failing the loan application
-      // Just log the error for debugging
+      
+      
     }
   }
 }

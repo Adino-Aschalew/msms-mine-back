@@ -5,13 +5,13 @@ const NotificationService = require('../../services/notification.service');
 class GuarantorService {
   static async addGuarantor(loanApplicationId, guarantorDetails, userId, ip, userAgent) {
     try {
-      // Validate guarantor details
+      
       const validation = await this.validateGuarantor(guarantorDetails);
       if (!validation.isValid) {
         throw new Error(validation.errors.join(', '));
       }
       
-      // Add guarantor to database
+      
       const insertQuery = `
         INSERT INTO guarantors (loan_application_id, user_id, guarantor_name, guarantor_email, guarantor_phone, guarantor_address, guarantor_relationship, guarantee_amount, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', NOW())
@@ -28,7 +28,7 @@ class GuarantorService {
         guarantorDetails.guarantee_amount
       ]);
       
-      // Update loan application with guarantor
+      
       const application = await query('SELECT guarantor_details FROM loan_applications WHERE id = ?', [loanApplicationId]);
       const existingGuarantors = JSON.parse(application[0]?.guarantor_details || '[]');
       existingGuarantors.push({
@@ -41,10 +41,10 @@ class GuarantorService {
         [JSON.stringify(existingGuarantors), loanApplicationId]
       );
       
-      // Log guarantor addition
+      
       await auditLog(userId, 'GUARANTOR_ADDED', 'guarantors', result.insertId, null, guarantorDetails, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         userId,
         'Guarantor Added',
@@ -52,15 +52,15 @@ class GuarantorService {
         'INFO'
       );
       
-      // Send notification to guarantor
+      
       await NotificationService.createNotification(
-        null, // System notification
+        null, 
         'Guarantor Request',
         `You have been requested to be a guarantor for a loan application.`,
         'INFO'
       );
       
-      // Send email to guarantor
+      
       await NotificationService.sendEmail(
         guarantorDetails.guarantor_email,
         'Guarantor Request - Microfinance System',
@@ -181,26 +181,26 @@ class GuarantorService {
         throw new Error('Invalid guarantor status');
       }
       
-      // Check if guarantor exists
+      
       const guarantor = await this.getGuarantorById(guarantorId);
       if (!guarantor) {
         throw new Error('Guarantor not found');
       }
       
-      // Update status
+      
       await query(`
         UPDATE guarantors 
         SET status = ?, updated_at = NOW()
         WHERE id = ?
       `, [status, guarantorId]);
       
-      // Log status change
+      
       await auditLog(updatedBy, 'GUARANTOR_STATUS_UPDATE', 'guarantors', guarantorId, null, { 
         old_status: guarantor.status, 
         new_status: status 
       }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         guarantor.user_id,
         'Guarantor Status Updated',
@@ -208,7 +208,7 @@ class GuarantorService {
         'INFO'
       );
       
-      // Send notification to guarantor
+      
       if (guarantor.guarantor_email) {
         const emailSubject = `Guarantor Status Update - ${status}`;
         const emailContent = `
@@ -252,7 +252,7 @@ class GuarantorService {
     try {
       const errors = [];
       
-      // Required fields validation
+      
       if (!guarantorDetails.guarantor_name || guarantorDetails.guarantor_name.trim() === '') {
         errors.push('Guarantor name is required');
       }
@@ -277,7 +277,7 @@ class GuarantorService {
         errors.push('Guarantee amount must be greater than 0');
       }
       
-      // Email validation
+      
       if (guarantorDetails.guarantor_email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(guarantorDetails.guarantor_email)) {
@@ -285,7 +285,7 @@ class GuarantorService {
         }
       }
       
-      // Phone validation
+      
       if (guarantorDetails.guarantor_phone) {
         const phoneRegex = /^[+]?[\d\s\-\(\)]+$/;
         if (!phoneRegex.test(guarantorDetails.guarantor_phone)) {
@@ -359,20 +359,20 @@ class GuarantorService {
         throw new Error('Guarantor not found');
       }
       
-      // Update status to released
+      
       await this.updateGuarantorStatus(guarantorId, 'RELEASED', releasedBy, ip, userAgent);
       
-      // Add release reason to notes
+      
       await query(`
         UPDATE guarantors 
         SET notes = ?, updated_at = NOW()
         WHERE id = ?
       `, [reason, guarantorId]);
       
-      // Log release
+      
       await auditLog(releasedBy, 'GUARANTOR_RELEASED', 'guarantors', guarantorId, null, { reason }, ip, userAgent);
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         guarantor.user_id,
         'Guarantor Released',
@@ -380,7 +380,7 @@ class GuarantorService {
         'INFO'
       );
       
-      // Send notification to guarantor
+      
       if (guarantor.guarantor_email) {
         await NotificationService.sendEmail(
           guarantor.guarantor_email,
@@ -404,14 +404,14 @@ class GuarantorService {
 
   static async checkGuarantorEligibility(userId, loanAmount) {
     try {
-      // Check if user has existing active loans
+      
       const [activeLoans] = await query(`
         SELECT COUNT(*) as count, SUM(outstanding_balance) as total_balance
         FROM loans
         WHERE user_id = ? AND status IN ('ACTIVE', 'OVERDUE')
       `, [userId]);
       
-      // Check if user has pending applications
+      
       const [pendingApplications] = await query(`
         SELECT COUNT(*) as count, SUM(requested_amount) as total_amount
         FROM loan_applications
@@ -422,9 +422,9 @@ class GuarantorService {
       const totalPendingAmount = parseFloat(pendingApplications[0]?.total_amount || 0);
       const totalObligations = totalActiveBalance + totalPendingAmount;
       
-      // Check if user can be a guarantor
-      const maxGuaranteeRatio = 0.5; // Maximum 50% of monthly income
-      const monthlyIncome = 5000; // Simplified calculation
+      
+      const maxGuaranteeRatio = 0.5; 
+      const monthlyIncome = 5000; 
       
       const maxGuaranteeAmount = monthlyIncome * maxGuaranteeRatio;
       
@@ -448,7 +448,7 @@ class GuarantorService {
         throw new Error('Guarantor not found');
       }
       
-      // Send reminder to guarantor
+      
       if (guarantor.guarantor_email) {
         await NotificationService.sendEmail(
           guarantor.guarantor_email,

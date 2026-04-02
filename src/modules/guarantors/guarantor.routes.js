@@ -5,23 +5,23 @@ const { auditMiddleware } = require('../../middleware/audit');
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
+
 router.use(authMiddleware);
 
-// User routes (authenticated users)
+
 router.post('/', GuarantorController.addGuarantor);
 router.get('/', GuarantorController.getGuarantors);
 router.get('/stats', GuarantorController.getGuarantorStats);
 
-// Individual guarantor routes
+
 router.get('/:guarantorId', GuarantorController.getGuarantorById);
 router.put('/:guarantorId/status', GuarantorController.updateGuarantorStatus);
 
-// Admin/HR routes
+
 router.get('/by-application/:loanApplicationId', roleMiddleware(['ADMIN', 'HR', 'LOAN_COMMITTEE']), GuarantorController.getGuarantors);
 router.get('/by-status/:status', roleMiddleware(['ADMIN', 'HR', 'LOAN_COMMITTEE']), GuarantorController.getGuarantors);
 
-// Validation routes
+
 router.post('/validate', GuarantorController.validateGuarantor);
 
 module.exports = router;

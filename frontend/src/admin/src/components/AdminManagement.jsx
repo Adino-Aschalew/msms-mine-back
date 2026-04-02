@@ -9,13 +9,13 @@ const AdminManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Admin lists
+  
   const [hrAdmins, setHRAdmins] = useState([]);
   const [financeAdmins, setFinanceAdmins] = useState([]);
   const [regularAdmins, setRegularAdmins] = useState([]);
   const [loanCommitteeAdmins, setLoanCommitteeAdmins] = useState([]);
 
-  // Modal states
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
@@ -99,7 +99,7 @@ const AdminManagement = () => {
         await isActive ? adminAPI.deactivateLoanCommitteeAdmin(adminId) : adminAPI.activateLoanCommitteeAdmin(adminId);
       }
       
-      // Refresh the list
+      
       fetchAdminsByType(activeTab);
     } catch (err) {
       setError('Failed to toggle admin status');
@@ -123,7 +123,7 @@ const AdminManagement = () => {
         await adminAPI.deleteLoanCommitteeAdmin(adminId);
       }
       
-      // Refresh the list
+      
       fetchAdminsByType(activeTab);
     } catch (err) {
       setError('Failed to delete admin');
@@ -274,7 +274,7 @@ const AdminManagement = () => {
         </div>
       )}
 
-      {/* Tabs */}
+      {}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => {
@@ -297,11 +297,11 @@ const AdminManagement = () => {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {}
       <div className="mt-6">
         {activeTab === 'overview' && dashboardData && (
           <div>
-            {/* Overview Stats */}
+            {}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-white overflow-hidden shadow rounded-lg">
                 <div className="p-5">
@@ -368,7 +368,7 @@ const AdminManagement = () => {
               </div>
             </div>
 
-            {/* Admin Statistics */}
+            {}
             {adminStats && (
               <div className="bg-white shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">

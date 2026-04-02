@@ -352,12 +352,12 @@ class ReportController {
       
       const report = reports[0];
       
-      // Delete file if it exists
+      
       if (require('fs').existsSync(report.file_path)) {
         require('fs').unlinkSync(report.file_path);
       }
       
-      // Delete database record
+      
       const deleteQuery = 'DELETE FROM generated_reports WHERE id = ?';
       await require('../config/database').query(deleteQuery, [reportId]);
       

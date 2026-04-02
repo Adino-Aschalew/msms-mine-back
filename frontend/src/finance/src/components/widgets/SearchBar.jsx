@@ -10,7 +10,7 @@ const SearchBar = ({ onOpen, isOpen, isModal = false }) => {
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
-  // Mock data for search
+  
   const mockData = [
     { type: 'employee', name: 'Sarah Johnson', email: 'sarah@company.com', id: 'EMP001' },
     { type: 'employee', name: 'Mike Chen', email: 'mike@company.com', id: 'EMP002' },
@@ -51,11 +51,11 @@ const SearchBar = ({ onOpen, isOpen, isModal = false }) => {
       setSelectedIndex(prev => (prev - 1 + results.length) % results.length);
     } else if (e.key === 'Enter' && results.length > 0) {
       e.preventDefault();
-      // Navigate to: selected result
+      
       const selectedResult = results[selectedIndex];
       console.log('Navigating to:', selectedResult);
       
-      // Navigate based on type
+      
       if (selectedResult.type === 'employee') {
         navigate('/employees');
       } else if (selectedResult.type === 'transaction') {
@@ -64,7 +64,7 @@ const SearchBar = ({ onOpen, isOpen, isModal = false }) => {
         navigate('/reports');
       }
       
-      // Close search and clear
+      
       if (isModal) {
         onOpen();
       }
@@ -85,7 +85,7 @@ const SearchBar = ({ onOpen, isOpen, isModal = false }) => {
   const handleResultClick = (result) => {
     console.log('Navigate to:', result);
     
-    // Navigate based on type
+    
     if (result.type === 'employee') {
       navigate('/employees');
     } else if (result.type === 'transaction') {
@@ -94,7 +94,7 @@ const SearchBar = ({ onOpen, isOpen, isModal = false }) => {
       navigate('/reports');
     }
     
-    // Close search and clear
+    
     if (isModal) {
       onOpen();
     }

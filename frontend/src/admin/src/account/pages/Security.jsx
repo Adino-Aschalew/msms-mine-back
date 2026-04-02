@@ -29,7 +29,7 @@ const Security = () => {
       [name]: value
     }));
     
-    // Clear error for this field
+    
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -85,18 +85,18 @@ const Security = () => {
     e.preventDefault();
     
     if (validatePasswordForm()) {
-      // Password change logic here
+      
       console.log('Password changed:', passwordData);
       setSuccessMessage('Password changed successfully!');
       
-      // Reset form
+      
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
       
-      // Clear success message after 3 seconds
+      
       setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
@@ -118,7 +118,7 @@ const Security = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Change Password */}
+        {}
         <div className="lg:col-span-2">
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Change Password</h2>
@@ -182,7 +182,7 @@ const Security = () => {
                   <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
                 )}
                 
-                {/* Password Strength Indicator */}
+                {}
                 {passwordData.newPassword && (
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-sm">
@@ -240,7 +240,7 @@ const Security = () => {
           </div>
         </div>
 
-        {/* Security Options */}
+        {}
         <div className="lg:col-span-2">
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Security Options</h2>

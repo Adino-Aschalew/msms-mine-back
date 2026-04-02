@@ -40,8 +40,8 @@ const FinanceTransactions = () => {
       const response = await financeAPI.getTransactionsList({
         search: searchQuery,
         type: filterType,
-        category: filterCategory, // Added category filter
-        dateRange: dateRange, // Added dateRange filter
+        category: filterCategory, 
+        dateRange: dateRange, 
         page: pagination.page,
         limit: pagination.limit
       });
@@ -87,7 +87,7 @@ const FinanceTransactions = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Transactions</h1>
@@ -101,7 +101,7 @@ const FinanceTransactions = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
@@ -142,7 +142,7 @@ const FinanceTransactions = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
@@ -199,7 +199,7 @@ const FinanceTransactions = () => {
         </div>
       </div>
 
-      {/* Transactions Table */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">

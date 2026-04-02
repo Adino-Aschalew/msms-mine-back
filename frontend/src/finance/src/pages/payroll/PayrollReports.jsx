@@ -93,7 +93,7 @@ const PayrollReports = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Payroll Reports
@@ -103,7 +103,7 @@ const PayrollReports = () => {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
           <div className="flex flex-col items-center text-center">
@@ -138,7 +138,7 @@ const PayrollReports = () => {
             </div>
             <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Total Payroll</h3>
             <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-1">
-              ${(payrollReports.reduce((sum, r) => sum + (r.totalPayroll || 0), 0) / 1000).toFixed(0)}K
+              ETB {(payrollReports.reduce((sum, r) => sum + (r.totalPayroll || 0), 0) / 1000).toFixed(0)}K
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-500">Total amount</p>
           </div>
@@ -158,7 +158,7 @@ const PayrollReports = () => {
         </div>
       </div>
 
-      {/* Controls */}
+      {}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -204,7 +204,7 @@ const PayrollReports = () => {
         </div>
       </div>
 
-      {/* Reports Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredReports.map((report) => {
           const typeColor = getReportTypeColor(report.type);
@@ -230,13 +230,13 @@ const PayrollReports = () => {
                 </span>
               </div>
               
-              {/* Report Details */}
+              {}
               <div className="space-y-3 flex-grow">
                 {report.totalPayroll && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Total Payroll</span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      ${(report.totalPayroll / 1000).toFixed(0)}K
+                      ETB {(report.totalPayroll / 1000).toFixed(0)}K
                     </span>
                   </div>
                 )}
@@ -254,7 +254,7 @@ const PayrollReports = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Total Taxes</span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      ${(report.totalTaxes / 1000).toFixed(0)}K
+                      ETB {(report.totalTaxes / 1000).toFixed(0)}K
                     </span>
                   </div>
                 )}
@@ -281,7 +281,7 @@ const PayrollReports = () => {
                 </div>
               </div>
               
-              {/* Action Buttons - Always at Bottom */}
+              {}
               <div className="grid grid-cols-2 gap-3 mt-auto pt-6 border-t border-gray-100 dark:border-gray-700">
                 <button className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all text-xs">
                   <Eye className="h-3.5 w-3.5" />

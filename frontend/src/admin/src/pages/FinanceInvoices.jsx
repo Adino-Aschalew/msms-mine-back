@@ -21,7 +21,7 @@ const FinanceInvoices = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Mock invoices data
+  
   const invoices = [
     {
       id: 'INV-2024-045',
@@ -164,7 +164,7 @@ const FinanceInvoices = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Invoices</h1>
@@ -182,7 +182,7 @@ const FinanceInvoices = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
@@ -233,7 +233,7 @@ const FinanceInvoices = () => {
         </div>
       </div>
 
-      {/* Invoice Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredInvoices.map((invoice) => (
           <InvoiceCard key={invoice.id} invoice={invoice} />

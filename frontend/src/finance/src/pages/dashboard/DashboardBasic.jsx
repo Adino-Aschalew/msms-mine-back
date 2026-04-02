@@ -3,7 +3,7 @@ import React from 'react';
 const DashboardBasic = () => {
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Dashboard Overview
@@ -13,7 +13,7 @@ const DashboardBasic = () => {
         </p>
       </div>
 
-      {/* Simple Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue</h3>
@@ -34,7 +34,7 @@ const DashboardBasic = () => {
         </div>
       </div>
 
-      {/* Test Section */}
+      {}
       <div className="card p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Dashboard is Working!

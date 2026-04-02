@@ -11,7 +11,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
         onClick={onClose} 
       />
       <div className="relative z-50 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-        {/* Modal Header */}
+        {}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -27,7 +27,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
           </div>
         </div>
         
-        {/* Modal Content */}
+        {}
         <div className="p-8">
           {children}
         </div>

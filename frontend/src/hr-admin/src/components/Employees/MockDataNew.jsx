@@ -10,7 +10,7 @@ export const employeesData = [
     phone: '+1 (555) 123-4567',
     address: '123 Tech Street, San Francisco, CA 94105',
     emergencyContact: 'John Jenkins - +1 (555) 987-6543',
-    avatar: 'https://i.pravatar.cc/150?u=sarah',
+    avatar: 'https:
     department: 'Engineering',
     role: 'Senior Software Engineer',
     type: 'Full-time',
@@ -34,7 +34,7 @@ export const employeesData = [
     phone: '+1 (555) 234-5678',
     address: '456 Business Ave, New York, NY 10001',
     emergencyContact: 'Lisa Chen - +1 (555) 876-5432',
-    avatar: 'https://i.pravatar.cc/150?u=michael',
+    avatar: 'https:
     department: 'Sales',
     role: 'Account Executive',
     type: 'Full-time',
@@ -58,7 +58,7 @@ export const employeesData = [
     phone: '+1 (555) 345-6789',
     address: '789 Marketing Blvd, Los Angeles, CA 90001',
     emergencyContact: 'Robert Davis - +1 (555) 765-4321',
-    avatar: 'https://i.pravatar.cc/150?u=emma',
+    avatar: 'https:
     department: 'Marketing',
     role: 'Marketing Manager',
     type: 'Full-time',
@@ -82,7 +82,7 @@ export const employeesData = [
     phone: '+1 (555) 456-7890',
     address: '321 Dev Road, Austin, TX 78701',
     emergencyContact: 'Mary Smith - +1 (555) 654-3210',
-    avatar: 'https://i.pravatar.cc/150?u=david',
+    avatar: 'https:
     department: 'Engineering',
     role: 'Frontend Developer',
     type: 'Contract',
@@ -106,7 +106,7 @@ export const employeesData = [
     phone: '+1 (555) 567-8901',
     address: '654 HR Lane, Chicago, IL 60601',
     emergencyContact: 'Susan Johnson - +1 (555) 543-2109',
-    avatar: 'https://i.pravatar.cc/150?u=alex',
+    avatar: 'https:
     department: 'HR',
     role: 'HR Specialist',
     type: 'Full-time',
@@ -130,7 +130,7 @@ export const employeesData = [
     phone: '+1 (555) 678-9012',
     address: '987 Design St, Miami, FL 33101',
     emergencyContact: 'Carlos Martinez - +1 (555) 432-1098',
-    avatar: 'https://i.pravatar.cc/150?u=olivia',
+    avatar: 'https:
     department: 'Design',
     role: 'Product Designer',
     type: 'Part-time',
@@ -154,7 +154,7 @@ export const employeesData = [
     phone: '+1 (555) 789-0123',
     address: '147 Ops Way, Seattle, WA 98101',
     emergencyContact: 'Jennifer Wilson - +1 (555) 321-0987',
-    avatar: 'https://i.pravatar.cc/150?u=james',
+    avatar: 'https:
     department: 'Engineering',
     role: 'DevOps Engineer',
     type: 'Full-time',
@@ -178,7 +178,7 @@ export const employeesData = [
     phone: '+1 (555) 890-1234',
     address: '258 Finance Ave, Boston, MA 02101',
     emergencyContact: 'William Brown - +1 (555) 210-9876',
-    avatar: 'https://i.pravatar.cc/150?u=sophia',
+    avatar: 'https:
     department: 'Finance',
     role: 'Financial Analyst',
     type: 'Full-time',
@@ -202,7 +202,7 @@ export const employeesData = [
     phone: '+1 (555) 901-2345',
     address: '369 Product Rd, Denver, CO 80201',
     emergencyContact: 'Elizabeth Taylor - +1 (555) 109-8765',
-    avatar: 'https://i.pravatar.cc/150?u=william',
+    avatar: 'https:
     department: 'Product',
     role: 'Product Manager',
     type: 'Full-time',
@@ -226,7 +226,7 @@ export const employeesData = [
     phone: '+1 (555) 012-3456',
     address: '741 Support St, Portland, OR 97201',
     emergencyContact: 'Daniel Anderson - +1 (555) 098-7654',
-    avatar: 'https://i.pravatar.cc/150?u=isabella',
+    avatar: 'https:
     department: 'Customer Support',
     role: 'Support Specialist',
     type: 'Full-time',

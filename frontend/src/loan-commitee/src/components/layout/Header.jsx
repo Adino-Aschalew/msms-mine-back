@@ -60,17 +60,17 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
   const [profileData, setProfileData] = useState(null);
   const [committeeStats, setCommitteeStats] = useState(null);
 
-  // Fetch profile and stats data
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch profile data
+        
         const profileRes = await committeeAPI.getProfile();
         if (profileRes.data?.success && profileRes.data?.data) {
           setProfileData(profileRes.data.data);
         }
 
-        // Fetch committee stats
+        
         const statsRes = await committeeAPI.getCommitteeStats();
         if (statsRes.data?.success && statsRes.data?.data) {
           setCommitteeStats(statsRes.data.data);
@@ -121,51 +121,51 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleViewDetails = (notification) => {
-    // Mark as read
+    
     notification.read = true;
     
-    // Navigate based on notification type
+    
     switch (notification.type) {
       case 'loan_request':
       case 'loan_approved':
-        // Navigate to loan details page
+        
         window.location.href = `/loan-requests/${notification.loanId}`;
         break;
       case 'report':
-        // Navigate to reports page
+        
         window.location.href = '/reports';
         break;
       default:
         console.log('View details for:', notification);
     }
     
-    // Close dropdown
+    
     setNotificationDropdown(false);
   };
 
   const handleReview = (notification) => {
-    // Mark as read
+    
     notification.read = true;
     
-    // Navigate based on notification type
+    
     switch (notification.type) {
       case 'loan_request':
-        // Navigate to loan review page
+        
         window.location.href = `/loan-requests/${notification.loanId}?action=review`;
         break;
       case 'loan_approved':
-        // Navigate to loan details for review
+        
         window.location.href = `/loan-requests/${notification.loanId}?action=review`;
         break;
       case 'report':
-        // Navigate to report review page
+        
         window.location.href = `/reports/${notification.reportId}?action=review`;
         break;
       default:
         console.log('Review:', notification);
     }
     
-    // Close dropdown
+    
     setNotificationDropdown(false);
   };
 
@@ -193,11 +193,11 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
   const handleSearchSubmit = (query) => {
     if (!query.trim()) return;
 
-    // Close any open dropdowns
+    
     setNotificationDropdown(false);
     setProfileDropdown(false);
 
-    // Navigate based on current page and search query
+    
     const currentPath = location.pathname;
     
     if (currentPath.includes('/loan-requests')) {
@@ -209,7 +209,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
     } else if (currentPath.includes('/notifications')) {
       navigate(`/notifications?search=${encodeURIComponent(query)}`);
     } else {
-      // Default to loan requests search
+      
       navigate(`/loan-requests?search=${encodeURIComponent(query)}`);
     }
   };
@@ -226,9 +226,9 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-5 lg:px-5 h-10 sm:h-20 lg:h-19 flex items-center justify-between">
       
-      {/* Left Section */}
+      {}
       <div className="flex items-center space-x-2 sm:space-x-4">
-        {/* Mobile Menu Toggle */}
+        {}
         <button
           onClick={toggleMobileSidebar}
           className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -236,10 +236,10 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
           <FiMenu className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-300" />
         </button>
 
-        {/* Welcome Message - Desktop Only */}
+        {}
         <div className="hidden lg:block">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Welcome back, {profileData ? `${profileData.first_name}` : (user?.username || 'User')}
+            Welcome back, {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.username || 'User')}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {profileData?.role || user?.role || 'Committee Administrator'}
@@ -247,10 +247,10 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
         </div>
       </div>
 
-      {/* Right Section */}
+      {}
       <div className="flex items-center space-x-1 sm:space-x-3">
         
-        {/* Theme Toggle */}
+        {}
         <div className="hidden sm:flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
           <button
             onClick={() => theme !== 'light' && toggleTheme('light')}
@@ -272,7 +272,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
           </button>
         </div>
 
-        {/* Mobile Theme Toggle */}
+        {}
         <button
           onClick={toggleTheme}
           className="sm:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -286,7 +286,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
           )}
         </button>
 
-        {/* Notifications */}
+        {}
         <div className="relative">
           <button
             onClick={() => setNotificationDropdown(!notificationDropdown)}
@@ -338,7 +338,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{notification.time}</p>
                         
-                        {/* Additional notification details */}
+                        {}
                         {(notification.type === 'loan_request' || notification.type === 'loan_approved') && (
                           <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                             <div>Applicant: {notification.applicant}</div>
@@ -354,7 +354,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                           </div>
                         )}
 
-                        {/* Action Buttons */}
+                        {}
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => handleViewDetails(notification)}
@@ -380,7 +380,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                 ))}
               </div>
               
-              {/* Footer */}
+              {}
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                 <button 
                   onClick={handleViewAllNotifications}
@@ -393,7 +393,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
           )}
         </div>
 
-        {/* Profile Dropdown */}
+        {}
         <div className="relative">
           <button
             onClick={() => setProfileDropdown(!profileDropdown)}
@@ -418,7 +418,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
 
           {profileDropdown && (
             <div className="absolute right-0 mt-2 sm:mt-3 w-72 sm:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-              {/* Profile Header */}
+              {}
               <div className="bg-blue-500 dark:bg-gray-700 p-4 sm:p-6 text-white dark:text-gray-100">
                 <div className="flex items-center space-x-3 sm:space-x-4">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
@@ -444,7 +444,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                 </div>
               </div>
 
-              {/* Quick Stats */}
+              {}
               <div className="grid grid-cols-3 gap-4 p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="text-center">
                   <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -466,7 +466,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                 </div>
               </div>
 
-              {/* Menu Items */}
+              {}
               <div className="p-2">
                 <div className="space-y-1">
                   <Link

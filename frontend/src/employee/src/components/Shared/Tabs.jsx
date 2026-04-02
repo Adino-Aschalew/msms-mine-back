@@ -57,7 +57,7 @@ const Tabs = ({
 
   return (
     <div {...props}>
-      {/* Tab Navigation */}
+      {}
       <nav className={classes}>
         {tabs.map((tab, index) => (
           <button
@@ -94,7 +94,7 @@ const Tabs = ({
         ))}
       </nav>
 
-      {/* Tab Content */}
+      {}
       <div className="mt-6">
         {tabs[activeTab]?.content}
       </div>

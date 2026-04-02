@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { loansAPI } from '../../../shared/services/loansAPI';
 
 const MyLoansPage = () => {
-  // Compact number formatting function
+  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -46,7 +46,7 @@ const MyLoansPage = () => {
         const approvedAmount = activeLoan ? parseFloat(activeLoan.loan_amount) : (app.status === 'APPROVED' ? parseFloat(app.approved_amount || app.requested_amount) : 0);
         const duration = activeLoan ? activeLoan.duration_months : (app.approved_term_months || app.repayment_duration_months || 0);
 
-        // Calculate a projected installment if approved but no active loan record yet
+        
         const projectedInstallment = status === 'approved' && duration > 0 ? (approvedAmount / duration) : 0;
 
         return {

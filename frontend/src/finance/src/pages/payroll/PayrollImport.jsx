@@ -3,6 +3,7 @@ import { Upload, Download, FileText, CheckCircle, AlertCircle, X, Users, DollarS
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { financeAPI } from '../../../../shared/services/financeAPI';
+import appEvents from '../../../../shared/utils/eventEmitter';
 import Papa from 'papaparse';
 
 const PayrollImport = () => {
@@ -51,7 +52,7 @@ const PayrollImport = () => {
 
     setFile(uploadedFile);
     
-    // Parse CSV/Excel for preview
+    
     if (uploadedFile.type === 'text/csv') {
       Papa.parse(uploadedFile, {
         header: true,
@@ -67,18 +68,21 @@ const PayrollImport = () => {
         },
       });
     } else {
-      // For Excel files, we'll show file info and let backend handle parsing
+      
       setPreview([{ 'Employee ID': 'Will be parsed by backend', 'Gross Salary': 'Will be parsed by backend', 'Net Salary': 'Will be parsed by backend' }]);
     }
   };
 
   const formatCurrency = (amount) => {
-    if (amount >= 1000000) {
-      return `METB ${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `KETB ${(amount / 1000).toFixed(1)}K`;
+    
+    const absAmount = Math.abs(amount);
+    
+    if (absAmount >= 1000000) {
+      return `METB ${(absAmount / 1000000).toFixed(1)}M`;
+    } else if (absAmount >= 1000) {
+      return `KETB ${(absAmount / 1000).toFixed(1)}K`;
     } else {
-      return `ETB ${amount.toLocaleString()}`;
+      return `ETB ${absAmount.toLocaleString()}`;
     }
   };
 
@@ -92,10 +96,7 @@ const PayrollImport = () => {
     const template = [
       {
         'Employee ID': 'EMP034',
-        'Gross Salary': '50000',
-        'Savings Deduction': '5000',
-        'Loan Deduction': '2000',
-        'Net Salary': '43000'
+        'Gross Salary': '50000'
       }
     ];
 
@@ -144,6 +145,24 @@ const PayrollImport = () => {
               : 'Payroll uploaded and ready for validation.'),
       });
 
+      
+      if (!isValidationError) {
+        appEvents.emit('payrollUploaded', {
+          batchId: response.batch_id,
+          totalEmployees: response.total_employees,
+          totalAmount: response.total_amount,
+          status: response.status,
+          timestamp: new Date()
+        });
+
+        
+        appEvents.emit('payrollDataUpdated', {
+          timestamp: new Date(),
+          action: 'upload',
+          data: response
+        });
+      }
+
     } catch (error) {
       addNotification({
         type: 'error',
@@ -161,7 +180,20 @@ const PayrollImport = () => {
     try {
       const response = await financeAPI.validatePayroll(results.batchId);
       setResults(prev => ({ ...prev, status: 'VALIDATED' }));
-      addNotification({ type: 'success', title: 'Validated', message: 'Payroll batch validated successfully.' });
+      addNotification({ type: 'success', title: 'Validation Complete', message: 'Payroll validated successfully' });
+      
+      
+      appEvents.emit('payrollValidated', {
+        batchId: results.batchId,
+        timestamp: new Date()
+      });
+
+      
+      appEvents.emit('payrollDataUpdated', {
+        timestamp: new Date(),
+        action: 'validate',
+        batchId: results.batchId
+      });
     } catch (error) {
       addNotification({ type: 'error', title: 'Validation Failed', message: error.message });
     } finally {
@@ -175,7 +207,20 @@ const PayrollImport = () => {
     try {
       await financeAPI.approvePayroll(results.batchId);
       setResults(prev => ({ ...prev, status: 'CONFIRMED' }));
-      addNotification({ type: 'success', title: 'Approved', message: 'Payroll batch approved for processing.' });
+      addNotification({ type: 'success', title: 'Payroll Approved', message: 'Payroll approved for processing' });
+      
+      
+      appEvents.emit('payrollApproved', {
+        batchId: results.batchId,
+        timestamp: new Date()
+      });
+
+      
+      appEvents.emit('payrollDataUpdated', {
+        timestamp: new Date(),
+        action: 'approve',
+        batchId: results.batchId
+      });
     } catch (error) {
       addNotification({ type: 'error', title: 'Approval Failed', message: error.message });
     } finally {
@@ -196,7 +241,7 @@ const PayrollImport = () => {
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
       <div className="w-full">
-        {/* Header */}
+        {}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -217,7 +262,7 @@ const PayrollImport = () => {
               className="flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600"
             >
               <Download className="h-4 w-4 mr-2" />
-              Template
+              DownloadTemplate
             </button>
           </div>
         </div>
@@ -377,7 +422,7 @@ const PayrollImport = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Results Summary */}
+            {}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Import Results

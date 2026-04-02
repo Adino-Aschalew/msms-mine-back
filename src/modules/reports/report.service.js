@@ -35,14 +35,14 @@ class ReportService {
           throw new Error('Invalid report type');
       }
       
-      // Save report to database if userId is provided
+      
       if (userId) {
         const reportId = await this.saveReport(reportType, reportData, userId);
         reportData.report_id = reportId;
         reportData.generated_at = new Date().toISOString();
       }
       
-      // Format output
+      
       switch (format) {
         case 'pdf':
           return await this.generatePDFReport(reportData, reportType);
@@ -86,7 +86,7 @@ class ReportService {
         ORDER BY l.created_at DESC
       `);
       
-      // Calculate portfolio metrics
+      
       const portfolioMetrics = {
         total_loans: portfolio?.length || 0,
         total_outstanding: portfolio?.reduce((sum, loan) => sum + parseFloat(loan.outstanding_balance || 0), 0) || 0,
@@ -453,31 +453,31 @@ class ReportService {
 
   static async getReportStats() {
     try {
-      // Get total reports count
+      
       const totalReportsResult = await query(`
         SELECT COUNT(*) as count FROM generated_reports
       `);
       
-      // Get this month reports count
+      
       const thisMonthReportsResult = await query(`
         SELECT COUNT(*) as count FROM generated_reports 
         WHERE MONTH(generation_date) = MONTH(CURRENT_DATE()) 
         AND YEAR(generation_date) = YEAR(CURRENT_DATE())
       `);
       
-      // Get total downloads count (simulate downloads since we don't have download tracking)
+      
       const totalDownloadsResult = await query(`
         SELECT COUNT(*) * 5 as total FROM generated_reports
       `);
       
-      // Get active users count (users who logged in last 30 days)
+      
       const activeUsersResult = await query(`
         SELECT COUNT(DISTINCT user_id) as count FROM audit_logs 
         WHERE action = 'LOGIN' 
         AND created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
       `);
       
-      // Get last month data for percentage calculations
+      
       const lastMonthReportsResult = await query(`
         SELECT COUNT(*) as count FROM generated_reports 
         WHERE MONTH(generation_date) = MONTH(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH))
@@ -499,22 +499,22 @@ class ReportService {
       const lastMonthReports = lastMonthReportsResult[0]?.count || 0;
       const lastMonthActiveUsers = lastMonthActiveUsersResult[0]?.count || 0;
       
-      // Calculate percentage changes
+      
       const reportsChange = lastMonthReports > 0 
         ? ((totalReports - lastMonthReports) / lastMonthReports * 100).toFixed(1)
-        : '12.0'; // Default for demo
+        : '12.0'; 
         
       const thisMonthChange = lastMonthReports > 0
         ? ((thisMonthReports - lastMonthReports) / lastMonthReports * 100).toFixed(1)
-        : '8.0'; // Default for demo
+        : '8.0'; 
         
       const downloadsChange = totalDownloads > 0
-        ? '18.0' // Default for demo
+        ? '18.0' 
         : '0.0';
         
       const activeUsersChange = lastMonthActiveUsers > 0
         ? ((activeUsers - lastMonthActiveUsers) / lastMonthActiveUsers * 100).toFixed(1)
-        : '5.0'; // Default for demo
+        : '5.0'; 
       
       return {
         totalReports,
@@ -528,12 +528,12 @@ class ReportService {
       };
     } catch (error) {
       console.error('Error fetching report stats:', error);
-      // Return default values if database queries fail
+      
       return {
         totalReports: 0,
         thisMonthReports: 0,
         totalDownloads: 0,
-        activeUsers: 89, // Default active users
+        activeUsers: 89, 
         reportsChange: '+12%',
         thisMonthChange: '+8%',
         downloadsChange: '+18%',
@@ -547,7 +547,7 @@ class ReportService {
       let whereClause = 'WHERE 1=1';
       const params = [];
       
-      // Add filters
+      
       if (filters.type && filters.type !== 'all') {
         whereClause += ' AND gr.report_type = ?';
         params.push(filters.type.toUpperCase());
@@ -601,12 +601,12 @@ class ReportService {
         ...report,
         size: report.record_count > 0 ? `${(report.record_count * 0.1).toFixed(1)} MB` : '1.2 MB',
         date: new Date(report.date).toISOString().split('T')[0],
-        downloads: Math.floor(Math.random() * 100), // Simulate download counts
+        downloads: Math.floor(Math.random() * 100), 
         type: report.type.toLowerCase()
       }));
     } catch (error) {
       console.error('Error fetching reports:', error);
-      // Return empty array if database queries fail
+      
       return [];
     }
   }

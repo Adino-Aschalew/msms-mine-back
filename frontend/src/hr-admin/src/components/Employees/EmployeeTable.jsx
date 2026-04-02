@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-// Modal Components
+
 import EmployeeModal from './EmployeeModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import ViewEmployeeModal from './ViewEmployeeModal';
@@ -25,7 +25,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Modal States
+  
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -96,7 +96,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
     return 'bg-rose-500';
   };
 
-  // Handlers
+  
   const openView = (emp) => {
     setSelectedEmployee(emp);
     setIsViewOpen(true);
@@ -119,7 +119,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
 
   return (
     <div className="glass-card rounded-2xl shadow-premium overflow-hidden flex flex-col transition-all duration-500">
-      {/* Table Toolbar */}
+      {}
       <div className="p-5 md:p-6 border-b border-sidebar-border/50 dark:border-white/5 flex flex-col md:flex-row gap-5 justify-between items-center bg-slate-50/20 dark:bg-transparent">
         <div className="relative w-full md:max-w-md group">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-all duration-300 w-4 h-4" />
@@ -172,7 +172,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
         </div>
       </div>
 
-      {/* Table Container - Horizontal Scroll */}
+      {}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left border-collapse">
           <thead className="bg-slate-50/50 dark:bg-white/[0.02] text-slate-500 dark:text-slate-400 border-b border-sidebar-border/50 dark:border-white/5">
@@ -284,7 +284,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
         </table>
       </div>
 
-      {/* Pagination Footer */}
+      {}
       <div className="p-5 md:p-6 border-t border-sidebar-border/50 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50/20 dark:bg-transparent">
         <div className="order-2 sm:order-1">
           Showing <span className="text-foreground">{((currentPage - 1) * itemsPerPage + 1).toString().padStart(2, '0')}</span> - <span className="text-foreground">{Math.min(currentPage * itemsPerPage, filteredData.length).toString().padStart(2, '0')}</span> of <span className="text-foreground">{filteredData.length.toString().padStart(2, '0')}</span>
@@ -324,7 +324,7 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
         </div>
       </div>
 
-      {/* Modals */}
+      {}
       <ViewEmployeeModal 
         isOpen={isViewOpen} 
         onClose={() => setIsViewOpen(false)} 

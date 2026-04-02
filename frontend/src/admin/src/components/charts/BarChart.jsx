@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -20,6 +20,16 @@ ChartJS.register(
 );
 
 const BarChart = ({ data, options = {} }) => {
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+  }, []);
+
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -92,7 +102,7 @@ const BarChart = ({ data, options = {} }) => {
 
   return (
     <div className="h-48">
-      <Bar data={data} options={{ ...defaultOptions, ...options }} />
+      <Bar ref={chartRef} data={data} options={{ ...defaultOptions, ...options }} />
     </div>
   );
 };

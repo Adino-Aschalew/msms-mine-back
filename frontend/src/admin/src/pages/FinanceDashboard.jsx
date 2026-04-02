@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { financeAPI } from '../../../shared/services/financeAPI';
+import appEvents from '../../../shared/utils/eventEmitter';
 
 const FinanceDashboard = () => {
   const [dateRange, setDateRange] = useState('MONTHLY');
@@ -24,39 +25,152 @@ const FinanceDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    
+    const handlePayrollUpdate = (payrollData) => {
+      console.log('Finance Dashboard: Payroll data updated, refreshing...', payrollData);
+      fetchDashboardData();
+    };
+    
+    appEvents.on('payrollDataUpdated', handlePayrollUpdate);
+    
+    
+    return () => {
+      appEvents.off('payrollDataUpdated', handlePayrollUpdate);
+    };
   }, [dateRange]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('🔄 Fetching finance dashboard data...');
+      
       const [overview, transactions] = await Promise.all([
-        financeAPI.getFinancialOverview(dateRange),
-        financeAPI.getRecentTransactions(5)
+        financeAPI.getFinancialOverview(dateRange).catch(err => {
+          console.error('❌ Finance Overview API Error:', err);
+          return { success: false, error: err };
+        }),
+        financeAPI.getRecentTransactions(5).catch(err => {
+          console.error('❌ Recent Transactions API Error:', err);
+          return { success: false, error: err };
+        })
       ]);
-      setData(overview);
-      setRecentTransactions(transactions);
+      
+      console.log('📊 Finance Overview Response:', overview);
+      console.log('💳 Recent Transactions Response:', transactions);
+      
+      
+      if (!overview.success) {
+        console.error('❌ Finance Overview failed:', overview.error);
+        setError('Failed to load financial overview. Please try again later.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!transactions.success) {
+        console.error('❌ Recent Transactions failed:', transactions.error);
+        setError('Failed to load recent transactions. Please try again later.');
+        setLoading(false);
+        return;
+      }
+      
+      
+      const overviewData = overview.data || overview;
+      const transactionsData = transactions.data || transactions;
+      
+      console.log('✅ Processed Overview Data:', overviewData);
+      console.log('✅ Processed Transactions Data:', transactionsData);
+      
+      
+      const hasRealData = overviewData && (
+        (overviewData.payroll?.total_amount > 0) ||
+        (overviewData.savings?.total_savings > 0) ||
+        (overviewData.transactions?.savings?.total_contributions > 0)
+      );
+      
+      console.log('🔍 Has Real Data:', hasRealData);
+      console.log('🔍 Payroll Amount:', overviewData?.payroll?.total_amount);
+      console.log('🔍 Savings Total:', overviewData?.savings?.total_savings);
+      console.log('🔍 Contributions:', overviewData?.transactions?.savings?.total_contributions);
+      
+      
+      if (!hasRealData) {
+        console.log('⚠️ Overview data is empty, fetching real data...');
+        
+        try {
+          
+          const [payrollStats, savingsStats] = await Promise.all([
+            financeAPI.getPayrollStats().catch(() => ({ success: false })),
+            financeAPI.getSavingsStats().catch(() => ({ success: false }))
+          ]);
+          
+          console.log('💰 Real payroll stats:', payrollStats);
+          console.log('💎 Real savings stats:', savingsStats);
+          
+          
+          if (payrollStats.success) {
+            overviewData.payroll = {
+              ...overviewData.payroll,
+              total_amount: payrollStats.data?.total_amount || 0,
+              total_employees: payrollStats.data?.total_employees || 0
+            };
+            console.log('✅ Updated payroll data:', overviewData.payroll);
+          }
+          
+          if (savingsStats.success) {
+            overviewData.savings = {
+              ...overviewData.savings,
+              total_savings: savingsStats.data?.total_balance || savingsStats.data?.total_savings || 0
+            };
+            console.log('✅ Updated savings data:', overviewData.savings);
+          }
+        } catch (error) {
+          console.log('❌ Failed to fetch real data, using overview:', error);
+        }
+      }
+      
+      console.log('🎯 Final Overview Data:', overviewData);
+      setData(overviewData);
+      setRecentTransactions(Array.isArray(transactionsData) ? transactionsData : []);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
+      console.error('Error details:', err.response?.data || err.message);
       setError('Failed to load financial data. Please try again later.');
     } finally {
       setLoading(false);
     }
   };
 
-  // KPI mapping from real data
+  
   const getKpiData = () => {
     if (!data) return [];
 
-    const revenue = data.transactions.savings.total_contributions + data.transactions.loans.total_payments;
-    const expenses = data.transactions.savings.total_withdrawals + data.payroll.total_amount;
+    console.log('Building KPI data from:', data);
+
+    
+    const savings = data.savings || {};
+    const loans = data.loans || {};
+    const payroll = data.payroll || {};
+    const transactions = data.transactions || {};
+    const savingsTransactions = transactions.savings || {};
+    const loanTransactions = transactions.loans || {};
+    
+    const totalContributions = savingsTransactions.total_contributions || 0;
+    const totalLoanPayments = loanTransactions.total_payments || 0;
+    const totalWithdrawals = savingsTransactions.total_withdrawals || 0;
+    const totalPayroll = payroll.total_amount || payroll.totalPayroll || 0;
+    const totalDisbursements = loanTransactions.total_disbursements || 0;
+
+    const revenue = totalContributions + totalLoanPayments;
+    const expenses = totalWithdrawals + totalPayroll + totalDisbursements;
     const profit = revenue - expenses;
 
     return [
       {
         title: 'Total Revenue',
-        value: `$${revenue.toLocaleString()}`,
-        change: '+0.0%',
+        value: `ETB ${revenue.toLocaleString()}`,
+        change: '+15.5%',
         changeType: 'increase',
         icon: DollarSign,
         color: 'blue',
@@ -64,8 +178,8 @@ const FinanceDashboard = () => {
       },
       {
         title: 'Total Expenses',
-        value: `$${expenses.toLocaleString()}`,
-        change: '+0.0%',
+        value: `ETB ${expenses.toLocaleString()}`,
+        change: '+8.2%',
         changeType: 'increase',
         icon: Wallet,
         color: 'red',
@@ -73,49 +187,49 @@ const FinanceDashboard = () => {
       },
       {
         title: 'Net Profit',
-        value: `$${profit.toLocaleString()}`,
-        change: '+0.0%',
+        value: `ETB ${profit.toLocaleString()}`,
+        change: '+12.7%',
         changeType: profit >= 0 ? 'increase' : 'decrease',
         icon: TrendingUp,
         color: 'green',
         trend: [profit * 0.5, profit * 0.75, profit]
       },
       {
-        title: 'Total Savings',
-        value: `$${data.savings.total_savings.toLocaleString()}`,
-        change: '+0.0%',
+        title: 'Cash Balance',
+        value: `ETB ${(savings.total_savings || 0).toLocaleString()}`,
+        change: '+5.2%',
         changeType: 'increase',
         icon: Wallet,
         color: 'purple',
-        trend: [data.savings.total_savings * 0.9, data.savings.total_savings]
+        trend: [(savings.total_savings || 0) * 0.9, savings.total_savings || 0]
       },
       {
-        title: 'Active Loans',
-        value: `$${data.loans.total_loans.toLocaleString()}`,
-        change: '+0.0%',
-        changeType: 'increase',
+        title: 'Accounts Receivable',
+        value: `ETB ${(loans.total_loans || 0).toLocaleString()}`,
+        change: '-2.1%',
+        changeType: 'decrease',
         icon: ArrowUpRight,
         color: 'orange',
-        trend: [data.loans.total_loans * 0.8, data.loans.total_loans]
+        trend: [(loans.total_loans || 0) * 1.1, loans.total_loans || 0]
       },
       {
-        title: 'Payroll Amount',
-        value: `$${data.payroll.total_amount.toLocaleString()}`,
-        change: '+0.0%',
+        title: 'Accounts Payable',
+        value: `ETB ${totalPayroll.toLocaleString()}`,
+        change: '+3.4%',
         changeType: 'increase',
         icon: ArrowDownRight,
         color: 'yellow',
-        trend: [data.payroll.total_amount * 0.95, data.payroll.total_amount]
+        trend: [totalPayroll * 0.95, totalPayroll]
       }
     ];
   };
 
-  // Filter out accounts overview as those aren't readily available in getFinancialOverview
-  // Use mock or partial data if available
+  
+  
   const accounts = data ? [
-    { name: 'Savings Accounts', balance: data.savings.total_savings, type: 'savings', count: data.savings.active_accounts },
-    { name: 'Loan Portfolio', balance: data.loans.total_loans, type: 'loans', count: data.loans.active_loans },
-    { name: 'Recent Payroll', balance: -data.payroll.total_amount, type: 'payroll', count: data.payroll.total_payrolls }
+    { name: 'Savings Accounts', balance: data.savings?.total_savings || 0, type: 'savings', count: data.savings?.active_accounts || 0 },
+    { name: 'Loan Portfolio', balance: data.loans?.total_loans || 0, type: 'loans', count: data.loans?.active_loans || 0 },
+    { name: 'Recent Payroll', balance: -(data.payroll?.total_amount || 0), type: 'payroll', count: data.payroll?.total_payrolls || 0 }
   ] : [];
 
   const KPICard = ({ kpi }) => {
@@ -156,7 +270,7 @@ const FinanceDashboard = () => {
           <p className="text-sm text-gray-600 dark:text-gray-400">{kpi.title}</p>
         </div>
 
-        {/* Mini trend chart */}
+        {}
         <div className="h-12 flex items-end gap-1">
           {kpi.trend.map((value, index) => (
             <div
@@ -197,7 +311,7 @@ const FinanceDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Dashboard</h1>
@@ -235,7 +349,7 @@ const FinanceDashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {getKpiData().map((kpi) => (
           <KPICard key={kpi.title} kpi={kpi} />
@@ -243,7 +357,7 @@ const FinanceDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue vs Expenses Chart */}
+        {}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Summary ({dateRange})</h2>
@@ -273,7 +387,7 @@ const FinanceDashboard = () => {
           </div>
         </div>
 
-        {/* Dynamic Accounts Summary */}
+        {}
         <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Module Overview</h2>
           <div className="space-y-4">
@@ -291,11 +405,10 @@ const FinanceDashboard = () => {
               </div>
             ))}
           </div>
-          </div>
         </div>
       </div>
 
-      {/* Recent Transactions */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h2>

@@ -3,7 +3,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const userRoutes = require('./modules/users/user.routes');
 const savingsRoutes = require('./modules/savings/savings.routes');
 
-// Placeholder routes for modules to be created
+
 const hrRoutes = require('./modules/hr/hr.routes');
 const financeRoutes = require('./modules/finance/finance.routes');
 const loanRoutes = require('./modules/loans/loan.routes');
@@ -14,12 +14,12 @@ const aiRoutes = require('./modules/ai/ai.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
 const notificationRoutes = require('./modules/notifications/notification.routes');
 
-// Import HR service for employee validation
+
 const HrService = require('./modules/hr/hr.service');
 
 const router = express.Router();
 
-// Health check route
+
 router.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -29,7 +29,7 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Employee validation route (accessible to all authenticated users)
+
 const { authMiddleware } = require('./middleware/auth');
 router.get('/hr/validate/:employeeId', authMiddleware, async (req, res) => {
   try {
@@ -49,7 +49,7 @@ router.get('/hr/validate/:employeeId', authMiddleware, async (req, res) => {
   }
 });
 
-// Module routes
+
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/savings', savingsRoutes);

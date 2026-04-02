@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiUsers, FiPlus, FiSearch, FiEdit, FiTrash2, FiHome, FiUser, FiFile, FiX, FiCheck, FiAlertCircle, FiFilter, FiDownload, FiEye, FiShield, FiCalendar, FiDollarSign } from 'react-icons/fi';
+import { FiUsers, FiPlus, FiSearch, FiEdit, FiTrash2, FiHome, FiUser, FiFile, FiX, FiCheck, FiAlertCircle, FiFilter, FiDownload, FiEye, FiShield, FiChevronDown,FiCalendar, FiDollarSign } from 'react-icons/fi';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
 import { guarantorsAPI } from '../../../shared/services/guarantorsAPI';
 
@@ -71,7 +71,7 @@ const GuarantorsPage = () => {
       const response = await guarantorsAPI.getGuarantors();
       const allGuarantorsData = response?.data || [];
       
-      // Separate by guarantor_type
+      
       const internal = allGuarantorsData.filter(g => g.guarantor_type === 'INTERNAL');
       const external = allGuarantorsData.filter(g => g.guarantor_type === 'EXTERNAL');
       
@@ -91,7 +91,7 @@ const GuarantorsPage = () => {
                    activeTab === 'internal' ? internalGuarantors : 
                    externalGuarantors;
 
-    // Apply status filter
+    
     if (statusFilter !== 'all') {
       guarantors = guarantors.filter(g => {
         if (statusFilter === 'approved') return g.is_approved === true;
@@ -101,7 +101,7 @@ const GuarantorsPage = () => {
       });
     }
 
-    // Apply search filter
+    
     if (searchTerm) {
       guarantors = guarantors.filter(guarantor =>
         (guarantor.guarantor_name && guarantor.guarantor_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -142,7 +142,7 @@ const GuarantorsPage = () => {
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
       
-      // Reload data
+      
       await loadGuarantors();
     } catch (err) {
       console.error('Failed to delete guarantor:', err);
@@ -376,16 +376,16 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      {/* Header */}
+      {}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-20">
         <div className="w-full mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 btn bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+              <div className="w-12 h-12 btn bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
                 <FiShield className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-600 dark:text-white">System Guarantors</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Guarantors</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">All guarantors registered in the system</p>
               </div>
             </div>
@@ -408,29 +408,29 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
       </div>
 
       <div className="w-full mx-auto px-6 py-8">
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Total Guarantors', value: allGuarantors.length, color: 'purple', icon: FiUsers },
             { label: 'Internal', value: internalGuarantors.length, color: 'emerald', icon: FiHome },
             { label: 'External', value: externalGuarantors.length, color: 'orange', icon: FiUser },
             { label: 'Pending Approval', value: allGuarantors.filter(g => g.is_approved === null).length, color: 'yellow', icon: FiAlertCircle },
           ].map((stat, i) => (
-            <div key={i} className="stat-card px-10 py-10">
-              <div className="flex items-center justify-between w-full">
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[13px] font-bold uppercase tracking-widest text-gray-600 dark:text-white mb-1">{stat.label}</p>
-                  <p className="text-3xl font-black text-gray-900 dark:text-white">{stat.value}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{stat.label}</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
                 </div>
-                <div className={`p-3 rounded-xl bg-${stat.color}-50 dark:bg-${stat.color}-900/20 text-${stat.color}-600 dark:text-${stat.color}-400`}>
-                  <stat.icon className="w-8 h-8" />
+                <div className={`p-3 rounded-lg bg-${stat.color}-100 dark:bg-${stat.color}-900/20 text-${stat.color}-600 dark:text-${stat.color}-400`}>
+                  <stat.icon className="w-6 h-6" />
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Filters Panel */}
+        {}
         {showFilters && (
           <div className="card mb-6 p-6 bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -470,7 +470,7 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
           </div>
         )}
 
-        {/* Content Card */}
+        {}
         <div className="card overflow-hidden">
           <div className="p-6 border-b border-gray-50 dark:border-gray-700/50 flex flex-col lg:flex-row gap-6 justify-between lg:items-center bg-gray-50/30 dark:bg-gray-800/20">
             <div className="flex p-1 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 w-fit">
@@ -493,7 +493,7 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder={`Find ${activeTab} guarantor...`}
+                placeholder={`Find all guarantor...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm dark:text-white"
@@ -502,91 +502,109 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full">
               <thead>
-                <tr className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Identity & Contact</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Employment details</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Applicant</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Relationship</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">System Status</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400 text-right">Row Controls</th>
+                <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Identity & Contact</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employment details</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Applicant</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Relationship</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">System Status</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Row Controls</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {getFilteredGuarantors().length > 0 ? (
                   getFilteredGuarantors().map((guarantor) => (
-                    <tr key={guarantor.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-900/5 transition-colors group">
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black text-sm border border-purple-200/50 dark:border-purple-800/50">
-                            {guarantor.guarantor_name ? guarantor.guarantor_name.charAt(0) : (guarantor.guarantor_id ? guarantor.guarantor_id.charAt(0) : 'G')}
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-700 dark:text-white">
-                              {guarantor.guarantor_name || (guarantor.guarantor_type === 'INTERNAL' ? `Employee: ${guarantor.guarantor_id}` : 'External Guarantor')}
+                    <tr key={guarantor.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                              <span className="text-purple-600 dark:text-purple-300 font-medium">
+                                {guarantor.guarantor_name ? guarantor.guarantor_name.charAt(0).toUpperCase() : 'G'}
+                              </span>
                             </div>
-                            <div className="text-sm text-gray-600">{guarantor.contact_email || 'No email'}</div>
-                            <div className="text-xs text-gray-400">{guarantor.contact_phone || 'No phone'}</div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {guarantor.guarantor_name || 'Unknown'}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {guarantor.contact_email || 'No email'}
+                            </div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500">
+                              {guarantor.contact_phone || 'No phone'}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
                           {guarantor.guarantor_type === 'INTERNAL' ? 'Internal Employee' : 'External Individual'}
                         </div>
-                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                          {guarantor.guarantor_id || 'No ID'}
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          ID: {guarantor.guarantor_id || 'N/A'}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          <FiDollarSign className="w-3 h-3 inline mr-1" />
-                          {guarantor.monthly_income ? `${guarantor.monthly_income.toLocaleString()} ETB` : 'Not specified'}
-                        </div>
+                        {guarantor.monthly_income && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Income: {guarantor.monthly_income.toLocaleString()} ETB
+                          </div>
+                        )}
                       </td>
-                      <td className="px-6 py-5">
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
                           {guarantor.applicant_first_name || 'Unknown'} {guarantor.applicant_last_name || ''}
                         </div>
-                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {guarantor.applicant_username || 'N/A'}
                         </div>
                         {guarantor.requested_amount && (
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Loan: {guarantor.requested_amount.toLocaleString()} ETB
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-5">
-                        <span className="text-sm text-gray-500">{guarantor.relationship || 'Not specified'}</span>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {guarantor.relationship || 'Not specified'}
+                        </span>
                       </td>
-                      <td className="px-6 py-5">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           guarantor.is_approved === true 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                             : guarantor.is_approved === false 
-                            ? 'bg-red-50 text-red-700 border-red-100'
-                            : 'bg-yellow-50 text-yellow-700 border-yellow-100'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         }`}>
                           {guarantor.is_approved === true ? 'Approved' : guarantor.is_approved === false ? 'Rejected' : 'Pending'}
                         </span>
-                        <div className="text-xs text-gray-400 mt-1">
-                          <FiCalendar className="w-3 h-3 inline mr-1" />
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {new Date(guarantor.created_at).toLocaleDateString()}
                         </div>
                       </td>
-                      <td className="px-6 py-5 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
                           <button 
                             onClick={() => { setSelectedGuarantor(guarantor); setShowDetailsModal(true); }} 
-                            className="p-2 text-blue-800 hover:text-blue-600 transition-colors" 
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
                             title="View Details"
                           >
                             <FiEye className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleEdit(guarantor)} className="p-2 text-blue-800 hover:text-blue-600 transition-colors" title="Edit">
+                          <button 
+                            onClick={() => handleEdit(guarantor)} 
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                            title="Edit"
+                          >
                             <FiEdit className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(guarantor.id, guarantor.guarantor_name || guarantor.guarantor_id)} className="p-2 text-red-800 hover:text-red-600 transition-colors" title="Delete">
+                          <button 
+                            onClick={() => handleDelete(guarantor.id, guarantor.guarantor_name || guarantor.guarantor_id)} 
+                            className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                            title="Delete"
+                          >
                             <FiTrash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -595,9 +613,12 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="px-6 py-20 text-center text-gray-400">
-                      <FiUsers className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                      <p className="text-sm font-bold uppercase tracking-widest opacity-40">Zero records found</p>
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <FiUsers className="w-12 h-12 text-gray-400 mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No guarantors found</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">Try adjusting your filters or search terms</p>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -607,304 +628,455 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
         </div>
       </div>
 
-      {/* Add Modal */}
+      {}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-widest">Register Guarantor</h2>
-                <p className="dark:text-white text-xs text-gray-800 mt-1">Step {formStep} of 3 • Process validation required</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <FiShield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Guarantor</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Step {formStep} of 3</p>
+                </div>
               </div>
-              <button onClick={() => setShowAddForm(false)} className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"><FiX className="w-5 h-5" /></button>
+              <button onClick={() => setShowAddForm(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <FiX className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8">
+            {}
+            <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                {[1, 2, 3].map((step) => (
+                  <div key={step} className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      formStep >= step 
+                        ? 'bg-purple-600 text-white' 
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {formStep > step ? <FiCheck className="w-4 h-4" /> : step}
+                    </div>
+                    {step < 3 && (
+                      <div className={`w-12 h-1 rounded-full ${
+                        formStep > step ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <span>Type</span>
+                <span>Details</span>
+                <span>Review</span>
+              </div>
+            </div>
+
+            {}
+            <div className="flex-1 overflow-y-auto p-6">
+              {}
               {formErrors.general && (
-                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <FiAlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                  <p className="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-tight">{formErrors.general}</p>
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+                  <FiAlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-300">{formErrors.general}</p>
                 </div>
               )}
 
+              {}
               {formStep === 1 && (
-                <div className="grid grid-cols-2 gap-6 py-10">
-                  <div onClick={() => handleInputChange('type', 'internal')} className={`p-8 rounded-2xl border-2 cursor-pointer transition-all ${formData.type === 'internal' ? 'border-blue-600 bg-blue-50/30 dark:bg-blue-900/10' : 'border-gray-100 dark:border-gray-700 hover:border-blue-200'}`}>
-                    <FiHome className={`w-10 h-10 mb-4 ${formData.type === 'internal' ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <p className="font-bold tracking-widest text-gray-900 dark:text-white">Internal</p>
-                    <p className="text-[10px] text-gray-600 uppercase font-bold mt-1 tracking-widest">Company Employee</p>
-                  </div>
-                  <div onClick={() => handleInputChange('type', 'external')} className={`p-8 rounded-2xl border-2 cursor-pointer transition-all ${formData.type === 'external' ? 'border-blue-600 bg-blue-50/30 dark:bg-blue-900/10' : 'border-gray-100 dark:border-gray-700 hover:border-blue-200'}`}>
-                    <FiUser className={`w-10 h-10 mb-4 ${formData.type === 'external' ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <p className="font-bold tracking-widest text-gray-900 dark:text-white">External</p>
-                    <p className="text-[10px] text-gray-600 uppercase font-bold mt-1 tracking-widest">Private Individual</p>
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Select the type of guarantor you want to add:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      onClick={() => handleInputChange('type', 'internal')}
+                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                        formData.type === 'internal'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
+                        <FiHome className={`w-6 h-6 ${formData.type === 'internal' ? 'text-purple-600 dark:text-purple-400' : 'text-blue-600 dark:text-blue-400'}`} />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Internal Employee</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Company employee who works within the organization</p>
+                    </button>
+                    <button
+                      onClick={() => handleInputChange('type', 'external')}
+                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                        formData.type === 'external'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
+                        <FiUser className={`w-6 h-6 ${formData.type === 'external' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`} />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">External Individual</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Private individual outside the organization</p>
+                    </button>
                   </div>
                 </div>
               )}
 
+              {}
               {formStep === 2 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
                   {formData.type === 'internal' ? (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-[12px] font-bold uppercase text-black dark:text-gray-400 tracking-widest">Employee ID</label>
-                        <input
-                          type="text"
-                          value={formData.employeeId}
-                          onChange={e => handleInputChange('employeeId', e.target.value)}
-                          placeholder="e.g. EMP001"
-                          className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:bg-white dark:focus:bg-gray-800 focus:ring-4 focus:ring-blue-500/5 text-[20px] outline-none text-sm dark:text-white ${formErrors.employeeId ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}
-                        />
-                        {formErrors.employeeId && <p className="text-[10px] text-red-500 font-bold uppercase tracking-tighter mt-1">{formErrors.employeeId}</p>}
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                        <p className="text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                          <FiUsers className="w-4 h-4" />
+                          Enter the employee ID to automatically fetch their details from the system.
+                        </p>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[12px] font-bold uppercase text-black dark:text-gray-400 tracking-widest">Relationship</label>
-                        <input
-                          type="text"
-                          value={formData.relationship}
-                          onChange={e => handleInputChange('relationship', e.target.value)}
-                          placeholder="e.g. Colleague, Friend"
-                          className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:bg-white dark:focus:bg-gray-800 focus:ring-4 focus:ring-blue-500/5 text-[20px] outline-none text-sm dark:text-white ${formErrors.relationship ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}
-                        />
-                        {formErrors.relationship && <p className="text-[10px] text-red-500 font-bold uppercase tracking-tighter mt-1">{formErrors.relationship}</p>}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee ID *</label>
+                          <input
+                            type="text"
+                            value={formData.employeeId}
+                            onChange={e => handleInputChange('employeeId', e.target.value)}
+                            placeholder="e.g. EMP001"
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.employeeId ? 'border-red-500' : 'border-gray-300'}`}
+                          />
+                          {formErrors.employeeId && <p className="mt-1 text-sm text-red-600">{formErrors.employeeId}</p>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Relationship *</label>
+                          <select
+                            value={formData.relationship}
+                            onChange={e => handleInputChange('relationship', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.relationship ? 'border-red-500' : 'border-gray-300'}`}
+                          >
+                            <option value="">Select relationship</option>
+                            <option value="Colleague">Colleague</option>
+                            <option value="Friend">Friend</option>
+                            <option value="Family">Family</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Other">Other</option>
+                          </select>
+                          {formErrors.relationship && <p className="mt-1 text-sm text-red-600">{formErrors.relationship}</p>}
+                        </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    <div className="col-span-full space-y-8">
-                      {/* Section: Personal Identity */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                          <FiUser className="w-4 h-4 text-blue-600" />
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Personal Identity</h4>
-                        </div>
+                    <div className="space-y-6">
+                      {}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <FiUser className="w-4 h-4 text-purple-600" />
+                          Personal Information
+                        </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Full Legal Name</label>
-                            <input type="text" value={formData.fullName} onChange={e => handleInputChange('fullName', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.fullName ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.fullName && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.fullName}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Nationality</label>
-                            <input type="text" value={formData.nationality} onChange={e => handleInputChange('nationality', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.nationality ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.nationality && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.nationality}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Relationship</label>
-                            <input type="text" value={formData.relationship} onChange={e => handleInputChange('relationship', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.relationship ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.relationship && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.relationship}</p>}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section: Contact Details */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                          <FiUsers className="w-4 h-4 text-blue-600" />
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Contact Channels</h4>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-2 col-span-1 md:col-span-1">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Email Address</label>
-                            <input type="email" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.email ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.email && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.email}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Personal Phone</label>
-                            <input type="text" value={formData.phoneNumber} onChange={e => handleInputChange('phoneNumber', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.phoneNumber ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.phoneNumber && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.phoneNumber}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Work Phone</label>
-                            <input type="text" value={formData.workPhone} onChange={e => handleInputChange('workPhone', e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section: Residence Location */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                          <FiHome className="w-4 h-4 text-blue-600" />
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Residential Data</h4>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="space-y-2 col-span-1 md:col-span-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">City</label>
-                            <input type="text" value={formData.city} onChange={e => handleInputChange('city', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.city ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.city && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.city}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Kebele</label>
-                            <input type="text" value={formData.kebele} onChange={e => handleInputChange('kebele', e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white" />
-                          </div>
-                          <div className="space-y-2 col-span-full">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Home Address / Street</label>
-                            <textarea rows="2" value={formData.homeAddress} onChange={e => handleInputChange('homeAddress', e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white resize-none" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section: Employment */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                          <FiFile className="w-4 h-4 text-blue-600" />
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Employment & ID Proof</h4>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Employer</label>
-                            <input type="text" value={formData.employer} onChange={e => handleInputChange('employer', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.employer ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.employer && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.employer}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Job Position</label>
-                            <input type="text" value={formData.jobPosition} onChange={e => handleInputChange('jobPosition', e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Monthly Salary</label>
-                            <input type="number" value={formData.monthlySalary} onChange={e => handleInputChange('monthlySalary', e.target.value)} className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-xl focus:ring-4 focus:ring-blue-500/5 outline-none text-sm dark:text-white ${formErrors.monthlySalary ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`} />
-                            {formErrors.monthlySalary && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{formErrors.monthlySalary}</p>}
-                          </div>
-                          <div className="col-span-full pt-2">
-                            <label className="text-[11px] font-bold uppercase text-gray-400 tracking-widest block mb-2">Upload ID Document (National ID/Passport)</label>
-                            <input 
-                              type="file" 
-                              ref={fileInputRef} 
-                              onChange={handleFileChange} 
-                              className="hidden" 
-                              accept=".pdf,.jpg,.jpeg,.png"
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name *</label>
+                            <input
+                              type="text"
+                              value={formData.fullName}
+                              onChange={e => handleInputChange('fullName', e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'}`}
                             />
-                            {!formData.idDocument ? (
-                              <div 
-                                onClick={() => fileInputRef.current.click()}
-                                onDragOver={onDragOver}
-                                onDragLeave={onDragLeave}
-                                onDrop={onDrop}
-                                className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer bg-gray-50/50 dark:bg-gray-900/50 group ${isDragging ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-800'} ${formErrors.idDocument ? 'border-red-500 bg-red-50/5' : ''}`}
-                              >
-                                <FiFile className={`w-8 h-8 mx-auto mb-2 ${isDragging ? 'text-blue-600 animate-bounce' : 'text-gray-400 group-hover:text-blue-500'}`} />
-                                <p className={`text-xs font-bold ${isDragging ? 'text-blue-600' : 'text-gray-400'}`}>
-                                  {isDragging ? 'Drop it here!' : 'Click to upload or drag & drop'}
-                                </p>
-                                <p className="text-[9px] text-gray-400 uppercase tracking-tighter mt-1">PDF, JPG up to 10MB</p>
-                                {formErrors.idDocument && <p className="text-[10px] text-red-500 font-bold mt-2 uppercase tracking-tighter">{formErrors.idDocument}</p>}
-                              </div>
-                            ) : (
-                              <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-200">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                                    <FiCheck className="w-6 h-6" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-[200px]">{formData.idDocument.name}</p>
-                                    <p className="text-[10px] text-gray-500 uppercase font-black">{(formData.idDocument.size / 1024 / 1024).toFixed(2)} MB • Ready for sync</p>
-                                  </div>
-                                </div>
-                                <button 
-                                  onClick={removeFile}
-                                  className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-colors"
-                                >
-                                  <FiX className="w-5 h-5" />
-                                </button>
-                              </div>
-                            )}
+                            {formErrors.fullName && <p className="mt-1 text-sm text-red-600">{formErrors.fullName}</p>}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nationality</label>
+                            <input
+                              type="text"
+                              value={formData.nationality}
+                              onChange={e => handleInputChange('nationality', e.target.value)}
+                              placeholder="e.g. Ethiopian"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Relationship *</label>
+                            <select
+                              value={formData.relationship}
+                              onChange={e => handleInputChange('relationship', e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.relationship ? 'border-red-500' : 'border-gray-300'}`}
+                            >
+                              <option value="">Select relationship</option>
+                              <option value="Friend">Friend</option>
+                              <option value="Family">Family</option>
+                              <option value="Colleague">Colleague</option>
+                              <option value="Neighbor">Neighbor</option>
+                              <option value="Other">Other</option>
+                            </select>
+                            {formErrors.relationship && <p className="mt-1 text-sm text-red-600">{formErrors.relationship}</p>}
                           </div>
                         </div>
+                      </div>
+
+                      {}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <FiUsers className="w-4 h-4 text-purple-600" />
+                          Contact Information
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={e => handleInputChange('email', e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                            {formErrors.email && <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone *</label>
+                            <input
+                              type="tel"
+                              value={formData.phoneNumber}
+                              onChange={e => handleInputChange('phoneNumber', e.target.value)}
+                              placeholder="+251 91 234 5678"
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                            {formErrors.phoneNumber && <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Work Phone</label>
+                            <input
+                              type="tel"
+                              value={formData.workPhone}
+                              onChange={e => handleInputChange('workPhone', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <FiHome className="w-4 h-4 text-purple-600" />
+                          Address
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City *</label>
+                            <input
+                              type="text"
+                              value={formData.city}
+                              onChange={e => handleInputChange('city', e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.city ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                            {formErrors.city && <p className="mt-1 text-sm text-red-600">{formErrors.city}</p>}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kebele</label>
+                            <input
+                              type="text"
+                              value={formData.kebele}
+                              onChange={e => handleInputChange('kebele', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Home Address</label>
+                            <textarea
+                              rows="2"
+                              value={formData.homeAddress}
+                              onChange={e => handleInputChange('homeAddress', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white resize-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <FiFile className="w-4 h-4 text-purple-600" />
+                          Employment Details
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employer *</label>
+                            <input
+                              type="text"
+                              value={formData.employer}
+                              onChange={e => handleInputChange('employer', e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.employer ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                            {formErrors.employer && <p className="mt-1 text-sm text-red-600">{formErrors.employer}</p>}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Job Position</label>
+                            <input
+                              type="text"
+                              value={formData.jobPosition}
+                              onChange={e => handleInputChange('jobPosition', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monthly Salary *</label>
+                            <input
+                              type="number"
+                              value={formData.monthlySalary}
+                              onChange={e => handleInputChange('monthlySalary', e.target.value)}
+                              placeholder="Amount in ETB"
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.monthlySalary ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                            {formErrors.monthlySalary && <p className="mt-1 text-sm text-red-600">{formErrors.monthlySalary}</p>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <FiFile className="w-4 h-4 text-purple-600" />
+                          ID Document
+                        </h4>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          className="hidden"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                        />
+                        {!formData.idDocument ? (
+                          <div
+                            onClick={() => fileInputRef.current?.click()}
+                            onDragOver={onDragOver}
+                            onDragLeave={onDragLeave}
+                            onDrop={onDrop}
+                            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                              isDragging
+                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
+                            } ${formErrors.idDocument ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : ''}`}
+                          >
+                            <FiFile className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Click to upload or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG up to 10MB</p>
+                            {formErrors.idDocument && <p className="mt-2 text-sm text-red-600">{formErrors.idDocument}</p>}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                                <FiCheck className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">
+                                  {formData.idDocument.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {(formData.idDocument.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={removeFile}
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            >
+                              <FiX className="w-5 h-5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
+              {}
               {formStep === 3 && (
-                <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                  <div className="text-center py-8 bg-green-300/10 dark:bg-green-900/10 rounded-2xl border border-green-100 dark:border-green-800">
-                    <FiCheck className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Identity Verified</h3>
-                    <p className="text-xs text-gray-500 mt-1">Please confirm the automated data retrieval is correct.</p>
+                <div className="space-y-6">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <FiCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      <h3 className="font-semibold text-green-800 dark:text-green-200">Review Information</h3>
+                    </div>
+                    <p className="text-sm text-green-700 dark:text-green-300 mt-1">Please verify the information below is correct before submitting.</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 text-left">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Legal Name</p>
-                      <p className="text-lg font-black text-gray-800 dark:text-white leading-tight">{formData.fullName}</p>
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Guarantor Details</h4>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{formData.type === 'internal' ? 'Employee Index' : 'Identity Reference'}</p>
-                      <p className="text-lg font-black text-gray-800 dark:text-white leading-tight">{formData.type === 'internal' ? formData.employeeId : formData.email || formData.phoneNumber}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Organization Unit</p>
-                      <p className="text-md font-bold text-gray-700 dark:text-gray-300">{formData.department || formData.employer}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Relationship Status</p>
-                      <p className="text-md font-bold text-gray-700 dark:text-gray-300">{formData.relationship}</p>
-                    </div>
-
-                    {formData.type === 'external' && (
-                      <div className="col-span-full grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-2">
-                        <div className="space-y-1">
-                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nationality</p>
-                          <p className="text-sm font-bold dark:text-white">{formData.nationality}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Location</p>
-                          <p className="text-sm font-bold dark:text-white">{formData.city}, {formData.kebele}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Monthly Salary</p>
-                          <p className="text-sm font-bold text-emerald-600">${Number(formData.monthlySalary).toLocaleString()}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Work Contact</p>
-                          <p className="text-sm font-bold dark:text-white">{formData.workPhone || 'N/A'}</p>
-                        </div>
-                        {formData.idDocument && (
-                          <div className="space-y-1">
-                            <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">ID Attachment</p>
-                            <p className="text-sm font-bold dark:text-white flex items-center gap-1">
-                              <FiCheck className="text-emerald-500" /> {formData.idDocument.name.slice(0, 15)}...
-                            </p>
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Full Name</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.fullName || formData.employeeId || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Type</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">{formData.type}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">{formData.type === 'internal' ? 'Employee ID' : 'Email'}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.type === 'internal' ? formData.employeeId : formData.email || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Relationship</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.relationship || 'N/A'}</p>
+                      </div>
+                      {formData.type === 'external' && (
+                        <>
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Phone</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.phoneNumber || 'N/A'}</p>
                           </div>
-                        )}
-                      </div>
-                    )}
-
-                    {formData.type === 'internal' && (
-                      <div className="col-span-1 md:col-span-2 pt-4 mt-2 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm animate-pulse" />
-                          <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">System Authenticated: {formData.position}</p>
-                        </div>
-                      </div>
-                    )}
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Location</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.city || 'N/A'}{formData.kebele ? `, ${formData.kebele}` : ''}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Employer</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.employer || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Monthly Salary</p>
+                            <p className="text-sm font-medium text-green-600 dark:text-green-400">{formData.monthlySalary ? `${Number(formData.monthlySalary).toLocaleString()} ETB` : 'N/A'}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
+
+                  {formData.idDocument && (
+                    <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                      <FiCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      <span className="text-sm text-purple-800 dark:text-purple-200">ID Document attached: {formData.idDocument.name}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="px-8 py-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20 flex justify-between items-center text-gray-500">
+            {}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-between items-center">
               <button
                 onClick={() => formStep > 1 ? setFormStep(formStep - 1) : setShowAddForm(false)}
-                className="px-6 py-2.5 text-sm font-bold hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 {formStep === 1 ? 'Cancel' : 'Back'}
               </button>
               <button
                 onClick={() => formStep < 3 ? handleNextStep() : handleSubmit()}
                 disabled={isSubmitting}
-                className="btn btn-primary px-10 h-11 flex items-center gap-2"
+                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Syncing...</span>
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
-                    {formStep === 2 && formData.type === 'internal' ? 'Confirm & Fetch Data' :
-                      formStep === 3 ? (isApproved ? 'Finalize' : 'Confirm Information') :
-                        'Continue'}
+                    {formStep === 3 ? 'Submit' : 'Continue'}
+                    {formStep !== 3 && <FiChevronDown className="w-4 h-4 rotate-[-90deg]" />}
                   </>
                 )}
               </button>
@@ -913,7 +1085,7 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
         </div>
       )}
 
-      {/* Delete confirmation and success messages would go here */}
+      {}
       {showSuccessMessage && (
         <div className="fixed bottom-10 right-10 bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in translate-y-2 duration-300">
           <FiCheck className="w-6 h-6" />
@@ -937,7 +1109,7 @@ const filteredExternalGuarantors = externalGuarantors.filter(guarantor =>
         </div>
       )}
 
-      {/* Error Modal */}
+      {}
       {errorModal.isOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 max-w-md w-full text-center shadow-3xl border border-red-100 dark:border-red-900/20">

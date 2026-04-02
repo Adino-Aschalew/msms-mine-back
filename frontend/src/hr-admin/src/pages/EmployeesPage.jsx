@@ -26,9 +26,9 @@ export default function EmployeesPage() {
     try {
       if (showLoading) setLoading(true);
       setError(null);
-      const response = await hrAPI.getAllEmployees(1, 1000); // Get all employees for now
+      const response = await hrAPI.getAllEmployees(1, 1000); 
       
-      // Handle the nested structure from hrAPI
+      
       const employeesData = response?.success ? response.data : (response?.data || response);
       setEmployees(Array.isArray(employeesData) ? employeesData : (employeesData?.employees || []));
     } catch (err) {
@@ -43,14 +43,14 @@ export default function EmployeesPage() {
     try {
       const response = await hrAPI.createEmployeeProfile(newEmployee);
       if (response.success) {
-        // Refresh the list without showing a full-page loading spinner
+        
         await fetchEmployees(false); 
         setIsModalOpen(false);
         setSuccessMessage('Employee created successfully!');
         
-        // Show success message with default password
+        
         const defaultPassword = response.data?.employee?.defaultPassword || 'BIT##123';
-        // Use a more subtle feedback if possible, but keeping alert for now as per user request
+        
         alert(`Employee created successfully!\n\nDefault Password: ${defaultPassword}`);
       }
     } catch (err) {
@@ -62,7 +62,7 @@ export default function EmployeesPage() {
   const handleUpdateEmployee = async (updatedEmployee) => {
     try {
       await hrAPI.updateEmployeeProfile(updatedEmployee.id, updatedEmployee);
-      await fetchEmployees(false); // Refresh without full loading spinner
+      await fetchEmployees(false); 
       setSuccessMessage('Employee profile updated successfully!');
     } catch (err) {
       console.error('Error updating employee:', err);
@@ -73,7 +73,7 @@ export default function EmployeesPage() {
   const handleDeleteEmployee = async (id) => {
     try {
       await hrAPI.updateEmploymentStatus(id, 'TERMINATED');
-      await fetchEmployees(false); // Refresh without full loading spinner
+      await fetchEmployees(false); 
       setSuccessMessage('Employee terminated successfully!');
     } catch (err) {
       console.error('Error deleting employee:', err);

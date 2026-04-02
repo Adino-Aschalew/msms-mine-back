@@ -6,41 +6,18 @@ const ExcelJS = require('exceljs');
 const { auditLog } = require('../middleware/audit');
 const axios = require('axios');
 
-/**
- * Payroll Model - Handles payroll processing, validation, and database operations
- * 
- * EXPECTED CSV/EXCEL FILE FORMAT:
- * Column 1: employee_id (e.g., EMP001)
- * Column 2: gross_salary (numeric, e.g., 5000)
- * Column 3: saving (numeric, e.g., 500)
- * Column 4: deduction (numeric, e.g., 500)
- * Column 5: net_salary (numeric, e.g., 4000) - MUST equal gross_salary - saving - deduction
- * Column 6: payroll_date (optional, format: YYYY-MM-DD)
- * 
- * CSV Headers can use spaces: "gross salary", "net salary"
- * Excel files should use underscore column names: gross_salary, net_salary
- * 
- * Net Salary Calculation: net_salary MUST equal gross_salary - saving - deduction
- * Files with incorrect net salary calculations will be rejected with validation errors
- * 
- * PAYROLL BATCH STATUS LIFECYCLE:
- * 1. UPLOADED - Initial state after file upload
- * 2. VALIDATED - File parsed and validated successfully
- * 3. CONFIRMED - Batch approved by finance admin (approvePayrollBatch)
- * 4. PROCESSED - Payroll deductions applied to accounts
- * 5. REVERSED - Batch rolled back (reversePayrollBatch)
- */
+
 
 class Payroll {
   static async createPayrollBatch(batchData, uploadUserId) {
     const { batch_name, payroll_date, total_employees, total_amount, file_path, cloudinary_url, public_id } = batchData;
 
-    // Extract month and year
+    
     const pDate = new Date(payroll_date);
     const month = pDate.getMonth() + 1;
     const year = pDate.getFullYear();
 
-    // Check for duplicates - allow multiple uploads for same month but show warning
+    
     const checkQuery = `
       SELECT id, batch_name, status FROM payroll_batches 
         WHERE payroll_month = ? AND payroll_year = ? AND status != 'REVERSED'
@@ -48,7 +25,7 @@ class Payroll {
     const existing = await query(checkQuery, [month, year]);
     if (existing.length > 0) {
       console.log(`Warning: Found ${existing.length} existing payroll batch(es) for ${month}/${year}`);
-      // Don't throw error, just log warning - allow multiple uploads
+      
     }
 
     const insertQuery = `
@@ -79,11 +56,11 @@ class Payroll {
     console.log('Original name:', originalName);
 
     try {
-      // Download from Cloudinary if URL provided, otherwise read local file
+      
       if (cloudinaryUrl) {
         fileBuffer = await this.downloadFromCloudinary(cloudinaryUrl);
       } else if (filePath && fs.existsSync(filePath)) {
-        // Read local file directly
+        
         fileBuffer = await fs.readFile(filePath);
       } else {
         throw new Error('No valid file source provided (missing Cloudinary URL or local file path)');
@@ -119,7 +96,12 @@ class Payroll {
       const batchName = `Payroll_${new Date().toISOString().split('T')[0]}_${uploadUserId}`;
       const payrollDate = payrollData[0]?.payroll_date || new Date().toISOString().split('T')[0];
       const totalEmployees = validationResults.validRecords.length;
-      const totalAmount = validationResults.validRecords.reduce((sum, record) => sum + parseFloat(record.net_salary), 0);
+      
+      
+      const totalAmount = validationResults.validRecords.reduce((sum, record) => {
+        const grossSalary = parseFloat(record.gross_salary || record.salary || 0);
+        return sum + Math.max(0, grossSalary); 
+      }, 0);
 
       const batchId = await this.createPayrollBatch({
         batch_name: batchName,
@@ -164,7 +146,7 @@ class Payroll {
         throw new Error(`Invalid URL type identifier provided`);
       }
 
-      // Handle protocol-relative URLs (e.g. //res.cloudinary.com/...)
+      
       let downloadUrl = url;
       if (downloadUrl.startsWith('//')) {
         downloadUrl = `https:${downloadUrl}`;
@@ -178,7 +160,7 @@ class Payroll {
 
       const response = await axios.get(downloadUrl, {
         responseType: 'arraybuffer',
-        timeout: 15000 // Increased to 15s
+        timeout: 15000 
       });
       return Buffer.from(response.data);
     } catch (error) {
@@ -202,7 +184,7 @@ class Payroll {
       readable
         .pipe(csv({ mapHeaders: ({ header }) => header.toLowerCase().trim() }))
         .on('data', (data) => {
-          // Standardize to underscore field names immediately
+          
           const processedData = {
             employee_id: data['employee id'] || data.employee_id,
             gross_salary: parseFloat(data['gross salary'] || data.gross_salary || 0),
@@ -226,7 +208,7 @@ class Payroll {
     const worksheet = workbook.getWorksheet(1);
     const results = [];
 
-    // Get header row and create column mapping
+    
     const headerRow = worksheet.getRow(1);
     const columnMap = {};
 
@@ -235,13 +217,13 @@ class Payroll {
       columnMap[header] = colNumber;
     });
 
-    // Process data rows
+    
     worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return; // Skip header row
+      if (rowNumber === 1) return; 
 
       const data = {};
 
-      // Map columns using the same logic as CSV parser
+      
       data.employee_id = this.getCellValue(row, columnMap['employee_id'] || columnMap['employee id']);
       data.gross_salary = parseFloat(this.getCellValue(row, columnMap['gross_salary'] || columnMap['gross salary'])) || 0;
       data.saving = parseFloat(this.getCellValue(row, columnMap['saving']) || this.getCellValue(row, columnMap['savings deduction']) || this.getCellValue(row, columnMap['saving deduction'])) || 0;
@@ -249,7 +231,7 @@ class Payroll {
       data.net_salary = parseFloat(this.getCellValue(row, columnMap['net_salary'] || columnMap['net salary'])) || 0;
       data.payroll_date = this.getCellValue(row, columnMap['payroll_date'] || columnMap['payroll date']) || new Date().toISOString().split('T')[0];
 
-      // Format payroll_date if it's a date
+      
       if (data.payroll_date instanceof Date) {
         data.payroll_date = data.payroll_date.toISOString().split('T')[0];
       }
@@ -272,7 +254,7 @@ class Payroll {
       fs.createReadStream(filePath)
         .pipe(csv({ mapHeaders: ({ header }) => header.toLowerCase().trim() }))
         .on('data', (data) => {
-          // Standardize to underscore field names immediately
+          
           const processedData = {
             employee_id: data['employee id'] || data.employee_id,
             gross_salary: parseFloat(data['gross salary'] || data.gross_salary || 0),
@@ -296,7 +278,7 @@ class Payroll {
     const worksheet = workbook.getWorksheet(1);
     const results = [];
 
-    // Get header row and create column mapping
+    
     const headerRow = worksheet.getRow(1);
     const columnMap = {};
 
@@ -305,13 +287,13 @@ class Payroll {
       columnMap[header] = colNumber;
     });
 
-    // Process data rows
+    
     worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return; // Skip header row
+      if (rowNumber === 1) return; 
 
       const data = {};
 
-      // Map columns using the same logic as CSV parser
+      
       data.employee_id = this.getCellValue(row, columnMap['employee_id'] || columnMap['employee id']);
       data.gross_salary = parseFloat(this.getCellValue(row, columnMap['gross_salary'] || columnMap['gross salary'])) || 0;
       data.saving = parseFloat(this.getCellValue(row, columnMap['saving']) || this.getCellValue(row, columnMap['savings deduction']) || this.getCellValue(row, columnMap['saving deduction'])) || 0;
@@ -319,7 +301,7 @@ class Payroll {
       data.net_salary = parseFloat(this.getCellValue(row, columnMap['net_salary'] || columnMap['net salary'])) || 0;
       data.payroll_date = this.getCellValue(row, columnMap['payroll_date'] || columnMap['payroll date']) || new Date().toISOString().split('T')[0];
 
-      // Format payroll_date if it's a date
+      
       if (data.payroll_date instanceof Date) {
         data.payroll_date = data.payroll_date.toISOString().split('T')[0];
       }
@@ -336,10 +318,10 @@ class Payroll {
     const validRecords = [];
     const seenEmployeeIds = new Set();
 
-    // Extract unique employee IDs for bulk loading
+    
     const uniqueEmployeeIds = [...new Set(payrollData.map(record => record.employee_id).filter(Boolean))];
 
-    // Bulk load all employee records at once
+    
     const employeeRecords = await this.bulkLoadEmployees(uniqueEmployeeIds);
     const employeeMap = new Map(employeeRecords.map(emp => [emp.employee_id, emp]));
 
@@ -364,14 +346,14 @@ class Payroll {
         continue;
       }
 
-      // We will automatically calculate net salary from gross, saving_percentage, and loan
-      // Remove the exact match validation that caused failures when file only has gross_salary
+      
+      
 
       if (record.net_salary && record.net_salary > record.gross_salary) {
         warnings.push(`Record ${recordNumber}: Provided net salary (${record.net_salary}) was greater than gross salary (${record.gross_salary})`);
       }
 
-      // Check employee exists in bulk-loaded data
+      
       const employee = employeeMap.get(record.employee_id);
       if (!employee) {
         errors.push(`Record ${recordNumber}: This employee_id (${record.employee_id}) is invalid or not found in database`);
@@ -387,7 +369,7 @@ class Payroll {
         warnings.push(`Record ${recordNumber}: Employee ${record.employee_id} employment status is ${employee.employment_status}`);
       }
 
-      // Validate against stored employee salary
+      
       if (employee.salary && parseFloat(employee.salary) !== parseFloat(record.gross_salary)) {
         errors.push(
           `Record ${recordNumber}: Invalid gross salary. Provided (${record.gross_salary}) does not match the stored salary for ${record.employee_id} (${employee.salary})`
@@ -395,16 +377,16 @@ class Payroll {
         continue;
       }
 
-      // AUTOMATIC CALCULATION
+      
       const systemSavingsDeduction = employee.saving_percentage ? (record.gross_salary * employee.saving_percentage / 100) : 0;
       const systemLoanRepayment = employee.monthly_repayment || 0;
 
-      // Use the system deductions
+      
       const calculatedSavingsDeduction = systemSavingsDeduction;
       const calculatedLoanDeduction = systemLoanRepayment;
       const calculatedTotalDeductions = calculatedSavingsDeduction + calculatedLoanDeduction;
 
-      // Calculate the net salary automatically
+      
       const calculatedNetSalary = record.gross_salary - calculatedTotalDeductions;
 
       if (record.saving !== undefined && record.saving !== calculatedSavingsDeduction) {
@@ -417,20 +399,20 @@ class Payroll {
       validRecords.push({
         ...record,
         user_id: employee.id,
-        row: i + 1, // Add row number for frontend display
-        valid: true, // ✅ Frontend checks this field for Success/Failed status
-        'Employee ID': record.employee_id, // Frontend field name
-        'Employee Name': `${employee.first_name || ''} ${employee.last_name || ''}`.trim(), // Frontend field name
-        'Salary': record.gross_salary, // Frontend field name
-        'Status': 'Processed', // Frontend field name
-        'Notes': '', // Frontend field name
-        employee_id: record.employee_id, // Use database field name
-        gross_salary: record.gross_salary, // Use database field name
-        net_salary: calculatedNetSalary, // Use calculated net salary
-        savings_deduction: calculatedSavingsDeduction, // Use calculated savings deduction
-        loan_repayment_deduction: calculatedLoanDeduction, // Use calculated loan deduction
-        total_deductions: calculatedTotalDeductions, // Use calculated total deductions
-        final_amount: calculatedNetSalary
+        row: i + 1, 
+        valid: true, 
+        'Employee ID': record.employee_id, 
+        'Employee Name': `${employee.first_name || ''} ${employee.last_name || ''}`.trim(), 
+        'Salary': Math.max(0, calculatedNetSalary), 
+        'Status': 'Processed', 
+        'Notes': '', 
+        employee_id: record.employee_id, 
+        gross_salary: record.gross_salary, 
+        net_salary: calculatedNetSalary, 
+        savings_deduction: calculatedSavingsDeduction, 
+        loan_repayment_deduction: calculatedLoanDeduction, 
+        total_deductions: calculatedTotalDeductions, 
+        final_amount: Math.max(0, calculatedNetSalary) 
       });
     }
 
@@ -473,7 +455,7 @@ class Payroll {
           record.savings_deduction, record.loan_repayment_deduction, record.total_deductions, record.final_amount
         ]);
 
-        // Verify insertion succeeded
+        
         if (!result || !result.insertId) {
           throw new Error(`Failed to insert payroll detail for employee ${record.employee_id}`);
         }
@@ -624,7 +606,7 @@ class Payroll {
       for (const detail of details.details) {
         console.log(` Processing employee ${detail.employee_id} - Savings: ${detail.savings_deduction}, Loan: ${detail.loan_repayment_deduction}`);
         
-        // Process savings deduction
+        
         if (detail.savings_deduction > 0) {
           console.log(` Adding ${detail.savings_deduction} to savings account for employee ${detail.employee_id}`);
           
@@ -665,7 +647,7 @@ class Payroll {
           }
         }
 
-        // Process loan repayment
+        
         if (detail.loan_repayment_deduction > 0) {
           console.log(` Processing loan repayment of ${detail.loan_repayment_deduction} for employee ${detail.employee_id}`);
           
@@ -693,7 +675,7 @@ class Payroll {
           }
         }
 
-        // Update payment status
+        
         const [updateResult] = await connection.query(`
           UPDATE payroll_details 
           SET payment_status = 'PAID', payment_date = NOW(), payment_reference = ?
@@ -722,7 +704,7 @@ class Payroll {
     });
   }
 
-  // ... (rest of the code remains the same)
+  
   static async validatePayrollBatch(batchId) {
     const batch = await this.getPayrollBatch(batchId);
 
@@ -738,12 +720,12 @@ class Payroll {
     const validationErrors = [];
 
     for (const detail of details.details) {
-      // Check if deductions exceed net salary
+      
       if (detail.total_deductions > detail.net_salary) {
         validationErrors.push(`Employee ${detail.employee_id}: Deductions exceed net salary`);
       }
 
-      // Verify exact net salary calculation: net_salary == gross_salary - savings_deduction - loan_repayment_deduction
+      
       const expectedNet = detail.gross_salary - detail.savings_deduction - detail.loan_repayment_deduction;
       if (Math.abs(detail.net_salary - expectedNet) > 0.01) {
         validationErrors.push(`Employee ${detail.employee_id}: Net salary must equal gross - saving - deduction (expected ${expectedNet}, got ${detail.net_salary})`);
@@ -834,7 +816,7 @@ class Payroll {
       const details = await this.getPayrollDetails(batchId, 1, 10000);
 
       for (const detail of details.details) {
-        // Reverse savings transactions
+        
         if (detail.savings_deduction > 0) {
           const savingsAccountQuery = 'SELECT id, current_balance FROM savings_accounts WHERE user_id = ?';
           const [savingsAccount] = await connection.query(savingsAccountQuery, [detail.user_id]);
@@ -861,16 +843,16 @@ class Payroll {
           }
         }
 
-        // Reverse loan repayments
+        
         if (detail.loan_repayment_deduction > 0) {
           const loanQuery = 'SELECT id, paid_amount, outstanding_balance FROM loans WHERE user_id = ? AND (status = "ACTIVE" OR status = "COMPLETED")';
           const [loan] = await connection.query(loanQuery, [detail.user_id]);
 
           if (loan && loan.length > 0) {
-            // Revert paid amount and outstanding balance? 
-            // Usually we just mark the repayment as reversed or add a negative repayment.
-            // For simplicity, let's just add a log entry if needed, but since we don't have a reversal flag on repayments table yet,
-            // we'll just log it in audit. Actually, we should probably delete/invalidate the repayment records.
+            
+            
+            
+            
             await connection.query(`
               DELETE FROM loan_repayments 
               WHERE payroll_batch_id = ? AND user_id = ?

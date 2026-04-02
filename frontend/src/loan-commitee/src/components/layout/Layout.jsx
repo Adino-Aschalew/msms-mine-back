@@ -13,7 +13,7 @@ const Layout = ({
 }) => {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Mobile Sidebar Overlay */}
+      {}
       {mobileSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-gray-900 bg-opacity-50 lg:hidden"
@@ -21,7 +21,7 @@ const Layout = ({
         />
       )}
 
-      {/* Sidebar */}
+      {}
       <Sidebar
         collapsed={sidebarCollapsed}
         mobileOpen={mobileSidebarOpen}
@@ -29,7 +29,7 @@ const Layout = ({
         onToggleSidebar={toggleSidebar}
       />
 
-      {/* Main Content */}
+      {}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
           theme={theme}

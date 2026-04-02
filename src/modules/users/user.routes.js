@@ -5,10 +5,10 @@ const { auditMiddleware } = require('../../middleware/audit');
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
+
 router.use(authMiddleware);
 
-// Admin/HR only routes
+
 router.post('/', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), auditMiddleware('USER_CREATED'), UserController.createUser);
 router.get('/all', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.getAllUsersWithInactive);
 router.put('/:userId/deactivate', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), auditMiddleware('USER_DEACTIVATED'), UserController.deactivateUser);
@@ -17,10 +17,10 @@ router.delete('/:userId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddlew
 router.put('/:userId/reset-password', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), auditMiddleware('PASSWORD_RESET'), UserController.resetPassword);
 router.get('/stats', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.getUserStats);
 
-// Current user profile route (authenticated users)
+
 router.get('/profile', selfOrRoleCheck([]), UserController.getProfile);
 
-// Search users (Admin/HR)
+
 router.get('/search', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.searchUsers);
 
 module.exports = router;

@@ -49,7 +49,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-8 items-start min-h-[600px]">
-        {/* Sidebar Tabs */}
+        {}
         <div className="w-full md:w-64 shrink-0 flex flex-col gap-2 relative">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -76,13 +76,13 @@ export default function SettingsPage() {
           })}
         </div>
 
-        {/* Content Area */}
+        {}
         <div className="flex-1 w-full min-w-0">
           
-          {/* ORGANIZATION TAB */}
+          {}
           {activeTab === 'organization' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-              {/* Branding Section */}
+              {}
               <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
                 <div className="p-5 border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -105,7 +105,7 @@ export default function SettingsPage() {
                       <div className="max-w-md">
                         <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block ml-1">Company Website</label>
                         <div className="flex relative group">
-                          <span className="inline-flex items-center px-4 border border-r-0 border-border bg-slate-50/80 dark:bg-slate-800/80 text-muted-foreground text-xs font-bold rounded-l-xl">https://</span>
+                          <span className="inline-flex items-center px-4 border border-r-0 border-border bg-slate-50/80 dark:bg-slate-800/80 text-muted-foreground text-xs font-bold rounded-l-xl">https:
                           <input type="text" defaultValue="acmecorp.com" className="flex-1 px-4 py-3 bg-background border border-border rounded-r-xl outline-none focus:border-primary-500 transition-all font-medium text-sm shadow-sm" />
                         </div>
                       </div>
@@ -114,7 +114,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Legal Info Section */}
+              {}
               <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-700">
                 <div className="p-5 border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -139,7 +139,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Regional Section */}
+              {}
               <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-1000">
                 <div className="p-5 border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -177,7 +177,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* ROLES TAB */}
+          {}
           {activeTab === 'roles' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="flex justify-between items-center bg-card border border-border rounded-xl p-5 shadow-sm">
@@ -219,15 +219,15 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* INTEGRATIONS TAB */}
+          {}
           {activeTab === 'integrations' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                  { name: 'Slack', category: 'Communication', desc: 'Send automated leave requests and daily HR briefing summaries directly to Slack channels.', logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg', active: true },
-                  { name: 'Google Workspace', category: 'Identity & SSO', desc: 'Enable Single Sign-On (SSO) and auto-sync employee calendars with company holidays.', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg', active: false },
-                  { name: 'Gusto', category: 'Payroll', desc: 'Sync hours worked, approved leaves, and update employee bank details directly.', logo: 'https://cdn.worldvectorlogo.com/logos/gusto-1.svg', active: true },
-                  { name: 'Zoom', category: 'Interviews', desc: 'Automatically generate and attach meeting links for scheduled candidate interviews.', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Zoom_logo.svg', active: false },
+                  { name: 'Slack', category: 'Communication', desc: 'Send automated leave requests and daily HR briefing summaries directly to Slack channels.', logo: 'https:
+                  { name: 'Google Workspace', category: 'Identity & SSO', desc: 'Enable Single Sign-On (SSO) and auto-sync employee calendars with company holidays.', logo: 'https:
+                  { name: 'Gusto', category: 'Payroll', desc: 'Sync hours worked, approved leaves, and update employee bank details directly.', logo: 'https:
+                  { name: 'Zoom', category: 'Interviews', desc: 'Automatically generate and attach meeting links for scheduled candidate interviews.', logo: 'https:
                 ].map((app, i) => (
                   <div key={i} className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col">
                     <div className="flex justify-between items-start mb-4">
@@ -252,10 +252,10 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* BILLING TAB */}
+          {}
           {activeTab === 'billing' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-              {/* Premium Plan Card */}
+              {}
               <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/20 blur-[80px] rounded-full"></div>
                 
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Payment Method & History Grid */}
+              {}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
                   <h3 className="text-sm font-semibold text-foreground mb-4">Payment Method</h3>

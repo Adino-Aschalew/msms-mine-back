@@ -174,7 +174,7 @@ const Activity = () => {
         <p className="text-gray-600 dark:text-gray-400">View your account activity history and login logs.</p>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="card p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -209,7 +209,7 @@ const Activity = () => {
         </div>
       </div>
 
-      {/* Activity Timeline */}
+      {}
       <div className="card">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -273,7 +273,7 @@ const Activity = () => {
         )}
       </div>
 
-      {/* Activity Statistics */}
+      {}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card p-6">
           <div className="flex items-center gap-3">

@@ -72,7 +72,7 @@ const Settings = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Simulate API call to save settings
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('Settings saved:', {
         systemConfig,
@@ -566,7 +566,7 @@ const Settings = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar Navigation */}
+        {}
         <div className="lg:w-64">
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div className="p-4">
@@ -591,7 +591,7 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Main Content */}
+        {}
         <div className="flex-1">
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div className="p-6">
@@ -601,7 +601,7 @@ const Settings = () => {
               {activeTab === 'system' && renderSystemSettings()}
             </div>
 
-            {/* Save Button */}
+            {}
             <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-500 dark:text-gray-400">

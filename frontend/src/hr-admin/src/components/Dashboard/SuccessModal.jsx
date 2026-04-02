@@ -6,7 +6,7 @@ export default function SuccessModal({ isOpen, onClose, title, message }) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all animate-in fade-in zoom-in duration-200">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -24,12 +24,12 @@ export default function SuccessModal({ isOpen, onClose, title, message }) {
           </button>
         </div>
 
-        {/* Content */}
+        {}
         <div className="p-6">
           <p className="text-gray-600">{message}</p>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex justify-end p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl">
           <button
             onClick={onClose}

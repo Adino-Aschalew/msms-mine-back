@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { loanAPI } from '../services/api';
 
 const useLoanStore = create((set, get) => ({
-  // State
+  
   loans: [],
   currentLoan: null,
   loading: false,
@@ -16,7 +16,7 @@ const useLoanStore = create((set, get) => ({
     amountRange: { min: '', max: '' },
   },
 
-  // Actions
+  
   setLoading: (loading) => set({ loading }),
   
   setError: (error) => set({ error }),
@@ -33,7 +33,7 @@ const useLoanStore = create((set, get) => ({
     }
   }),
 
-  // Fetch loan requests
+  
   fetchLoans: async (params = {}) => {
     set({ loading: true, error: null });
     try {
@@ -50,7 +50,7 @@ const useLoanStore = create((set, get) => ({
     }
   },
 
-  // Fetch loan by ID
+  
   fetchLoanById: async (id) => {
     set({ loading: true, error: null });
     try {
@@ -67,12 +67,12 @@ const useLoanStore = create((set, get) => ({
     }
   },
 
-  // Approve loan
+  
   approveLoan: async (id, approvalData) => {
     set({ loading: true, error: null });
     try {
       await loanAPI.approveLoan(id, approvalData);
-      // Update loan in state
+      
       set(state => ({
         loans: state.loans.map(loan => 
           loan.id === id ? { ...loan, status: 'approved', ...approvalData } : loan
@@ -89,12 +89,12 @@ const useLoanStore = create((set, get) => ({
     }
   },
 
-  // Reject loan
+  
   rejectLoan: async (id, rejectionData) => {
     set({ loading: true, error: null });
     try {
       await loanAPI.rejectLoan(id, rejectionData);
-      // Update loan in state
+      
       set(state => ({
         loans: state.loans.map(loan => 
           loan.id === id ? { ...loan, status: 'rejected', ...rejectionData } : loan
@@ -111,12 +111,12 @@ const useLoanStore = create((set, get) => ({
     }
   },
 
-  // Suspend loan
+  
   suspendLoan: async (id, suspensionData) => {
     set({ loading: true, error: null });
     try {
       await loanAPI.suspendLoan(id, suspensionData);
-      // Update loan in state
+      
       set(state => ({
         loans: state.loans.map(loan => 
           loan.id === id ? { ...loan, status: 'suspended', ...suspensionData } : loan
@@ -133,7 +133,7 @@ const useLoanStore = create((set, get) => ({
     }
   },
 
-  // Fetch loan statistics
+  
   fetchStats: async (params = {}) => {
     set({ loading: true, error: null });
     try {
@@ -150,10 +150,10 @@ const useLoanStore = create((set, get) => ({
     }
   },
 
-  // Clear current loan
+  
   clearCurrentLoan: () => set({ currentLoan: null }),
 
-  // Clear error
+  
   clearError: () => set({ error: null }),
 }));
 

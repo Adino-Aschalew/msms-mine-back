@@ -1,4 +1,4 @@
-// Utility helper functions
+
 
 export const formatCurrency = (amount, currency = 'ETB') => {
   if (currency === 'ETB') {
@@ -16,7 +16,7 @@ export const formatCurrency = (amount, currency = 'ETB') => {
   }).format(amount);
 };
 
-// Alias for ETB formatting
+
 export const formatETB = (amount) => formatCurrency(amount, 'ETB');
 
 export const formatDate = (date, format = 'short') => {
@@ -44,7 +44,7 @@ export const calculateMonthlyInstallment = (principal, months, interestRate = 0)
 export const checkEligibility = (loanData, rules) => {
   const checks = [];
   
-  // Salary Rule
+  
   const monthlyInstallment = calculateMonthlyInstallment(
     loanData.requestedAmount, 
     loanData.loanDuration, 
@@ -58,7 +58,7 @@ export const checkEligibility = (loanData, rules) => {
     required: `≤ ${rules.salaryDeductionLimit}%`
   });
   
-  // Savings Rule
+  
   const maxLoanFromSavings = loanData.savingsBalance * rules.savingsMultiplier;
   checks.push({
     rule: 'Savings Rule',
@@ -67,7 +67,7 @@ export const checkEligibility = (loanData, rules) => {
     required: `≤ ${formatETB(maxLoanFromSavings)}`
   });
   
-  // Employment Period
+  
   const employmentMonths = Math.floor(
     (new Date() - new Date(loanData.employmentDate)) / (1000 * 60 * 60 * 24 * 30)
   );
@@ -78,7 +78,7 @@ export const checkEligibility = (loanData, rules) => {
     required: `≥ ${rules.minEmploymentPeriod} months`
   });
   
-  // Guarantor Rule
+  
   const requiredGuarantorSavings = loanData.requestedAmount * rules.guarantorSavingsRatio;
   checks.push({
     rule: 'Guarantor Rule',

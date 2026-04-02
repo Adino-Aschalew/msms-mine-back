@@ -9,7 +9,7 @@ class SavingsController {
       const userId = req.userId;
       const employeeId = req.user.employee_id;
       
-      // Default to 15% if not provided
+      
       const finalSavingPercentage = saving_percentage || 15;
       
       if (finalSavingPercentage < 15 || finalSavingPercentage > 65) {
@@ -38,7 +38,7 @@ class SavingsController {
         data: { 
           accountId,
           saving_percentage: finalSavingPercentage,
-          is_default: !saving_percentage // Indicates if default percentage was used
+          is_default: !saving_percentage 
         }
       });
     } catch (error) {

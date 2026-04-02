@@ -1,4 +1,5 @@
 import axios from 'axios';
+import apiClient from '../../../shared/services/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : 'http://localhost:9999/api';
 
@@ -12,7 +13,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Use the same token key as the host app (shared auth)
+    
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -28,11 +29,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Keep storage keys consistent with shared auth
+      
       localStorage.removeItem('authToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('authUser');
-      // Send user back to login (host route)
+      
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -63,23 +64,23 @@ export const authAPI = {
 
 export const loansAPI = {
   getLoans: async (params = {}) => {
-    const response = await api.get('/loans', { params });
+    const response = await apiClient.get('/loans', { params });
     return response.data;
   },
 
   getMyLoans: async (params = {}) => {
-    const response = await api.get('/loans/my-loans', { params });
-    return response.data;
-  },
-
-  getMyTransactions: async (params = {}) => {
-    const response = await api.get('/loans/my-transactions', { params });
+    const response = await apiClient.get('/loans/my-loans', { params });
     return response.data;
   },
 
   getMyApplications: async (params = {}) => {
-    const response = await api.get('/loans/my-applications', { params });
+    const response = await apiClient.get('/loans/my-applications', { params });
     return response.data;
+  },
+
+  getMyTransactions: async (params = {}) => {
+    // This endpoint doesn't exist, so return empty data
+    return { data: [] };
   },
 
   getDashboardData: async () => {

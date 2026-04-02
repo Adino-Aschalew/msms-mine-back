@@ -14,7 +14,7 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('loan-rules');
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Loan Rules State
+  
   const [loanRules, setLoanRules] = useState({
     maxLoanAmount: 50000,
     savingsMultiplier: 3,
@@ -23,7 +23,7 @@ const Settings = () => {
     salaryDeductionLimit: 30
   });
 
-  // Eligibility Rules State
+  
   const [eligibilityRules, setEligibilityRules] = useState({
     minEmploymentPeriod: 12,
     requiredGuarantors: 1,
@@ -50,18 +50,18 @@ const Settings = () => {
   const handleSave = () => {
     console.log('Saving settings:', { loanRules, eligibilityRules });
     setHasChanges(false);
-    // Implementation for saving settings
+    
   };
 
   const handleReset = () => {
     console.log('Resetting to defaults');
     setHasChanges(false);
-    // Implementation for resetting to defaults
+    
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
@@ -88,7 +88,7 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Unsaved Changes Warning */}
+      {}
       {hasChanges && (
         <div className="bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg p-4">
           <div className="flex items-center">
@@ -100,7 +100,7 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Tabs */}
+      {}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex space-x-8">
           {tabs.map((tab) => (
@@ -120,11 +120,11 @@ const Settings = () => {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {}
       <div className="space-y-6">
         {activeTab === 'loan-rules' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Loan Settings */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
                 Basic Loan Settings
@@ -185,7 +185,7 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Financial Settings */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
                 Financial Settings
@@ -229,7 +229,7 @@ const Settings = () => {
                   </p>
                 </div>
 
-                {/* Rule Summary */}
+                {}
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mt-6">
                   <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
                     Current Rules Summary
@@ -249,7 +249,7 @@ const Settings = () => {
 
         {activeTab === 'eligibility-rules' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Employment Requirements */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
                 Employment Requirements
@@ -294,7 +294,7 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Guarantor & Savings Requirements */}
+            {}
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
                 Guarantor & Savings Requirements
@@ -355,7 +355,7 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Eligibility Summary */}
+            {}
             <div className="card p-6 lg:col-span-2">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Current Eligibility Criteria
@@ -386,7 +386,7 @@ const Settings = () => {
         )}
       </div>
 
-      {/* System Information */}
+      {}
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           System Information

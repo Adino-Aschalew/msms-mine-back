@@ -7,14 +7,14 @@ class FinanceController {
       const period = req.query.period || 'MONTHLY';
       const overview = await FinanceService.getFinancialOverview(period);
       
-      // The service now always returns data (even fallback), so no need to check for errors
+      
       res.json({
         success: true,
         data: overview
       });
     } catch (error) {
       console.error('Get financial overview error:', error);
-      // Return fallback data instead of 500 error
+      
       res.json({
         success: true,
         data: {
@@ -62,14 +62,14 @@ class FinanceController {
       const limit = parseInt(req.query.limit) || 10;
       const transactions = await FinanceService.getRecentTransactions(limit);
       
-      // The service now always returns data (even fallback), so no need to check for errors
+      
       res.json({
         success: true,
         data: transactions
       });
     } catch (error) {
       console.error('Get recent transactions error:', error);
-      // Return fallback data instead of 500 error
+      
       res.json({
         success: true,
         data: [
@@ -129,14 +129,14 @@ class FinanceController {
       const { period } = req.query;
       const result = await FinanceService.getAnalytics(period);
       
-      // The service now always returns data (even fallback), so no need to check for errors
+      
       res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Get analytics error:', error);
-      // Return fallback data instead of 500 error
+      
       res.json({
         success: true,
         data: {
@@ -161,7 +161,7 @@ class FinanceController {
 
   static async getBudgetOverview(req, res) {
     try {
-      // Mock for now until budgets table is defined
+      
       const budgets = [
         { id: 1, department: 'Engineering', category: 'Salaries', allocated: 500000, spent: 425000, remaining: 75000, period: 'Q1 2024', status: 'on-track' },
         { id: 2, department: 'Marketing', category: 'Advertising', allocated: 100000, spent: 115000, remaining: -15000, period: 'Q1 2024', status: 'over-budget' },
@@ -407,11 +407,11 @@ class FinanceController {
       const uploadedBy = req.userId;
       const fileData = req.file;
       
-      // Process the uploaded CSV file
+      
       const CsvUtils = require('../../utils/csv');
       const parsedData = await CsvUtils.parseCsvBuffer(fileData.buffer);
       
-      // Process payroll data
+      
       const result = await FinanceService.processPayroll(parsedData.data, uploadedBy);
       
       res.json({

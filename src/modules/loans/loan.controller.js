@@ -20,6 +20,9 @@ class LoanController {
       });
     } catch (error) {
       console.error('Apply for loan error:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
       
       if (error.message.includes('not eligible') || 
           error.message.includes('required') || 
@@ -30,9 +33,13 @@ class LoanController {
         });
       }
       
+      
       res.status(500).json({
         success: false,
-        message: 'Failed to apply for loan'
+        message: error.message || 'Failed to apply for loan',
+        error: error.message,
+        code: error.code,
+        sql: error.sql
       });
     }
   }
@@ -516,7 +523,12 @@ class LoanController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       
+      console.log('🔍 getUserLoans called for userId:', userId);
+      
       const result = await LoanService.getUserLoans(userId, page, limit);
+      
+      console.log('📊 LoanService result:', result);
+      console.log('📊 Loans count:', result.loans?.length);
       
       res.json({
         success: true,
@@ -524,7 +536,7 @@ class LoanController {
         pagination: result.pagination
       });
     } catch (error) {
-      console.error('Get user loans error:', error);
+      console.error('❌ Get user loans error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch user loans'
@@ -615,9 +627,9 @@ class LoanController {
         WHERE user_id = ? AND status = 'ACTIVE'
       `, [userId]);
 
-      // We don't currently store a "due_date" + "PENDING" payroll deduction schedule
-      // in `loan_repayments`. Approximate the monthly payroll deduction as the sum
-      // of `monthly_repayment` for active loans.
+      
+      
+      
       const [deductions] = await query(`
         SELECT COALESCE(SUM(monthly_repayment), 0) as sum_deductions
         FROM loans
@@ -652,7 +664,7 @@ class LoanController {
         success: true,
         data: {
           stats: {
-            savingsBalance: 0, // Mock savings as it belongs to another module
+            savingsBalance: 0, 
             currentSavingRate: 0,
             activeLoans: loanStats?.active_loans ?? 0,
             outstandingLoanBalance: loanStats?.outstanding_balance ?? 0,

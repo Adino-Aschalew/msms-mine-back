@@ -24,7 +24,7 @@ const navItems = [
 export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen }) {
   return (
     <>
-      {/* Mobile Overlay */}
+      {}
       {mobileMenuOpen && (
         <div 
           className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden"
@@ -32,7 +32,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
         />
       )}
 
-      {/* Sidebar Container */}
+      {}
       <aside 
         className={`fixed inset-y-0 left-0 z-50 flex flex-col glass-sidebar transition-all duration-300 lg:static lg:translate-x-0 ${
           collapsed ? 'lg:w-20' : 'lg:w-64'
@@ -44,7 +44,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
               HR Admin
             </span>
           )}
-          {/* Desktop Collapse Toggle */}
+          {}
           <button 
             onClick={() => setCollapsed(!collapsed)}
             className={`hidden lg:flex p-1.5 rounded-lg hover:bg-primary-500/10 dark:hover:bg-white/5 text-sidebar-foreground/70 hover:text-primary-500 dark:hover:text-primary-400 transition-all ${collapsed ? 'mx-auto' : ''}`}
@@ -52,7 +52,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
             {collapsed ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
           </button>
           
-          {/* Mobile Close Button */}
+          {}
           <button 
             onClick={() => setMobileMenuOpen(false)}
             className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-sidebar-foreground/70 transition-colors"
@@ -64,7 +64,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 scrollbar-none">
           {navItems.map((item) => {
             const Icon = item.icon;
-            // On mobile, force uncollapsed view visually for navigation items
+            
             const visuallyCollapsed = collapsed && !mobileMenuOpen;
             
             return (
@@ -87,10 +87,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
                     {item.name}
                   </div>
                 )}
-                {/* Active Indicator Dot */}
-                {/* {isActive && !visuallyCollapsed && (
-                  <div className="absolute right-3 w-1 h-1 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-                )} */}
+                {}
+                {}
               </NavLink>
             );
           })}

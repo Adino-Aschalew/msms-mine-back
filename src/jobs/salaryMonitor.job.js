@@ -15,19 +15,19 @@ class SalaryMonitorJob {
         errors: []
       };
       
-      // Check for pending payroll batches
+      
       const pendingBatches = await this.getPendingPayrollBatches();
       results.pendingPayrolls = pendingBatches.length;
       
       console.log(`📊 Found ${pendingBatches.length} pending payroll batches`);
       
-      // Check for stuck payroll batches (older than 7 days)
+      
       const stuckBatches = await this.getStuckPayrollBatches();
       results.stuckPayrolls = stuckBatches.length;
       
       console.log(`📊 Found ${stuckBatches.length} stuck payroll batches`);
       
-      // Process alerts for stuck batches
+      
       for (const batch of stuckBatches) {
         try {
           await this.processStuckBatchAlert(batch, adminId);
@@ -45,12 +45,12 @@ class SalaryMonitorJob {
         }
       }
       
-      // Check for long-pending loan applications
+      
       const pendingLoans = await this.getPendingLoanApplications();
       
       console.log(`📊 Found ${pendingLoans.length} pending loan applications`);
       
-      // Process alerts for pending loans
+      
       for (const loan of pendingLoans) {
         try {
           await this.processPendingLoanAlert(loan, adminId);
@@ -68,12 +68,12 @@ class SalaryMonitorJob {
         }
       }
       
-      // Check for high penalty accumulation
+      
       const highPenalties = await this.getHighPenalties();
       
       console.log(`📊 Found ${highPenalties.length} high penalty cases`);
       
-      // Process alerts for high penalties
+      
       for (const penalty of highPenalties) {
         try {
           await this.processHighPenaltyAlert(penalty, adminId);
@@ -91,7 +91,7 @@ class SalaryMonitorJob {
         }
       }
       
-      // Log job completion
+      
       if (adminId) {
         await auditLog(adminId, 'SALARY_MONITOR_JOB', 'system_monitoring', null, null, results, '127.0.0.1', 'System Job');
       }
@@ -210,7 +210,7 @@ class SalaryMonitorJob {
 
   static async processStuckBatchAlert(batch, adminId) {
     try {
-      // Create system notification
+      
       await NotificationService.createNotification(
         adminId,
         'Stuck Payroll Batch Alert',
@@ -218,7 +218,7 @@ class SalaryMonitorJob {
         'WARNING'
       );
       
-      // Send email notification to payroll team
+      
       if (process.env.PAYROLL_TEAM_EMAIL) {
         await NotificationService.sendEmail(
           process.env.PAYROLL_TEAM_EMAIL,
@@ -247,7 +247,7 @@ class SalaryMonitorJob {
 
   static async processPendingLoanAlert(loan, adminId) {
     try {
-      // Create system notification
+      
       await NotificationService.createNotification(
         adminId,
         'Pending Loan Application Alert',
@@ -255,7 +255,7 @@ class SalaryMonitorJob {
         'WARNING'
       );
       
-      // Send email notification to loan committee
+      
       if (process.env.LOAN_COMMITTEE_EMAIL) {
         await NotificationService.sendEmail(
           process.env.LOAN_COMMITTEE_EMAIL,
@@ -276,7 +276,7 @@ class SalaryMonitorJob {
         );
       }
       
-      // Send notification to applicant
+      
       await NotificationService.createNotification(
         loan.user_id,
         'Loan Application Update',
@@ -292,7 +292,7 @@ class SalaryMonitorJob {
 
   static async processHighPenaltyAlert(penalty, adminId) {
     try {
-      // Create system notification
+      
       await NotificationService.createNotification(
         adminId,
         'High Penalty Alert',
@@ -300,7 +300,7 @@ class SalaryMonitorJob {
         'WARNING'
       );
       
-      // Send email notification to finance team
+      
       if (process.env.FINANCE_TEAM_EMAIL) {
         await NotificationService.sendEmail(
           process.env.FINANCE_TEAM_EMAIL,
@@ -322,7 +322,7 @@ class SalaryMonitorJob {
         );
       }
       
-      // Send notification to user
+      
       await NotificationService.createNotification(
         penalty.user_id,
         'Account Alert',
@@ -339,7 +339,7 @@ class SalaryMonitorJob {
   static async schedule() {
     const cron = require('node-cron');
     
-    // Schedule job to run every day at 9 AM
+    
     cron.schedule('0 9 * * *', async () => {
       try {
         await this.execute();
@@ -376,7 +376,7 @@ class SalaryMonitorJob {
     try {
       const { query } = require('../config/database');
       
-      // Get last execution details from audit logs
+      
       const [lastExecution] = await query(`
         SELECT * FROM audit_logs 
         WHERE action = 'SALARY_MONITOR_JOB' 
@@ -426,7 +426,7 @@ class SalaryMonitorJob {
         overall_health: 'healthy'
       };
       
-      // Payroll status
+      
       const [payrollStats] = await query(`
         SELECT 
           COUNT(*) as total_batches,
@@ -438,7 +438,7 @@ class SalaryMonitorJob {
       
       report.payroll_status = payrollStats[0] || {};
       
-      // Loan status
+      
       const [loanStats] = await query(`
         SELECT 
           COUNT(*) as total_applications,
@@ -449,7 +449,7 @@ class SalaryMonitorJob {
       
       report.loan_status = loanStats[0] || {};
       
-      // Penalty status
+      
       const [penaltyStats] = await query(`
         SELECT 
           COUNT(*) as total_penalties,
@@ -461,7 +461,7 @@ class SalaryMonitorJob {
       
       report.penalty_status = penaltyStats[0] || {};
       
-      // Determine overall health
+      
       const issues = [];
       
       if (report.payroll_status.stuck_batches > 0) {
@@ -496,12 +496,12 @@ class SalaryMonitorJob {
   static async validateJobConfiguration() {
     const issues = [];
     
-    // Check if required environment variables are set
+    
     if (!process.env.JWT_SECRET) {
       issues.push('JWT_SECRET environment variable not set');
     }
     
-    // Check database connectivity
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1');
@@ -509,7 +509,7 @@ class SalaryMonitorJob {
       issues.push('Database connectivity failed: ' + error.message);
     }
     
-    // Check if monitoring tables exist
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1 FROM payroll_batches LIMIT 1');

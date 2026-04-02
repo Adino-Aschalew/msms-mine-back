@@ -224,7 +224,7 @@ const FinanceAdminManagement = () => {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -249,7 +249,7 @@ const FinanceAdminManagement = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
@@ -295,7 +295,7 @@ const FinanceAdminManagement = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
@@ -333,7 +333,7 @@ const FinanceAdminManagement = () => {
         </div>
       </div>
 
-      {/* Admins Table */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -421,7 +421,7 @@ const FinanceAdminManagement = () => {
           </table>
         </div>
 
-        {/* Pagination */}
+        {}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700 dark:text-gray-300">
@@ -451,7 +451,7 @@ const FinanceAdminManagement = () => {
         </div>
       </div>
 
-      {/* Add Admin Modal */}
+      {}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -463,7 +463,7 @@ const FinanceAdminManagement = () => {
         />
       </Modal>
 
-      {/* Action Modals */}
+      {}
       {activeModal && selectedAdmin && (
         <Modal
           isOpen={true}

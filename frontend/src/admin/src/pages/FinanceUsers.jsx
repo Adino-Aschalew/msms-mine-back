@@ -21,7 +21,7 @@ const FinanceUsers = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Mock users data
+  
   const users = [
     {
       id: 1,
@@ -118,7 +118,7 @@ const FinanceUsers = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Users & Roles</h1>
@@ -136,7 +136,7 @@ const FinanceUsers = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
@@ -187,7 +187,7 @@ const FinanceUsers = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
@@ -233,7 +233,7 @@ const FinanceUsers = () => {
         </div>
       </div>
 
-      {/* Users Table */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -315,7 +315,7 @@ const FinanceUsers = () => {
         </div>
       </div>
 
-      {/* Roles Overview */}
+      {}
       <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Roles Overview</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

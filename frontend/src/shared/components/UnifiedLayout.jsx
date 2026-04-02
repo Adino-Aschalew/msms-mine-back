@@ -11,12 +11,12 @@ const UnifiedLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Module Navigation Header */}
+      {}
       <ModuleNavigation />
       
-      {/* Main Content Area */}
+      {}
       <div className="flex">
-        {/* Sidebar - Can be expanded later with module-specific navigation */}
+        {}
         <aside className={`w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 ${
           sidebarOpen ? 'block' : 'hidden lg:block'
         }`}>
@@ -29,7 +29,7 @@ const UnifiedLayout = () => {
               {user?.role === 'loan_committee' && 'Loan Committee Module'}
             </h3>
             
-            {/* Module-specific sidebar navigation */}
+            {}
             <nav className="space-y-2">
               {user?.role === 'admin' && (
                 <>
@@ -164,7 +164,7 @@ const UnifiedLayout = () => {
           </div>
         </aside>
         
-        {/* Main Content */}
+        {}
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           <Outlet />
         </main>

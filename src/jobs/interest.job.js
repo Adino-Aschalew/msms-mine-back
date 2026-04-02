@@ -22,17 +22,17 @@ class InterestJob {
         }
       };
       
-      // Process savings interest
+      
       console.log('📊 Processing savings interest...');
       const savingsResults = await InterestService.applyInterestToAllSavingsAccounts();
       results.savings = savingsResults;
       
-      // Process loan interest
+      
       console.log('📊 Processing loan interest...');
       const loanResults = await InterestService.applyInterestToAllLoans();
       results.loans = loanResults;
       
-      // Send summary notification to admin
+      
       if (adminId) {
         await NotificationService.createNotification(
           adminId,
@@ -41,7 +41,7 @@ class InterestJob {
           'INFO'
         );
         
-        // Log job completion
+        
         await auditLog(adminId, 'INTEREST_CALCULATION_JOB', 'interest_transactions', null, null, results, '127.0.0.1', 'System Job');
       }
       
@@ -58,7 +58,7 @@ class InterestJob {
   static async schedule() {
     const cron = require('node-cron');
     
-    // Schedule job to run on the 1st of every month at 1 AM
+    
     cron.schedule('0 1 1 * *', async () => {
       try {
         await this.execute();
@@ -143,7 +143,7 @@ class InterestJob {
     try {
       const { query } = require('../config/database');
       
-      // Get last execution details from audit logs
+      
       const [lastExecution] = await query(`
         SELECT * FROM audit_logs 
         WHERE action IN ('INTEREST_CALCULATION_JOB', 'SAVINGS_INTEREST_JOB', 'LOAN_INTEREST_JOB') 
@@ -178,7 +178,7 @@ class InterestJob {
     
     let nextRun = new Date(now.getFullYear(), now.getMonth(), 1, 1, 0, 0, 0);
     
-    // If the 1st has passed this month, schedule for next month
+    
     if (currentDay > 1) {
       nextRun = new Date(now.getFullYear(), now.getMonth() + 1, 1, 1, 0, 0, 0);
     }
@@ -239,7 +239,7 @@ class InterestJob {
     try {
       const { query } = require('../config/database');
       
-      // Get statistics for the last 12 months
+      
       const [stats] = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%Y-%m') as month,
@@ -282,12 +282,12 @@ class InterestJob {
   static async validateJobConfiguration() {
     const issues = [];
     
-    // Check if required environment variables are set
+    
     if (!process.env.JWT_SECRET) {
       issues.push('JWT_SECRET environment variable not set');
     }
     
-    // Check database connectivity
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1');
@@ -295,7 +295,7 @@ class InterestJob {
       issues.push('Database connectivity failed: ' + error.message);
     }
     
-    // Check if interest tables exist
+    
     try {
       const { query } = require('../config/database');
       await query('SELECT 1 FROM savings_transactions WHERE transaction_type = "INTEREST" LIMIT 1');
@@ -315,7 +315,7 @@ class InterestJob {
     try {
       const { query } = require('../config/database');
       
-      // Get current totals
+      
       const [currentTotals] = await query(`
         SELECT 
           (SELECT SUM(current_balance) FROM savings_accounts WHERE account_status = 'ACTIVE') as total_savings,

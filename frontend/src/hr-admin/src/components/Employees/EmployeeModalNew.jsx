@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, UserPlus, Briefcase, Mail, DollarSign, User, Edit, Shield, Phone, Calendar, MapPin } from 'lucide-react';
 
 export default function EmployeeModal({ isOpen, onClose, onSave, employee = null }) {
@@ -75,7 +76,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
     if (!formData.role.trim()) newErrors.role = 'Job role is required';
     if (!formData.salary || formData.salary <= 0) newErrors.salary = 'Valid salary is required';
 
-    // Password validation removed as it is now set automatically to BIT##123
+    
 
 
     setErrors(newErrors);
@@ -105,11 +106,11 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
       emergencyContact: formData.emergencyContact,
       joinDate: formData.joinDate,
       status: formData.status,
-      avatar: employee?.avatar || `https://i.pravatar.cc/150?u=${formData.firstName.toLowerCase()}`,
+      avatar: employee?.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
       performance: employee?.performance || 0,
     };
 
-    // Password is now set automatically on the backend to BIT##123
+    
 
 
     onSave(newEmployee);
@@ -123,20 +124,20 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
   const employmentTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Temporary'];
   const statuses = ['Active', 'On Leave', 'Probation', 'Inactive'];
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* Backdrop */}
+  return isOpen ? createPortal(
+    <div className="fixed inset-0 z-[999999999] flex items-center justify-center p-4">
+      {}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       />
 
-      {/* Modal Content */}
+      {}
       <div
         className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]"
         role="dialog"
       >
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg">
@@ -159,11 +160,11 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
           </button>
         </div>
 
-        {/* Body */}
+        {}
         <div className="p-6 overflow-y-auto flex-1">
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Employee Information */}
+            {}
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 space-y-4">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 <User className="text-blue-500" size={20} />
@@ -234,7 +235,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
               </div>
             </div>
 
-            {/* Contact Information */}
+            {}
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 space-y-4">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 <Mail className="text-blue-500" size={20} />
@@ -302,7 +303,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
               </div>
             </div>
 
-            {/* Job Information */}
+            {}
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 space-y-4">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 <Briefcase className="text-blue-500" size={20} />
@@ -404,12 +405,12 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
               </div>
             </div>
 
-            {/* Security Information Section Removed - Back-end sets default password BIT##123 */}
+            {}
 
           </form>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-4 bg-slate-50 dark:bg-slate-800">
           <button
             type="button"
@@ -426,6 +427,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, employee = null
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 }

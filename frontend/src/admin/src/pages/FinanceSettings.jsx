@@ -273,7 +273,7 @@ const FinanceSettings = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
@@ -304,7 +304,7 @@ const FinanceSettings = () => {
         </div>
       </div>
 
-      {/* Save Status */}
+      {}
       {saveStatus === 'success' && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 dark:bg-green-900/20 dark:border-green-800">
           <div className="flex items-center gap-2">
@@ -317,7 +317,7 @@ const FinanceSettings = () => {
       )}
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar */}
+        {}
         <div className="lg:w-64">
           <nav className="space-y-1">
             {tabs.map((tab) => {
@@ -340,7 +340,7 @@ const FinanceSettings = () => {
           </nav>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1">
           <div className="bg-white rounded-xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
             {renderTabContent()}

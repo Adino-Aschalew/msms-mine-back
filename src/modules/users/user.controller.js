@@ -8,7 +8,7 @@ class UserController {
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
       
-      // Remove profile data from userData
+      
       const { profile, ...userOnlyData } = userData;
       
       const result = await UserService.createUser(userOnlyData, profileData, ip, userAgent);
@@ -46,7 +46,7 @@ class UserController {
         search: req.query.search
       };
       
-      // Remove undefined filters
+      
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
       
       const result = await UserService.getAllUsers(page, limit, filters);
@@ -77,7 +77,7 @@ class UserController {
         search: req.query.search
       };
       
-      // Remove undefined filters
+      
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
       
       const result = await UserService.getAllUsersWithInactive(page, limit, filters);
@@ -318,7 +318,7 @@ class UserController {
       console.log('getProfile - Request received for userId:', req.userId);
       const userId = req.userId;
       
-      // Use UserService to get the user with profile - it already handles findByIdWithProfile and data transformation
+      
       const user = await UserService.getUserById(userId);
       console.log('getProfile - User data retrieved successfully');
       

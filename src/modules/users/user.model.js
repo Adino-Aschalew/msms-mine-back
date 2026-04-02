@@ -28,7 +28,7 @@ class UserModel {
 
   static async createWithProfile(userData, profileData) {
     return await transaction(async (connection) => {
-      // Create user
+      
       const { employee_id, username, email, password_hash, role = 'EMPLOYEE' } = userData;
       const insertUserQuery = `
         INSERT INTO users (employee_id, username, email, password_hash, role)
@@ -38,7 +38,7 @@ class UserModel {
       const [userResult] = await connection.execute(insertUserQuery, [employee_id, username, email, password_hash, role]);
       const userId = userResult.insertId;
       
-      // Create employee profile
+      
       const { first_name, last_name, phone, address, department, job_grade, employment_status } = profileData;
       const insertProfileQuery = `
         INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, phone, address, department, job_grade, employment_status)
@@ -118,7 +118,7 @@ class UserModel {
       const user = result[0];
       console.log('findByIdWithProfile - Raw user data:', user);
       
-      // Transform the data structure
+      
       const transformedUser = {
         id: user.id,
         username: user.username,
@@ -347,7 +347,7 @@ class UserModel {
     const connection = await transaction();
     
     try {
-      // Delete related records first
+      
       await connection.execute('DELETE FROM employee_profiles WHERE user_id = ?', [userId]);
       await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
       

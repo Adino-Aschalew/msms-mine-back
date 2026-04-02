@@ -81,19 +81,19 @@ const PasswordChangeModal = ({ isOpen, onClose, isForced = false }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={!isForced ? onClose : undefined}
       />
 
-      {/* Modal */}
+      {}
       <div
         className="relative bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
-        {/* Header */}
+        {}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
@@ -112,7 +112,7 @@ const PasswordChangeModal = ({ isOpen, onClose, isForced = false }) => {
           </div>
         </div>
 
-        {/* Body */}
+        {}
         <div className="p-6">
           {success ? (
             <div className="flex flex-col items-center py-6 gap-3">
@@ -124,7 +124,7 @@ const PasswordChangeModal = ({ isOpen, onClose, isForced = false }) => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Current Password (only if not forced) */}
+              {}
               {!isForced && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -157,7 +157,7 @@ const PasswordChangeModal = ({ isOpen, onClose, isForced = false }) => {
                 </div>
               )}
 
-              {/* New Password */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   New Password
@@ -188,7 +188,7 @@ const PasswordChangeModal = ({ isOpen, onClose, isForced = false }) => {
                 )}
               </div>
 
-              {/* Confirm Password */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Confirm New Password
@@ -219,14 +219,14 @@ const PasswordChangeModal = ({ isOpen, onClose, isForced = false }) => {
                 )}
               </div>
 
-              {/* Submit error */}
+              {}
               {errors.submit && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
                   <p className="text-sm text-red-700 dark:text-red-300">{errors.submit}</p>
                 </div>
               )}
 
-              {/* Password strength hint when forced */}
+              {}
               {isForced && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                   <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
@@ -242,7 +242,7 @@ const PasswordChangeModal = ({ isOpen, onClose, isForced = false }) => {
           )}
         </div>
 
-        {/* Footer */}
+        {}
         {!success && (
           <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
             {!isForced && (

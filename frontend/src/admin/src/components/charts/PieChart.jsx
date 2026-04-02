@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -10,6 +10,16 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const PieChart = ({ data, options = {} }) => {
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+  }, []);
+
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -59,7 +69,7 @@ const PieChart = ({ data, options = {} }) => {
 
   return (
     <div className="h-80 relative">
-      <Pie data={data} options={{ ...defaultOptions, ...options }} />
+      <Pie ref={chartRef} data={data} options={{ ...defaultOptions, ...options }} />
     </div>
   );
 };

@@ -44,7 +44,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
 
-  // Close dropdowns when clicking outside
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -128,7 +128,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
     try {
       const res = await notificationsAPI.getNotifications({ page: 1, limit: 20 });
       const items = res?.data?.notifications || res?.data?.notifications?.notifications || res?.data?.notifications || res?.data || [];
-      // backend returns { success, data: { notifications, pagination } }
+      
       const normalized = (res?.data?.notifications ? res.data.notifications : res?.data?.notifications?.notifications) || res?.data?.notifications || res?.data?.data?.notifications || res?.data?.data || [];
       const list = Array.isArray(normalized) ? normalized : items;
       setNotifications(list);
@@ -142,7 +142,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   useEffect(() => {
     if (!user?.id) return;
     fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [user?.id]);
 
   const markAsRead = async (id) => {
@@ -169,7 +169,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
 
   const unreadCount = notifications.filter((notif) => !notif.is_read).length;
 
-  // Mock user stats for demonstration
+  
   const userStats = {
     savingsRate: 25,
     loanProgress: 68,
@@ -220,10 +220,10 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
               )}
             </button>
 
-            {/* Enhanced Notification Dropdown */}
+            {}
             {notificationDropdownOpen && (
               <div className="absolute right-0 mt-3 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 transform transition-all duration-200 origin-top-right">
-                {/* Header */}
+                {}
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
@@ -245,7 +245,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                     </div>
                   </div>
 
-                  {/* Filter Tabs */}
+                  {}
                   <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                     <button
                       onClick={() => setFilterType('all')}
@@ -277,7 +277,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                   </div>
                 </div>
 
-                {/* Notifications List */}
+                {}
                 <div className="max-h-96 overflow-y-auto">
                   {notificationsLoading ? (
                     <div className="p-8 text-center">
@@ -334,7 +334,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                   )}
                 </div>
 
-                {/* Footer */}
+                {}
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                   <Link
                     to="/employee/notifications"
@@ -375,10 +375,10 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
               <FiChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Enhanced Profile Dropdown */}
+            {}
             {profileDropdownOpen && (
               <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 transform transition-all duration-200 origin-top-right">
-                {/* User Profile Header */}
+                {}
                 <div className="bg-blue-500 p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden">
@@ -401,7 +401,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                   </div>
                 </div>
 
-                {/* Menu Items */}
+                {}
                 <div className="py-2">
                   <Link
                     to="/employee/profile"
@@ -432,7 +432,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                   </Link>
                 </div>
 
-                {/* Footer */}
+                {}
                 <div className="border-t border-gray-200 dark:border-gray-700 p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Member since {userStats.memberSince}</span>

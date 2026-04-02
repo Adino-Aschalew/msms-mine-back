@@ -1,57 +1,29 @@
-const mysql = require('mysql2/promise');
-require('dotenv').config({ path: '.env' });
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
 
-async function runMigration() {
-  let connection;
+const migrationFile = process.argv[2] || 'migrations/create_performance_reviews.sql';
+
+console.log(`Running migration: ${migrationFile}`);
+
+try {
+  const sql = fs.readFileSync(path.join(__dirname, migrationFile), 'utf8');
+  console.log('Migration SQL loaded successfully');
+  console.log('SQL content preview:', sql.substring(0, 200) + '...');
   
-  try {
-    // Create connection
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'microfinance_system',
-      port: process.env.DB_PORT || 3307
-    });
-
-    console.log('Connected to database successfully');
-
-    // Read and execute migration
-    const fs = require('fs');
-    const migrationSQL = fs.readFileSync('./migrations/enterprise_savings_system.sql', 'utf8');
-    
-    // Split SQL into individual statements
-    const statements = migrationSQL
-      .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
-
-    console.log('Executing enterprise savings system migration...');
-    
-    for (const statement of statements) {
-      if (statement.trim()) {
-        console.log('Executing:', statement.substring(0, 100) + '...');
-        await connection.execute(statement);
-      }
-    }
-
-    console.log('✅ Migration completed successfully!');
-    console.log('Created enterprise savings system tables and views');
-
-  } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    
-    if (error.code === 'ER_DUP_FIELDNAME' || error.code === 'ER_TABLE_EXISTS_ERROR') {
-      console.log('⚠️  Table/columns may already exist - this is normal');
-    } else {
-      console.error('Full error:', error);
-    }
-  } finally {
-    if (connection) {
-      await connection.end();
-      console.log('Database connection closed');
-    }
-  }
+  // Write SQL to a temp file and execute
+  const tempFile = path.join(__dirname, 'temp_migration.sql');
+  fs.writeFileSync(tempFile, sql);
+  
+  console.log('\nTo execute this migration, run one of these commands:');
+  console.log('\nOption 1 - Using MySQL CLI:');
+  console.log('  mysql -u root -p microfinance_system < temp_migration.sql');
+  console.log('\nOption 2 - If MySQL is in PATH:');
+  console.log('  Get-Content temp_migration.sql | mysql -u root -p microfinance_system');
+  console.log('\nOption 3 - Using MySQL Workbench or phpMyAdmin:');
+  console.log('  Open temp_migration.sql and execute it manually');
+  
+} catch (error) {
+  console.error('Error reading migration file:', error.message);
+  process.exit(1);
 }
-
-runMigration();

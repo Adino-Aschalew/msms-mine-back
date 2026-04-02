@@ -8,21 +8,21 @@ const Settings = () => {
   const [activeSubTab, setActiveSubTab] = useState('company');
   const [showPassword, setShowPassword] = useState(false);
   const [settings, setSettings] = useState({
-    // Company Settings
+    
     companyName: 'FinanceHub',
     companyEmail: 'contact@financehub.com',
     companyPhone: '+1 (555) 123-4567',
     companyAddress: '123 Business Ave, Suite 100, New York, NY 10001',
     taxId: '12-3456789',
     
-    // General Settings
+    
     currency: 'USD',
     timezone: 'America/New_York',
     language: 'en',
     dateFormat: 'MM/DD/YYYY',
     timeFormat: '12h',
     
-    // Notification Settings
+    
     emailNotifications: true,
     pushNotifications: false,
     smsNotifications: false,
@@ -32,7 +32,7 @@ const Settings = () => {
     invoiceAlerts: true,
     payrollAlerts: true,
     
-    // Security Settings
+    
     twoFactorAuth: false,
     sessionTimeout: '30min',
     passwordMinLength: 8,
@@ -40,14 +40,14 @@ const Settings = () => {
     ipWhitelist: '',
     loginNotifications: true,
     
-    // Data & Backup Settings
+    
     dataRetention: '2years',
     autoBackup: true,
     backupFrequency: 'daily',
     backupLocation: 'cloud',
     encryptionEnabled: true,
     
-    // Appearance Settings
+    
     theme: 'light',
     accentColor: 'blue',
     sidebarCollapsed: false,
@@ -190,7 +190,7 @@ const Settings = () => {
   return (
     <div className="p-8 min-h-screen bg-gray-50 dark:bg-slate-900">
       <div className="w-full">
-        {/* Header */}
+        {}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center space-x-6">
             <div className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
@@ -208,7 +208,7 @@ const Settings = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Navigation */}
+          {}
           <div className="lg:col-span-3">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Categories</h3>
@@ -233,7 +233,7 @@ const Settings = () => {
                         {section.name}
                       </button>
                       
-                      {/* Sub Navigation */}
+                      {}
                       {isActive && (
                         <div className="ml-8 mt-2 space-y-1">
                           {section.subTabs.map((subTab) => {
@@ -263,10 +263,10 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Content Area */}
+          {}
           <div className="lg:col-span-9">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
-              {/* Company Settings */}
+              {}
               {activeTab === 'general' && activeSubTab === 'company' && (
                 <div className="space-y-8">
                   <div className="flex items-center space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700">
@@ -345,7 +345,7 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Preferences Settings */}
+              {}
               {activeTab === 'general' && activeSubTab === 'preferences' && (
                 <div className="space-y-8">
                   <div className="flex items-center space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700">
@@ -441,7 +441,7 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Email Notifications */}
+              {}
               {activeTab === 'notifications' && activeSubTab === 'email' && (
                 <div className="space-y-8">
                   <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
@@ -529,7 +529,7 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Security Settings */}
+              {}
               {activeTab === 'security' && activeSubTab === 'authentication' && (
                 <div className="space-y-8">
                   <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
@@ -603,7 +603,7 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Theme Settings */}
+              {}
               {activeTab === 'appearance' && activeSubTab === 'theme' && (
                 <div className="space-y-8">
                   <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
@@ -680,7 +680,7 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Action Buttons */}
+              {}
               <div className="flex justify-between pt-8 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={resetSettings}
