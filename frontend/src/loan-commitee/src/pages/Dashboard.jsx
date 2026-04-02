@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import LoanChart from '../components/charts/LoanChart';
 import StatCard from '../components/widgets/StatCard';
+import Modal from '../components/ui/Modal';
 import {
   FileText,
   CheckCircle,
@@ -16,27 +17,26 @@ import {
   RefreshCw,
   Download,
   Filter,
-  Search
+  Search,
+  Briefcase,
+  Hash,
+  Clock
 } from 'lucide-react';
 import { handleButtonClick } from '../utils/actionHandlers';
 import { exportDashboardReport as exportUtil } from '../utils/exportUtils';
 import { committeeAPI } from '../services/committeeAPI';
+import { formatETB } from '../utils/helpers';
 
 const Dashboard = () => {
-  // Compact number formatting function
-  const formatCompactNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'METB';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'KETB';
-    }
-    return num.toString();
-  };
+  // Compact number formatting function using ETB
+  const formatCompactNumber = (num) => formatETB(num);
 
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -46,12 +46,21 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching dashboard data...');
       const res = await committeeAPI.getDashboardData({ period: selectedPeriod });
+      console.log('Dashboard API response:', res);
+      console.log('Response data:', res.data);
+      
       if (res && res.data && res.data.success) {
+        console.log('Setting dashboard data:', res.data.data);
         setDashboardData(res.data.data);
+      } else {
+        console.error('Unexpected response format:', res);
+        setError('Failed to fetch dashboard data: Unexpected response format');
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      console.error('Error response:', error.response);
       setError('Failed to fetch dashboard data. Please try again.');
     } finally {
       setLoading(false);
@@ -93,10 +102,42 @@ const Dashboard = () => {
     handleButtonClick('searchData', query);
   };
 
+  // Quick action handlers for loan requests
+  const handleQuickApprove = async (loanId) => {
+    try {
+      await committeeAPI.approveLoan(loanId, { quick_approve: true });
+      fetchDashboardData(); // Refresh data
+      alert('Loan approved successfully');
+    } catch (error) {
+      console.error('Failed to approve loan:', error);
+      alert('Failed to approve loan. Please try again.');
+    }
+  };
+
+  const handleQuickReject = async (loanId) => {
+    try {
+      await committeeAPI.rejectLoan(loanId, { quick_reject: true });
+      fetchDashboardData(); // Refresh data
+      alert('Loan rejected successfully');
+    } catch (error) {
+      console.error('Failed to reject loan:', error);
+      alert('Failed to reject loan. Please try again.');
+    }
+  };
+
+  const handleViewRequest = (request) => {
+    setSelectedRequest(request);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRequest(null);
+  };
+
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
-    console.log(`Period changed to: ${period}`);
-    // In a real app, this would fetch new data
+    handleButtonClick('changePeriod', period);
   };
 
   const stats = [
@@ -151,18 +192,18 @@ const Dashboard = () => {
   ];
 
   const monthlyDistributionData = {
-    labels: dashboardData?.trends?.map(t => t.label) || ['Jan', 'Feb', 'Mar'],
+    labels: Array.isArray(dashboardData?.trends) ? dashboardData.trends.map(t => t.label) : ['Jan', 'Feb', 'Mar'],
     datasets: [
       {
         label: 'Loan Requests',
-        data: dashboardData?.trends?.map(t => t.total_requests) || [0, 0, 0],
+        data: Array.isArray(dashboardData?.trends) ? dashboardData.trends.map(t => t.total_requests) : [0, 0, 0],
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 2,
       },
       {
         label: 'Approved Loans',
-        data: dashboardData?.trends?.map(t => t.approved_loans) || [0, 0, 0],
+        data: Array.isArray(dashboardData?.trends) ? dashboardData.trends.map(t => t.approved_loans) : [0, 0, 0],
         backgroundColor: 'rgba(34, 197, 94, 0.5)',
         borderColor: 'rgb(34, 197, 94)',
         borderWidth: 2,
@@ -171,11 +212,11 @@ const Dashboard = () => {
   };
 
   const loanGrowthData = {
-    labels: dashboardData?.growth?.map(g => g.label) || ['Jan', 'Feb', 'Mar'],
+    labels: Array.isArray(dashboardData?.growth) ? dashboardData.growth.map(g => g.label) : ['Jan', 'Feb', 'Mar'],
     datasets: [
       {
         label: 'Portfolio Growth',
-        data: dashboardData?.growth?.map(g => g.amount) || [0, 0, 0],
+        data: Array.isArray(dashboardData?.growth) ? dashboardData.growth.map(g => g.amount) : [0, 0, 0],
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4,
@@ -185,13 +226,22 @@ const Dashboard = () => {
   };
 
   const calculateSizeDist = () => {
-    if (!dashboardData?.sizeDistribution) return { labels: [], dataset: [] };
-    const order = ['< $5K', '$5K-$10K', '$10K-$20K', '$20K-$50K', '> $50K'];
+    if (!Array.isArray(dashboardData?.sizeDistribution)) return { labels: [], dataset: [] };
+    const order = ['< 5K ETB', '5K-10K ETB', '10K-20K ETB', '20K-50K ETB', '> 50K ETB'];
     // Merge backend data with default zeros
-    const distMap = { '< $5K': 0, '$5K-$10K': 0, '$10K-$20K': 0, '$20K-$50K': 0, '> $50K': 0 };
+    const distMap = { '< 5K ETB': 0, '5K-10K ETB': 0, '10K-20K ETB': 0, '20K-50K ETB': 0, '> 50K ETB': 0 };
     let total = 0;
     dashboardData.sizeDistribution.forEach(d => {
-      distMap[d.category] = d.count;
+      // Map old dollar categories to new ETB categories
+      const categoryMap = {
+        '< $5K': '< 5K ETB',
+        '$5K-$10K': '5K-10K ETB',
+        '$10K-$20K': '10K-20K ETB',
+        '$20K-$50K': '20K-50K ETB',
+        '> $50K': '> 50K ETB'
+      };
+      const mappedCategory = categoryMap[d.category] || d.category;
+      distMap[mappedCategory] = d.count;
       total += d.count;
     });
     
@@ -219,24 +269,30 @@ const Dashboard = () => {
     ]
   };
 
-  const recentRequests = dashboardData?.recentRequests?.map(req => ({
+  // Format amount to ETB with K/M suffix
+  const formatETBLocal = (amount) => formatETB(amount);
+
+  const recentRequests = Array.isArray(dashboardData?.recentRequests) ? dashboardData.recentRequests.map(req => ({
     id: req.id,
     employee: req.employee,
     department: req.department || 'Not specified',
-    loanType: req.loanType || 'Personal',
-    amount: `$${req.amount}`,
+    loanType: req.loan_type || 'Personal',
+    reason: req.reason || '-',
+    guarantorName: req.guarantor_name || 'No guarantor',
+    guarantorPhone: req.guarantor_phone || '-',
+    amount: formatETBLocal(req.amount),
     submissionDate: req.submissionDate?.split('T')[0],
     status: req.status.toLowerCase()
-  })) || [];
+  })) : [];
 
   // Real activity feed from backend
-  const activityFeed = dashboardData?.recentActivity?.map((activity, index) => ({
+  const activityFeed = Array.isArray(dashboardData?.recentActivity) ? dashboardData.recentActivity.map((activity, index) => ({
     id: index + 1,
     type: activity.action?.toLowerCase() || 'unknown',
     message: activity.description || `${activity.action} by ${activity.user_name || 'User'}`,
     time: activity.created_at ? new Date(activity.created_at).toLocaleString() : 'Unknown',
     icon: getActivityIcon(activity.action?.toLowerCase())
-  })) || [
+  })) : [
     {
       id: 1,
       type: 'new_request',
@@ -345,7 +401,7 @@ const Dashboard = () => {
         <div className="space-y-6">
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
@@ -396,6 +452,8 @@ const Dashboard = () => {
                   <th className="pb-3">Employee</th>
                   <th className="pb-3">Department</th>
                   <th className="pb-3">Type</th>
+                  <th className="pb-3">Reason</th>
+                  <th className="pb-3">Guarantor</th>
                   <th className="pb-3">Amount</th>
                   <th className="pb-3">Status</th>
                   <th className="pb-3">Action</th>
@@ -423,6 +481,17 @@ const Dashboard = () => {
                     <td className="py-3 text-sm text-gray-600 dark:text-gray-400">
                       {request.loanType}
                     </td>
+                    <td className="py-3 text-sm text-gray-600 dark:text-gray-400 max-w-[150px] truncate" title={request.reason}>
+                      {request.reason}
+                    </td>
+                    <td className="py-3 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex flex-col">
+                        <span>{request.guarantorName}</span>
+                        {request.guarantorPhone !== '-' && (
+                          <span className="text-xs text-gray-400">{request.guarantorPhone}</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                       {request.amount}
                     </td>
@@ -432,12 +501,33 @@ const Dashboard = () => {
                       </span>
                     </td>
                     <td className="py-3">
-                      <Link
-                        to={`/loan-requests/${request.id}`}
-                        className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center flex-wrap gap-1 sm:gap-2">
+                        <button
+                          onClick={() => handleViewRequest(request)}
+                          className="p-1 sm:p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                        {request.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleQuickApprove(request.id)}
+                              className="p-1 sm:p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded transition-colors"
+                              title="Quick Approve"
+                            >
+                              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleQuickReject(request.id)}
+                              className="p-1 sm:p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                              title="Quick Reject"
+                            >
+                              <XCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -500,6 +590,110 @@ const Dashboard = () => {
       </div>
       </div>
     </div>
+
+    {/* Request Detail Modal */}
+    <Modal
+      isOpen={isModalOpen}
+      onClose={handleCloseModal}
+      title="Loan Request Details"
+      size="large"
+    >
+      {selectedRequest && (
+        <div className="space-y-6">
+          {/* Request ID and Status */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Hash className="w-5 h-5 text-gray-500" />
+              <span className="text-sm text-gray-500">Request ID:</span>
+              <span className="font-mono text-sm font-medium">{selectedRequest.id}</span>
+            </div>
+            <span className={`status-badge ${getStatusBadge(selectedRequest.status)}`}>
+              {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
+            </span>
+          </div>
+
+          {/* Employee Info */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Employee Information
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-500">Name</label>
+                <p className="font-medium">{selectedRequest.employee}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Department</label>
+                <p className="font-medium">{selectedRequest.department}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Loan Details */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              Loan Details
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-500">Loan Type</label>
+                <p className="font-medium">{selectedRequest.loanType}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Reason</label>
+                <p className="font-medium">{selectedRequest.reason}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Guarantor</label>
+                <p className="font-medium">{selectedRequest.guarantorName}</p>
+                {selectedRequest.guarantorPhone !== '-' && (
+                  <p className="text-xs text-gray-400">{selectedRequest.guarantorPhone}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Amount</label>
+                <p className="font-medium text-lg text-primary-600">{selectedRequest.amount}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Submission Date</label>
+                <p className="font-medium flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {selectedRequest.submissionDate}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          {selectedRequest.status === 'pending' && (
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                onClick={() => {
+                  handleQuickApprove(selectedRequest.id);
+                  handleCloseModal();
+                }}
+                className="flex-1 btn btn-primary flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Approve Request
+              </button>
+              <button
+                onClick={() => {
+                  handleQuickReject(selectedRequest.id);
+                  handleCloseModal();
+                }}
+                className="flex-1 btn btn-outline border-red-300 text-red-600 hover:bg-red-50 flex items-center justify-center gap-2"
+              >
+                <XCircle className="w-4 h-4" />
+                Reject Request
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
     </div>
   );
 };

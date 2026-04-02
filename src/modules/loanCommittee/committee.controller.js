@@ -347,8 +347,10 @@ class CommitteeController {
 
   static async getDashboardData(req, res) {
     try {
+      console.log('=== FETCHING DASHBOARD DATA ===');
+      
       // 1. Stats
-      const [stats] = await query(`
+      const stats = await query(`
         SELECT 
           COUNT(*) as total_requests,
           SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending_reviews,
@@ -357,14 +359,20 @@ class CommitteeController {
           SUM(CASE WHEN status = 'SUSPENDED' THEN 1 ELSE 0 END) as suspended_requests
         FROM loan_applications
       `);
+      console.log('Stats query result:', stats);
       
-      const [portfolio] = await query(`
+      // Check all loan applications to see what's in the table
+      const allApplications = await query(`SELECT id, status, created_at FROM loan_applications LIMIT 5`);
+      console.log('Sample loan applications:', allApplications);
+      
+      const portfolio = await query(`
         SELECT COALESCE(SUM(outstanding_balance), 0) as total_portfolio 
-        FROM loans WHERE status = 'ACTIVE'
+        FROM loans WHERE status IN ('ACTIVE', 'DISBURSED', 'OVERDUE') AND outstanding_balance > 0
       `);
+      console.log('Portfolio query result:', portfolio);
 
       // 2. Monthly Distribution (Trends)
-      const [trends] = await query(`
+      const trends = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%b') as label,
           COUNT(*) as total_requests,
@@ -376,7 +384,7 @@ class CommitteeController {
       `);
 
       // 3. Loan Growth Data
-      const [growth] = await query(`
+      const growth = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%b') as label,
           SUM(loan_amount) as amount
@@ -387,24 +395,38 @@ class CommitteeController {
       `);
 
       // 4. Recent Requests
-      const [recentRequests] = await query(`
+      const recentRequests = await query(`
         SELECT 
           la.id,
           CONCAT(ep.first_name, ' ', ep.last_name) as employee,
           ep.department,
-          la.purpose as loanType,
+          la.loan_type,
+          la.purpose as reason,
           la.requested_amount as amount,
           la.created_at as submissionDate,
-          la.status
+          la.status,
+          COALESCE(g.guarantor_name, 'No guarantor') as guarantor_name,
+          COALESCE(g.guarantor_phone, '-') as guarantor_phone
         FROM loan_applications la
         LEFT JOIN users u ON la.user_id = u.id
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
+        LEFT JOIN (
+          SELECT loan_application_id, 
+                 CONCAT(first_name, ' ', last_name) as guarantor_name,
+                 phone as guarantor_phone
+          FROM guarantors 
+          WHERE id IN (
+            SELECT MIN(id) 
+            FROM guarantors 
+            GROUP BY loan_application_id
+          )
+        ) g ON la.id = g.loan_application_id
         ORDER BY la.created_at DESC
         LIMIT 5
       `);
 
       // 5. Loan Size Distribution
-      const [sizeDistribution] = await query(`
+      const sizeDistribution = await query(`
         SELECT 
           CASE 
             WHEN requested_amount < 5000 THEN '< $5K'
@@ -442,7 +464,7 @@ class CommitteeController {
 
   static async getReportsData(req, res) {
     try {
-      const [approvalTrends] = await query(`
+      const approvalTrends = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%b') as label,
           COUNT(*) as request_rate,
@@ -455,7 +477,7 @@ class CommitteeController {
         ORDER BY MONTH(created_at) ASC
       `);
 
-      const [yearlyDistribution] = await query(`
+      const yearlyDistribution = await query(`
         SELECT 
           YEAR(created_at) as label,
           COUNT(*) as total_loans
@@ -464,7 +486,7 @@ class CommitteeController {
         ORDER BY YEAR(created_at) ASC
       `);
 
-      const [departmentDistribution] = await query(`
+      const departmentDistribution = await query(`
         SELECT 
           COALESCE(ep.department, 'Unknown') as department,
           COUNT(*) as count
@@ -473,7 +495,7 @@ class CommitteeController {
         GROUP BY ep.department
       `);
 
-      const [summaryStats] = await query(`
+      const summaryStats = await query(`
         SELECT 
           COUNT(*) as total_loans_year,
           (SELECT SUM(outstanding_balance) FROM loans) as total_portfolio,
@@ -483,7 +505,7 @@ class CommitteeController {
         WHERE YEAR(created_at) = YEAR(NOW())
       `);
 
-      const [repaymentPerformanceData] = await query(`
+      const repaymentPerformanceData = await query(`
         SELECT 
           CASE 
             WHEN status = 'COMPLETED' THEN 'On Time'
@@ -496,7 +518,7 @@ class CommitteeController {
         GROUP BY category
       `);
 
-      const [topBorrowers] = await query(`
+      const topBorrowers = await query(`
         SELECT 
           CONCAT(ep.first_name, ' ', ep.last_name) as name,
           ep.department,
@@ -509,7 +531,7 @@ class CommitteeController {
         LIMIT 5
       `);
 
-      const [sizeDistribution] = await query(`
+      const sizeDistribution = await query(`
         SELECT 
           CASE 
             WHEN requested_amount < 5000 THEN '< $5K'

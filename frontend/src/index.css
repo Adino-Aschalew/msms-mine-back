@@ -182,7 +182,7 @@
   }
 
   .stat-card {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200 p-6 flex items-center justify-between hover:shadow-md;
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200 p-3 sm:p-4 lg:p-6 flex items-center justify-between hover:shadow-md;
   }
 }
 

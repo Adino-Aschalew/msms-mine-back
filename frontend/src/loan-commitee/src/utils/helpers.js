@@ -1,11 +1,23 @@
 // Utility helper functions
 
-export const formatCurrency = (amount, currency = 'USD') => {
+export const formatCurrency = (amount, currency = 'ETB') => {
+  if (currency === 'ETB') {
+    const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.]/g, '')) : amount;
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)} METB`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)} KETB`;
+    }
+    return `${num} ETB`;
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
   }).format(amount);
 };
+
+// Alias for ETB formatting
+export const formatETB = (amount) => formatCurrency(amount, 'ETB');
 
 export const formatDate = (date, format = 'short') => {
   const options = {
@@ -51,8 +63,8 @@ export const checkEligibility = (loanData, rules) => {
   checks.push({
     rule: 'Savings Rule',
     passed: loanData.requestedAmount <= maxLoanFromSavings,
-    actual: `$${loanData.requestedAmount.toLocaleString()}`,
-    required: `≤ $${maxLoanFromSavings.toLocaleString()}`
+    actual: `${formatETB(loanData.requestedAmount)}`,
+    required: `≤ ${formatETB(maxLoanFromSavings)}`
   });
   
   // Employment Period
@@ -71,8 +83,8 @@ export const checkEligibility = (loanData, rules) => {
   checks.push({
     rule: 'Guarantor Rule',
     passed: loanData.guarantorSavings >= requiredGuarantorSavings,
-    actual: `$${loanData.guarantorSavings.toLocaleString()}`,
-    required: `≥ $${requiredGuarantorSavings.toLocaleString()}`
+    actual: `${formatETB(loanData.guarantorSavings)}`,
+    required: `≥ ${formatETB(requiredGuarantorSavings)}`
   });
   
   return checks;
