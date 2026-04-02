@@ -24,7 +24,7 @@ class LoanController {
   
   static async createApplication(req, res) {
     try {
-      const { requested_amount, purpose, repayment_duration_months, monthly_income } = req.body;
+      const { requested_amount, purpose, repayment_duration_months, monthly_income, guarantor_details } = req.body;
       const userId = req.userId;
       const employeeId = req.user.employee_id;
       
@@ -55,6 +55,29 @@ class LoanController {
         repayment_duration_months,
         monthly_income
       });
+      
+      // Save guarantor information if provided
+      if (guarantor_details) {
+        try {
+          const guarantorData = typeof guarantor_details === 'string' 
+            ? JSON.parse(guarantor_details) 
+            : guarantor_details;
+          
+          await Guarantor.addGuarantor(applicationId, userId, {
+            guarantor_type: guarantorData.type === 'internal' ? 'INTERNAL' : 'EXTERNAL',
+            guarantor_name: guarantorData.fullName || guarantorData.employeeId || 'Unknown',
+            guarantor_id: guarantorData.employeeId || '',
+            relationship: guarantorData.relationship || '',
+            monthly_income: 0,
+            contact_phone: guarantorData.phoneNumber || '',
+            contact_email: guarantorData.email || '',
+            address: ''
+          });
+        } catch (guarantorError) {
+          console.error('Error saving guarantor:', guarantorError);
+          // Don't fail the loan application if guarantor save fails
+        }
+      }
       
       await auditLog(userId, 'LOAN_APPLICATION_CREATE', 'loan_applications', applicationId, null, { requested_amount, purpose, repayment_duration_months, monthly_income }, req.ip, req.get('User-Agent'));
       

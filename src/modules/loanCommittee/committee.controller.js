@@ -405,22 +405,19 @@ class CommitteeController {
           la.requested_amount as amount,
           la.created_at as submissionDate,
           la.status,
-          COALESCE(g.guarantor_name, 'No guarantor') as guarantor_name,
-          COALESCE(g.guarantor_phone, '-') as guarantor_phone
+          (SELECT guarantor_name
+           FROM guarantors 
+           WHERE loan_application_id = la.id 
+           ORDER BY id 
+           LIMIT 1) as guarantor_name,
+          (SELECT contact_phone 
+           FROM guarantors 
+           WHERE loan_application_id = la.id 
+           ORDER BY id 
+           LIMIT 1) as guarantor_phone
         FROM loan_applications la
         LEFT JOIN users u ON la.user_id = u.id
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-        LEFT JOIN (
-          SELECT loan_application_id, 
-                 CONCAT(first_name, ' ', last_name) as guarantor_name,
-                 phone as guarantor_phone
-          FROM guarantors 
-          WHERE id IN (
-            SELECT MIN(id) 
-            FROM guarantors 
-            GROUP BY loan_application_id
-          )
-        ) g ON la.id = g.loan_application_id
         ORDER BY la.created_at DESC
         LIMIT 5
       `);

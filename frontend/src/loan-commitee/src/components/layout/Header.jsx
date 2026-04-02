@@ -211,7 +211,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
 
         {/* Welcome Message - Desktop Only */}
         <div className="hidden lg:block">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Welcome back, John</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Welcome back,  User</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">Committee Administrator</p>
         </div>
       </div>

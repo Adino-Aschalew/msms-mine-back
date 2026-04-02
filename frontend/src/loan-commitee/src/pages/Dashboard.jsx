@@ -37,6 +37,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({ isOpen: false, type: '', title: '', message: '' });
 
   useEffect(() => {
     fetchDashboardData();
@@ -107,10 +108,20 @@ const Dashboard = () => {
     try {
       await committeeAPI.approveLoan(loanId, { quick_approve: true });
       fetchDashboardData(); // Refresh data
-      alert('Loan approved successfully');
+      setFeedbackModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Loan Approved',
+        message: 'The loan has been approved successfully.'
+      });
     } catch (error) {
       console.error('Failed to approve loan:', error);
-      alert('Failed to approve loan. Please try again.');
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Approval Failed',
+        message: 'Failed to approve the loan. Please try again.'
+      });
     }
   };
 
@@ -118,11 +129,25 @@ const Dashboard = () => {
     try {
       await committeeAPI.rejectLoan(loanId, { quick_reject: true });
       fetchDashboardData(); // Refresh data
-      alert('Loan rejected successfully');
+      setFeedbackModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Loan Rejected',
+        message: 'The loan has been rejected successfully.'
+      });
     } catch (error) {
       console.error('Failed to reject loan:', error);
-      alert('Failed to reject loan. Please try again.');
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Rejection Failed',
+        message: 'Failed to reject the loan. Please try again.'
+      });
     }
+  };
+
+  const closeFeedbackModal = () => {
+    setFeedbackModal({ isOpen: false, type: '', title: '', message: '' });
   };
 
   const handleViewRequest = (request) => {
@@ -357,20 +382,29 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Loan Committee Dashboard</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">Welcome back, Committee Member. Loan committee overview and analytics</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900/20 dark:to-indigo-900/20">
+      {/* System-Level Header */}
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg">
+                <Briefcase className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Loan Committee Dashboard</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">Enterprise Loan Management System • Real-time Analytics</p>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">System Active</span>
+              </div>
               <select
                 value={selectedPeriod}
                 onChange={(e) => handlePeriodChange(e.target.value)}
-                className="input w-auto"
+                className="px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="week">Last Week</option>
                 <option value="month">Last Month</option>
@@ -379,17 +413,17 @@ const Dashboard = () => {
               </select>
               <button
                 onClick={handleRefresh}
-                className="btn btn-secondary"
+                className="p-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all hover:scale-105 active:scale-95"
                 title="Refresh Data"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
               <button
                 onClick={handleExport}
-                className="btn btn-secondary"
+                className="p-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 active:scale-95"
                 title="Export Report"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -693,6 +727,35 @@ const Dashboard = () => {
           )}
         </div>
       )}
+    </Modal>
+
+    {/* Feedback Modal */}
+    <Modal
+      isOpen={feedbackModal.isOpen}
+      onClose={closeFeedbackModal}
+      title={feedbackModal.title}
+      size="small"
+    >
+      <div className="text-center py-4">
+        <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+          feedbackModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'
+        }`}>
+          {feedbackModal.type === 'success' ? (
+            <CheckCircle className="w-8 h-8 text-emerald-600" />
+          ) : (
+            <XCircle className="w-8 h-8 text-red-600" />
+          )}
+        </div>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
+          {feedbackModal.message}
+        </p>
+        <button
+          onClick={closeFeedbackModal}
+          className={`btn ${feedbackModal.type === 'success' ? 'btn-primary' : 'btn-outline border-red-300 text-red-600 hover:bg-red-50'}`}
+        >
+          {feedbackModal.type === 'success' ? 'Continue' : 'Try Again'}
+        </button>
+      </div>
     </Modal>
     </div>
   );

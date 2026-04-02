@@ -115,7 +115,7 @@ class CommitteeService {
           (SELECT SUM(amount) FROM savings_transactions WHERE user_id = la.user_id AND transaction_type = 'CONTRIBUTION') as total_savings_contributions,
           (SELECT COUNT(*) FROM savings_transactions WHERE user_id = la.user_id AND transaction_type = 'WITHDRAWAL') as savings_withdrawals_count,
           (SELECT COUNT(*) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as existing_loans,
-          (SELECT AVG(l.outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
+          (SELECT AVG(outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
           (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count,
           g.guarantor_name,
           g.guarantor_id as guarantor_employee_id,
@@ -126,9 +126,10 @@ class CommitteeService {
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         LEFT JOIN guarantors g ON la.id = g.loan_application_id
         WHERE la.id = ?
+        LIMIT 1
       `;
       
-      const [applications] = await query(selectQuery, [applicationId]);
+      const applications = await query(selectQuery, [applicationId]);
       const application = applications[0];
       
       if (!application) {
@@ -253,31 +254,37 @@ class CommitteeService {
 
   static async reviewApplication(applicationId, reviewData, reviewedBy, ip, userAgent) {
     try {
-      const { decision, notes, approved_amount, approved_term_months, approved_interest_rate, conditions } = reviewData;
+      let { decision, action, notes, approved_amount, approved_term_months, approved_interest_rate, conditions } = reviewData;
+      
+      // Support both 'decision' and 'action' parameters
+      const actionType = (decision || action || '').toString().toLowerCase();
       
       const application = await this.getApplicationById(applicationId);
       
-      if (application.status !== 'PENDING') {
+      if (application.status !== 'PENDING' && application.status !== 'UNDER_REVIEW') {
         throw new Error('Application is not pending review');
       }
       
       let result;
       
-      switch (decision) {
+      switch (actionType) {
         case 'approve':
+        case 'approved':
           result = await this.approveApplication(applicationId, approved_amount, approved_term_months, approved_interest_rate, conditions, reviewedBy, ip, userAgent);
           break;
           
         case 'reject':
+        case 'rejected':
           result = await this.rejectApplication(applicationId, notes, reviewedBy, ip, userAgent);
           break;
           
         case 'request_more_info':
+        case 'more_info':
           result = await this.requestMoreInfo(applicationId, notes, reviewedBy, ip, userAgent);
           break;
           
         default:
-          throw new Error('Invalid decision');
+          throw new Error('Invalid decision: ' + actionType);
       }
       
       return result;
@@ -288,84 +295,144 @@ class CommitteeService {
 
   static async approveApplication(applicationId, approvedAmount, approvedTerm, approvedRate, conditions, reviewedBy, ip, userAgent) {
     try {
-      const connection = require('../../config/database').transaction();
+      const { query, transaction } = require('../../config/database');
       
-      try {
-        // Update application status
-        await connection.execute(`
-          UPDATE loan_applications 
-          SET status = 'APPROVED', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?,
-              approved_amount = ?, approved_term_months = ?, approved_interest_rate = ?, conditions = ?
-          WHERE id = ?
-        `, [reviewedBy, JSON.stringify({ conditions }), approvedAmount, approvedTerm, approvedRate, JSON.stringify(conditions || []), applicationId]);
+      console.log('Approving application:', {
+        applicationId,
+        approvedAmount,
+        approvedTerm,
+        approvedRate,
+        conditions,
+        reviewedBy
+      });
+      
+      const result = await transaction(async (connection) => {
+        // Get application details first to use original values if not provided
+        const [applications] = await connection.execute('SELECT * FROM loan_applications WHERE id = ?', [applicationId]);
+        const application = applications[0];
         
-        // Create loan record
-        const nextPaymentDate = new Date();
-        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-        
-        const [loanResult] = await connection.execute(`
-          INSERT INTO loans (
-            loan_application_id, user_id, employee_id, principal_amount, loan_amount, interest_rate,
-            duration_months, monthly_repayment, remaining_balance, outstanding_balance, 
-            next_payment_date, status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 MONTH), 'ACTIVE', NOW())
-        `, [
-          applicationId, application.user_id, application.employee_id, approvedAmount, approvedAmount, approvedRate,
-          approvedTerm, (approvedAmount * (1 + approvedRate/100) / approvedTerm), approvedAmount, approvedAmount
-        ]);
-        
-        await connection.commit();
-        
-        // Log approval
-        await auditLog(reviewedBy, 'LOAN_COMMITTEE_APPROVED', 'loan_applications', applicationId, null, {
-          approved_amount: approvedAmount,
-          approved_term_months: approvedTerm,
-          approved_interest_rate: approvedRate,
-          conditions
-        }, ip, userAgent);
-        
-        // Send notifications
-        await NotificationService.createNotification(
-          application.user_id,
-          'Loan Application Approved by Committee',
-          `Your loan application for ${approvedAmount} has been approved by the loan committee.`,
-          'SUCCESS'
-        );
-        
-        // Send email
-        if (application.email) {
-          await NotificationService.sendEmail(
-            application.email,
-            'Loan Application Approved by Committee',
-            `
-              <h2>Loan Application Approved!</h2>
-              <p>Dear ${application.first_name} ${application.last_name},</p>
-              <p>Your loan application has been approved by the loan committee.</p>
-              <p><strong>Approved Details:</strong></p>
-              <ul>
-                <li>Amount: ${approvedAmount}</li>
-                <li>Term: ${approvedTerm} months</li>
-                <li>Interest Rate: ${approvedRate}%</li>
-                <li>Monthly Payment: ${application.monthly_payment}</li>
-                ${conditions && conditions.length > 0 ? `<li>Conditions: ${conditions.join(', ')}</li>` : ''}
-              </ul>
-              <p>The funds will be disbursed to your account shortly.</p>
-              <p>Best regards,<br>Loan Committee</p>
-            `
-          );
+        if (!application) {
+          throw new Error('Application not found');
         }
         
+        // Use application's original values if approval parameters are not provided
+        const finalAmount = approvedAmount || application.requested_amount;
+        const finalTerm = approvedTerm || application.repayment_duration_months;
+        const finalRate = approvedRate || 5.0; // Default 5% interest rate
+        const finalConditions = conditions || [];
+        
+        console.log('Using values:', {
+          finalAmount,
+          finalTerm,
+          finalRate,
+          finalConditions
+        });
+        
+        // Update application status
+        const updateQuery = `
+          UPDATE loan_applications 
+          SET status = 'APPROVED', reviewed_by = ?, review_date = NOW(), review_comments = ?
+          WHERE id = ?
+        `;
+        const updateParams = [
+          reviewedBy, 
+          JSON.stringify({ approved_amount: finalAmount, approved_term: finalTerm, approved_rate: finalRate, conditions: finalConditions }), 
+          applicationId
+        ];
+        
+        console.log('Update query:', updateQuery);
+        console.log('Update params:', updateParams);
+        
+        await connection.execute(updateQuery, updateParams);
+        
+        console.log('Application found:', application);
+        
+        // Create loan record - match schema: principal_amount, interest_rate, total_interest, total_repayment, monthly_repayment, remaining_balance, maturity_date
+        const monthlyRepayment = finalAmount * (1 + finalRate/100) / finalTerm;
+        const totalInterest = finalAmount * (finalRate/100);
+        const totalRepayment = finalAmount + totalInterest;
+        const maturityDate = new Date();
+        maturityDate.setMonth(maturityDate.getMonth() + parseInt(finalTerm));
+        
+        const loanQuery = `
+          INSERT INTO loans (
+            loan_application_id, user_id, employee_id, principal_amount, interest_rate,
+            total_interest, total_repayment, monthly_repayment, remaining_balance, 
+            disbursement_date, maturity_date, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'ACTIVE', NOW())
+        `;
+        const loanParams = [
+          applicationId, 
+          application.user_id, 
+          application.employee_id, 
+          finalAmount, 
+          finalRate,
+          totalInterest,
+          totalRepayment,
+          monthlyRepayment,
+          finalAmount,
+          maturityDate.toISOString().split('T')[0]
+        ];
+        
+        console.log('Loan query:', loanQuery);
+        console.log('Loan params:', loanParams);
+        
+        const [loanResult] = await connection.execute(loanQuery, loanParams);
+        
         return {
-          message: 'Application approved successfully',
           loanId: loanResult.insertId,
-          approvedAmount,
-          approvedTerm,
-          approvedRate
+          application
         };
-      } catch (error) {
-        await connection.rollback();
-        throw error;
+      });
+      
+      const application = result.application;
+      
+      // Log approval
+      await auditLog(reviewedBy, 'LOAN_COMMITTEE_APPROVED', 'loan_applications', applicationId, null, {
+        approved_amount: approvedAmount,
+        approved_term_months: approvedTerm,
+        approved_interest_rate: approvedRate,
+        conditions
+      }, ip, userAgent);
+      
+      // Send notifications
+      await NotificationService.createNotification(
+        application.user_id,
+        'Loan Application Approved by Committee',
+        `Your loan application for ${approvedAmount} has been approved by the loan committee.`,
+        'SUCCESS'
+      );
+      
+      // Send email
+      if (application.email) {
+        await NotificationService.sendEmail(
+          application.email,
+          'Loan Application Approved by Committee',
+          `
+            <h2>Loan Application Approved!</h2>
+            <p>Dear ${application.first_name} ${application.last_name},</p>
+            <p>Your loan application has been approved by the loan committee.</p>
+            <p><strong>Approved Details:</strong></p>
+            <ul>
+              <li>Amount: ${approvedAmount}</li>
+              <li>Term: ${approvedTerm} months</li>
+              <li>Interest Rate: ${approvedRate}%</li>
+              <li>Monthly Payment: ${application.monthly_payment}</li>
+              ${conditions && conditions.length > 0 ? `<li>Conditions: ${conditions.join(', ')}</li>` : ''}
+            </ul>
+            <p>The funds will be disbursed to your account shortly.</p>
+            <p>Best regards,<br>Loan Committee</p>
+          `
+        );
       }
+      
+      return {
+        message: 'Application approved successfully',
+        loanId: result.loanId,
+        approvedAmount,
+        approvedTerm,
+        approvedRate
+      };
     } catch (error) {
       throw error;
     }
@@ -375,7 +442,7 @@ class CommitteeService {
     try {
       const updated = await query(`
         UPDATE loan_applications 
-        SET status = 'REJECTED', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?
+        SET status = 'REJECTED', reviewed_by = ?, review_date = NOW(), review_comments = ?
         WHERE id = ?
       `, [reviewedBy, reason, applicationId]);
       
@@ -422,7 +489,7 @@ class CommitteeService {
     try {
       const updated = await query(`
         UPDATE loan_applications 
-        SET status = 'UNDER_REVIEW', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?
+        SET status = 'UNDER_REVIEW', reviewed_by = ?, review_date = NOW(), review_comments = ?
         WHERE id = ?
       `, [reviewedBy, JSON.stringify({ requested_info }), applicationId]);
       

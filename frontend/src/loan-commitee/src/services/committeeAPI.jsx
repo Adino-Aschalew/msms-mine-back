@@ -57,6 +57,20 @@ export const committeeAPI = {
     return api.put(`/loan-committee/applications/${applicationId}/review`, reviewData);
   },
 
+  approveLoan: (applicationId, data = {}) => {
+    return api.put(`/loan-committee/applications/${applicationId}/review`, { 
+      action: 'APPROVE',
+      ...data 
+    });
+  },
+
+  rejectLoan: (applicationId, data = {}) => {
+    return api.put(`/loan-committee/applications/${applicationId}/review`, { 
+      action: 'REJECT',
+      ...data 
+    });
+  },
+
   disburseLoan: (applicationId, disbursementData) => {
     return api.post(`/loan-committee/applications/${applicationId}/disburse`, disbursementData);
   },
@@ -106,6 +120,14 @@ export const committeeAPI = {
   // Committee management
   getCommitteeMembers: (params = {}) => {
     return api.get('/loan-committee/members', { params });
+  },
+
+  getProfile: () => {
+    return api.get('/loan-committee/profile');
+  },
+
+  updateProfile: (profileData) => {
+    return api.put('/loan-committee/profile', profileData);
   },
 
   getCommitteeStats: (params = {}) => {

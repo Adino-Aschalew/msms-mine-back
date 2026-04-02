@@ -1,45 +1,60 @@
 import React, { useState } from 'react';
 import {
-  FiSettings,
-  FiSun,
-  FiMoon,
-  FiMonitor,
-  FiBell,
-  FiShield,
-  FiLock,
-  FiTrash2,
-  FiDownload,
-  FiCheck,
-  FiAlertCircle,
-  FiEye,
-  FiEyeOff,
-} from 'react-icons/fi';
+  Settings,
+  Sun,
+  Moon,
+  Monitor,
+  Bell,
+  Shield,
+  Lock,
+  Trash2,
+  Download,
+  Check,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Palette,
+  Volume2,
+  Database,
+  UserCheck,
+  Smartphone,
+  Globe,
+  CreditCard,
+  HelpCircle
+} from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 
-const Section = ({ title, description, children }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
-      <h3 className="text-sm font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">{title}</h3>
-      {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
+// Modern Section Component
+const Section = ({ title, description, children, icon: Icon }) => (
+  <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/30 dark:to-gray-800/30">
+      <div className="flex items-center gap-3">
+        {Icon && <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>}
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
+          {description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
+        </div>
+      </div>
     </div>
-    <div className="p-6">{children}</div>
+    <div className="p-8">{children}</div>
   </div>
 );
 
+// Modern Toggle Component
 const Toggle = ({ label, description, checked, onChange }) => (
-  <div className="flex items-center justify-between py-3">
+  <div className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
     <div>
-      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{label}</p>
-      {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
+      <p className="font-medium text-gray-900 dark:text-white">{label}</p>
+      {description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
     </div>
     <button
       onClick={() => onChange(!checked)}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-        checked ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+      className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+        checked ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-gray-200 dark:bg-gray-700'
       }`}
     >
-      <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`} />
+      <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${checked ? 'translate-x-6' : ''}`} />
     </button>
   </div>
 );
@@ -71,16 +86,16 @@ const AccountSettingsPage = () => {
   const [activeTab, setActiveTab] = useState('appearance');
 
   const tabs = [
-    { id: 'appearance', label: 'Appearance', icon: FiSun },
-    { id: 'notifications', label: 'Notifications', icon: FiBell },
-    { id: 'security', label: 'Security', icon: FiShield },
-    { id: 'data', label: 'Data', icon: FiDownload },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'data', label: 'Data & Privacy', icon: Database },
   ];
 
   const themeOptions = [
-    { id: 'light', label: 'Light', icon: FiSun, desc: 'Clean white interface' },
-    { id: 'dark', label: 'Dark', icon: FiMoon, desc: 'Easy on the eyes' },
-    { id: 'system', label: 'System', icon: FiMonitor, desc: 'Follows OS setting' },
+    { id: 'light', label: 'Light', icon: Sun, desc: 'Clean white interface', color: 'yellow' },
+    { id: 'dark', label: 'Dark', icon: Moon, desc: 'Easy on the eyes', color: 'purple' },
+    { id: 'system', label: 'System', icon: Monitor, desc: 'Follows OS setting', color: 'blue' },
   ];
 
   const handlePasswordChange = (e) => {
@@ -104,33 +119,44 @@ const AccountSettingsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Account Settings</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Manage preferences, notifications, and security for your account.</p>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+              <Settings className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white">Account Settings</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Manage your preferences, notifications, and security</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Tab Bar */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl w-fit">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-150 ${
-                activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tab Bar */}
+        <div className="flex gap-2 bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
 
       {/* Appearance Tab */}
       {activeTab === 'appearance' && (
@@ -317,6 +343,7 @@ const AccountSettingsPage = () => {
           </Section>
         </div>
       )}
+    </div>
     </div>
   );
 };
