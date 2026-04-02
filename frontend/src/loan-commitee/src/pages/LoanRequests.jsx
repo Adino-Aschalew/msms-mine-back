@@ -13,7 +13,7 @@ import {
   Building2,
   CreditCard,
   Calendar,
-  DollarSign,
+  Coins,
   RefreshCw,
   Info,
   X,
@@ -35,6 +35,22 @@ import {
 import { handleButtonClick, approveLoan, rejectLoan, suspendLoan } from '../utils/actionHandlers';
 import { exportLoanReport } from '../utils/exportUtils';
 import { committeeAPI } from '../services/committeeAPI';
+
+// Compact money formatter for large amounts
+const formatCompactMoney = (amount) => {
+  if (amount === 0) return 'ETB 0';
+  
+  const absAmount = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  
+  if (absAmount >= 1000000) {
+    return `${sign}ETB ${(absAmount / 1000000).toFixed(1)}M`;
+  } else if (absAmount >= 1000) {
+    return `${sign}ETB ${(absAmount / 1000).toFixed(1)}K`;
+  } else {
+    return `${sign}ETB ${absAmount.toLocaleString()}`;
+  }
+};
 
 const LoanRequests = () => {
   const navigate = useNavigate();
@@ -58,7 +74,7 @@ const LoanRequests = () => {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const response = await committeeAPI.getPendingApplications({
+      const res = await committeeAPI.getPendingApplications({
         page: 1,
         limit: 100,
         search: searchTerm,
@@ -67,22 +83,21 @@ const LoanRequests = () => {
         max_amount: amountRange.max || undefined
       });
       
-      if (response && response.data && response.data.success) {
-        // Map backend response fields to frontend expected fields
-        const mappedData = response.data.data.map(app => ({
+      if (res && res.data && res.data.success) {
+        // Map backend response to frontend expected fields
+        const mappedData = res.data.data.map(app => ({
           id: app.id,
           employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
           employeeId: app.employee_id || 'N/A',
           department: app.department || 'Not specified',
           loanType: app.purpose || 'Personal',
           requestedAmount: parseFloat(app.requested_amount || 0),
-          monthlySalary: parseFloat(app.monthly_income || 0),
-          savingsBalance: parseFloat(app.savings_balance || 0),
-          guarantor: app.guarantor_details?.name || 'Not specified',
-          eligibilityStatus: app.risk_level === 'CRITICAL' ? 'not-eligible' : 'eligible',
-          submissionDate: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          status: app.status?.toLowerCase() || 'pending',
-          riskLevel: app.risk_level || 'LOW'
+          monthlyInstallment: parseFloat(app.monthly_repayment || 0),
+          tenure: app.approved_term_months || app.repayment_duration_months || 0,
+          approvalDate: app.review_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+          status: app.status?.toLowerCase() || 'approved',
+          nextPaymentDate: app.next_payment_date || 'N/A',
+          outstandingBalance: parseFloat(app.outstanding_balance || 0)
         }));
         setLoanRequests(mappedData);
       }
@@ -582,10 +597,10 @@ const LoanRequests = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">${stats.totalAmount.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{formatCompactMoney(stats.totalAmount)}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <Coins className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </div>
@@ -722,7 +737,7 @@ const LoanRequests = () => {
                   {/* Min Amount */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                      <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
+                      <Coins className="w-4 h-4 mr-2 text-gray-500" />
                       Minimum Amount
                     </label>
                     <div className="relative">
@@ -740,7 +755,7 @@ const LoanRequests = () => {
                   {/* Max Amount */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                      <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
+                      <Coins className="w-4 h-4 mr-2 text-gray-500" />
                       Maximum Amount
                     </label>
                     <div className="relative">
@@ -804,8 +819,8 @@ const LoanRequests = () => {
                       )}
                       {amountRange.min && (
                         <div className="inline-flex items-center px-3 py-1.5 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-full text-sm">
-                          <DollarSign className="w-3 h-3 mr-1" />
-                          Min: ${amountRange.min}
+                          <Coins className="w-3 h-3 mr-1" />
+                          Min: {amountRange.min}
                           <button
                             onClick={() => setAmountRange(prev => ({ ...prev, min: '' }))}
                             className="ml-2 text-yellow-500 hover:text-yellow-700"
@@ -816,8 +831,8 @@ const LoanRequests = () => {
                       )}
                       {amountRange.max && (
                         <div className="inline-flex items-center px-3 py-1.5 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded-full text-sm">
-                          <DollarSign className="w-3 h-3 mr-1" />
-                          Max: ${amountRange.max}
+                          <Coins className="w-3 h-3 mr-1" />
+                          Max: {amountRange.max}
                           <button
                             onClick={() => setAmountRange(prev => ({ ...prev, max: '' }))}
                             className="ml-2 text-orange-500 hover:text-orange-700"
@@ -965,10 +980,10 @@ const LoanRequests = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          ${request.requestedAmount.toLocaleString()}
+                          {formatCompactMoney(request.requestedAmount)}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          ${request.monthlySalary.toLocaleString()}/month
+                          {formatCompactMoney(request.monthlySalary)}/month
                         </div>
                       </td>
                       <td className="px-6 py-4">

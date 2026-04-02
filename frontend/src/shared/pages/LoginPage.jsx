@@ -130,17 +130,18 @@ const LoginPage = () => {
         }}
       >
         {/* Logo / Brand */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-2">
           <div
-            className="inline-flex items-center justify-center mb-4"
+            className="inline-flex items-center justify-center mb-4 rounded-full"
             style={{
-              width: '64px', height: '64px',
-              borderRadius: '18px',
-              background: 'linear-gradient(135deg, #3b82f6, #6d28d9)',
+              width: '100px', height: '100px',
+              border: '2px solid #ffffff',
+              backgroundImage: 'url("https://addisfortune.news/wp-content/uploads/2022/08/Bahirdar-university.jpg")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
               boxShadow: '0 8px 32px rgba(59,130,246,0.35)'
             }}
           >
-            <FiShield className="w-8 h-8 text-white" />
           </div>
           <h1
             className="text-3xl font-bold text-white"
@@ -152,33 +153,7 @@ const LoginPage = () => {
             Microfinance &amp; Savings Management System
           </p>
         </div>
-
-        {/* Hint strip */}
-        <div
-          className="flex gap-4 mb-8 p-3 rounded-xl text-xs"
-          style={{
-            background: 'rgba(59,130,246,0.08)',
-            border: '1px solid rgba(59,130,246,0.18)'
-          }}
-        >
-          <div className="flex items-start gap-2 flex-1">
-            <span style={{ color: '#60a5fa' }}>👔</span>
-            <div>
-              <div className="font-semibold text-blue-300">Employee</div>
-              <div style={{ color: 'rgba(148,163,184,0.85)' }}>Use your <strong>Employee ID</strong> (e.g. EMP001)</div>
-            </div>
-          </div>
-          <div
-            style={{ width: '1px', background: 'rgba(255,255,255,0.08)' }}
-          />
-          <div className="flex items-start gap-2 flex-1">
-            <span style={{ color: '#a78bfa' }}>🛡️</span>
-            <div>
-              <div className="font-semibold text-purple-300">Admin / Staff</div>
-              <div style={{ color: 'rgba(148,163,184,0.85)' }}>Use your <strong>email address</strong></div>
-            </div>
-          </div>
-        </div>
+        <h1 className='text-white text-xl font-bold mb-4 items-center justify-center text-center mt-0'>Welcome to MSMS Portal</h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Identifier field */}
@@ -345,7 +320,7 @@ const LoginPage = () => {
               className="px-2 py-1 rounded-md"
               style={{ background: 'rgba(30,41,59,0.6)', color: 'rgba(148,163,184,0.8)' }}
             >
-              v2.0
+              Our Version 1.0.0
             </span>
           </div>
         </div>

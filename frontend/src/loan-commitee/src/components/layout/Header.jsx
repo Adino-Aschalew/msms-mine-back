@@ -238,8 +238,12 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
 
         {/* Welcome Message - Desktop Only */}
         <div className="hidden lg:block">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Welcome back,  User</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Committee Administrator</p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Welcome back, {profileData ? `${profileData.first_name}` : (user?.username || 'User')}
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {profileData?.role || user?.role || 'Committee Administrator'}
+          </p>
         </div>
       </div>
 
@@ -402,8 +406,12 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">John Committee</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.username || 'Loading...')}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {profileData?.role || user?.role || 'Loading...'}
+              </p>
             </div>
             <FiChevronDown className={`w-4 h-4 text-gray-600 dark:text-gray-300 transition-transform duration-200 ${profileDropdown ? 'rotate-180' : ''}`} />
           </button>
@@ -507,7 +515,10 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                 <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
                 <div className="space-y-1">
-                  <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group w-full text-left">
+                  <button 
+                    onClick={logout}
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group w-full text-left"
+                  >
                     <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center group-hover:bg-red-200 dark:group-hover:bg-red-900/30 transition-colors">
                       <FiLogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
                     </div>

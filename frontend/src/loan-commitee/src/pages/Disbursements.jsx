@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
-  DollarSign,
   Calendar,
   CreditCard,
   Eye,
@@ -30,10 +29,43 @@ import {
   List,
   ChevronRight,
   RefreshCw,
-  Info
+  Info,
+  Coins
 } from 'lucide-react';
 import { committeeAPI } from '../services/committeeAPI';
 import { useAuth } from '../../../shared/contexts/AuthContext';
+
+// Compact money formatter for large amounts
+const formatCompactMoney = (amount) => {
+  if (amount === 0) return 'ETB 0';
+  
+  const absAmount = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  
+  if (absAmount >= 1000000) {
+    return `${sign}ETB ${(absAmount / 1000000).toFixed(1)}M`;
+  } else if (absAmount >= 1000) {
+    return `${sign}ETB ${(absAmount / 1000).toFixed(1)}K`;
+  } else {
+    return `${sign}ETB ${absAmount.toLocaleString()}`;
+  }
+};
+
+// Safe money formatter that handles zero values
+const formatMoney = (amount) => {
+  if (amount === 0 || amount === '0') return 'ETB 0';
+  
+  const absAmount = Math.abs(parseFloat(amount || 0));
+  const sign = amount < 0 ? '-' : '';
+  
+  if (absAmount >= 1000000) {
+    return `${sign}ETB ${(absAmount / 1000000).toFixed(1)}M`;
+  } else if (absAmount >= 1000) {
+    return `${sign}ETB ${(absAmount / 1000).toFixed(1)}K`;
+  } else {
+    return `${sign}ETB ${absAmount.toLocaleString()}`;
+  }
+};
 
 const Disbursements = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +86,7 @@ const Disbursements = () => {
       setLoading(true);
       const res = await committeeAPI.getApprovedApplications();
       if (res && res.data && res.data.success) {
-        // Map backend response to frontend expected format
+        // Map backend response to frontend expected format for disbursements
         const mappedData = res.data.data.map(app => ({
           id: app.id,
           employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
@@ -67,7 +99,8 @@ const Disbursements = () => {
           approvalDate: app.review_date?.split('T')[0] || new Date().toISOString().split('T')[0],
           status: app.status?.toLowerCase() || 'approved',
           nextPaymentDate: app.next_payment_date || 'N/A',
-          outstandingBalance: parseFloat(app.outstanding_balance || 0)
+          outstandingBalance: parseFloat(app.outstanding_balance || 0),
+          disbursementDate: app.disbursement_date || app.review_date?.split('T')[0] || new Date().toISOString().split('T')[0]
         }));
         setDisbursements(mappedData);
       }
@@ -100,9 +133,10 @@ const Disbursements = () => {
   ];
 
   const filteredDisbursements = disbursements.filter(disbursement => {
-    const matchesSearch = disbursement.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         disbursement.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         disbursement.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || 
+      (disbursement.employeeName && disbursement.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (disbursement.id && disbursement.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (disbursement.department && disbursement.department.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = selectedStatus === 'all' || disbursement.status === selectedStatus;
 
@@ -292,10 +326,10 @@ const Disbursements = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">${stats.totalAmount.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{formatMoney(stats.totalAmount)}</p>
               </div>
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
+                <Coins className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </div>
@@ -521,10 +555,10 @@ const Disbursements = () => {
                       </td>
                       <td className="px-3 sm:px-6 py-4">
                         <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
-                          ${disbursement.approvedAmount.toLocaleString()}
+                          {formatMoney(disbursement.approvedAmount)}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
-                          ${disbursement.installmentAmount.toLocaleString()}/month
+                          {formatMoney(disbursement.installmentAmount)}/month
                         </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
@@ -537,7 +571,7 @@ const Disbursements = () => {
                       </td>
                       <td className="px-3 sm:px-6 py-4 hidden lg:table-cell">
                         <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                          ${disbursement.installmentAmount.toLocaleString()}
+                          ${(disbursement.installmentAmount || 0).toLocaleString()}
                         </span>
                       </td>
                       <td className="px-3 sm:px-6 py-4">
@@ -628,11 +662,11 @@ const Disbursements = () => {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Amount</span>
-                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 text-right">${disbursement.approvedAmount.toLocaleString()}</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 text-right">${(disbursement.approvedAmount || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Monthly Installment</span>
-                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 text-right">${disbursement.installmentAmount.toLocaleString()}</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 text-right">${(disbursement.installmentAmount || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Disbursement Date</span>
@@ -811,9 +845,9 @@ const Disbursements = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
+                      <Coins className="w-4 h-4 text-gray-400 mr-1" />
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {disbursement.approvedAmount.toLocaleString()}
+                        {formatMoney(disbursement.approvedAmount)}
                       </span>
                     </div>
                   </td>
@@ -827,7 +861,7 @@ const Disbursements = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      ${disbursement.installmentAmount.toLocaleString()}
+                      {formatCompactMoney(disbursement.installmentAmount || 0)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -903,13 +937,13 @@ const Disbursements = () => {
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
                   <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    ${selectedLoan.approvedAmount.toLocaleString()}
+                    {formatMoney(selectedLoan.approvedAmount)}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Installment</p>
                   <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    ${selectedLoan.installmentAmount.toLocaleString()}
+                    {formatMoney(selectedLoan.installmentAmount)}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -921,7 +955,7 @@ const Disbursements = () => {
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Remaining Balance</p>
                   <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    ${(selectedLoan.approvedAmount - (selectedLoan.installmentAmount * 0)).toLocaleString()}
+                    {formatMoney((selectedLoan.approvedAmount || 0) - ((selectedLoan.installmentAmount || 0) * 0))}
                   </p>
                 </div>
               </div>
@@ -948,7 +982,7 @@ const Disbursements = () => {
                           {payment.dueDate}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                          ${payment.amount.toLocaleString()}
+                          {formatMoney(payment.amount)}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`status-badge ${getStatusBadge(payment.status)}`}>
@@ -956,7 +990,7 @@ const Disbursements = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                          ${payment.balance.toLocaleString()}
+                          {formatMoney(payment.balance)}
                         </td>
                       </tr>
                     ))}
