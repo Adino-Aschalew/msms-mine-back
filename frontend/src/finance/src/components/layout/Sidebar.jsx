@@ -12,10 +12,11 @@ import {
   FiBell,
   FiHome,
   FiCreditCard,
-  FiShield,
   FiChevronLeft,
   FiArrowRight,
+  FiShield
 } from 'react-icons/fi';
+import { useAuth } from '../../../../shared/contexts/AuthContext.jsx';
 
 const navigation = [
   {
@@ -89,6 +90,7 @@ const navigation = [
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
+  const { logout } = useAuth();
   const [expandedItems, setExpandedItems] = React.useState(new Set(['Payroll']));
 
   const toggleExpanded = (name) => {
@@ -120,7 +122,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
-      {}
+      { }
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -128,12 +130,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         />
       )}
 
-      {}
+      { }
       <aside
         className={`fixed top-0 left-0 z-50 w-64 h-full bg-white dark:bg-black border-r border-gray-200 dark:border-gray-700 lg:static lg:z-auto transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex flex-col h-full">
-          {}
+          { }
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
@@ -156,7 +158,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             </button>
           </div>
 
-          {}
+          { }
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -174,17 +176,16 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                         handleCloseSidebar();
                       }
                     }}
-                    className={({ isActive }) => `flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                      isActive 
-                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300' 
+                    className={({ isActive }) => `flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${isActive
+                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
                         : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                    }`}
+                      }`}
                   >
                     <Icon className="h-5 w-5 flex-shrink-0" />
                     <span className="ml-3 flex-1 text-left hidden sm:block">{item.name}</span>
                     {hasChildren && (
                       <div className={`transform text-center justify-center flex transition-transform duration-200 ${isExpanded ? 'rotate-270' : ''}`}>
-                        <FiChevronLeft className="h-4 w-4 text-center hidden sm:block"/>
+                        <FiChevronLeft className="h-4 w-4 text-center hidden sm:block" />
                         <svg
                           className="h-4 w-4 hidden sm:block"
                           fill="none"
@@ -197,7 +198,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     )}
                   </NavLink>
 
-                  {}
+                  { }
                   {hasChildren && isExpanded && (
                     <div className="overflow-hidden">
                       <div className="ml-4 sm:ml-8 mt-1 space-y-1">
@@ -206,11 +207,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                             key={child.name}
                             to={child.href}
                             onClick={handleCloseSidebar}
-                            className={({ isActive }) => `flex items-center w-full px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
-                            isActive 
-                              ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300' 
-                              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-                          }`}
+                            className={({ isActive }) => `flex items-center w-full px-3 py-2 text-xs font-medium rounded-lg transition-colors ${isActive
+                                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                              }`}
                           >
                             <span className="hidden text-sm sm:block">{child.name}</span>
                             <span className="sm:hidden text-xs">{child.name.length > 15 ? child.name.substring(0, 15) + '...' : child.name}</span>
@@ -224,15 +224,18 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             })}
           </nav>
 
-          {}
+          { }
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-            <button className="sidebar-item sidebar-item-inactive w-full">
+            <button
+              onClick={logout}
+              className="sidebar-item sidebar-item-inactive w-full flex items-center"
+            >
               <FiLogOut className="h-5 w-5" />
               <span className="ml-3 hidden sm:block">Sign Out</span>
-              <span className="sm:hidden">Sign Out</span>
+              <span className="sm:hidden ml-3">Sign Out</span>
             </button>
-            
-            {}
+
+            { }
             <button
               onClick={handleCloseSidebar}
               className="lg:hidden w-full flex items-center justify-center px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"

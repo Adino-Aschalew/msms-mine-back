@@ -7,30 +7,30 @@ class SavingsRequest {
       INSERT INTO savings_requests (user_id, old_value, new_value, reason, status, request_type, savings_type, effective_date, requested_effective_date, submitted_by)
       VALUES (?, ?, ?, ?, 'PENDING', 'PERCENTAGE_CHANGE', 'PERCENTAGE', CURDATE(), CURDATE(), ?)
     `;
-    
+
     const result = await query(insertQuery, [userId, oldPercentage, newPercentage, reason, userId]);
     return result.insertId;
   }
-  
+
   static async getRequests(page = 1, limit = 10, filters = {}) {
     const offset = (page - 1) * limit;
     let whereClause = 'WHERE 1=1';
     const params = [];
-    
+
     if (filters.status) {
       whereClause += ' AND sr.status = ?';
       params.push(filters.status);
     }
-    
+
     if (filters.user_id) {
       whereClause += ' AND sr.user_id = ?';
       params.push(filters.user_id);
     }
-    
+
     const countQuery = `
       SELECT COUNT(*) as total FROM savings_requests sr ${whereClause}
     `;
-    
+
     const selectQuery = `
       SELECT sr.*, sr.old_value as old_percentage, sr.new_value as new_percentage, 
              u.username, u.email, ep.first_name, ep.last_name, ep.department,
@@ -43,12 +43,12 @@ class SavingsRequest {
       ORDER BY sr.submitted_at DESC
       LIMIT ? OFFSET ?
     `;
-    
+
     const [countResult, requests] = await Promise.all([
       query(countQuery, params),
       query(selectQuery, [...params, limit, offset])
     ]);
-    
+
     return {
       requests,
       pagination: {
@@ -59,7 +59,7 @@ class SavingsRequest {
       }
     };
   }
-  
+
   static async getRequest(requestId) {
     const selectQuery = `
       SELECT sr.*, sr.old_value as old_percentage, sr.new_value as new_percentage,
@@ -69,50 +69,56 @@ class SavingsRequest {
       JOIN employee_profiles ep ON u.id = ep.user_id
       WHERE sr.id = ?
     `;
-    
+
     const requests = await query(selectQuery, [requestId]);
     return requests[0] || null;
   }
-  
+
   static async updateRequestStatus(requestId, status, reviewedBy, comments) {
     return await transaction(async (connection) => {
       const request = await this.getRequest(requestId);
-      
+
       if (!request) {
         throw new Error('Savings update request not found');
       }
-      
+
       if (request.status !== 'PENDING') {
         throw new Error('Request has already been processed');
       }
-      
+
       const updateRequestQuery = `
         UPDATE savings_requests 
         SET status = ?, final_approved_by = ?, final_approved_at = NOW(), final_approval_comments = ?
         WHERE id = ?
       `;
-      
+
       await connection.execute(updateRequestQuery, [status, reviewedBy, comments, requestId]);
-      
+      console.log(`[SavingsRequest] Request ${requestId} status updated to ${status}`);
+
       if (status === 'APPROVED') {
         const updateSavingsQuery = `
           UPDATE savings_accounts 
           SET saving_percentage = ?, updated_at = NOW()
           WHERE user_id = ? AND account_status = 'ACTIVE'
         `;
-        
-        await connection.execute(updateSavingsQuery, [request.new_percentage, request.user_id]);
+
+        console.log(`[SavingsRequest] Updating savings account for user ${request.user_id} to ${request.new_percentage}%`);
+        const [saveResult] = await connection.execute(updateSavingsQuery, [request.new_percentage, request.user_id]);
+        console.log(`[SavingsRequest] Savings account update result:`, saveResult);
       }
-      
-      
-      await NotificationService.sendSavingsStatusNotification(
-        request.user_id,
-        requestId,
-        status,
-        request.new_percentage,
-        comments
-      );
-      
+
+      try {
+        await NotificationService.sendSavingsStatusNotification(
+          request.user_id,
+          requestId,
+          status,
+          request.new_percentage,
+          comments
+        );
+      } catch (notifError) {
+        console.error('[SavingsRequest] Notification failed but proceeding with DB commit:', notifError);
+      }
+
       return { success: true, status };
     });
   }

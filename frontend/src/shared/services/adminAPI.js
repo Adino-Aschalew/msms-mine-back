@@ -20,6 +20,26 @@ export const adminAPI = {
     return response;
   },
 
+  createHRAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/hr-admins', userData);
+    return response;
+  },
+
+  createLoanCommitteeAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/loan-committee-admins', userData);
+    return response;
+  },
+
+  createFinanceAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/finance-admins', userData);
+    return response;
+  },
+
+  createRegularAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/regular-admins', userData);
+    return response;
+  },
+
   
   updateUser: async (userId, userData) => {
     const response = await apiClient.put(`/admin/users/${userId}`, userData);

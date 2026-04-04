@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FiMenu, FiBell, FiUser, FiMoon, FiSun, FiMonitor, FiLogOut, FiSettings, FiChevronDown, FiSearch } from 'react-icons/fi';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext.jsx';
-import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useAuth } from '../../../../shared/contexts/AuthContext.jsx';
 import NotificationDropdown from '../widgets/NotificationDropdown.jsx';
 import SearchBar from '../widgets/SearchBar.jsx';
 
@@ -16,28 +16,28 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <>
-      {}
+      { }
       <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {}
+            { }
             <div className="flex items-center space-x-4">
-              {}
+              { }
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 transition-colors"
               >
                 <FiMenu className="h-6 w-6" />
               </button>
-              
-             <p className="mt-1 text-sm text-gray-500 dark:text-white">
-            Welcome back, {user?.first_name || 'Finance Admin'}
-          </p>
+
+              <p className="mt-1 text-sm text-gray-500 dark:text-white">
+                Welcome back, {user?.first_name || 'Finance Admin'}
+              </p>
             </div>
 
-            {}
+            { }
             <div className="flex items-center space-x-2">
-              {}
+              { }
               <div className="relative">
                 <button
                   onClick={toggleTheme}
@@ -56,7 +56,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 </button>
               </div>
 
-              {}
+              { }
               <div className="relative">
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
@@ -69,7 +69,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                     </span>
                   )}
                 </button>
-                
+
                 {showNotifications && (
                   <NotificationDropdown
                     notifications={notifications}
@@ -78,7 +78,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 )}
               </div>
 
-              {}
+              { }
               <div className="relative">
                 <button
                   onClick={() => setShowProfile(!showProfile)}
@@ -97,10 +97,10 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                   </span>
                   <FiChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
-                
+
                 {showProfile && (
                   <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-black rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-                    {}
+                    { }
                     <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center space-x-3">
                         <img
@@ -122,11 +122,11 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                         </div>
                       </div>
                     </div>
-                    
-                    {}
+
+                    { }
                     <div className="py-2">
                       <a
-                        href="/account/profile"
+                        href="/finance/account/profile"
                         className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors duration-200"
                       >
                         <FiUser className="h-4 w-4 mr-3 text-blue-500" />
@@ -149,7 +149,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
       </header>
 
-      {}
+      { }
       {showSearch && (
         <SearchBar
           isOpen={showSearch}

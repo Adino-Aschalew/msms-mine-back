@@ -47,23 +47,25 @@ class Payroll {
     console.log('Upload User ID:', uploadUserId);
     console.log('Cloudinary info:', cloudinaryInfo);
 
-    const { cloudinaryUrl, originalName, publicId } = cloudinaryInfo;
+    const { cloudinaryUrl, originalName, publicId, buffer } = cloudinaryInfo;
     const fileExtension = path.extname(originalName || filePath).toLowerCase();
     let payrollData = [];
-    let fileBuffer = null;
+    let fileBuffer = buffer || null;
 
     console.log('File extension:', fileExtension);
     console.log('Original name:', originalName);
 
     try {
       
-      if (cloudinaryUrl) {
-        fileBuffer = await this.downloadFromCloudinary(cloudinaryUrl);
-      } else if (filePath && fs.existsSync(filePath)) {
-        
-        fileBuffer = await fs.readFile(filePath);
-      } else {
-        throw new Error('No valid file source provided (missing Cloudinary URL or local file path)');
+      if (!fileBuffer) {
+        if (cloudinaryUrl) {
+          fileBuffer = await this.downloadFromCloudinary(cloudinaryUrl);
+        } else if (filePath && fs.existsSync(filePath)) {
+          
+          fileBuffer = await fs.readFile(filePath);
+        } else {
+          throw new Error('No valid file source provided (missing Cloudinary URL or local file path)');
+        }
       }
 
       if (fileExtension === '.csv') {

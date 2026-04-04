@@ -116,7 +116,11 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
       }
     } catch (err) {
       console.error('Submission error:', err);
-      setErrors({ submit: err.response?.data?.message || 'Server error occurred' });
+      
+      const detailedErrors = err.data?.errors?.join(', ');
+      const errorMessage = detailedErrors || err.data?.message || err.message || 'Server error occurred';
+      
+      setErrors({ submit: errorMessage });
     } finally {
       setIsSubmitting(false);
     }

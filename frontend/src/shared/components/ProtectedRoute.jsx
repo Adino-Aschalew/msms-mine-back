@@ -5,10 +5,11 @@ import { useAuth } from '../contexts/AuthContext';
 
 const normalizeRole = (dbRole) => {
   if (!dbRole) return '';
-  const r = dbRole.toLowerCase();
-  
+  const r = dbRole.toLowerCase().trim();
+
+
   if (r === 'finance_admin') return 'finance';
-  if (r === 'super_admin')   return 'admin';
+  if (r === 'super_admin') return 'admin';
   if (r === 'loan_committee') return 'loan_committee';
   return r;
 };

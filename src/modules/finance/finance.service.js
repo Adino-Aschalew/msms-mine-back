@@ -5,15 +5,15 @@ const NotificationService = require('../../services/notification.service');
 class FinanceService {
   static async getFinancialOverview(period = 'MONTHLY') {
     try {
-      const savingsDateFilter = this.getDateFilter(period, 'created_at');
-      const loanDateFilter = this.getDateFilter(period, 'created_at');
-      const payrollDateFilter = this.getDateFilter(period, 'created_at');
+      const savingsDateFilter = this.getDateFilter('ALL', 'created_at');
+      const loanDateFilter = this.getDateFilter('ALL', 'created_at');
+      const payrollDateFilter = this.getDateFilter('ALL', 'created_at');
       
       
       let savingsTotals, loanTotals, savingsTransactions, loanTransactions, payrollSummary;
       
       try {
-        [savingsTotals] = await query(`
+        savingsTotals = await query(`
           SELECT 
             SUM(current_balance) as total_savings,
             COUNT(*) as active_accounts,
@@ -28,7 +28,7 @@ class FinanceService {
       }
       
       try {
-        [loanTotals] = await query(`
+        loanTotals = await query(`
           SELECT 
             SUM(remaining_balance) as total_loans,
             COUNT(*) as active_loans,
@@ -45,7 +45,7 @@ class FinanceService {
       
       
       try {
-        [savingsTransactions] = await query(`
+        savingsTransactions = await query(`
           SELECT 
             COUNT(*) as total_transactions,
             SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as total_contributions,
@@ -59,7 +59,7 @@ class FinanceService {
         console.warn('Savings transactions query failed:', error.message);
         
         try {
-          [savingsTransactions] = await query(`
+          savingsTransactions = await query(`
             SELECT 
               COUNT(*) as total_transactions,
               SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as total_contributions,
@@ -76,7 +76,7 @@ class FinanceService {
       }
       
       try {
-        [loanTransactions] = await query(`
+        loanTransactions = await query(`
           SELECT 
             COUNT(*) as total_transactions,
             SUM(CASE WHEN status = 'PAID' THEN amount ELSE 0 END) as total_payments,
@@ -94,7 +94,7 @@ class FinanceService {
       
       
       try {
-        [payrollSummary] = await query(`
+        payrollSummary = await query(`
           SELECT 
             COUNT(*) as total_payrolls,
             SUM(total_employees) as total_records_processed,
@@ -113,16 +113,30 @@ class FinanceService {
       const totalSavings = parseFloat(savingsTotals[0]?.total_savings || 0);
       const totalLoans = parseFloat(loanTotals[0]?.total_loans || 0);
 
-      return {
+      const totalContributions = parseFloat(savingsTransactions[0]?.total_contributions || 0);
+      const totalPayments = parseFloat(loanTransactions[0]?.total_payments || 0);
+      const totalWithdrawals = parseFloat(savingsTransactions[0]?.total_withdrawals || 0);
+      const totalPayrollAmount = parseFloat(payrollSummary[0]?.total_payroll_amount || 0);
+      const totalDisbursements = parseFloat(loanTransactions[0]?.total_disbursements || 0);
+
+      const overviewData = {
         period,
+        revenue: totalContributions + totalPayments,
+        expenses: totalWithdrawals + totalPayrollAmount,
+        netProfit: Math.abs((totalContributions + totalPayments) - (totalWithdrawals + totalPayrollAmount)),
+        cashBalance: totalSavings,
+        accountsReceivable: totalLoans,
+        accountsPayable: totalPayrollAmount,
         total_assets: totalSavings + totalLoans,
         savings: {
           total_savings: totalSavings,
+          total_withdrawals: totalWithdrawals,
           active_accounts: savingsTotals[0]?.active_accounts || 0,
           average_balance: parseFloat(savingsTotals[0]?.avg_balance || 0)
         },
         loans: {
           total_loans: totalLoans,
+          total_payments: totalPayments,
           active_loans: loanTotals[0]?.active_loans || 0,
           overdue_loans: loanTotals[0]?.overdue_loans || 0,
           average_balance: parseFloat(loanTotals[0]?.avg_loan_balance || 0)
@@ -130,25 +144,28 @@ class FinanceService {
         transactions: {
           savings: {
             total_transactions: savingsTransactions[0]?.total_transactions || 0,
-            total_contributions: parseFloat(savingsTransactions[0]?.total_contributions || 0),
-            total_withdrawals: parseFloat(savingsTransactions[0]?.total_withdrawals || 0),
+            total_contributions: totalContributions,
+            total_withdrawals: totalWithdrawals,
             total_interest: parseFloat(savingsTransactions[0]?.total_interest || 0)
           },
           loans: {
             total_transactions: loanTransactions[0]?.total_transactions || 0,
-            total_payments: parseFloat(loanTransactions[0]?.total_payments || 0),
+            total_payments: totalPayments,
             total_interest: parseFloat(loanTransactions[0]?.total_interest || 0),
             total_penalties: parseFloat(loanTransactions[0]?.total_penalties || 0),
-            total_disbursements: parseFloat(loanTransactions[0]?.total_disbursements || 0)
+            total_disbursements: totalDisbursements
           }
         },
         payroll: {
           total_payrolls: payrollSummary[0]?.total_payrolls || 0,
           total_records: payrollSummary[0]?.total_records_processed || 0,
-          total_amount: parseFloat(payrollSummary[0]?.total_payroll_amount || 0),
+          total_amount: totalPayrollAmount,
           average_salary: parseFloat(payrollSummary[0]?.avg_salary || 0)
         }
       };
+
+      console.log('Finance Overview Processed Data:', overviewData);
+      return overviewData;
     } catch (error) {
       console.error('Financial overview error:', error);
       
@@ -157,11 +174,13 @@ class FinanceService {
         total_assets: 0,
         savings: {
           total_savings: 0,
+          total_withdrawals: 0,
           active_accounts: 0,
           average_balance: 0
         },
         loans: {
           total_loans: 0,
+          total_payments: 0,
           active_loans: 0,
           overdue_loans: 0,
           average_balance: 0
@@ -255,37 +274,26 @@ class FinanceService {
     try {
       const dateFilter = this.getDateFilter(period, 'transaction_date');
       
-      const [cashFlow] = await query(`
+      const cashFlow = await query(`
         SELECT 
           DATE_FORMAT(transaction_date, '%Y-%m') as period,
           SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as savings_in,
-          SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN -amount ELSE 0 END) as savings_out,
-          SUM(CASE WHEN transaction_type = 'PAYMENT' THEN -amount ELSE 0 END) as loan_payments,
+          SUM(CASE WHEN transaction_type IN ('WITHDRAWAL', 'PAYROLL') THEN amount ELSE 0 END) as savings_out,
+          SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END) as loan_payments,
           SUM(CASE WHEN transaction_type = 'INTEREST' THEN amount ELSE 0 END) as savings_interest,
-          SUM(CASE WHEN transaction_type = 'PENALTY' THEN -amount ELSE 0 END) as loan_penalties
+          SUM(CASE WHEN transaction_type = 'PENALTY' THEN amount ELSE 0 END) as loan_penalties
         FROM (
-          SELECT 
-            'CONTRIBUTION' as transaction_type, amount, transaction_date
-          FROM savings_transactions
+          SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions WHERE transaction_type = 'CONTRIBUTION'
           UNION ALL
-          SELECT 
-            'WITHDRAWAL' as transaction_type, amount, transaction_date
-          FROM savings_transactions
+          SELECT 'WITHDRAWAL' as transaction_type, amount, transaction_date FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL'
           UNION ALL
-          SELECT 
-            'PAYMENT' as transaction_type, amount, repayment_date as transaction_date
-          FROM loan_repayments
-          WHERE status = 'PAID'
+          SELECT 'PAYROLL' as transaction_type, total_amount as amount, processed_date as transaction_date FROM payroll_batches WHERE status = 'PROCESSED'
           UNION ALL
-          SELECT 
-            'INTEREST' as transaction_type, interest_amount as amount, repayment_date as transaction_date
-          FROM loan_repayments
-          WHERE status = 'PAID' AND interest_amount > 0
+          SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
           UNION ALL
-          SELECT 
-            'PENALTY' as transaction_type, amount, repayment_date as transaction_date
-          FROM loan_repayments
-          WHERE status = 'OVERDUE'
+          SELECT 'INTEREST' as transaction_type, interest_amount as amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID' AND interest_amount > 0
+          UNION ALL
+          SELECT 'PENALTY' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'OVERDUE'
         ) as transactions
         WHERE 1=1 ${dateFilter}
         GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
@@ -303,46 +311,36 @@ class FinanceService {
       const dateFilter = this.getDateFilter(period, 'transaction_date');
       
       
-      const [incomeData] = await query(`
+      const incomeData = await query(`
         SELECT 
           DATE_FORMAT(transaction_date, '%Y-%m') as period,
           SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as savings_income,
-          SUM(CASE WHEN transaction_type = 'PAYMENT' THEN -amount ELSE 0 END) as loan_payments,
+          SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END) as loan_payments,
           SUM(CASE WHEN transaction_type = 'INTEREST' THEN amount ELSE 0 END) as savings_interest
         FROM (
-          SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date
-          FROM savings_transactions
+          SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions WHERE transaction_type = 'CONTRIBUTION'
           UNION ALL
-          SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date
-          FROM loan_repayments
-          WHERE status = 'PAID'
+          SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
           UNION ALL
-          SELECT 'INTEREST' as transaction_type, interest_amount as amount, repayment_date as transaction_date
-          FROM loan_repayments
-          WHERE status = 'PAID' AND interest_amount > 0
+          SELECT 'INTEREST' as transaction_type, interest_amount as amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID' AND interest_amount > 0
         ) as transactions
         WHERE 1=1 ${dateFilter}
         GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
         ORDER BY period DESC
       `);
       
-      const [expenseData] = await query(`
+      const expenseData = await query(`
         SELECT 
           DATE_FORMAT(transaction_date, '%Y-%m') as period,
           SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN amount ELSE 0 END) as savings_expenses,
           SUM(CASE WHEN transaction_type = 'PENALTY' THEN amount ELSE 0 END) as loan_penalties,
-          SUM(CASE WHEN transaction_type = 'FEES' THEN amount ELSE 0 END) as other_expenses
+          SUM(CASE WHEN transaction_type = 'PAYROLL' THEN amount ELSE 0 END) as payroll_expenses
         FROM (
-          SELECT 'WITHDRAWAL' as transaction_type, amount, transaction_date
-          FROM savings_transactions
+          SELECT 'WITHDRAWAL' as transaction_type, amount, transaction_date FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL'
           UNION ALL
-          SELECT 'PENALTY' as transaction_type, amount, repayment_date as transaction_date
-          FROM loan_repayments
-          WHERE status = 'OVERDUE'
+          SELECT 'PENALTY' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'OVERDUE'
           UNION ALL
-          SELECT 'FEES' as transaction_type, amount, repayment_date as transaction_date
-          FROM loan_repayments
-          WHERE status = 'OVERDUE'
+          SELECT 'PAYROLL' as transaction_type, total_amount as amount, processed_date as transaction_date FROM payroll_batches WHERE status = 'PROCESSED'
         ) as transactions
         WHERE 1=1 ${dateFilter}
         GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
@@ -464,15 +462,19 @@ class FinanceService {
   }
 
   static getDateFilter(period, dateColumn = 'created_at') {
+    if (!period || period === 'ALL') return '';
+    
     switch (period) {
+      case '30days':
+        return `AND ${dateColumn} >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`;
       case 'DAILY':
         return `AND DATE(${dateColumn}) = CURDATE()`;
       case 'WEEKLY':
-        return `AND YEARWEEK(${dateColumn}) = YEARWEEK(CURDATE()) AND WEEK(${dateColumn}) = YEARWEEK(CURDATE())`;
+        return `AND YEARWEEK(${dateColumn}) = YEARWEEK(CURDATE())`;
       case 'MONTHLY':
         return `AND DATE_FORMAT(${dateColumn}, "%Y-%m") = DATE_FORMAT(CURDATE(), "%Y-%m")`;
       case 'QUARTERLY':
-        return `AND QUARTER(${dateColumn}) = QUARTER(CURDATE(), YEAR(CURDATE()))`;
+        return `AND QUARTER(${dateColumn}) = QUARTER(CURDATE()) AND YEAR(${dateColumn}) = YEAR(CURDATE())`;
       case 'YEARLY':
         return `AND YEAR(${dateColumn}) = YEAR(CURDATE())`;
       default:
@@ -556,9 +558,9 @@ class FinanceService {
       const params = [];
       
       if (filters.type && filters.type !== 'all') {
-        const type = filters.type === 'Income' ? 'CONTRIBUTION' : 'WITHDRAWAL';
+        const type = filters.type.toLowerCase() === 'income' ? 'CONTRIBUTION' : 'WITHDRAWAL';
         whereClause += ' AND type = ?';
-        params.push(filters.type); 
+        params.push(type);
       }
 
       if (filters.search) {
@@ -587,8 +589,8 @@ class FinanceService {
           
           SELECT 
             lt.id, 
-            lt.transaction_date as date, 
-            lt.transaction_type as type, 
+            lt.repayment_date as date, 
+            lt.status as type, 
             'Loan' as category, 
             'Loan Account' as account, 
             lt.amount, 
@@ -604,7 +606,7 @@ class FinanceService {
         LIMIT ? OFFSET ?
       `;
       
-      const [transactions] = await query(transactionQuery, [...params, parseInt(limit), parseInt(offset)]);
+      const transactions = await query(transactionQuery, [...params, parseInt(limit), parseInt(offset)]);
       
       return {
         transactions,
@@ -656,10 +658,10 @@ class FinanceService {
       let pendingSavingsRequests = 0;
       
       try {
-        const [payrollCount] = await query("SELECT COUNT(*) as count FROM payroll_batches WHERE status IN ('UPLOADED', 'VALIDATED', 'CONFIRMED')");
+        const payrollCount = await query("SELECT COUNT(*) as count FROM payroll_batches WHERE status IN ('UPLOADED', 'VALIDATED', 'CONFIRMED')");
         pendingPayrolls = payrollCount[0]?.count || 0;
         
-        const [savingsCount] = await query("SELECT COUNT(*) as count FROM savings_requests WHERE status = 'PENDING'");
+        const savingsCount = await query("SELECT COUNT(*) as count FROM savings_requests WHERE status = 'PENDING'");
         pendingSavingsRequests = savingsCount[0]?.count || 0;
       } catch (countError) {
         console.warn('Pending counts query failed:', countError.message);
@@ -677,7 +679,7 @@ class FinanceService {
 
       try {
         
-        const [monthTotals] = await query(`
+        const monthTotals = await query(`
           SELECT 
             COALESCE(SUM(CASE WHEN transaction_type = 'CONTRIBUTION' AND DATE_FORMAT(transaction_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END), 0) as month_saving,
             COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' AND DATE_FORMAT(transaction_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END), 0) as month_loan
@@ -685,11 +687,11 @@ class FinanceService {
             SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
             UNION ALL
             SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
-          ) as t
+          ) as t1
         `);
         
         
-        const [yearTotals] = await query(`
+        const yearTotals = await query(`
           SELECT 
             COALESCE(SUM(CASE WHEN transaction_type = 'CONTRIBUTION' AND YEAR(transaction_date) = YEAR(CURDATE()) THEN amount ELSE 0 END), 0) as year_saving,
             COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' AND YEAR(transaction_date) = YEAR(CURDATE()) THEN amount ELSE 0 END), 0) as year_loan
@@ -697,11 +699,11 @@ class FinanceService {
             SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
             UNION ALL
             SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
-          ) as t
+          ) as t2
         `);
 
         
-        const [highs] = await query(`
+        const highs = await query(`
           SELECT 
             MAX(monthly_saving) as high_saving,
             MAX(monthly_loan) as high_loan
@@ -714,7 +716,7 @@ class FinanceService {
               SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions
               UNION ALL
               SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
-            ) as t2
+            ) as t3sub
             GROUP BY period
           ) as t3
         `);
@@ -734,7 +736,7 @@ class FinanceService {
       
       let expenses = [];
       try {
-        [expenses] = await query(`
+        expenses = await query(`
           SELECT 
             category, 
             SUM(amount) as value
@@ -762,7 +764,7 @@ class FinanceService {
       return {
         revenue: totalContributions + totalPayments,
         expenses: totalWithdrawals + totalPayroll,
-        netProfit: (totalContributions + totalPayments) - (totalWithdrawals + totalPayroll),
+        netProfit: Math.abs((totalContributions + totalPayments) - (totalWithdrawals + totalPayroll)),
         revenueGrowth: 15.5, 
         expensesGrowth: 8.2,
         profitGrowth: 12.7,
@@ -804,7 +806,7 @@ class FinanceService {
 
   static async getRecentTransactions(limit = 10) {
     try {
-      const [transactions] = await query(`
+      const transactions = await query(`
         SELECT * FROM (
           SELECT 
             st.id, 

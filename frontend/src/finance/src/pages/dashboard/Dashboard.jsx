@@ -115,7 +115,7 @@ const Dashboard = () => {
   const kpiData = [
     {
       title: 'Total Revenue',
-      value: formatCompactNumber((overviewData?.savings?.total_savings || 0) + (overviewData?.loans?.total_payments || 0)),
+      value: formatCompactNumber(overviewData?.revenue || 0),
       change: `+${(overviewData?.revenueGrowth || '0')}%`,
       trend: overviewData?.revenueGrowth >= 0 ? 'up' : 'down',
       icon: DollarSign,
@@ -123,7 +123,7 @@ const Dashboard = () => {
     },
     {
       title: 'Total Expenses',
-      value: formatCompactNumber((overviewData?.savings?.total_withdrawals || 0) + (overviewData?.payroll?.total_amount || 0)),
+      value: formatCompactNumber(overviewData?.expenses || 0),
       change: `+${(overviewData?.expensesGrowth || '0')}%`,
       trend: overviewData?.expensesGrowth >= 0 ? 'up' : 'down',
       icon: Wallet,
@@ -131,7 +131,7 @@ const Dashboard = () => {
     },
     {
       title: 'Net Profit',
-      value: formatCompactNumber(((overviewData?.savings?.total_savings || 0) + (overviewData?.loans?.total_payments || 0)) - ((overviewData?.savings?.total_withdrawals || 0) + (overviewData?.payroll?.total_amount || 0))),
+      value: formatCompactNumber(Math.abs(overviewData?.netProfit || 0)),
       change: `+${(overviewData?.profitGrowth || '0')}%`,
       trend: overviewData?.profitGrowth >= 0 ? 'up' : 'down',
       icon: TrendingUp,
@@ -139,7 +139,7 @@ const Dashboard = () => {
     },
     {
       title: 'Cash Balance',
-      value: formatCompactNumber(overviewData?.savings?.total_savings || 0),
+      value: formatCompactNumber(overviewData?.cashBalance || 0),
       change: `+${(overviewData?.cashChange || '0')}%`,
       trend: overviewData?.cashChange >= 0 ? 'up' : 'down',
       icon: Wallet,

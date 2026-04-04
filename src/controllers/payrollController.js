@@ -7,7 +7,7 @@ const path = require('path');
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['.csv', '.xlsx', '.xls'];
   const fileExtension = path.extname(file.originalname).toLowerCase();
-  
+
   if (allowedTypes.includes(fileExtension)) {
     cb(null, true);
   } else {
@@ -19,21 +19,21 @@ const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024
   }
 });
 
 class PayrollController {
   static uploadMiddleware = upload.single('payroll_file');
-  
+
   static async uploadPayroll(req, res) {
     try {
       const uploadUserId = req.userId;
-      
+
       console.log('=== PAYROLL UPLOAD START ===');
       console.log('Upload User ID:', uploadUserId);
       console.log('Request headers:', req.headers);
-      
+
       if (!req.file) {
         console.error('Upload failed: req.file is missing');
         console.log('Request body keys:', Object.keys(req.body));
@@ -42,7 +42,7 @@ class PayrollController {
           message: 'Payroll file is required and must be in allowed format (CSV/Excel)'
         });
       }
-      
+
       console.log('Payroll upload req.file properties:', {
         fieldname: req.file.fieldname,
         originalname: req.file.originalname,
@@ -53,68 +53,47 @@ class PayrollController {
         secure_url: req.file.secure_url,
         mimetype: req.file.mimetype
       });
-      
+
       let cloudinaryUrl = req.file.path || req.file.secure_url || req.file.url;
       let publicId = req.file.filename;
-      
-      
+
+
+      let localFilePath = '';
       if (!cloudinaryUrl && req.file.buffer) {
-        console.log('Manual upload to Cloudinary from buffer...');
-        console.log('Buffer size:', req.file.buffer.length);
-        console.log('File mimetype:', req.file.mimetype);
-        
-        const uploadResult = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              folder: 'microfinance/payroll',
-              resource_type: 'raw',
-              public_id: `payroll-${Date.now()}`
-            },
-            (error, result) => {
-              if (error) {
-                console.error('Cloudinary manual upload error:', error);
-                reject(error);
-              } else {
-                console.log('Cloudinary upload success:', result.secure_url);
-                resolve(result);
-              }
-            }
-          );
-          
-          const stream = require('stream');
-          const bufferStream = new stream.PassThrough();
-          bufferStream.end(req.file.buffer);
-          bufferStream.pipe(uploadStream);
-        });
-        
-        cloudinaryUrl = uploadResult.secure_url;
-        publicId = uploadResult.public_id;
-        console.log('Manual upload success:', cloudinaryUrl);
+        console.log('Saving file locally (bypassing Cloudinary due to timestamp errors)...');
+        const fs = require('fs');
+        const path = require('path');
+        const uploadDir = path.join(__dirname, '../../uploads');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        publicId = `payroll-${Date.now()}-${req.file.originalname}`;
+        localFilePath = path.join(uploadDir, publicId);
+        fs.writeFileSync(localFilePath, req.file.buffer);
+
+        cloudinaryUrl = ''; // Leave empty so we skip Cloudinary download
+        console.log('Local save success:', localFilePath);
       } else {
         console.log('Using existing Cloudinary URL:', cloudinaryUrl);
       }
-      
-      if (!cloudinaryUrl) {
-        console.error('Failed to resolve Cloudinary URL');
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to upload/retrieve file URL'
-        });
-      }
-      
-      
+
+      // Cloudinary URL requirement bypassed to support local file reading
+
+
       console.log('=== PROCESSING PAYROLL FILE ===');
       console.log('Cloudinary URL:', cloudinaryUrl);
       console.log('Upload User ID:', uploadUserId);
       console.log('Original Name:', req.file.originalname);
       console.log('Public ID:', publicId);
-      
-      const result = await Payroll.processPayrollFile(cloudinaryUrl, uploadUserId, {
+
+      const result = await Payroll.processPayrollFile(localFilePath || cloudinaryUrl, uploadUserId, {
         cloudinaryUrl: cloudinaryUrl,
         originalName: req.file.originalname,
-        publicId: publicId
+        publicId: publicId,
+        buffer: req.file.buffer
       });
-      
+
       console.log('=== PAYROLL PROCESSING RESULT ===');
       console.log('Success:', result.success);
       console.log('Batch ID:', result.batchId);
@@ -122,41 +101,41 @@ class PayrollController {
       console.log('Total Amount:', result.totalAmount);
       console.log('Errors:', result.errors);
       console.log('Warnings:', result.warnings);
-      
+
       if (result.success) {
         console.log('=== SENDING SUCCESS RESPONSE ===');
-        await auditLog(uploadUserId, 'PAYROLL_UPLOAD', 'payroll_batches', result.batchId, null, { 
-          batchName: result.batchName, 
+        await auditLog(uploadUserId, 'PAYROLL_UPLOAD', 'payroll_batches', result.batchId, null, {
+          batchName: result.batchName,
           totalEmployees: result.totalEmployees,
           totalAmount: result.totalAmount,
           fileName: req.file.originalname,
           cloudinaryUrl: req.file.path,
           publicId: req.file.filename
         }, req.ip, req.get('User-Agent'));
-        
+
         const responseData = {
           success: true,
           message: 'Payroll uploaded and processed successfully',
           batch_id: result.batchId,
           batch_name: result.batchName,
-          total_employees: result.totalEmployees, 
-          total_amount: result.totalAmount, 
+          total_employees: result.totalEmployees,
+          total_amount: result.totalAmount,
           status: 'VALIDATED',
           warnings: result.warnings,
           valid_records_count: result.validRecords ? result.validRecords.length : 0,
-          payroll_details: result.validRecords || [] 
+          payroll_details: result.validRecords || []
         };
-        
+
         console.log('Response data:', responseData);
         res.json(responseData);
       } else {
         console.log('=== SENDING ERROR RESPONSE ===');
-        await auditLog(uploadUserId, 'PAYROLL_UPLOAD_FAILED', 'payroll_batches', null, null, { 
+        await auditLog(uploadUserId, 'PAYROLL_UPLOAD_FAILED', 'payroll_batches', null, null, {
           fileName: req.file.originalname,
           errors: result.errors,
           cloudinaryUrl: cloudinaryUrl
         }, req.ip, req.get('User-Agent'));
-        
+
         const errorResponse = {
           success: false,
           message: 'Payroll validation failed',
@@ -168,15 +147,15 @@ class PayrollController {
           batch_id: null,
           batch_name: null,
           status: 'FAILED',
-          payroll_details: result.validRecords || [] 
+          payroll_details: result.validRecords || []
         };
-        
+
         console.log('Error response:', errorResponse);
         res.json(errorResponse);
       }
     } catch (error) {
       console.error('CRITICAL Upload payroll error:', error);
-      
+
       res.status(500).json({
         success: false,
         message: 'Internal server error during payroll upload: ' + (error.message || 'Unknown error'),
@@ -184,7 +163,7 @@ class PayrollController {
       });
     }
   }
-  
+
   static async getBatches(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;
@@ -194,11 +173,11 @@ class PayrollController {
         start_date: req.query.start_date,
         end_date: req.query.end_date
       };
-      
+
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
-      
+
       const result = await Payroll.getPayrollBatches(page, limit, filters);
-      
+
       res.json({
         success: true,
         data: result
@@ -211,20 +190,20 @@ class PayrollController {
       });
     }
   }
-  
+
   static async getBatch(req, res) {
     try {
       const { batchId } = req.params;
-      
+
       const batch = await Payroll.getPayrollBatch(batchId);
-      
+
       if (!batch) {
         return res.status(404).json({
           success: false,
           message: 'Payroll batch not found'
         });
       }
-      
+
       res.json({
         success: true,
         data: batch
@@ -237,15 +216,15 @@ class PayrollController {
       });
     }
   }
-  
+
   static async getBatchDetails(req, res) {
     try {
       const { batchId } = req.params;
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
-      
+
       const result = await Payroll.getPayrollDetails(batchId, page, limit);
-      
+
       res.json({
         success: true,
         data: result
@@ -262,20 +241,20 @@ class PayrollController {
   static async exportBatch(req, res) {
     try {
       const { batchId } = req.params;
-      
+
       const batch = await Payroll.getPayrollBatch(batchId);
       if (!batch) {
         return res.status(404).json({ success: false, message: 'Payroll batch not found' });
       }
-      
-      
+
+
       const result = await Payroll.getPayrollDetails(batchId, 1, 1000000);
       const records = result.details;
-      
+
       const ExcelJS = require('exceljs');
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Payroll Report');
-      
+
       worksheet.columns = [
         { header: 'Employee ID', key: 'employee_id', width: 15 },
         { header: 'First Name', key: 'first_name', width: 20 },
@@ -286,13 +265,13 @@ class PayrollController {
         { header: 'Net Salary', key: 'net_salary', width: 15 },
         { header: 'Date', key: 'date', width: 15 }
       ];
-      
+
       worksheet.getRow(1).font = { bold: true };
-      
+
       records.forEach(record => {
-        const payrollDateObj = batch.payroll_date ? new Date(batch.payroll_date) : 
-                              (record.created_at ? new Date(record.created_at) : new Date());
-        
+        const payrollDateObj = batch.payroll_date ? new Date(batch.payroll_date) :
+          (record.created_at ? new Date(record.created_at) : new Date());
+
         worksheet.addRow({
           employee_id: record.employee_id,
           first_name: record.first_name,
@@ -304,10 +283,10 @@ class PayrollController {
           date: payrollDateObj.toISOString().split('T')[0]
         });
       });
-      
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=payroll-report-${batchId}.xlsx`);
-      
+
       await workbook.xlsx.write(res);
       res.end();
     } catch (error) {
@@ -315,19 +294,19 @@ class PayrollController {
       res.status(500).json({ success: false, message: 'Internal server error' });
     }
   }
-  
+
   static async validateBatch(req, res) {
     try {
       const { batchId } = req.params;
       const validatedBy = req.userId;
-      
+
       const result = await Payroll.validatePayrollBatch(batchId);
-      
-      await auditLog(validatedBy, 'PAYROLL_BATCH_VALIDATE', 'payroll_batches', batchId, null, { 
+
+      await auditLog(validatedBy, 'PAYROLL_BATCH_VALIDATE', 'payroll_batches', batchId, null, {
         status: result.status,
         validationErrors: result.validationErrors
       }, req.ip, req.get('User-Agent'));
-      
+
       res.json({
         success: true,
         message: 'Payroll batch validation completed',
@@ -341,16 +320,16 @@ class PayrollController {
       });
     }
   }
-  
+
   static async approveBatch(req, res) {
     try {
       const { batchId } = req.params;
       const approvedBy = req.userId;
-      
+
       const result = await Payroll.approvePayrollBatch(batchId, approvedBy);
-      
+
       await auditLog(approvedBy, 'PAYROLL_BATCH_APPROVE', 'payroll_batches', batchId, null, result, req.ip, req.get('User-Agent'));
-      
+
       res.json({
         success: true,
         message: 'Payroll batch approved successfully',
@@ -369,11 +348,11 @@ class PayrollController {
     try {
       const { batchId } = req.params;
       const processedBy = req.userId;
-      
+
       const result = await Payroll.processPayrollBatch(batchId, processedBy);
-      
+
       await auditLog(processedBy, 'PAYROLL_BATCH_PROCESS', 'payroll_batches', batchId, null, result, req.ip, req.get('User-Agent'));
-      
+
       res.json({
         success: true,
         message: 'Payroll batch processed successfully',
@@ -392,11 +371,11 @@ class PayrollController {
     try {
       const { batchId } = req.params;
       const reversedBy = req.userId;
-      
+
       const result = await Payroll.reversePayrollBatch(batchId, reversedBy);
-      
+
       await auditLog(reversedBy, 'PAYROLL_BATCH_REVERSE', 'payroll_batches', batchId, null, result, req.ip, req.get('User-Agent'));
-      
+
       res.json({
         success: true,
         message: 'Payroll batch reversed successfully',
@@ -410,13 +389,13 @@ class PayrollController {
       });
     }
   }
-  
+
   static async getPayrollStats(req, res) {
     try {
       const { start_date, end_date } = req.query;
-      
+
       const stats = await Payroll.getPayrollStats(start_date, end_date);
-      
+
       res.json({
         success: true,
         data: stats
@@ -429,13 +408,13 @@ class PayrollController {
       });
     }
   }
-  
+
   static async downloadBatchTemplate(req, res) {
     try {
       const ExcelJS = require('exceljs');
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Payroll Template');
-      
+
       worksheet.columns = [
         { header: 'Employee ID', key: 'employee_id', width: 15 },
         { header: 'Gross Salary', key: 'gross_salary', width: 15 },
@@ -444,21 +423,21 @@ class PayrollController {
         { header: 'Net Salary', key: 'net_salary', width: 15 },
         { header: 'Payroll Date', key: 'payroll_date', width: 15 }
       ];
-      
+
       worksheet.getRow(1).font = { bold: true };
-      
+
       const sampleData = [
         { employee_id: 'EMP001', gross_salary: 5000, saving: 500, deduction: 0, net_salary: 4500, payroll_date: '2024-01-31' },
         { employee_id: 'EMP002', gross_salary: 6000, saving: 600, deduction: 200, net_salary: 5200, payroll_date: '2024-01-31' }
       ];
-      
+
       sampleData.forEach(data => {
         worksheet.addRow(data);
       });
-      
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', 'attachment; filename=payroll-template.xlsx');
-      
+
       await workbook.xlsx.write(res);
       res.end();
     } catch (error) {
@@ -469,20 +448,20 @@ class PayrollController {
       });
     }
   }
-  
+
   static async getEmployeePayrollHistory(req, res) {
     try {
       const { userId } = req.params;
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const offset = (page - 1) * limit;
-      
+
       const countQuery = `
         SELECT COUNT(*) as total
         FROM payroll_details pd
         WHERE pd.user_id = ?
       `;
-      
+
       const selectQuery = `
         SELECT pd.*, pb.batch_name, pb.payroll_date, pb.status as batch_status
         FROM payroll_details pd
@@ -491,12 +470,12 @@ class PayrollController {
         ORDER BY pd.created_at DESC
         LIMIT ? OFFSET ?
       `;
-      
+
       const [countResult, history] = await Promise.all([
         require('../config/database').query(countQuery, [userId]),
         require('../config/database').query(selectQuery, [userId, limit, offset])
       ]);
-      
+
       res.json({
         success: true,
         data: {
