@@ -131,7 +131,8 @@ class AdminController {
         pool.execute(`
           SELECT 
             DATE_FORMAT(created_at, '%Y-%m') as month,
-            COUNT(*) as newUsers
+            COUNT(*) as newUsers,
+            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as activeUsers
           FROM users
           WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
           GROUP BY DATE_FORMAT(created_at, '%Y-%m')

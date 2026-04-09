@@ -59,6 +59,8 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
   const [profileDropdown, setProfileDropdown] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [committeeStats, setCommitteeStats] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   
   useEffect(() => {
@@ -75,48 +77,21 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
         if (statsRes.data?.success && statsRes.data?.data) {
           setCommitteeStats(statsRes.data.data);
         }
+
+        
+        // Notifications endpoint not available yet - using empty array
+        setNotifications([]);
       } catch (error) {
         console.error('Error fetching header data:', error);
+        
+        setNotifications([]);
+      } finally {
+        setLoadingNotifications(false);
       }
     };
 
     fetchData();
   }, []);
-
-  const notifications = [
-    { 
-      id: 1, 
-      text: 'New loan request from John Doe', 
-      time: '5 min ago', 
-      read: false,
-      type: 'loan_request',
-      loanId: 'LR-2024-001',
-      applicant: 'John Doe',
-      amount: '$25,000',
-      priority: 'high'
-    },
-    { 
-      id: 2, 
-      text: 'Loan #1234 has been approved', 
-      time: '1 hour ago', 
-      read: false,
-      type: 'loan_approved',
-      loanId: 'LR-2024-002',
-      applicant: 'Jane Smith',
-      amount: '$15,000',
-      priority: 'medium'
-    },
-    { 
-      id: 3, 
-      text: 'Monthly report is ready', 
-      time: '2 hours ago', 
-      read: true,
-      type: 'report',
-      reportId: 'RPT-2024-03',
-      reportType: 'Monthly Summary',
-      priority: 'low'
-    },
-  ];
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -169,10 +144,15 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
     setNotificationDropdown(false);
   };
 
-  const handleMarkAsRead = (notificationId) => {
-    const notification = notifications.find(n => n.id === notificationId);
-    if (notification) {
-      notification.read = true;
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await committeeAPI.markNotificationAsRead(notificationId);
+      
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
     }
   };
 
@@ -238,12 +218,12 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
 
         {}
         <div className="hidden lg:block">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Welcome back, {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.username || 'User')}
+          <h2 className="text-lg flex items-center gap-1 font-semibold text-gray-900 dark:text-gray-100">
+            Welcome back,<div className='text-blue-600 capitalize font-bold text-lg ml-1 text-wrap max-w-xs dark:text-white'>{profileData ? `${profileData.first_name}` : (user?.first_name || user?.username?.split('@')[0] || 'User')}</div>
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          {/* <p className="text-sm text-gray-600 dark:text-gray-400">
             {profileData?.role || user?.role || 'Committee Administrator'}
-          </p>
+          </p> */}
         </div>
       </div>
 
@@ -311,73 +291,84 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                 </div>
               </div>
               <div className="max-h-96 overflow-y-auto">
-                {notifications.map(notification => (
-                  <div
-                    key={notification.id}
-                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 last:border-b-0 transition-colors ${
-                      !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className={`p-2 rounded-lg ${getPriorityColor(notification.priority)}`}>
-                        {getTypeIcon(notification.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {notification.text}
-                          </p>
-                          {!notification.read && (
-                            <button
-                              onClick={() => handleMarkAsRead(notification.id)}
-                              className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                            >
-                              Mark as read
-                            </button>
-                          )}
+                {loadingNotifications ? (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    Loading notifications...
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    No notifications found
+                  </div>
+                ) : (
+                  notifications.map(notification => (
+                    <div
+                      key={notification.id}
+                      className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 last:border-b-0 transition-colors ${
+                        !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-lg ${getPriorityColor(notification.priority)}`}>
+                          {getTypeIcon(notification.type)}
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{notification.time}</p>
-                        
-                        {}
-                        {(notification.type === 'loan_request' || notification.type === 'loan_approved') && (
-                          <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                            <div>Applicant: {notification.applicant}</div>
-                            <div>Amount: {notification.amount}</div>
-                            <div>Loan ID: {notification.loanId}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.text}
+                            </p>
+                            {!notification.read && (
+                              <button
+                                onClick={() => handleMarkAsRead(notification.id)}
+                                className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                Mark as read
+                              </button>
+                            )}
                           </div>
-                        )}
-                        
-                        {notification.type === 'report' && (
-                          <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                            <div>Report Type: {notification.reportType}</div>
-                            <div>Report ID: {notification.reportId}</div>
-                          </div>
-                        )}
-
-                        {}
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewDetails(notification)}
-                            className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
-                          >
-                            <FiEye className="w-3 h-3" />
-                            <span>View Details</span>
-                          </button>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{notification.time}</p>
                           
+                          {}
                           {(notification.type === 'loan_request' || notification.type === 'loan_approved') && (
-                            <button
-                              onClick={() => handleReview(notification)}
-                              className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                               <FiFileText className="w-3 h-3" />
-                              <span>Review</span>
-                            </button>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                              <div>Applicant: {notification.applicant}</div>
+                              <div>Amount: {notification.amount}</div>
+                              <div>Loan ID: {notification.loanId}</div>
+                            </div>
                           )}
+                          
+                          {notification.type === 'report' && (
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                              <div>Report Type: {notification.reportType}</div>
+                              <div>Report ID: {notification.reportId}</div>
+                            </div>
+                          )}
+
+                          {}
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleViewDetails(notification)}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              <FiEye className="w-3 h-3" />
+                              <span>View Details</span>
+                            </button>
+                            
+                            {(notification.type === 'loan_request' || notification.type === 'loan_approved') && (
+                              <button
+                                onClick={() => handleReview(notification)}
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                 <FiFileText className="w-3 h-3" />
+                                <span>Review</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
               
               {}
@@ -407,7 +398,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
             </div>
             <div className="hidden md:block text-left">
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.username || 'Loading...')}
+                {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.first_name || user?.username?.split('@')[0] || 'Loading...')}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {profileData?.role || user?.role || 'Loading...'}
@@ -426,7 +417,7 @@ const Header = ({ sidebarCollapsed, toggleSidebar, mobileSidebarOpen, toggleMobi
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-base sm:text-lg">
-                      {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.username || 'Loading...')}
+                      {profileData ? `${profileData.first_name} ${profileData.last_name}` : (user?.first_name || user?.username?.split('@')[0] || 'Loading...')}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-10 tracking-tight dark:text-gray-100">
                       {profileData?.email || user?.email || 'Loading...'}

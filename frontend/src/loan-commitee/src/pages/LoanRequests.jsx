@@ -437,9 +437,9 @@ const LoanRequests = () => {
     };
 
     
-    exportLoanReport(exportData);
+    exportLoanReport(exportData, 'csv');
     
-    console.log(`Exported ${getFilteredRequests().length} loan requests`);
+    console.log(`Exported ${getFilteredRequests().length} loan requests as CSV`);
   };
 
   

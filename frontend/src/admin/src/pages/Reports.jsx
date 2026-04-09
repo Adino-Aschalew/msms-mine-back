@@ -13,6 +13,7 @@ import {
   Plus,
   BarChart3,
   TrendingUp,
+  TrendingDown,
   Users,
   DollarSign,
   FileDown,
@@ -47,19 +48,60 @@ const Reports = () => {
   
   const fetchReportStats = async () => {
     try {
+      console.log('Fetching report stats from API...');
       const stats = await reportsAPI.getStats();
       console.log('Report stats API response:', stats);
       
       // Handle different response formats
       if (stats && stats.success && stats.data) {
+        console.log('Using stats.data:', stats.data);
         setReportStats(stats.data);
+      } else if (stats && typeof stats === 'object' && !stats.success) {
+        console.log('API returned non-success, using fallback zeros');
+        // Use zero-based fallback for non-success responses
+        setReportStats({
+          totalReports: 0,
+          thisMonthReports: 0,
+          totalDownloads: 0,
+          activeUsers: 0,
+          reportsChange: '0%',
+          thisMonthChange: '0%',
+          downloadsChange: '0%',
+          activeUsersChange: '0%'
+        });
       } else if (stats && typeof stats === 'object') {
+        console.log('Using stats object directly:', stats);
         setReportStats(stats);
       } else {
         console.error('Unexpected stats format:', stats);
+        // Set zero-based fallback
+        setReportStats({
+          totalReports: 0,
+          thisMonthReports: 0,
+          totalDownloads: 0,
+          activeUsers: 0,
+          reportsChange: '0%',
+          thisMonthChange: '0%',
+          downloadsChange: '0%',
+          activeUsersChange: '0%'
+        });
       }
     } catch (error) {
       console.error('Error fetching report stats:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      // Set zero-based fallback on error
+      setReportStats({
+        totalReports: 0,
+        thisMonthReports: 0,
+        totalDownloads: 0,
+        activeUsers: 0,
+        reportsChange: '0%',
+        thisMonthChange: '0%',
+        downloadsChange: '0%',
+        activeUsersChange: '0%'
+      });
       setNotification({ type: 'error', message: 'Failed to fetch report statistics' });
     }
   };
@@ -68,27 +110,43 @@ const Reports = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
+      console.log('Fetching reports with filters:', { selectedReport, selectedPeriod, searchQuery });
+      
       const filters = {
         type: selectedReport,
         period: selectedPeriod,
         search: searchQuery
       };
+      
       const reportsData = await reportsAPI.getReports(filters);
       console.log('Reports API response:', reportsData);
+      console.log('Response type:', typeof reportsData);
+      console.log('Response success:', reportsData?.success);
+      console.log('Response data:', reportsData?.data);
       
       // Handle different response formats
       if (reportsData && reportsData.success && reportsData.data) {
+        console.log('Using reports.data, count:', reportsData.data.length);
         setReports(reportsData.data);
       } else if (reportsData && Array.isArray(reportsData)) {
+        console.log('Using reports array directly, count:', reportsData.length);
         setReports(reportsData);
+      } else if (reportsData && typeof reportsData === 'object' && !reportsData.success) {
+        console.log('API returned non-success for reports, using empty array');
+        setReports([]);
       } else if (reportsData && typeof reportsData === 'object') {
-        setReports(reportsData);
+        console.log('Using reports object directly:', reportsData);
+        setReports(Array.isArray(reportsData) ? reportsData : []);
       } else {
         console.error('Unexpected reports format:', reportsData);
         setReports([]);
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      setReports([]);
       setNotification({ type: 'error', message: 'Failed to fetch reports' });
     } finally {
       setLoading(false);
@@ -267,21 +325,20 @@ const Reports = () => {
         </div>
 
         {}
-        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
           {statsData.map((stat, index) => (
             <div key={index} className="card p-6 transition-all hover:shadow-lg w-full">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
-                  <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                  <div className="mt-2 flex items-center gap-1">
-                    <span className={`text-sm font-medium ${
-                      stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                    }`}>{stat.change}</span>
-                    <span className="text-sm text-gray-500">from last month</span>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                  <div className={`flex items-center mt-2 ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                    {stat.change.startsWith('+') ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                    <span className="ml-2 text-sm font-medium">{stat.change}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">from last month</span>
                   </div>
                 </div>
-                <div className={`rounded-lg p-3 ${stat.color}`}>
+                <div className={`p-3 rounded-full ${stat.color}`}>
                   {stat.icon}
                 </div>
               </div>
@@ -301,7 +358,7 @@ const Reports = () => {
                   placeholder="Search reports..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg  dark:border-gray-600 dark:bg-gray-700 dark:text-white w-64"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white w-full sm:w-64"
                 />
               </div>
 
@@ -310,7 +367,7 @@ const Reports = () => {
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="appearance-none pl-10 pr-10 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white w-50"
+                  className="appearance-none pl-10 pr-10 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white w-full sm:w-50"
                 >
                   <option value="7days">Last 7 Days</option>
                   <option value="30days">Last 30 Days</option>
@@ -320,13 +377,12 @@ const Reports = () => {
                 <Calendar className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <ChevronDown className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
-
               {}
               <div className="relative flex-shrink-0">
                 <select
                   value={selectedReport}
                   onChange={(e) => setSelectedReport(e.target.value)}
-                  className="appearance-none pl-10 pr-10 py-2 border border-gray-300 rounded-lg  focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white w-50"
+                  className="appearance-none pl-10 pr-10 py-2 border border-gray-300 rounded-lg  focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white w-full sm:w-50"
                 >
                   <option value="all">All Reports</option>
                   <option value="loan_portfolio">Loan Portfolio</option>
@@ -422,100 +478,93 @@ const Reports = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700/50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Report Name</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Type</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Generated By</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Size</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Downloads</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {reports.length === 0 ? (
+                <table className="w-full min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
                     <tr>
-                      <td colSpan="8" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                        No reports found. Generate your first report to get started.
-                      </td>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Report Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Generated By</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Size</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Downloads</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
                     </tr>
-                  ) : (
-                    reports.map((report) => (
-                      <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            {getReportTypeIcon(report.type)}
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white">{report.title}</p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">ID: #{report.id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900 dark:text-white capitalize">{report.type.replace('-', ' ')}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900 dark:text-white">{report.date}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(report.status)}`}>
-                            {report.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900 dark:text-white">{report.generated_by}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900 dark:text-white">{report.size}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900 dark:text-white">{report.downloads}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => console.log('View report:', report.title)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                              title="View Report"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleExportSingle(report)}
-                              className="p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                              title="Export Report"
-                            >
-                              <FileDown className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => console.log('Edit report:', report.title)}
-                              className="p-2 text-yellow-600 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                              title="Edit Report"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => {
-                                if (window.confirm(`Are you sure you want to delete "${report.title}"?`)) {
-                                  handleDeleteReport(report.id);
-                                }
-                              }}
-                              className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 hover:scale-105"
-                              title="Delete Report"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {reports.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                          No reports found. Generate your first report to get started.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      reports.map((report) => (
+                        <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              {getReportTypeIcon(report.type)}
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-white">{report.title}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">ID: #{report.id}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900 dark:text-white capitalize">{report.type.replace('-', ' ')}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900 dark:text-white">{report.date}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(report.status)}`}>
+                              {report.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900 dark:text-white">{report.generated_by}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900 dark:text-white">{report.size}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900 dark:text-white">{report.downloads}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={() => console.log('View report:', report.title)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-105"
+                                title="View Report"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleExportSingle(report)}
+                                className="p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded-lg transition-all duration-200 hover:scale-105"
+                                title="Export Report"
+                              >
+                                <FileDown className="h-4 w-4" />
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (window.confirm(`Are you sure you want to delete "${report.title}"?`)) {
+                                    handleDeleteReport(report.id);
+                                  }
+                                }}
+                                className="p-2 text-yellow-600 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-200 hover:scale-105"
+                                title="Delete Report"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
           )}
         </div>
       </div>

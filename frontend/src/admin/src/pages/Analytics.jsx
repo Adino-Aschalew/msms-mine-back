@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Users, Activity, Zap } from 'lucide-react';
+import { TrendingUp, Users, Activity, Heart } from 'lucide-react';
 import LineChart from '../components/charts/LineChart';
 import PieChart from '../components/charts/PieChart';
 import BarChart from '../components/charts/BarChart';
@@ -20,108 +20,172 @@ const Analytics = () => {
       setLoading(true);
       console.log('Fetching analytics data...');
       
-      // Try to get real stats from the API
+      // Get real stats from the API
       const response = await adminAPI.getSystemStats();
       console.log('Analytics API response:', response);
       console.log('Response type:', typeof response);
       console.log('Response success:', response?.success);
       console.log('Response data:', response?.data);
       
-      let statsData = null;
-      
-      // Handle different response formats
       if (response && response.success && response.data) {
-        statsData = response.data;
-        console.log('Using response.data');
-      } else if (response && !response.success) {
-        console.log('API returned failure, using mock data');
-        // Use mock data as fallback
-        statsData = {
-          totalUsers: 1247,
-          activeUsers: 892,
-          newUsers: 45,
-          totalLoans: 3421,
-          activeLoans: 2156,
-          pendingApplications: 89,
-          systemHealth: 'Good',
-          serverUptime: '99.9%',
-          databaseSize: '2.4GB',
-          lastBackup: '2 hours ago'
-        };
-      } else if (response && typeof response === 'object') {
-        statsData = response;
-        console.log('Using response directly');
+        console.log('Using real API data');
+        setStatsData(response.data);
       } else {
-        console.log('Invalid response, using mock data');
-        statsData = {
-          totalUsers: 1247,
-          activeUsers: 892,
-          newUsers: 45,
-          totalLoans: 3421,
-          activeLoans: 2156,
-          pendingApplications: 89,
-          systemHealth: 'Good',
-          serverUptime: '99.9%',
-          databaseSize: '2.4GB',
-          lastBackup: '2 hours ago'
-        };
+        console.log('API returned non-success response, using minimal fallback');
+        // Minimal fallback with proper structure for charts
+        setStatsData({
+          userStats: [],
+          loanStats: [],
+          savingsStats: [{ totalAccounts: 0, totalBalance: 0, avgBalance: 0 }],
+          departmentStats: [],
+          monthlyGrowth: []
+        });
+        setError('Unable to load analytics data');
       }
-      
-      console.log('Final stats data:', statsData);
-      setStatsData(statsData);
     } catch (err) {
       console.error('Error fetching stats:', err);
       console.error('Error status:', err.response?.status);
       console.error('Error data:', err.response?.data);
       
-      // Use mock data as fallback
-      const mockStats = {
-        totalUsers: 1247,
-        activeUsers: 892,
-        newUsers: 45,
-        totalLoans: 3421,
-        activeLoans: 2156,
-        pendingApplications: 89,
-        systemHealth: 'Good',
-        serverUptime: '99.9%',
-        databaseSize: '2.4GB',
-        lastBackup: '2 hours ago'
-      };
-      
-      console.log('Using mock stats due to error:', mockStats);
-      setStatsData(mockStats);
-      setError('Failed to load system analytics (using mock data)');
+      // Minimal fallback with proper structure
+      setStatsData({
+        userStats: [],
+        loanStats: [],
+        savingsStats: [{ totalAccounts: 0, totalBalance: 0, avgBalance: 0 }],
+        departmentStats: [],
+        monthlyGrowth: []
+      });
+      setError('Failed to load system analytics');
     } finally {
       setLoading(false);
     }
   };
 
   const getUserGrowthData = () => {
-    if (!statsData?.monthlyGrowth) return { labels: [], datasets: [] };
+    if (!statsData?.monthlyGrowth || statsData.monthlyGrowth.length === 0) {
+      // Return empty data structure if no data available
+      return {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [
+          {
+            label: 'New Users',
+            data: [0, 0, 0, 0, 0, 0],
+            borderColor: 'rgba(59, 130, 246, 1)',
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            tension: 0.6,
+            fill: true,
+            borderWidth: 3,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+          },
+          {
+            label: 'Active Users',
+            data: [0, 0, 0, 0, 0, 0],
+            borderColor: 'rgba(34, 197, 94, 1)',
+            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+            tension: 0.6,
+            fill: true,
+            borderWidth: 3,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+          },
+        ],
+      };
+    }
     
-    
+    // Backend returns data in descending order, so we need to reverse it for chronological display
     const sortedData = [...statsData.monthlyGrowth].reverse();
-    const labels = sortedData.map(d => d.month);
-    const data = sortedData.map(d => d.newUsers);
+    
+    // Format month names to be more readable
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const labels = sortedData.map(d => {
+      const [year, month] = d.month.split('-');
+      return monthNames[parseInt(month) - 1];
+    });
+    
+    const newUsersData = sortedData.map(d => d.newUsers || 0);
+    const activeUsersData = sortedData.map(d => d.activeUsers || 0);
+    
+    // Create responsive gradient function
+    const createGradient = (ctx, chartArea, color1, color2) => {
+      const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+      gradient.addColorStop(0, color1);
+      gradient.addColorStop(0.5, color1.replace('0.1', '0.2'));
+      gradient.addColorStop(1, color2);
+      return gradient;
+    };
+
+    // Responsive point sizes based on screen width
+    const getResponsivePointSize = () => {
+      if (typeof window !== 'undefined') {
+        if (window.innerWidth < 640) return 8; // Mobile
+        if (window.innerWidth < 1024) return 6; // Tablet
+        return 5; // Desktop
+      }
+      return 5;
+    };
+
+    const pointRadius = getResponsivePointSize();
+    const pointHoverRadius = pointRadius + 3;
 
     return {
       labels,
       datasets: [
         {
           label: 'New Users',
-          data: data,
+          data: newUsersData,
           borderColor: 'rgba(59, 130, 246, 1)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.4,
+          backgroundColor: (context) => {
+            const chart = context.chart;
+            const {ctx, chartArea} = chart;
+            if (!chartArea) return 'rgba(59, 130, 246, 0.2)';
+            return createGradient(ctx, chartArea, 'rgba(59, 130, 246, 0.05)', 'rgba(59, 130, 246, 0.3)');
+          },
+          tension: 0.6, // Wave-like smooth curves
           fill: true,
+          borderWidth: 3,
+          pointRadius: pointRadius,
+          pointHoverRadius: pointHoverRadius,
+          pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+          pointHoverBorderWidth: 3,
+          // Touch-friendly interactions
+          hitRadius: pointHoverRadius + 5,
+          hoverBackgroundColor: 'rgba(59, 130, 246, 0.1)',
         },
         {
           label: 'Active Users',
-          data: data.map(val => val + Math.floor(Math.random() * 200) + 200),
+          data: activeUsersData,
           borderColor: 'rgba(34, 197, 94, 1)',
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          tension: 0.4,
+          backgroundColor: (context) => {
+            const chart = context.chart;
+            const {ctx, chartArea} = chart;
+            if (!chartArea) return 'rgba(34, 197, 94, 0.2)';
+            return createGradient(ctx, chartArea, 'rgba(34, 197, 94, 0.05)', 'rgba(34, 197, 94, 0.3)');
+          },
+          tension: 0.6, // Wave-like smooth curves
           fill: true,
+          borderWidth: 3,
+          pointRadius: pointRadius,
+          pointHoverRadius: pointHoverRadius,
+          pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgba(34, 197, 94, 1)',
+          pointHoverBorderWidth: 3,
+          // Touch-friendly interactions
+          hitRadius: pointHoverRadius + 5,
+          hoverBackgroundColor: 'rgba(34, 197, 94, 0.1)',
         },
       ],
     };
@@ -159,19 +223,44 @@ const Analytics = () => {
   };
 
   const getAdminActivityData = () => {
-    if (!statsData?.departmentStats) return { labels: [], datasets: [] };
+    if (!statsData?.userStats) return { labels: [], datasets: [] };
     
-    const labels = statsData.departmentStats.map(d => d.department);
-    const data = statsData.departmentStats.map(d => d.employeeCount);
+    // Filter for admin roles only
+    const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'];
+    const adminStats = statsData.userStats.filter(s => adminRoles.includes(s.role));
+    
+    if (adminStats.length === 0) {
+      return {
+        labels: ['No Admin Data'],
+        datasets: [{
+          label: 'Admin Users',
+          data: [0],
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 1,
+        }]
+      };
+    }
+    
+    const labels = adminStats.map(s => s.role.replace('_', ' '));
+    const data = adminStats.map(s => s.count || 0);
+    const activeData = adminStats.map(s => s.active || 0);
 
     return {
       labels,
       datasets: [
         {
-          label: 'Employees by Department',
+          label: 'Total Admin Users',
           data,
           backgroundColor: 'rgba(59, 130, 246, 0.8)',
           borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Active Admin Users',
+          data: activeData,
+          backgroundColor: 'rgba(34, 197, 94, 0.8)',
+          borderColor: 'rgba(34, 197, 94, 1)',
           borderWidth: 1,
         },
       ],
@@ -200,8 +289,32 @@ const Analytics = () => {
     ],
   });
 
-  const totalUsersCount = statsData?.userStats?.reduce((acc, s) => acc + s.count, 0) || 0;
-  const activeAdmins = statsData?.userStats?.find(s => ['ADMIN', 'SUPER_ADMIN'].includes(s.role))?.active || 0;
+  const totalUsersCount = statsData?.userStats?.reduce((acc, s) => acc + (s.count || 0), 0) || 0;
+  const activeAdmins = statsData?.userStats?.filter(s => ['ADMIN', 'SUPER_ADMIN'].includes(s.role)).reduce((acc, s) => acc + (s.active || 0), 0) || 0;
+  const totalActiveUsers = statsData?.userStats?.reduce((acc, s) => acc + (s.active || 0), 0) || 0;
+  
+  // Calculate activity rate properly
+  const activityRate = totalUsersCount > 0 ? Math.round((totalActiveUsers / totalUsersCount) * 100) : 0;
+  
+  // Determine system health based on real data
+  let systemHealthStatus = 'Warning';
+  let statusText = 'Check Needed';
+  if (totalActiveUsers > 0) {
+    systemHealthStatus = 'Excellent';
+    statusText = 'Operational';
+  } else if (totalUsersCount > 0) {
+    systemHealthStatus = 'Good';
+    statusText = 'Stable';
+  }
+
+  console.log('System Health Calculations:', {
+    totalUsersCount,
+    totalActiveUsers,
+    activeAdmins,
+    activityRate,
+    systemHealthStatus,
+    userStats: statsData?.userStats
+  });
 
   const analyticsCards = [
     {
@@ -226,11 +339,13 @@ const Analytics = () => {
       color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
     },
     {
-      title: 'Total Loan Portfolio',
-      value: '$' + (statsData?.loanStats?.reduce((acc, s) => acc + (parseFloat(s.totalAmount) || 0), 0) || 0).toLocaleString(),
-      change: '+5.2%',
-      icon: <Zap className="h-6 w-6" />,
-      color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
+      title: 'System Health',
+      value: systemHealthStatus,
+      change: statusText,
+      icon: <Heart className="h-6 w-6" />,
+      color: systemHealthStatus === 'Excellent' ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 
+              systemHealthStatus === 'Good' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' : 
+              'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
     }
   ];
 

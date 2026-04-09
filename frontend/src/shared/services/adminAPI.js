@@ -3,7 +3,7 @@ import apiClient from '../services/api';
 export const adminAPI = {
   
   getSystemOverview: async () => {
-    const response = await apiClient.get('/admin/overview');
+    const response = await apiClient.get('/admin/statistics');
     return response;
   },
 
@@ -54,6 +54,27 @@ export const adminAPI = {
 
   getSystemStats: async () => {
     const response = await apiClient.get('/admin/stats');
+    return response;
+  },
+
+  // Admin creation functions
+  createHRAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/hr-admins', userData);
+    return response;
+  },
+
+  createLoanCommitteeAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/loan-committee-admins', userData);
+    return response;
+  },
+
+  createFinanceAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/finance-admins', userData);
+    return response;
+  },
+
+  createRegularAdmin: async (userData) => {
+    const response = await apiClient.post('/admin/regular-admins', userData);
     return response;
   }
 };

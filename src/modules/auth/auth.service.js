@@ -120,10 +120,15 @@ class AuthService {
         user = await this.findByEmail(identifier);
         console.log('Email-based login, found user:', user ? `YES (role: ${user.role})` : 'NO');
         
+        // Block employees from using email login - they must use employee ID
         if (user && user.role === 'EMPLOYEE') {
           throw new Error('Employees must log in with their Employee ID, not email');
         }
         
+        // Only allow admin/staff roles to use email login
+        if (user && !['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'].includes(user.role)) {
+          throw new Error('Invalid role for email-based login. Only admin and staff roles can use email login.');
+        }
         
         if (user && ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'].includes(user.role)) {
           

@@ -349,7 +349,7 @@ class CommitteeController {
     try {
       console.log('=== FETCHING DASHBOARD DATA ===');
       
-      
+      // Get current period stats
       const stats = await query(`
         SELECT 
           COUNT(*) as total_requests,
@@ -358,18 +358,83 @@ class CommitteeController {
           SUM(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_loans,
           SUM(CASE WHEN status = 'SUSPENDED' THEN 1 ELSE 0 END) as suspended_requests
         FROM loan_applications
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
       `);
-      console.log('Stats query result:', stats);
+      console.log('Current month stats:', stats);
       
+      // Get previous period stats for comparison
+      const previousStats = await query(`
+        SELECT 
+          COUNT(*) as total_requests,
+          SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending_reviews,
+          SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) as approved_loans,
+          SUM(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_loans,
+          SUM(CASE WHEN status = 'SUSPENDED' THEN 1 ELSE 0 END) as suspended_requests
+        FROM loan_applications
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY) 
+        AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
+      `);
+      console.log('Previous month stats:', previousStats);
       
-      const allApplications = await query(`SELECT id, status, created_at FROM loan_applications LIMIT 5`);
-      console.log('Sample loan applications:', allApplications);
-      
+      // Get total portfolio
       const portfolio = await query(`
         SELECT COALESCE(SUM(outstanding_balance), 0) as total_portfolio 
         FROM loans WHERE status IN ('ACTIVE', 'DISBURSED', 'OVERDUE') AND outstanding_balance > 0
       `);
       console.log('Portfolio query result:', portfolio);
+      
+      // Get previous month portfolio for comparison
+      const previousPortfolio = await query(`
+        SELECT COALESCE(SUM(outstanding_balance), 0) as total_portfolio 
+        FROM loans 
+        WHERE status IN ('ACTIVE', 'DISBURSED', 'OVERDUE') 
+        AND outstanding_balance > 0
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY) 
+        AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
+      `);
+      console.log('Previous month portfolio:', previousPortfolio);
+
+      // Calculate change percentages
+      const current = stats[0] || {};
+      const previous = previousStats[0] || {};
+      const currentPortfolio = portfolio[0]?.total_portfolio || 0;
+      const previousPortfolioValue = previousPortfolio[0]?.total_portfolio || 0;
+      
+      const calculateChange = (current, previous) => {
+        if (previous == 0) return current > 0 ? '+100.0%' : '0.0%';
+        const change = ((current - previous) / previous * 100).toFixed(1);
+        return change >= 0 ? `+${change}%` : `${change}%`;
+      };
+      
+      const getChangeType = (current, previous) => {
+        if (previous == 0) return current > 0 ? 'increase' : 'neutral';
+        return current > previous ? 'increase' : current < previous ? 'decrease' : 'neutral';
+      };
+
+      const statsWithChanges = {
+        total_requests: current.total_requests || 0,
+        pending_reviews: current.pending_reviews || 0,
+        approved_loans: current.approved_loans || 0,
+        rejected_loans: current.rejected_loans || 0,
+        suspended_requests: current.suspended_requests || 0,
+        total_portfolio: currentPortfolio,
+        // Change percentages
+        total_requests_change: calculateChange(current.total_requests || 0, previous.total_requests || 0),
+        pending_reviews_change: calculateChange(current.pending_reviews || 0, previous.pending_reviews || 0),
+        approved_loans_change: calculateChange(current.approved_loans || 0, previous.approved_loans || 0),
+        rejected_loans_change: calculateChange(current.rejected_loans || 0, previous.rejected_loans || 0),
+        suspended_requests_change: calculateChange(current.suspended_requests || 0, previous.suspended_requests || 0),
+        total_portfolio_change: calculateChange(currentPortfolio, previousPortfolioValue),
+        // Change types
+        total_requests_change_type: getChangeType(current.total_requests || 0, previous.total_requests || 0),
+        pending_reviews_change_type: getChangeType(current.pending_reviews || 0, previous.pending_reviews || 0),
+        approved_loans_change_type: getChangeType(current.approved_loans || 0, previous.approved_loans || 0),
+        rejected_loans_change_type: getChangeType(current.rejected_loans || 0, previous.rejected_loans || 0),
+        suspended_requests_change_type: getChangeType(current.suspended_requests || 0, previous.suspended_requests || 0),
+        total_portfolio_change_type: getChangeType(currentPortfolio, previousPortfolioValue)
+      };
+      
+      console.log('Stats with changes:', statsWithChanges);
 
       
       const trends = await query(`
@@ -440,10 +505,7 @@ class CommitteeController {
       res.json({
         success: true,
         data: {
-          stats: {
-            ...stats[0],
-            total_portfolio: portfolio[0]?.total_portfolio || '0.00'
-          },
+          stats: statsWithChanges,
           trends: trends || [],
           growth: growth || [],
           recentRequests: recentRequests || [],
@@ -700,6 +762,88 @@ class CommitteeController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch profile data'
+      });
+    }
+  }
+
+  static async getLoanSettings(req, res) {
+    try {
+      // In a real implementation, these would come from a database table
+      // For now, returning default settings structure
+      const defaultSettings = {
+        loanRules: {
+          maxLoanAmount: 50000,
+          savingsMultiplier: 3,
+          maxLoanDuration: 36,
+          interestRate: 5.5,
+          salaryDeductionLimit: 30,
+          processingFee: 2.5,
+          latePaymentPenalty: 1.5,
+          earlyRepaymentBonus: 0.5
+        },
+        eligibilityRules: {
+          minEmploymentPeriod: 12,
+          requiredGuarantors: 1,
+          maxActiveLoans: 1,
+          savingsRequirement: 5000,
+          guarantorSavingsRatio: 0.5,
+          minCreditScore: 650,
+          maxDebtToIncomeRatio: 40
+        }
+      };
+
+      // TODO: Fetch from database when table is created
+      // const settings = await query('SELECT * FROM loan_settings WHERE id = 1');
+
+      res.json({
+        success: true,
+        data: defaultSettings
+      });
+    } catch (error) {
+      console.error('Get loan settings error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch loan settings'
+      });
+    }
+  }
+
+  static async saveLoanSettings(req, res) {
+    try {
+      const { loanRules, eligibilityRules } = req.body;
+      const userId = req.userId;
+
+      // Validate required fields
+      if (!loanRules || !eligibilityRules) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required settings data'
+        });
+      }
+
+      // TODO: Save to database when table is created
+      // await query(`
+      //   INSERT INTO loan_settings (id, loan_rules, eligibility_rules, updated_by, updated_at)
+      //   VALUES (1, ?, ?, ?, NOW())
+      //   ON DUPLICATE KEY UPDATE
+      //   loan_rules = VALUES(loan_rules),
+      //   eligibility_rules = VALUES(eligibility_rules),
+      //   updated_by = VALUES(updated_by),
+      //   updated_at = VALUES(updated_at)
+      // `, [JSON.stringify(loanRules), JSON.stringify(eligibilityRules), userId]);
+
+      console.log('Saving loan settings:', { loanRules, eligibilityRules, updatedBy: userId });
+
+      res.json({
+        success: true,
+        message: 'Settings saved successfully',
+        data: { loanRules, eligibilityRules }
+      });
+    } catch (error) {
+      console.error('Save loan settings error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to save loan settings'
       });
     }
   }

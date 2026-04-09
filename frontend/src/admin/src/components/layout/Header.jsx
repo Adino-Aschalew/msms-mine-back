@@ -215,21 +215,16 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+            className="p-2 hover:bg-gray-600 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200 lg:hidden"
           >
-            <FiMenu className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            <FiMenu className="text-center h-5 w-5 text-gray-700 dark:text-gray-300" />
           </button>
-          
-          <div className="relative hidden md:block">
-            <FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input w-80 pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-white/90 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800/90 dark:text-white"
-            />
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              Welcome Back, <span className='text-blue-600 dark:text-blue-400'>{user?.name || "Admin"}</span>
+            </h1>
           </div>
+          
         </div>
 
         <div className="flex items-center gap-4">

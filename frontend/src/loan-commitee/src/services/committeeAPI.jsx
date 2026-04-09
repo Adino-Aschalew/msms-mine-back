@@ -99,8 +99,29 @@ export const committeeAPI = {
     return apiClient.get('/loan-committee/workload', { params });
   },
 
+  getNotifications: (params = {}) => {
+    return apiClient.get('/loan-committee/notifications', { params });
+  },
+
+  getRecentActivity: (params = {}) => {
+    return apiClient.get('/loan-committee/activity', { params });
+  },
+
+  markNotificationAsRead: (notificationId) => {
+    return apiClient.put(`/loan-committee/notifications/${notificationId}/read`);
+  },
+
   
   getApplicationHistory: (applicationId) => {
     return apiClient.get(`/loan-committee/applications/${applicationId}/history`);
+  },
+
+  // Loan Settings
+  getLoanSettings: () => {
+    return apiClient.get('/loan-committee/settings');
+  },
+
+  saveLoanSettings: (settingsData) => {
+    return apiClient.put('/loan-committee/settings', settingsData);
   }
 };

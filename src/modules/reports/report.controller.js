@@ -4,7 +4,9 @@ const { authMiddleware, roleMiddleware } = require('../../middleware/auth');
 class ReportController {
   static async getReportStats(req, res) {
     try {
+      console.log('getReportStats controller called');
       const stats = await ReportService.getReportStats();
+      console.log('Stats from service:', stats);
       
       res.json({
         success: true,
@@ -15,13 +17,24 @@ class ReportController {
       
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
+        data: {
+          totalReports: 0,
+          thisMonthReports: 0,
+          totalDownloads: 0,
+          activeUsers: 0,
+          reportsChange: '0%',
+          thisMonthChange: '0%',
+          downloadsChange: '0%',
+          activeUsersChange: '0%'
+        }
       });
     }
   }
   
   static async getReports(req, res) {
     try {
+      console.log('getReports controller called with query:', req.query);
       const { type, period, search } = req.query;
       
       const filters = {
@@ -31,6 +44,7 @@ class ReportController {
       };
       
       const reports = await ReportService.getReportList(filters);
+      console.log('Reports from service:', reports?.length || 0, 'items');
       
       res.json({
         success: true,
@@ -41,7 +55,8 @@ class ReportController {
       
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
+        data: []
       });
     }
   }

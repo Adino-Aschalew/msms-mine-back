@@ -13,8 +13,14 @@ class ApiClient {
   setTokens(token, refreshToken) {
     this.token = token;
     this.refreshToken = refreshToken;
+    
+    // Synchronous localStorage operations to prevent timing issues
     localStorage.setItem('authToken', token);
     localStorage.setItem('refreshToken', refreshToken);
+    
+    // Force storage event to ensure synchronization
+    localStorage.setItem('tokenUpdate', Date.now().toString());
+    
     console.log('[api] setTokens', { hasToken: !!token, hasRefreshToken: !!refreshToken });
   }
 

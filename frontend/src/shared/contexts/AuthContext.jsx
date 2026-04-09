@@ -55,16 +55,16 @@ export const AuthProvider = ({ children }) => {
         userId: response?.user?.id,
       });
       
-      
+      // Set tokens first before updating user state
       const apiClient = (await import('../services/api')).default;
       apiClient.setTokens(response.token, response.refreshToken);
       console.log('[auth] tokens saved to api client + localStorage');
       
-      
+      // Then update user state
       setUser(response.user);
       console.log('[auth] user state scheduled', { role: response?.user?.role });
       
-      
+      // Check for password change requirement
       if (response.user.password_change_required) {
         setIsForcedPasswordChange(true);
         setShowPasswordChangeModal(true);

@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { committeeAPI } from '../services/committeeAPI';
 import { useAuth } from '../../../shared/contexts/AuthContext';
+import { exportReport } from '../utils/exportUtils';
 
 
 const formatCompactMoney = (amount) => {
@@ -244,6 +245,45 @@ const Disbursements = () => {
     
   };
 
+  const handleExportDisbursements = () => {
+    try {
+      // Filter disbursements based on current filters
+      const filteredDisbursements = disbursements.filter(disbursement => {
+        const matchesSearch = !searchTerm || 
+          disbursement.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          disbursement.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          disbursement.employeeId.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesStatus = selectedStatus === 'all' || disbursement.status === selectedStatus;
+        
+        return matchesSearch && matchesStatus;
+      });
+
+      // Prepare export data
+      const exportData = {
+        generatedAt: new Date().toISOString(),
+        filters: {
+          searchTerm,
+          status: selectedStatus
+        },
+        disbursements: filteredDisbursements,
+        summary: {
+          totalDisbursements: disbursements.length,
+          filteredDisbursements: filteredDisbursements.length,
+          exportTimestamp: new Date().toISOString()
+        }
+      };
+
+      // Export as CSV
+      const filename = `disbursement-report-${new Date().toISOString().split('T')[0]}`;
+      exportReport(exportData, filename, 'csv');
+      
+      console.log(`Exported ${filteredDisbursements.length} disbursements as CSV`);
+    } catch (error) {
+      console.error('Error exporting disbursements:', error);
+    }
+  };
+
   const handleViewSchedule = (loan) => {
     setSelectedLoan(loan);
     setShowRepaymentSchedule(true);
@@ -274,7 +314,7 @@ const Disbursements = () => {
                   <Grid className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 </button>
               </div>
-              <button className="btn btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
+              <button onClick={handleExportDisbursements} className="btn btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
                 <Download className="w-4 h-4" />
                 <span>Export Report</span>
               </button>

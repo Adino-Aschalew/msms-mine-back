@@ -41,4 +41,8 @@ router.get('/workload', CommitteeController.getCommitteeWorkload);
 
 router.get('/applications/:applicationId/history', CommitteeController.getApplicationHistory);
 
+// Loan Settings
+router.get('/settings', CommitteeController.getLoanSettings);
+router.put('/settings', auditMiddleware('LOAN_SETTINGS_UPDATED'), CommitteeController.saveLoanSettings);
+
 module.exports = router;

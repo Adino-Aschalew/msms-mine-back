@@ -54,6 +54,17 @@ const LoginPage = () => {
   
   const isEmailMode = formData.identifier.includes('@');
 
+  const getInferredRole = () => {
+    if (isEmailMode) {
+      // For email logins, we need to determine the role from the user data after login
+      // The API will return the actual role, so we don't infer it here
+      return null; // Let the server determine the role
+    } else {
+      // For employee ID logins, it's always employee role
+      return 'employee';
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.identifier.trim()) {
@@ -71,14 +82,29 @@ const LoginPage = () => {
     try {
       console.log('[login] submit', { identifier: formData.identifier, isEmailMode, from });
       
-      
       const inferredRole = isEmailMode ? 'admin' : 'employee';
       const loggedInUser = await login(formData, inferredRole);
       console.log('[login] user object received:', loggedInUser);
-      const redirectPath = from !== '/' ? from : getRoleRedirectPathFromUser(loggedInUser);
-      console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role, from });
-      console.log('[login] about to navigate to:', redirectPath);
-      navigate(redirectPath, { replace: true });
+      
+      // Add small delay to ensure authentication state is fully set
+      setTimeout(() => {
+        const roleBasedPath = getRoleRedirectPathFromUser(loggedInUser);
+        // Prevent users from accessing routes that don't match their role
+        const redirectPath = (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'EMPLOYEE') 
+          ? roleBasedPath 
+          : (from !== '/' && from.startsWith('/employee') && (loggedInUser?.role === 'ADMIN' || loggedInUser?.role === 'SUPER_ADMIN'))
+          ? roleBasedPath
+          : (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'LOAN_COMMITTEE')
+          ? roleBasedPath
+          : (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'HR')
+          ? roleBasedPath
+          : (from !== '/' && from.startsWith('/admin') && (loggedInUser?.role === 'FINANCE' || loggedInUser?.role === 'FINANCE_ADMIN'))
+          ? roleBasedPath
+          : (from !== '/' ? from : roleBasedPath);
+        console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role, from });
+        console.log('[login] about to navigate to:', redirectPath);
+        navigate(redirectPath, { replace: true });
+      }, 200);
     } catch (err) {
       console.log('[login] error', err);
       setError(err.message || 'Invalid credentials. Please try again.');

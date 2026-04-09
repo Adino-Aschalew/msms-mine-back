@@ -20,7 +20,8 @@ import {
   Users,
   Target,
   TrendingUp,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { committeeAPI } from '../../services/committeeAPI';
 
@@ -31,46 +32,189 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const [profile, setProfile] = useState({
-    firstName: 'John',
-    lastName: 'Committee',
-    email: 'john.committee@company.com',
-    phone: '+1 (555) 123-4567',
-    department: 'Loan Committee',
-    position: 'Senior Committee Member',
-    employeeId: 'LC-2024-001',
-    joinDate: '2020-03-15',
-    location: 'New York, NY',
-    timezone: 'EST (UTC-5)',
-    language: 'English',
-    bio: 'Senior loan committee member with over 10 years of experience in financial risk assessment and loan management. Specialized in corporate loans and risk mitigation strategies.',
-    expertise: ['Risk Assessment', 'Corporate Finance', 'Compliance', 'Loan Structuring'],
-    certifications: ['CFA Level III', 'FRM Certified', 'Risk Management Professional'],
-    office: 'Building A, Floor 12, Suite 1205',
-    manager: 'Sarah Mitchell - Head of Loan Committee',
-    emergencyContact: 'Jane Committee - Spouse: +1 (555) 987-6543'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    department: '',
+    position: '',
+    employeeId: '',
+    joinDate: '',
+    location: '',
+    timezone: '',
+    language: '',
+    expertise: [],
+    certifications: [],
+    office: '',
+    manager: '',
+    emergencyContact: ''
   });
 
   const [systemStats, setSystemStats] = useState({
-    totalLoansReviewed: 1247,
-    loansApproved: 892,
-    loansRejected: 265,
-    averageReviewTime: '2.3 days',
-    accuracyRate: '94.2%',
-    committeesServed: 3,
-    yearsOfService: 4.2,
-    currentWorkload: 23,
-    pendingReviews: 8
+    totalLoansReviewed: 0,
+    loansApproved: 0,
+    loansRejected: 0,
+    averageReviewTime: '0 days',
+    accuracyRate: '0%',
+    committeesServed: 0,
+    yearsOfService: 0,
+    currentWorkload: 0,
+    pendingReviews: 0
   });
 
-  const recentActivity = [
-    { id: 1, type: 'approved', loanId: 'LN-2024-089', amount: '$45,000', time: '2 hours ago', status: 'completed' },
-    { id: 2, type: 'reviewed', loanId: 'LN-2024-090', amount: '$28,000', time: '5 hours ago', status: 'pending' },
-    { id: 3, type: 'rejected', loanId: 'LN-2024-088', amount: '$75,000', time: '1 day ago', status: 'completed' },
-    { id: 4, type: 'approved', loanId: 'LN-2024-087', amount: '$32,000', time: '2 days ago', status: 'completed' },
-    { id: 5, type: 'reviewed', loanId: 'LN-2024-086', amount: '$18,000', time: '3 days ago', status: 'approved' }
-  ];
+  const [recentActivity, setRecentActivity] = useState([]);
+
+  useEffect(() => {
+    fetchProfileData();
+    
+    // Set up automatic location tracking
+    const locationInterval = setInterval(async () => {
+      try {
+        const newLocation = await getCurrentLocation();
+        setProfile(prev => {
+          // Only update if location has changed significantly
+          if (prev.location !== newLocation) {
+            return { ...prev, location: newLocation };
+          }
+          return prev;
+        });
+      } catch (error) {
+        console.error('Error in automatic location tracking:', error);
+      }
+    }, 5 * 60 * 1000); // Update every 5 minutes
+
+    return () => clearInterval(locationInterval);
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const profileRes = await committeeAPI.getProfile();
+      if (profileRes.data?.success && profileRes.data?.data) {
+        const data = profileRes.data.data;
+        setProfile({
+          firstName: data.first_name || '',
+          lastName: data.last_name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          department: data.department || '',
+          position: data.position || '',
+          employeeId: data.employee_id || '',
+          joinDate: data.join_date || '',
+          location: data.location || await getCurrentLocation(),
+          timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+          language: data.language || navigator.language || 'en',
+          expertise: data.expertise || [],
+          certifications: data.certifications || [],
+          office: data.office || '',
+          manager: data.manager || '',
+          emergencyContact: data.emergency_contact || ''
+        });
+      }
+
+      const statsRes = await committeeAPI.getCommitteeStats();
+      if (statsRes.data?.success && statsRes.data?.data) {
+        setSystemStats(statsRes.data.data);
+      }
+
+      // Try to fetch recent activity if endpoint is available
+      try {
+        const activityRes = await committeeAPI.getRecentActivity();
+        if (activityRes.data?.success && activityRes.data?.data) {
+          setRecentActivity(activityRes.data.data);
+        }
+      } catch (activityError) {
+        console.log('Activity endpoint not available:', activityError.message);
+        // Activity endpoint not implemented yet - keep empty array
+      }
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      setError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve('Location not available');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Use browser's Intl API to get timezone and region info
+          try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const locale = navigator.language || 'en-US';
+            const region = locale.split('-')[1] || '';
+            
+            // Create a human-readable location using browser data only
+            const location = `Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`;
+            
+            // Try to get city/country from timezone if available
+            if (timezone && timezone !== 'UTC') {
+              const cityFromTimezone = timezone.split('/')[1]?.replace(/_/g, ' ');
+              if (cityFromTimezone) {
+                resolve(`${cityFromTimezone} (${location})`);
+                return;
+              }
+            }
+            
+            resolve(location);
+          } catch (error) {
+            console.error('Error getting location info:', error);
+            resolve(`Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          
+          // Fallback to timezone-based location
+          try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (timezone && timezone !== 'UTC') {
+              const cityFromTimezone = timezone.split('/')[1]?.replace(/_/g, ' ');
+              if (cityFromTimezone) {
+                resolve(`${cityFromTimezone} (Timezone-based)`);
+                return;
+              }
+            }
+          } catch (tzError) {
+            console.error('Error getting timezone:', tzError);
+          }
+          
+          resolve('Location access denied');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes cache
+        }
+      );
+    });
+  };
+
+  const refreshLocation = async () => {
+    setLocationLoading(true);
+    try {
+      const newLocation = await getCurrentLocation();
+      setProfile(prev => ({ ...prev, location: newLocation }));
+      setHasChanges(true);
+    } catch (error) {
+      console.error('Error refreshing location:', error);
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
   const handleProfileChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -83,14 +227,20 @@ const Profile = () => {
       setError(null);
       
       const profileData = {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
+        first_name: profile.firstName,
+        last_name: profile.lastName,
         email: profile.email,
         phone: profile.phone,
+        department: profile.department,
+        position: profile.position,
         location: profile.location,
         timezone: profile.timezone,
-        bio: profile.bio,
-        emergencyContact: profile.emergencyContact,
+        language: profile.language,
+        expertise: profile.expertise,
+        certifications: profile.certifications,
+        office: profile.office,
+        manager: profile.manager,
+        emergency_contact: profile.emergencyContact,
       };
       
       const res = await committeeAPI.updateProfile(profileData);
@@ -203,7 +353,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/50 dark:from-gray-900 dark:via-blue-900/10 dark:to-indigo-900/10">
       {}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -443,8 +593,23 @@ const Profile = () => {
                       value={profile.location}
                       onChange={(e) => handleProfileChange('location', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all"
+                      className="w-full pl-12 pr-20 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all"
                     />
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={refreshLocation}
+                        disabled={locationLoading}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Detect current location"
+                      >
+                        {locationLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        ) : (
+                          <RefreshCw className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -649,36 +814,47 @@ const Profile = () => {
             Recent Loan Activity
           </h3>
           <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={activity.id} className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-700/30 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all group">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${
-                    activity.type === 'approved' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
-                    activity.type === 'rejected' ? 'bg-red-100 dark:bg-red-900/30' :
-                    'bg-blue-100 dark:bg-blue-900/30'
-                  }`}>
-                    {getActivityIcon(activity.type)}
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)} - {activity.loanId}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{activity.amount}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    activity.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                    activity.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
-                    activity.status === 'approved' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
-                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  }`}>
-                    {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{activity.time}</span>
-                </div>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
-            ))}
+            ) : recentActivity.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No recent activity found</p>
+              </div>
+            ) : (
+              recentActivity.map((activity, index) => (
+                <div key={activity.id} className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-700/30 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl ${
+                      activity.type === 'approved' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
+                      activity.type === 'rejected' ? 'bg-red-100 dark:bg-red-900/30' :
+                      'bg-blue-100 dark:bg-blue-900/30'
+                    }`}>
+                      {getActivityIcon(activity.type)}
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)} - {activity.loanId}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{activity.amount}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      activity.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                      activity.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                      activity.status === 'approved' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                    }`}>
+                      {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{activity.time}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

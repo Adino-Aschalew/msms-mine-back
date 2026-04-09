@@ -179,48 +179,48 @@ const Dashboard = () => {
     {
       title: 'Total Loan Requests',
       value: dashboardData?.stats?.total_requests || '0',
-      change: 'Active tracking',
-      changeType: 'neutral',
+      change: dashboardData?.stats?.total_requests_change || '0%',
+      changeType: dashboardData?.stats?.total_requests_change_type || 'neutral',
       icon: <FileText className="w-6 h-6" />,
       color: 'primary'
     },
     {
       title: 'Pending Reviews',
       value: dashboardData?.stats?.pending_reviews || '0',
-      change: 'Needs action',
-      changeType: 'warning',
+      change: dashboardData?.stats?.pending_reviews_change || '0%',
+      changeType: dashboardData?.stats?.pending_reviews_change_type || 'warning',
       icon: <AlertCircle className="w-6 h-6" />,
       color: 'warning'
     },
     {
       title: 'Approved Loans',
       value: dashboardData?.stats?.approved_loans || '0',
-      change: 'Approved',
-      changeType: 'success',
+      change: dashboardData?.stats?.approved_loans_change || '0%',
+      changeType: dashboardData?.stats?.approved_loans_change_type || 'success',
       icon: <CheckCircle className="w-6 h-6" />,
       color: 'success'
     },
     {
       title: 'Rejected Loans',
       value: dashboardData?.stats?.rejected_loans || '0',
-      change: 'Rejected',
-      changeType: 'neutral',
+      change: dashboardData?.stats?.rejected_loans_change || '0%',
+      changeType: dashboardData?.stats?.rejected_loans_change_type || 'neutral',
       icon: <XCircle className="w-6 h-6" />,
       color: 'danger'
     },
     {
       title: 'Suspended Requests',
       value: dashboardData?.stats?.suspended_requests || '0',
-      change: 'On Hold',
-      changeType: 'warning',
+      change: dashboardData?.stats?.suspended_requests_change || '0%',
+      changeType: dashboardData?.stats?.suspended_requests_change_type || 'warning',
       icon: <AlertCircle className="w-6 h-6" />,
       color: 'warning'
     },
     {
       title: 'Total Loan Portfolio',
       value: formatCompactNumber(dashboardData?.stats?.total_portfolio || 0),
-      change: 'Active Value',
-      changeType: 'increase',
+      change: dashboardData?.stats?.total_portfolio_change || '0%',
+      changeType: dashboardData?.stats?.total_portfolio_change_type || 'increase',
       icon: <DollarSign className="w-6 h-6" />,
       color: 'primary'
     }
@@ -394,7 +394,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900/20 dark:to-indigo-900/20">
       {}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40 shadow-sm">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -445,14 +445,14 @@ const Dashboard = () => {
         <div className="space-y-6">
 
       {}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
 
       {}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
         {}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
@@ -475,9 +475,9 @@ const Dashboard = () => {
       </div>
 
       {}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {}
-        <div className="lg:col-span-2 card p-6">
+        <div className="xl:col-span-2 card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Recent Loan Requests
@@ -610,7 +610,7 @@ const Dashboard = () => {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Loan Size Distribution
         </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
           <div className="h-64">
             <LoanChart type="doughnut" data={loanSizeDistributionData} />
           </div>
