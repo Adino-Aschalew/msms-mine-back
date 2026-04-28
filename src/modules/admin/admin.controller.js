@@ -1734,15 +1734,18 @@ class AdminController {
     try {
       const { enabled } = req.body;
 
-      
-      
-      
+      await pool.execute(
+        `INSERT INTO system_configuration (config_key, config_value, config_type, description) 
+         VALUES ('system_maintenance_mode', ?, 'BOOLEAN', 'System maintenance mode') 
+         ON DUPLICATE KEY UPDATE config_value = ?`,
+        [String(!!enabled), String(!!enabled)]
+      );
 
       res.json({
         success: true,
         message: `Maintenance mode ${enabled ? 'enabled' : 'disabled'}`,
         data: {
-          maintenanceMode: enabled,
+          maintenanceMode: !!enabled,
           timestamp: new Date().toISOString()
         }
       });
@@ -1751,6 +1754,119 @@ class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to toggle maintenance mode',
+        error: error.message
+      });
+    }
+  }
+
+  static async getSystemConfig(req, res) {
+    try {
+      const [configs] = await pool.execute(
+        'SELECT config_key, config_value, config_type, description FROM system_configuration WHERE is_active = TRUE'
+      );
+
+      const configMap = {};
+      configs.forEach(row => {
+        let value = row.config_value;
+        if (row.config_type === 'BOOLEAN') value = value === 'true';
+        else if (row.config_type === 'NUMBER') value = parseFloat(value);
+        configMap[row.config_key] = value;
+      });
+
+      // Merge with defaults for any missing admin settings
+      const defaults = {
+        system_name: 'Microfinance Management System',
+        organization_name: 'MSMS Organization',
+        admin_email: 'admin@msms.com',
+        support_email: 'support@msms.com',
+        date_format: 'YYYY-MM-DD',
+        currency: 'USD',
+        fiscal_year_start: 'January',
+        session_timeout_minutes: 30,
+        password_min_length: 8,
+        password_expiry_days: 90,
+        max_login_attempts: 5,
+        lockout_duration_minutes: 15,
+        require_two_factor: false,
+        ip_restriction: false,
+        allowed_ips: '',
+        email_notifications: true,
+        system_alerts: true,
+        user_activity_logs: true,
+        backup_notifications: true,
+        loan_notifications: true,
+        payment_notifications: true,
+        debug_mode: false,
+        log_level: 'INFO',
+        backup_schedule: 'daily',
+        data_retention: '7years',
+        max_file_upload_size_mb: 10,
+        allowed_file_types: 'pdf,doc,docx,xls,xlsx,csv'
+      };
+
+      // Apply defaults for any missing keys
+      Object.keys(defaults).forEach(key => {
+        if (!(key in configMap)) {
+          configMap[key] = defaults[key];
+        }
+      });
+
+      res.json({
+        success: true,
+        data: configMap
+      });
+    } catch (error) {
+      console.error('Error getting system config:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch system configuration',
+        error: error.message
+      });
+    }
+  }
+
+  static async updateSystemConfig(req, res) {
+    try {
+      const updates = req.body;
+
+      const allowedKeys = [
+        'system_name', 'organization_name', 'admin_email', 'support_email',
+        'date_format', 'currency', 'fiscal_year_start',
+        'session_timeout_minutes', 'password_min_length', 'password_expiry_days',
+        'max_login_attempts', 'lockout_duration_minutes', 'require_two_factor',
+        'ip_restriction', 'allowed_ips',
+        'email_notifications', 'system_alerts', 'user_activity_logs',
+        'backup_notifications', 'loan_notifications', 'payment_notifications',
+        'system_maintenance_mode', 'debug_mode', 'log_level',
+        'backup_schedule', 'data_retention', 'max_file_upload_size_mb',
+        'allowed_file_types'
+      ];
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (!allowedKeys.includes(key)) continue;
+
+        const stringValue = String(value);
+        let configType = 'STRING';
+        if (typeof value === 'boolean') configType = 'BOOLEAN';
+        else if (typeof value === 'number') configType = 'NUMBER';
+
+        await pool.execute(
+          `INSERT INTO system_configuration (config_key, config_value, config_type, description) 
+           VALUES (?, ?, ?, ?) 
+           ON DUPLICATE KEY UPDATE config_value = ?, config_type = ?`,
+          [key, stringValue, configType, `Setting: ${key}`, stringValue, configType]
+        );
+      }
+
+      res.json({
+        success: true,
+        message: 'System configuration updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating system config:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update system configuration',
         error: error.message
       });
     }
