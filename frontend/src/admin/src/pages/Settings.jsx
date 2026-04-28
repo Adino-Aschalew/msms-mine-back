@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext2';
-import { useAuth } from '../../../../shared/contexts/AuthContext';
+import { useAuth } from '../../../shared/contexts/AuthContext';
 import { 
   Settings as SettingsIcon, 
   Shield, 

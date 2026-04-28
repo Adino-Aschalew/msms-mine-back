@@ -62,6 +62,8 @@ router.put('/regular-admins/:adminId/activate', roleMiddleware(['SUPER_ADMIN', '
 
 router.get('/system/health', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemHealth);
 router.get('/system/logs', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemLogs);
+router.get('/system/config', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemConfig);
+router.put('/system/config', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('SYSTEM_CONFIG_UPDATE'), AdminController.updateSystemConfig);
 router.post('/system/maintenance', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), auditMiddleware('MAINTENANCE_MODE_TOGGLE'), AdminController.toggleMaintenanceMode);
 
 module.exports = router;
