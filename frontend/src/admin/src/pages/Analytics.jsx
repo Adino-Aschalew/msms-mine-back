@@ -450,7 +450,7 @@ const Analytics = () => {
             {}
           </div>
         </div>
-        <LineChart data={getUserGrowthData()} />
+        <BarChart data={getUserGrowthData()} />
       </div>
 
       {}
