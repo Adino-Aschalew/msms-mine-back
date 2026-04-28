@@ -445,16 +445,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                         </div>
                       )}
                     </div>
-
-                    {}
-                    <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
-                      <button 
-                        onClick={() => { setNotificationsOpen(false); navigate('/admin/settings'); }}
-                        className="w-full py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        View All Activity <FiChevronRight size={12} />
-                      </button>
-                    </div>
                   </>
                 )}
               </div>
