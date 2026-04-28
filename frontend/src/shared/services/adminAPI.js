@@ -65,6 +65,21 @@ export const adminAPI = {
     return response;
   },
 
+  getSystemConfig: async () => {
+    const response = await apiClient.get('/admin/system/config');
+    return response;
+  },
+
+  updateSystemConfig: async (configData) => {
+    const response = await apiClient.put('/admin/system/config', configData);
+    return response;
+  },
+
+  toggleMaintenanceMode: async (enabled) => {
+    const response = await apiClient.post('/admin/system/maintenance', { enabled });
+    return response;
+  },
+
   // Admin creation functions
   createHRAdmin: async (userData) => {
     const response = await apiClient.post('/admin/hr-admins', userData);
