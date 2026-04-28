@@ -60,6 +60,11 @@ export const adminAPI = {
     return response;
   },
 
+  getSystemActivity: async (limit = 10) => {
+    const response = await apiClient.get(`/admin/activity?limit=${limit}`);
+    return response;
+  },
+
   // Admin creation functions
   createHRAdmin: async (userData) => {
     const response = await apiClient.post('/admin/hr-admins', userData);

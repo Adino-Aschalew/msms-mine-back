@@ -34,29 +34,94 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
   const fetchNotifications = async () => {
     try {
-      // Use mock data since getSystemActivity doesn't exist
-      const mockNotifications = [
-        { id: 1, type: 'system', message: 'System startup completed', time: '2 mins ago', read: false },
-        { id: 2, type: 'request', message: 'New user registration', time: '5 mins ago', read: false },
-        { id: 3, type: 'alert', message: 'Database backup completed', time: '1 hour ago', read: true }
-      ];
+      const response = await adminAPI.getSystemActivity(10);
       
+      let activities = [];
+      if (response && response.success && response.data?.activities) {
+        activities = response.data.activities;
+      } else if (response && Array.isArray(response)) {
+        activities = response;
+      } else if (response && response.data && Array.isArray(response.data)) {
+        activities = response.data;
+      }
+
       const readLogs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
-      
-      const mapped = mockNotifications.map((act) => ({
-        id: act.id,
-        log_id: act.id,
-        title: act.type.charAt(0).toUpperCase() + act.type.slice(1),
-        message: act.message,
-        time: act.time,
-        detail: `System notification: ${act.message}`,
-        isRead: readLogs.includes(act.id),
-        type: act.type
-      }));
+
+      const getNotificationType = (action) => {
+        if (!action) return 'system';
+        const a = action.toUpperCase();
+        if (a.includes('LOGIN') || a.includes('AUTH')) return 'auth';
+        if (a.includes('CREATE') || a.includes('ADD')) return 'request';
+        if (a.includes('UPDATE') || a.includes('SETTING')) return 'settings';
+        if (a.includes('DELETE') || a.includes('REMOVE')) return 'alert';
+        if (a.includes('SUSPEND') || a.includes('BAN')) return 'alert';
+        return 'system';
+      };
+
+      const getNotificationTitle = (action) => {
+        if (!action) return 'System Activity';
+        const a = action.toUpperCase();
+        if (a.includes('LOGIN')) return 'Login Activity';
+        if (a.includes('LOGOUT')) return 'Logout Activity';
+        if (a.includes('HR_ADMIN_CREATED')) return 'New HR Admin Added';
+        if (a.includes('LOAN_COMMITTEE_ADMIN_CREATED')) return 'New Loan Committee Admin';
+        if (a.includes('FINANCE_ADMIN_CREATED')) return 'New Finance Admin Added';
+        if (a.includes('REGULAR_ADMIN_CREATED')) return 'New Admin Added';
+        if (a.includes('ADMIN_CREATED')) return 'New Admin Added';
+        if (a.includes('USER_CREATED')) return 'New User Registered';
+        if (a.includes('SYSTEM_CONFIG_UPDATE')) return 'System Settings Changed';
+        if (a.includes('SETTING')) return 'Settings Updated';
+        if (a.includes('PROFILE_UPDATE')) return 'Profile Updated';
+        if (a.includes('PASSWORD')) return 'Password Changed';
+        if (a.includes('SUSPEND') || a.includes('DEACTIVATE')) return 'Account Suspended';
+        if (a.includes('ACTIVATE')) return 'Account Activated';
+        if (a.includes('DELETE')) return 'Account Deleted';
+        if (a.includes('LOAN')) return 'Loan Activity';
+        if (a.includes('SAVINGS')) return 'Savings Activity';
+        if (a.includes('PAYROLL')) return 'Payroll Activity';
+        return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      };
+
+      const getNotificationMessage = (act) => {
+        const userName = act.first_name && act.last_name 
+          ? `${act.first_name} ${act.last_name}` 
+          : act.employee_id || 'System';
+        const action = act.action || '';
+        const a = action.toUpperCase();
+        
+        if (a.includes('LOGIN')) return `${userName} logged in`;
+        if (a.includes('LOGOUT')) return `${userName} logged out`;
+        if (a.includes('CREATED')) return `${userName} was added as ${act.role || 'admin'}`;
+        if (a.includes('UPDATED') || a.includes('UPDATE')) return `${userName} updated ${action.split('_').slice(0, -1).join(' ').toLowerCase()}`;
+        if (a.includes('DELETED')) return `${userName} was removed`;
+        if (a.includes('SUSPENDED') || a.includes('DEACTIVATE')) return `${userName} was suspended`;
+        if (a.includes('ACTIVATE')) return `${userName} was activated`;
+        if (a.includes('CONFIG')) return `System configuration updated by ${userName}`;
+        return `${userName} - ${action.replace(/_/g, ' ').toLowerCase()}`;
+      };
+
+      const mapped = activities.map((act, index) => {
+        const notifType = getNotificationType(act.action);
+        const timeAgo = act.created_at 
+          ? formatDistanceToNow(new Date(act.created_at), { addSuffix: true })
+          : 'Just now';
+
+        return {
+          id: index + 1,
+          log_id: `${act.action}_${act.created_at}`,
+          title: getNotificationTitle(act.action),
+          message: getNotificationMessage(act),
+          time: timeAgo,
+          detail: `${act.action?.replace(/_/g, ' ')} by ${act.first_name || 'System'} ${act.last_name || ''}${act.ip_address ? ` from IP ${act.ip_address}` : ''}${act.role ? ` (Role: ${act.role})` : ''}`,
+          isRead: readLogs.includes(`${act.action}_${act.created_at}`),
+          type: notifType
+        };
+      });
 
       setNotifications(mapped);
     } catch (err) {
       console.error('Failed to fetch activities:', err);
+      setNotifications([]);
     }
   };
 
@@ -85,7 +150,9 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const NotificationItem = ({ notification, onMarkRead, onViewDetail }) => {
     const getIcon = () => {
       switch (notification.type) {
+        case 'auth': return <FiShield className="text-green-500" size={16} />;
         case 'request': return <FiFileText className="text-blue-500" size={16} />;
+        case 'settings': return <FiSettings className="text-purple-500" size={16} />;
         case 'alert': return <FiAlertTriangle className="text-amber-500" size={16} />;
         case 'system': return <FiBell className="text-rose-500" size={16} />;
         default: return <FiInfo className="text-blue-500" size={16} />;
@@ -94,7 +161,9 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
     const getBgColor = () => {
       switch (notification.type) {
+        case 'auth': return 'bg-green-500/10';
         case 'request': return 'bg-blue-500/10';
+        case 'settings': return 'bg-purple-500/10';
         case 'alert': return 'bg-amber-500/10';
         case 'system': return 'bg-rose-500/10';
         default: return 'bg-blue-500/10';
