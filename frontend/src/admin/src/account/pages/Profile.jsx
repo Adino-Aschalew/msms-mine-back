@@ -1,200 +1,200 @@
-import React, { useState, useEffect } from 'react';
-import { User, Camera, Save, Edit3 } from 'lucide-react';
-import { useAuth } from '../../../../shared/contexts/AuthContext';
+// import React, { useState, useEffect } from 'react';
+// import { User, Camera, Save, Edit3 } from 'lucide-react';
+// import { useAuth } from '../../../../shared/contexts/AuthContext';
 
-const Profile = () => {
-  const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    fullName: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    role: 'Super Admin',
-    joinDate: '2024-01-15'
-  });
+// const Profile = () => {
+//   const { user } = useAuth();
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [profileData, setProfileData] = useState({
+//     fullName: 'John Doe',
+//     email: 'john.doe@example.com',
+//     phone: '+1 (555) 123-4567',
+//     role: 'Super Admin',
+//     joinDate: '2024-01-15'
+//   });
 
-  const [avatarPreview, setAvatarPreview] = useState(null);
+//   const [avatarPreview, setAvatarPreview] = useState(null);
 
-  useEffect(() => {
-    if (user) {
-      setProfileData({
-        fullName: `${user.first_name} ${user.last_name}`,
-        email: user.email,
-        phone: user.phone_number || 'Enter your phone pls',
-        role: user.role || 'Admin',
-        joinDate: new Date(user.created_at).toISOString().split('T')[0] || '2024-01-15'
-      });
-    }
-  }, [user]);
+//   useEffect(() => {
+//     if (user) {
+//       setProfileData({
+//         fullName: `${user.first_name} ${user.last_name}`,
+//         email: user.email,
+//         phone: user.phone_number || 'Enter your phone pls',
+//         role: user.role || 'Admin',
+//         joinDate: new Date(user.created_at).toISOString().split('T')[0] || '2024-01-15'
+//       });
+//     }
+//   }, [user]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setProfileData(prev => ({
+//       ...prev,
+//       [name]: value
+//     }));
+//   };
 
-  const handleAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+//   const handleAvatarUpload = (e) => {
+//     const file = e.target.files[0];
+//     if (file) {
+//       const reader = new FileReader();
+//       reader.onloadend = () => {
+//         setAvatarPreview(reader.result);
+//       };
+//       reader.readAsDataURL(file);
+//     }
+//   };
 
-  const handleSave = () => {
+//   const handleSave = () => {
     
-    console.log('Profile saved:', profileData);
-    setIsEditing(false);
-  };
+//     console.log('Profile saved:', profileData);
+//     setIsEditing(false);
+//   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
+//   const handleCancel = () => {
+//     setIsEditing(false);
     
-    setProfileData({
-      fullName: 'John Doe',
-      email: 'john.doe@example.com',
-      phone: '+1 (555) 123-4567',
-      role: 'Super Admin',
-      joinDate: '2024-01-15'
-    });
-    setAvatarPreview(null);
-  };
+//     setProfileData({
+//       fullName: 'John Doe',
+//       email: 'john.doe@example.com',
+//       phone: '+1 (555) 123-4567',
+//       role: 'Super Admin',
+//       joinDate: '2024-01-15'
+//     });
+//     setAvatarPreview(null);
+//   };
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage your personal information and account details.</p>
-      </div>
+//   return (
+//     <div className="space-y-6">
+//       <div>
+//         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
+//         <p className="text-gray-600 dark:text-gray-400">Manage your personal information and account details.</p>
+//       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {}
-        <div className="lg:col-span-1">
-          <div className="card p-6">
-            <div className="text-center">
-              <div className="relative mx-auto h-24 w-24">
-                <div className="h-24 w-24 rounded-full bg-primary-600 flex items-center justify-center">
-                  {avatarPreview ? (
-                    <img
-                      src={avatarPreview}
-                      alt="Profile"
-                      className="h-24 w-24 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="h-12 w-12 text-white" />
-                  )}
-                </div>
-                {isEditing && (
-                  <label className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center cursor-pointer hover:bg-primary-700">
-                    <Camera className="h-4 w-4 text-white" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleAvatarUpload}
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+//       <div className="grid gap-6 lg:grid-cols-3">
+//         {}
+//         <div className="lg:col-span-1">
+//           <div className="card p-6">
+//             <div className="text-center">
+//               <div className="relative mx-auto h-24 w-24">
+//                 <div className="h-24 w-24 rounded-full bg-primary-600 flex items-center justify-center">
+//                   {avatarPreview || user?.profile_picture ? (
+//                     <img
+//                       src={avatarPreview || user.profile_picture}
+//                       alt="Profile"
+//                       className="h-24 w-24 rounded-full object-cover"
+//                     />
+//                   ) : (
+//                     <User className="h-12 w-12 text-white" />
+//                   )}
+//                 </div>
+//                 {isEditing && (
+//                   <label className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center cursor-pointer hover:bg-primary-700">
+//                     <Camera className="h-4 w-4 text-white" />
+//                     <input
+//                       type="file"
+//                       accept="image/*"
+//                       className="hidden"
+//                       onChange={handleAvatarUpload}
+//                     />
+//                   </label>
+//                 )}
+//               </div>
+//             </div>
+//           </div>
+//         </div>
 
-        <div className="lg:col-span-2">
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Profile Information</h2>
+//         <div className="lg:col-span-2">
+//           <div className="card p-6">
+//             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Profile Information</h2>
             
-            <div className="space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Full Name
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={profileData.fullName}
-                      onChange={handleInputChange}
-                      className="input"
-                    />
-                  ) : (
-                    <p className="text-gray-900 dark:text-white">{profileData.fullName}</p>
-                  )}
-                </div>
+//             <div className="space-y-6">
+//               <div className="grid gap-6 sm:grid-cols-2">
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+//                     Full Name
+//                   </label>
+//                   {isEditing ? (
+//                     <input
+//                       type="text"
+//                       name="fullName"
+//                       value={profileData.fullName}
+//                       onChange={handleInputChange}
+//                       className="input"
+//                     />
+//                   ) : (
+//                     <p className="text-gray-900 dark:text-white">{profileData.fullName}</p>
+//                   )}
+//                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={profileData.email}
-                      onChange={handleInputChange}
-                      className="input"
-                    />
-                  ) : (
-                    <p className="text-gray-900 dark:text-white">{profileData.email}</p>
-                  )}
-                </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+//                     Email
+//                   </label>
+//                   {isEditing ? (
+//                     <input
+//                       type="email"
+//                       name="email"
+//                       value={profileData.email}
+//                       onChange={handleInputChange}
+//                       className="input"
+//                     />
+//                   ) : (
+//                     <p className="text-gray-900 dark:text-white">{profileData.email}</p>
+//                   )}
+//                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Phone
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={profileData.phone}
-                      onChange={handleInputChange}
-                      className="input"
-                    />
-                  ) : (
-                    <p className="text-gray-900 dark:text-white">{profileData.phone}</p>
-                  )}
-                </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+//                     Phone
+//                   </label>
+//                   {isEditing ? (
+//                     <input
+//                       type="tel"
+//                       name="phone"
+//                       value={profileData.phone}
+//                       onChange={handleInputChange}
+//                       className="input"
+//                     />
+//                   ) : (
+//                     <p className="text-gray-900 dark:text-white">{profileData.phone}</p>
+//                   )}
+//                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Role
-                  </label>
-                  {isEditing ? (
-                    <select
-                      name="role"
-                      value={profileData.role}
-                      onChange={handleInputChange}
-                      className="input"
-                    >
-                      <option value="Super Admin">Super Admin</option>
-                      <option value="Admin">Admin</option>
-                      <option value="Moderator">Moderator</option>
-                    </select>
-                  ) : (
-                    <p className="text-gray-900 dark:text-white">{profileData.role}</p>
-                  )}
-                </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+//                     Role
+//                   </label>
+//                   {isEditing ? (
+//                     <select
+//                       name="role"
+//                       value={profileData.role}
+//                       onChange={handleInputChange}
+//                       className="input"
+//                     >
+//                       <option value="Super Admin">Super Admin</option>
+//                       <option value="Admin">Admin</option>
+//                       <option value="Moderator">Moderator</option>
+//                     </select>
+//                   ) : (
+//                     <p className="text-gray-900 dark:text-white">{profileData.role}</p>
+//                   )}
+//                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Join Date
-                  </label>
-                  <p className="text-gray-900 dark:text-white">{profileData.joinDate}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+//                     Join Date
+//                   </label>
+//                   <p className="text-gray-900 dark:text-white">{profileData.joinDate}</p>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
 
-export default Profile;
+// export default Profile;

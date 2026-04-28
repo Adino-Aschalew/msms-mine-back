@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext2';
 import { 
-  User, Mail, Phone, MapPin, Shield, Bell, Settings, LogOut, Edit, Camera, Key,
+  User, Mail, Phone, MapPin, Shield, Bell, Settings, LogOut, Edit, Camera, Key,UserRound,
   CreditCard, HelpCircle, ChevronRight, Lock, Eye, EyeOff, Save, X, Activity, Clock, Globe, Users, CheckCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +17,7 @@ const Account = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const [profileImage, setProfileImage] = useState('https://i.pravatar.cc/150?img=1');
+  const [profileImage, setProfileImage] = useState('');
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -134,11 +134,17 @@ const Account = () => {
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white">
         <div className="flex items-center gap-8">
           <div className="relative">
-            <img 
-              src={profileImage} 
-              alt="Profile" 
-              className="h-32 w-32 rounded-full border-4 border-white/20 object-cover"
-            />
+            {profileImage ? (
+              <img 
+                src={profileImage} 
+                alt="Profile" 
+                className="h-32 w-32 rounded-full border-4 border-white/20 object-cover"
+              />
+            ) : (
+              <div className="h-32 w-32 rounded-full border-4 border-white/20 bg-blue-400 flex items-center justify-center">
+                <UserRound className="h-16 w-16 text-white" />
+              </div>
+            )}
             <input
               type="file"
               id="profile-image-upload"
@@ -156,7 +162,8 @@ const Account = () => {
           
           <div>
             <h2 className="text-2xl font-bold">{user?.first_name} {user?.last_name}</h2>
-            <p className="text-blue-100">{user?.job_title}</p>
+            <p className="text-blue-100">{user?.email}</p>
+            <p className="text-blue-100">{user?.role}</p>
           </div>
         </div>
       </div>
@@ -225,11 +232,10 @@ const Account = () => {
               <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-3">Address</label>
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <textarea
+                <input
                   value={formData.address || ''}
                   onChange={(e) => setFormData({...formData, address: e.target.value})}
                   disabled={!isEditing}
-                  rows={3}
                   className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50 resize-none"
                   placeholder="Enter your address"
                 />
@@ -257,14 +263,14 @@ const Account = () => {
           <div className="mt-8 flex gap-4">
             <button
               onClick={handleSave}
-              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-base font-medium"
+              className="flex items-center gap-3 px-6 py-2.5 bg-blue-600 text-white rounded-sm hover:bg-blue-700 transition-colors duration-200 text-base font-medium"
             >
               <Save className="h-5 w-5" />
               Save Changes
             </button>
             <button
               onClick={handleCancel}
-              className="flex items-center gap-3 px-8 py-4 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 text-base font-medium"
+              className="flex items-center gap-3 px-6 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 text-base font-medium"
             >
               <X className="h-5 w-5" />
               Cancel
@@ -571,10 +577,10 @@ const Account = () => {
           {activeTab === 'profile' && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 font-black uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center gap-2"
+              className="px-6 py-3 bg-blue-600 text-white rounded-sm shadow-sm shadow-blue-500/20 hover:bg-blue-700 font-bold uppercase tracking-widest text-[14px] transition-all active:scale-95 flex items-center gap-2"
             >
               <Edit className="h-4 w-4" />
-              Edit Profile
+              Edit
             </button>
           )}
         </div>
