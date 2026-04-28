@@ -373,55 +373,55 @@ const Analytics = () => {
       </div>
 
       {}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto">
         <button
           onClick={() => setTimeRange('7days')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+          className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
             timeRange === '7days' 
               ? 'bg-blue-600 text-white shadow-md' 
               : 'bg-white dark:bg-gray-800 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          Last 7 Days
+          7 Days
         </button>
         <button
           onClick={() => setTimeRange('30days')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+          className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
             timeRange === '30days' 
               ? 'bg-blue-600 text-white shadow-md' 
               : 'bg-white dark:bg-gray-800 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          Last 30 Days
+          30 Days
         </button>
         <button
           onClick={() => setTimeRange('year')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+          className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
             timeRange === 'year' 
               ? 'bg-blue-600 text-white shadow-md' 
               : 'bg-white dark:bg-gray-800 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          Last Year
+          Year
         </button>
       </div>
 
       {}
-      <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {analyticsCards.map((card, index) => (
-          <div key={index} className="card p-8 transition-all hover:shadow-lg">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{card.title}</p>
-                <p className="text-4xl font-bold text-gray-900 dark:text-white leading-tight">{card.value}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+          <div key={index} className="card p-4 sm:p-6 transition-all hover:shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{card.title}</p>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white leading-tight truncate">{card.value}</p>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs sm:text-sm font-medium px-2 py-0.5 sm:px-3 sm:py-1 rounded-full ${
                     card.change.startsWith('+') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                   }`}>{card.change}</span>
-                  <span className="text-sm text-gray-500">from last month</span>
+                  <span className="text-xs sm:text-sm text-gray-500">from last month</span>
                 </div>
               </div>
-              <div className={`rounded-2xl p-4 ${card.color}`}>
+              <div className={`rounded-xl sm:rounded-2xl p-2 sm:p-3 lg:p-4 ${card.color} flex-shrink-0`}>
                 {card.icon}
               </div>
             </div>
