@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext2';
+import { useAuth } from '../../../../shared/contexts/AuthContext';
 import { 
   Settings as SettingsIcon, 
   Shield, 
@@ -13,19 +14,28 @@ import {
   Lock,
   Database,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Loader
 } from 'lucide-react';
+import { adminAPI } from '../../../shared/services/adminAPI';
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [lastSaved, setLastSaved] = useState(null);
 
   const [systemConfig, setSystemConfig] = useState({
-    systemName: 'Microfinance Management System',
-    organizationName: 'MSMS Organization',
-    adminEmail: 'admin@msms.com',
-    supportEmail: 'support@msms.com',
+    systemName: '',
+    organizationName: '',
+    adminEmail: '',
+    supportEmail: '',
     timezone: 'UTC+3',
     dateFormat: 'YYYY-MM-DD',
     currency: 'USD',
@@ -62,6 +72,69 @@ const Settings = () => {
     allowedFileTypes: 'pdf,doc,docx,xls,xlsx,csv'
   });
 
+  useEffect(() => {
+    fetchConfig();
+  }, []);
+
+  const fetchConfig = async () => {
+    try {
+      setFetching(true);
+      const response = await adminAPI.getSystemConfig();
+      const data = response?.success ? response.data : (response?.data || response || {});
+
+      if (data && typeof data === 'object') {
+        setSystemConfig(prev => ({
+          ...prev,
+          systemName: data.system_name !== undefined ? data.system_name : prev.systemName,
+          organizationName: data.organization_name !== undefined ? data.organization_name : prev.organizationName,
+          adminEmail: data.admin_email !== undefined ? data.admin_email : prev.adminEmail,
+          supportEmail: data.support_email !== undefined ? data.support_email : prev.supportEmail,
+          timezone: data.timezone !== undefined ? data.timezone : prev.timezone,
+          dateFormat: data.date_format !== undefined ? data.date_format : prev.dateFormat,
+          currency: data.currency !== undefined ? data.currency : prev.currency,
+          fiscalYearStart: data.fiscal_year_start !== undefined ? data.fiscal_year_start : prev.fiscalYearStart
+        }));
+
+        setSecurityConfig(prev => ({
+          ...prev,
+          sessionTimeout: data.session_timeout_minutes !== undefined ? data.session_timeout_minutes : prev.sessionTimeout,
+          passwordMinLength: data.password_min_length !== undefined ? data.password_min_length : prev.passwordMinLength,
+          passwordExpiry: data.password_expiry_days !== undefined ? data.password_expiry_days : prev.passwordExpiry,
+          maxLoginAttempts: data.max_login_attempts !== undefined ? data.max_login_attempts : prev.maxLoginAttempts,
+          lockoutDuration: data.lockout_duration_minutes !== undefined ? data.lockout_duration_minutes : prev.lockoutDuration,
+          requireTwoFactor: data.require_two_factor !== undefined ? data.require_two_factor : prev.requireTwoFactor,
+          ipRestriction: data.ip_restriction !== undefined ? data.ip_restriction : prev.ipRestriction,
+          allowedIPs: data.allowed_ips !== undefined ? data.allowed_ips : prev.allowedIPs
+        }));
+
+        setNotificationConfig(prev => ({
+          ...prev,
+          emailNotifications: data.email_notifications !== undefined ? data.email_notifications : prev.emailNotifications,
+          systemAlerts: data.system_alerts !== undefined ? data.system_alerts : prev.systemAlerts,
+          userActivityLogs: data.user_activity_logs !== undefined ? data.user_activity_logs : prev.userActivityLogs,
+          backupNotifications: data.backup_notifications !== undefined ? data.backup_notifications : prev.backupNotifications,
+          loanNotifications: data.loan_notifications !== undefined ? data.loan_notifications : prev.loanNotifications,
+          paymentNotifications: data.payment_notifications !== undefined ? data.payment_notifications : prev.paymentNotifications
+        }));
+
+        setSystemConfig2(prev => ({
+          ...prev,
+          maintenanceMode: data.system_maintenance_mode !== undefined ? data.system_maintenance_mode : prev.maintenanceMode,
+          debugMode: data.debug_mode !== undefined ? data.debug_mode : prev.debugMode,
+          logLevel: data.log_level !== undefined ? data.log_level : prev.logLevel,
+          backupSchedule: data.backup_schedule !== undefined ? data.backup_schedule : prev.backupSchedule,
+          dataRetention: data.data_retention !== undefined ? data.data_retention : prev.dataRetention,
+          maxFileSize: data.max_file_upload_size_mb !== undefined ? data.max_file_upload_size_mb : prev.maxFileSize,
+          allowedFileTypes: data.allowed_file_types !== undefined ? data.allowed_file_types : prev.allowedFileTypes
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch config:', err);
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const tabs = [
     { id: 'general', label: 'System Configuration', icon: SettingsIcon },
     { id: 'security', label: 'Security Settings', icon: Shield },
@@ -71,18 +144,45 @@ const Settings = () => {
 
   const handleSave = async () => {
     setLoading(true);
+    setSaveSuccess(false);
+    setSaveError('');
     try {
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Settings saved:', {
-        systemConfig,
-        securityConfig,
-        notificationConfig,
-        systemConfig2
-      });
-      alert('Settings saved successfully');
+      const payload = {
+        system_name: systemConfig.systemName || 'Microfinance Management System',
+        organization_name: systemConfig.organizationName || 'BDU (Poly University)',
+        admin_email: systemConfig.adminEmail !== undefined ? systemConfig.adminEmail : user?.email,
+        support_email: systemConfig.supportEmail,
+        date_format: systemConfig.dateFormat,
+        session_timeout_minutes: securityConfig.sessionTimeout,
+        password_min_length: securityConfig.passwordMinLength,
+        password_expiry_days: securityConfig.passwordExpiry,
+        max_login_attempts: securityConfig.maxLoginAttempts,
+        lockout_duration_minutes: securityConfig.lockoutDuration,
+        require_two_factor: securityConfig.requireTwoFactor,
+        ip_restriction: securityConfig.ipRestriction,
+        allowed_ips: securityConfig.allowedIPs,
+        email_notifications: notificationConfig.emailNotifications,
+        system_alerts: notificationConfig.systemAlerts,
+        user_activity_logs: notificationConfig.userActivityLogs,
+        backup_notifications: notificationConfig.backupNotifications,
+        loan_notifications: notificationConfig.loanNotifications,
+        payment_notifications: notificationConfig.paymentNotifications,
+        system_maintenance_mode: systemConfig2.maintenanceMode,
+        debug_mode: systemConfig2.debugMode,
+        log_level: systemConfig2.logLevel,
+        backup_schedule: systemConfig2.backupSchedule,
+        data_retention: systemConfig2.dataRetention,
+        max_file_upload_size_mb: systemConfig2.maxFileSize,
+        allowed_file_types: systemConfig2.allowedFileTypes
+      };
+
+      await adminAPI.updateSystemConfig(payload);
+      setSaveSuccess(true);
+      setLastSaved(new Date().toLocaleString());
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      alert('Failed to save settings');
+      setSaveError(error.message || 'Failed to save settings');
+      setTimeout(() => setSaveError(''), 5000);
     } finally {
       setLoading(false);
     }
@@ -590,29 +690,50 @@ const Settings = () => {
         <div>
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div className="p-6">
-              {activeTab === 'general' && renderGeneralSettings()}
-              {activeTab === 'security' && renderSecuritySettings()}
-              {activeTab === 'notifications' && renderNotificationSettings()}
-              {activeTab === 'system' && renderSystemSettings()}
+              {fetching ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader className="w-8 h-8 animate-spin text-blue-500" />
+                  <span className="ml-3 text-gray-500 dark:text-gray-400">Loading settings...</span>
+                </div>
+              ) : (
+                <>
+                  {activeTab === 'general' && renderGeneralSettings()}
+                  {activeTab === 'security' && renderSecuritySettings()}
+                  {activeTab === 'notifications' && renderNotificationSettings()}
+                  {activeTab === 'system' && renderSystemSettings()}
+                </>
+              )}
             </div>
 
             {}
             <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Last saved: Never
+                  {lastSaved ? `Last saved: ${lastSaved}` : 'Not yet saved'}
+                  {saveSuccess && (
+                    <span className="ml-3 text-green-600 dark:text-green-400 flex items-center gap-1 inline-flex">
+                      <CheckCircle className="w-3.5 h-3.5" /> Saved successfully
+                    </span>
+                  )}
+                  {saveError && (
+                    <span className="ml-3 text-red-600 dark:text-red-400 flex items-center gap-1 inline-flex">
+                      <XCircle className="w-3.5 h-3.5" /> {saveError}
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={handleSave}
-                  disabled={loading}
+                  disabled={loading || fetching}
                   className={`flex items-center gap-2 px-6 py-2 rounded-md font-medium transition-colors ${
                     loading
+                      ? 'bg-blue-400 text-white cursor-wait'
+                      : fetching
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  <Save className="w-4 h-4" />
-                  {loading ? 'Saving...' : 'Save Settings'}
+                  {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {loading ? 'Saving...' : fetching ? 'Loading...' : 'Save Settings'}
                 </button>
               </div>
             </div>
