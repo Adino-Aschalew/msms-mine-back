@@ -65,12 +65,12 @@ class AuthController {
       
       res.json({
         success: true,
-        message: result.message
+        message: result.message || 'Password changed successfully'
       });
     } catch (error) {
       console.error('Password change error:', error);
       
-      if (error.message.includes('incorrect') || error.message.includes('required')) {
+      if (error.message.includes('incorrect') || error.message.includes('required') || error.message.includes('must contain')) {
         return res.status(400).json({
           success: false,
           message: error.message

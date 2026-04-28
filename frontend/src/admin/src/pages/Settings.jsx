@@ -47,11 +47,17 @@ const Settings = () => {
     passwordMinLength: 8,
     passwordExpiry: 90,
     maxLoginAttempts: 5,
-    lockoutDuration: 15,
-    requireTwoFactor: false,
-    ipRestriction: false,
-    allowedIPs: ''
+    lockoutDuration: 15
   });
+
+  const [passwordChange, setPasswordChange] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const [notificationConfig, setNotificationConfig] = useState({
     emailNotifications: true,
@@ -101,10 +107,7 @@ const Settings = () => {
           passwordMinLength: data.password_min_length !== undefined ? data.password_min_length : prev.passwordMinLength,
           passwordExpiry: data.password_expiry_days !== undefined ? data.password_expiry_days : prev.passwordExpiry,
           maxLoginAttempts: data.max_login_attempts !== undefined ? data.max_login_attempts : prev.maxLoginAttempts,
-          lockoutDuration: data.lockout_duration_minutes !== undefined ? data.lockout_duration_minutes : prev.lockoutDuration,
-          requireTwoFactor: data.require_two_factor !== undefined ? data.require_two_factor : prev.requireTwoFactor,
-          ipRestriction: data.ip_restriction !== undefined ? data.ip_restriction : prev.ipRestriction,
-          allowedIPs: data.allowed_ips !== undefined ? data.allowed_ips : prev.allowedIPs
+          lockoutDuration: data.lockout_duration_minutes !== undefined ? data.lockout_duration_minutes : prev.lockoutDuration
         }));
 
         setNotificationConfig(prev => ({
@@ -158,9 +161,6 @@ const Settings = () => {
         password_expiry_days: securityConfig.passwordExpiry,
         max_login_attempts: securityConfig.maxLoginAttempts,
         lockout_duration_minutes: securityConfig.lockoutDuration,
-        require_two_factor: securityConfig.requireTwoFactor,
-        ip_restriction: securityConfig.ipRestriction,
-        allowed_ips: securityConfig.allowedIPs,
         email_notifications: notificationConfig.emailNotifications,
         system_alerts: notificationConfig.systemAlerts,
         user_activity_logs: notificationConfig.userActivityLogs,
@@ -185,6 +185,65 @@ const Settings = () => {
       setTimeout(() => setSaveError(''), 5000);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    if (!passwordChange.currentPassword || !passwordChange.newPassword || !passwordChange.confirmPassword) {
+      setPasswordError('All password fields are required');
+      return;
+    }
+
+    if (passwordChange.newPassword !== passwordChange.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordChange.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters');
+      return;
+    }
+
+    // Validate password contains at least one letter, one number, and one special character
+    const hasLetter = /[a-zA-Z]/.test(passwordChange.newPassword);
+    const hasNumber = /[0-9]/.test(passwordChange.newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(passwordChange.newPassword);
+
+    if (!hasLetter) {
+      setPasswordError('Password must contain at least one letter');
+      return;
+    }
+
+    if (!hasNumber) {
+      setPasswordError('Password must contain at least one number');
+      return;
+    }
+
+    if (!hasSpecialChar) {
+      setPasswordError('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await adminAPI.changePassword({
+        currentPassword: passwordChange.currentPassword,
+        newPassword: passwordChange.newPassword
+      });
+      setPasswordSuccess(true);
+      setPasswordChange({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || error.message || 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -402,46 +461,57 @@ const Settings = () => {
       </div>
 
       <div className="space-y-4 mt-8">
-        <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-900 dark:text-white">Require Two-Factor Authentication</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Enforce 2FA for all admin accounts</p>
+        <div className="border-t pt-6 mt-6">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change Your Password</h4>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Current Password
+              </label>
+              <input
+                type="password"
+                value={passwordChange.currentPassword}
+                onChange={(e) => setPasswordChange(prev => ({ ...prev, currentPassword: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                New Password
+              </label>
+              <input
+                type="password"
+                value={passwordChange.newPassword}
+                onChange={(e) => setPasswordChange(prev => ({ ...prev, newPassword: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                value={passwordChange.confirmPassword}
+                onChange={(e) => setPasswordChange(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            {passwordError && (
+              <div className="text-sm text-red-600 dark:text-red-400">{passwordError}</div>
+            )}
+            {passwordSuccess && (
+              <div className="text-sm text-green-600 dark:text-green-400">Password changed successfully!</div>
+            )}
+            <button
+              onClick={handlePasswordChange}
+              disabled={passwordLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+            >
+              {passwordLoading ? 'Changing Password...' : 'Change Password'}
+            </button>
           </div>
-          <input
-            type="checkbox"
-            checked={securityConfig.requireTwoFactor}
-            onChange={(e) => setSecurityConfig(prev => ({ ...prev, requireTwoFactor: e.target.checked }))}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-          />
         </div>
-
-        <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-900 dark:text-white">IP Address Restriction</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Limit access to specific IP addresses</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={securityConfig.ipRestriction}
-            onChange={(e) => setSecurityConfig(prev => ({ ...prev, ipRestriction: e.target.checked }))}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-          />
-        </div>
-
-        {securityConfig.ipRestriction && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Allowed IP Addresses (comma-separated)
-            </label>
-            <textarea
-              value={securityConfig.allowedIPs}
-              onChange={(e) => setSecurityConfig(prev => ({ ...prev, allowedIPs: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              rows={3}
-              placeholder="192.168.1.100, 10.0.0.50, 203.0.113.0"
-            />
-          </div>
-        )}
       </div>
     </div>
   );

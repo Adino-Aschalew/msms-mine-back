@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const path = require('path');
-const { query } = require('../../config/database');
+const { query, pool } = require('../../config/database');
 const { auditLog } = require('../../middleware/audit');
 const HrService = require('../hr/hr.service');
 
@@ -10,6 +10,48 @@ const HrService = require('../hr/hr.service');
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 class AuthService {
+  static async getSecurityConfig() {
+    try {
+      const [configs] = await pool.execute(
+        'SELECT config_key, config_value, config_type FROM system_configuration WHERE is_active = TRUE'
+      );
+
+      const configMap = {};
+      configs.forEach(row => {
+        let value = row.config_value;
+        if (row.config_type === 'BOOLEAN') value = value === 'true';
+        else if (row.config_type === 'NUMBER') value = parseFloat(value);
+        configMap[row.config_key] = value;
+      });
+
+      // Merge with defaults for any missing keys
+      const defaults = {
+        session_timeout_minutes: 30,
+        password_min_length: 8,
+        password_expiry_days: 90,
+        max_login_attempts: 5,
+        lockout_duration_minutes: 15
+      };
+
+      Object.keys(defaults).forEach(key => {
+        if (!(key in configMap)) {
+          configMap[key] = defaults[key];
+        }
+      });
+
+      return configMap;
+    } catch (error) {
+      console.error('Error fetching security config:', error);
+      // Return defaults on error
+      return {
+        session_timeout_minutes: 30,
+        password_min_length: 8,
+        password_expiry_days: 90,
+        max_login_attempts: 5,
+        lockout_duration_minutes: 15
+      };
+    }
+  }
   static async forgotPassword(email, ip, userAgent) {
     try {
       if (!email) {
@@ -111,6 +153,10 @@ class AuthService {
         throw new Error('Username/ID and password are required');
       }
 
+      // Fetch security configuration
+      const securityConfig = await this.getSecurityConfig();
+      console.log('Security config loaded:', securityConfig);
+
       let user;
       
       
@@ -150,28 +196,86 @@ class AuthService {
         await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
         throw new Error('Invalid credentials. Please check your username/ID and password.');
       }
-      
+
+      // Check if user is locked out due to too many failed attempts
+      if (user.failed_login_attempts >= securityConfig.max_login_attempts) {
+        const lockoutTime = new Date(user.last_failed_login);
+        const lockoutDuration = securityConfig.lockout_duration_minutes * 60 * 1000;
+        const timeSinceLockout = Date.now() - lockoutTime.getTime();
+        
+        if (timeSinceLockout < lockoutDuration) {
+          const remainingMinutes = Math.ceil((lockoutDuration - timeSinceLockout) / 60000);
+          throw new Error(`Account locked due to too many failed login attempts. Try again in ${remainingMinutes} minutes.`);
+        } else {
+          // Reset failed attempts if lockout period has passed
+          await query('UPDATE users SET failed_login_attempts = 0, last_failed_login = NULL WHERE id = ?', [user.id]);
+        }
+      }
       
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
       
       if (!isValidPassword) {
         console.log('Login failed: Invalid password');
-        await auditLog(user.id, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
-        throw new Error('Invalid credentials. Please check your username/ID and password.');
+        
+        // Increment failed login attempts
+        const newAttempts = (user.failed_login_attempts || 0) + 1;
+        await query(
+          'UPDATE users SET failed_login_attempts = ?, last_failed_login = NOW() WHERE id = ?',
+          [newAttempts, user.id]
+        );
+        
+        await auditLog(user.id, 'LOGIN_FAILED', 'users', null, null, { identifier, attempts: newAttempts }, ip, userAgent);
+        
+        if (newAttempts >= securityConfig.max_login_attempts) {
+          throw new Error(`Account locked due to too many failed login attempts. Try again in ${securityConfig.lockout_duration_minutes} minutes.`);
+        }
+        
+        const remainingAttempts = securityConfig.max_login_attempts - newAttempts;
+        throw new Error(`Invalid credentials. ${remainingAttempts} attempts remaining before account lockout.`);
       }
       
       console.log('Login successful for user:', user.id, 'role:', user.role);
       
+      // Reset failed login attempts on successful login
+      await query('UPDATE users SET failed_login_attempts = 0, last_failed_login = NULL, last_login = NOW() WHERE id = ?', [user.id]);
       
-      await query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
-      
+      // Check password expiry
+      if (user.password_changed_at) {
+        const passwordAge = Date.now() - new Date(user.password_changed_at).getTime();
+        const passwordExpiryDays = securityConfig.password_expiry_days;
+        const passwordExpiryMs = passwordExpiryDays * 24 * 60 * 60 * 1000;
+        
+        if (passwordAge > passwordExpiryMs) {
+          await auditLog(user.id, 'PASSWORD_EXPIRED', 'users', null, null, { identifier }, ip, userAgent);
+          return {
+            user: {
+              id: user.id,
+              employee_id: user.employee_id,
+              username: user.username,
+              email: user.email,
+              role: user.role,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              department: user.department,
+              job_grade: user.job_grade,
+              password_change_required: true
+            },
+            token: null,
+            refreshToken: null,
+            passwordExpired: true,
+            message: 'Your password has expired. Please change your password to continue.'
+          };
+        }
+      }
       
       await auditLog(user.id, 'LOGIN_SUCCESS', 'users', null, null, { identifier }, ip, userAgent);
       
+      // Use configured session timeout for JWT token expiration
+      const sessionTimeoutMinutes = securityConfig.session_timeout_minutes;
       const token = jwt.sign(
         { userId: user.id, employee_id: user.employee_id, role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN }
+        { expiresIn: `${sessionTimeoutMinutes}m` }
       );
       
       const refreshToken = jwt.sign(
@@ -470,13 +574,34 @@ class AuthService {
         throw new Error('Current password and new password are required');
       }
 
-      if (newPassword.length < 8) {
-        throw new Error('New password must be at least 8 characters long');
+      // Fetch security configuration for password validation
+      const securityConfig = await this.getSecurityConfig();
+      
+      // Validate password against security configuration
+      if (newPassword.length < securityConfig.password_min_length) {
+        throw new Error(`New password must be at least ${securityConfig.password_min_length} characters long`);
+      }
+
+      // Validate password contains at least one letter, one number, and one special character
+      const hasLetter = /[a-zA-Z]/.test(newPassword);
+      const hasNumber = /[0-9]/.test(newPassword);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+      if (!hasLetter) {
+        throw new Error('Password must contain at least one letter');
+      }
+
+      if (!hasNumber) {
+        throw new Error('Password must contain at least one number');
+      }
+
+      if (!hasSpecialChar) {
+        throw new Error('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)');
       }
 
       
       const users = await query(`
-        SELECT id, password_hash, password_change_required
+        SELECT id, password_hash, password_change_required, email
         FROM users 
         WHERE id = ? AND is_active = TRUE
       `, [userId]);
@@ -500,9 +625,17 @@ class AuthService {
       
       await query(`
         UPDATE users 
-        SET password_hash = ?, password_change_required = FALSE, updated_at = NOW()
+        SET password_hash = ?, password_change_required = FALSE, password_changed_at = NOW(), updated_at = NOW()
         WHERE id = ?
       `, [newPasswordHash, userId]);
+
+      // Log the password change
+      await auditLog(userId, 'PASSWORD_CHANGED', 'users', userId, null, { email: user.email }, ip, userAgent);
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
 
     } catch (error) {
       console.error('Change password error:', error);

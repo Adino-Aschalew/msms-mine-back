@@ -80,6 +80,11 @@ export const adminAPI = {
     return response;
   },
 
+  changePassword: async (passwordData) => {
+    const response = await apiClient.post('/auth/change-password', passwordData);
+    return response;
+  },
+
   // Admin creation functions
   createHRAdmin: async (userData) => {
     const response = await apiClient.post('/admin/hr-admins', userData);
