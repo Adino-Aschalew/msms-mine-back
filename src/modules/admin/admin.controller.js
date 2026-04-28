@@ -164,7 +164,7 @@ class AdminController {
   static async getAllAdmins(req, res) {
     try {
       const [admins] = await pool.execute(`
-        SELECT 
+        SELECT DISTINCT
           u.id,
           u.employee_id,
           u.first_name,
@@ -182,6 +182,10 @@ class AdminController {
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.role IN ('SUPER_ADMIN', 'ADMIN', 'HR', 'LOAN_COMMITTEE', 'FINANCE_ADMIN')
+          AND u.first_name IS NOT NULL AND u.first_name != ''
+          AND u.last_name IS NOT NULL AND u.last_name != ''
+          AND u.email IS NOT NULL AND u.email != ''
+        GROUP BY u.id
         ORDER BY u.created_at DESC
       `);
 

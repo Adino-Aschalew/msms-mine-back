@@ -46,21 +46,26 @@ const AdminManagement = () => {
       console.log('Admin users count:', adminUsers.length);
       
       if (adminUsers.length === 0) {
-        console.log('No admin users found, might be permission issue');
-        setError('No administrators found or insufficient permissions');
+        console.log('No admin users found');
+        setAdmins([]);
         return;
       }
       
-      const formattedAdmins = adminUsers.map(admin => ({
-        id: admin.id,
-        name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.employee_id || admin.username || 'Unknown',
-        first_name: admin.first_name,
-        last_name: admin.last_name,
-        email: admin.email,
-        role: admin.role,
-        status: admin.is_active ? 'active' : 'suspended',
-        createdDate: admin.created_at ? new Date(admin.created_at).toISOString().split('T')[0] : 'N/A'
-      }));
+      const formattedAdmins = adminUsers
+        .filter(admin => admin.first_name && admin.last_name && admin.email)
+        .map(admin => ({
+          id: admin.id,
+          name: `${admin.first_name} ${admin.last_name}`.trim(),
+          first_name: admin.first_name,
+          last_name: admin.last_name,
+          email: admin.email,
+          role: admin.role,
+          status: admin.is_active ? 'active' : 'suspended',
+          createdDate: admin.created_at ? new Date(admin.created_at).toISOString().split('T')[0] : 'N/A'
+        }))
+        .filter((admin, index, self) => 
+          self.findIndex(a => a.email === admin.email) === index
+        );
       console.log('Formatted admins:', formattedAdmins);
       console.log('Formatted admins length:', formattedAdmins.length);
       setAdmins(formattedAdmins);

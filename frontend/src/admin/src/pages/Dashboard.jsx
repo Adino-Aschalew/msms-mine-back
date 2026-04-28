@@ -218,18 +218,21 @@ const Dashboard = () => {
   };
 
   
-  const admins = dashboardData?.recentActivity?.map((activity, index) => ({
-    id: index + 1,
-    employeeId: activity.employee_id,
-    name: activity.first_name && activity.last_name 
-      ? `${activity.first_name} ${activity.last_name}`
-      : activity.employee_id || 'Unknown',
-    email: activity.email || 'unknown@example.com',
-    phone: activity.phone_number || 'N/A',
-    role: activity.role || 'Admin',
-    addDate: activity.created_at ? new Date(activity.created_at).toLocaleDateString() : 'Unknown',
-    status: 'active'
-  })) || [];
+  const admins = (dashboardData?.recentActivity || [])
+    .filter(activity => activity.first_name && activity.last_name && activity.email)
+    .filter((activity, index, self) => 
+      self.findIndex(a => a.email === activity.email) === index
+    )
+    .map((activity, index) => ({
+      id: activity.id || index + 1,
+      employeeId: activity.employee_id,
+      name: `${activity.first_name} ${activity.last_name}`,
+      email: activity.email,
+      phone: activity.phone_number || 'N/A',
+      role: activity.role || 'Admin',
+      addDate: activity.created_at ? new Date(activity.created_at).toLocaleDateString() : 'N/A',
+      status: 'active'
+    }));
 
   if (loading) {
     return (
