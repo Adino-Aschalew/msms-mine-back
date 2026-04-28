@@ -147,71 +147,82 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
+  const [notifTab, setNotifTab] = useState('all');
+
+  const filteredNotifications = notifTab === 'unread' 
+    ? notifications.filter(n => !n.isRead) 
+    : notifications;
+
   const NotificationItem = ({ notification, onMarkRead, onViewDetail }) => {
     const getIcon = () => {
       switch (notification.type) {
-        case 'auth': return <FiShield className="text-green-500" size={16} />;
-        case 'request': return <FiFileText className="text-blue-500" size={16} />;
-        case 'settings': return <FiSettings className="text-purple-500" size={16} />;
-        case 'alert': return <FiAlertTriangle className="text-amber-500" size={16} />;
-        case 'system': return <FiBell className="text-rose-500" size={16} />;
-        default: return <FiInfo className="text-blue-500" size={16} />;
+        case 'auth': return <FiShield className="text-green-500" size={14} />;
+        case 'request': return <FiFileText className="text-blue-500" size={14} />;
+        case 'settings': return <FiSettings className="text-purple-500" size={14} />;
+        case 'alert': return <FiAlertTriangle className="text-amber-500" size={14} />;
+        case 'system': return <FiBell className="text-rose-500" size={14} />;
+        default: return <FiInfo className="text-blue-500" size={14} />;
       }
     };
 
-    const getBgColor = () => {
+    const getAccentColor = () => {
       switch (notification.type) {
-        case 'auth': return 'bg-green-500/10';
-        case 'request': return 'bg-blue-500/10';
-        case 'settings': return 'bg-purple-500/10';
-        case 'alert': return 'bg-amber-500/10';
-        case 'system': return 'bg-rose-500/10';
-        default: return 'bg-blue-500/10';
+        case 'auth': return 'from-green-500 to-emerald-600';
+        case 'request': return 'from-blue-500 to-cyan-600';
+        case 'settings': return 'from-purple-500 to-violet-600';
+        case 'alert': return 'from-amber-500 to-orange-600';
+        case 'system': return 'from-rose-500 to-pink-600';
+        default: return 'from-blue-500 to-cyan-600';
+      }
+    };
+
+    const getLightBg = () => {
+      switch (notification.type) {
+        case 'auth': return 'bg-green-50 dark:bg-green-900/20';
+        case 'request': return 'bg-blue-50 dark:bg-blue-900/20';
+        case 'settings': return 'bg-purple-50 dark:bg-purple-900/20';
+        case 'alert': return 'bg-amber-50 dark:bg-amber-900/20';
+        case 'system': return 'bg-rose-50 dark:bg-rose-900/20';
+        default: return 'bg-blue-50 dark:bg-blue-900/20';
       }
     };
 
     return (
-      <div className={`p-4 transition-all duration-300 border-l-2 ${notification.isRead ? 'border-transparent bg-transparent' : 'border-blue-500 bg-blue-500/[0.03]'} hover:bg-slate-100/50 dark:hover:bg-white/[0.03] group relative`}>
-        <div className="flex gap-4">
-          <div className={`w-10 h-10 rounded-xl ${getBgColor()} flex items-center justify-center shrink-0`}>
+      <div 
+        onClick={() => onViewDetail(notification)}
+        className={`relative px-4 py-3 cursor-pointer transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${!notification.isRead ? getLightBg() : ''}`}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getAccentColor()} flex items-center justify-center shrink-0 shadow-sm`}>
             {getIcon()}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-0.5">
-              <h4 className={`text-sm font-bold truncate ${notification.isRead ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'} tracking-tight`}>
+            <div className="flex items-center justify-between gap-2">
+              <p className={`text-sm truncate ${notification.isRead ? 'text-gray-600 dark:text-gray-400 font-medium' : 'text-gray-900 dark:text-white font-semibold'}`}>
                 {notification.title}
-              </h4>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap ml-2">
+              </p>
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap shrink-0">
                 {notification.time}
               </span>
             </div>
-            <p className="text-[12px] text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed font-medium">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
               {notification.message}
             </p>
-            
-            <div className="flex items-center gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                onClick={() => onViewDetail(notification)}
-                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors"
-              >
-                <FiExternalLink size={12} />
-                View Detail
-              </button>
-              {!notification.isRead && (
-                <button 
-                  onClick={() => onMarkRead(notification.id)}
-                  className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-600 transition-colors"
-                >
-                  <FiCheck size={12} />
-                  Mark as Read
-                </button>
-              )}
-            </div>
           </div>
+          {!notification.isRead && (
+            <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-2"></div>
+          )}
         </div>
-        {!notification.isRead && (
-          <div className="absolute top-4 right-4 w-2 h-2 bg-blue-500 rounded-full animate-pulse group-hover:hidden"></div>
-        )}
+        <div className="flex items-center gap-2 mt-2 ml-11 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+          {!notification.isRead && (
+            <button 
+              onClick={() => onMarkRead(notification.id)}
+              className="text-[11px] text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1"
+            >
+              <FiCheck size={10} /> Mark read
+            </button>
+          )}
+        </div>
       </div>
     );
   };
@@ -311,109 +322,140 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
             </button>
 
             {notificationsOpen && (
-              <div className="fixed sm:absolute right-4 sm:right-0 top-16 sm:top-auto mt-0 sm:mt-4 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-3xl sm:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-gray-200 dark:border-gray-700 dark:bg-gray-800 overflow-hidden animate-in slide-in-from-top-2 duration-300 z-[60]">
+              <div className="fixed sm:absolute right-4 sm:right-0 top-16 sm:top-auto mt-0 sm:mt-3 w-[calc(100vw-2rem)] sm:w-[400px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700/50 overflow-hidden z-[60]">
                 {}
-                <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                      Notifications
-                      {unreadCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-blue-500 text-[10px] font-black text-white shadow-lg">
-                          {unreadCount} New
-                        </span>
+                {selectedNotification ? (
+                  <div className="flex flex-col max-h-[520px]">
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                      <button 
+                        onClick={() => setSelectedNotification(null)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                      >
+                        <FiChevronRight size={16} className="rotate-180" />
+                      </button>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">Notification Detail</span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${
+                          selectedNotification.type === 'auth' ? 'from-green-500 to-emerald-600' :
+                          selectedNotification.type === 'request' ? 'from-blue-500 to-cyan-600' :
+                          selectedNotification.type === 'settings' ? 'from-purple-500 to-violet-600' :
+                          selectedNotification.type === 'alert' ? 'from-amber-500 to-orange-600' :
+                          'from-rose-500 to-pink-600'
+                        } flex items-center justify-center shadow-sm`}>
+                          {selectedNotification.type === 'auth' ? <FiShield className="text-white" size={18} /> :
+                           selectedNotification.type === 'request' ? <FiFileText className="text-white" size={18} /> :
+                           selectedNotification.type === 'settings' ? <FiSettings className="text-white" size={18} /> :
+                           selectedNotification.type === 'alert' ? <FiAlertTriangle className="text-white" size={18} /> :
+                           <FiBell className="text-white" size={18} />}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{selectedNotification.title}</h4>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{selectedNotification.time}</p>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {selectedNotification.message}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Details</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                          {selectedNotification.detail || 'No additional details available.'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800">
+                      <button 
+                        onClick={() => { handleMarkRead(selectedNotification.id); setSelectedNotification(null); }}
+                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {}
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          Notifications
+                          {unreadCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-blue-600 text-[10px] font-bold text-white">
+                              {unreadCount}
+                            </span>
+                          )}
+                        </h3>
+                        {unreadCount > 0 && (
+                          <button 
+                            onClick={handleMarkAllRead}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center gap-1"
+                          >
+                            <FiCheck size={12} /> Mark all read
+                          </button>
+                        )}
+                      </div>
+                      {}
+                      <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                        <button
+                          onClick={() => setNotifTab('all')}
+                          className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                            notifTab === 'all' 
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                          }`}
+                        >
+                          All
+                        </button>
+                        <button
+                          onClick={() => setNotifTab('unread')}
+                          className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                            notifTab === 'unread' 
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                          }`}
+                        >
+                          Unread{unreadCount > 0 ? ` (${unreadCount})` : ''}
+                        </button>
+                      </div>
+                    </div>
+
+                    {}
+                    <div className="max-h-[380px] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                      {filteredNotifications.length > 0 ? (
+                        filteredNotifications.map(notif => (
+                          <NotificationItem 
+                            key={notif.id} 
+                            notification={notif} 
+                            onMarkRead={handleMarkRead}
+                            onViewDetail={handleViewDetail}
+                          />
+                        ))
+                      ) : (
+                        <div className="py-16 text-center">
+                          <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
+                            <FiBell className="text-gray-300 dark:text-gray-600" size={24} />
+                          </div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            {notifTab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+                          </p>
+                        </div>
                       )}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {unreadCount > 0 && (
-                      <button 
-                        onClick={handleMarkAllRead}
-                        className="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all"
-                        title="Mark all as read"
-                      >
-                        <FiCheck size={18} />
-                      </button>
-                    )}
-                    <button className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all">
-                      <FiSettings size={18} />
-                    </button>
-                  </div>
-                </div>
-
-                {}
-                <div className="max-h-[420px] overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
-                  {notifications.length > 0 ? (
-                    notifications.map(notif => (
-                      <NotificationItem 
-                        key={notif.id} 
-                        notification={notif} 
-                        onMarkRead={handleMarkRead}
-                        onViewDetail={handleViewDetail}
-                      />
-                    ))
-                  ) : (
-                    <div className="p-12 text-center">
-                      <div className="w-16 h-16 rounded-3xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4">
-                        <FiBell className="text-gray-300 dark:text-gray-600" size={32} />
-                      </div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">All caught up!</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">No new notifications for now.</p>
                     </div>
-                  )}
-                </div>
 
-                {}
-                <button className="w-full p-4 text-center border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors flex items-center justify-center gap-2">
-                    View All Notifications <FiChevronRight size={12} />
-                  </span>
-                </button>
-
-                {}
-                {selectedNotification && (
-                  <div className="absolute inset-0 bg-gray-900 dark:bg-gray-800 z-10 p-6 flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex justify-between items-center mb-6">
+                    {}
+                    <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
                       <button 
-                        onClick={() => setSelectedNotification(null)}
-                        className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
+                        onClick={() => { setNotificationsOpen(false); navigate('/admin/settings'); }}
+                        className="w-full py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5"
                       >
-                        <FiX size={20} />
-                      </button>
-                      <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-500`}>
-                        {selectedNotification.type}
-                      </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto pr-2">
-                      <h4 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-2">
-                        {selectedNotification.title}
-                      </h4>
-                      <div className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-6">
-                        {selectedNotification.time}
-                      </div>
-                      <div className="p-5 rounded-3xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 mb-6">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed italic">
-                          "{selectedNotification.message}"
-                        </p>
-                      </div>
-                      <div className="space-y-4">
-                        <h5 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                          <FiAlertCircle size={12} className="text-blue-500" />
-                          Additional Details
-                        </h5>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium">
-                          {selectedNotification.detail || 'No further details available for this notification.'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="pt-6 mt-auto">
-                      <button 
-                        onClick={() => setSelectedNotification(null)}
-                        className="w-full py-4 bg-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-blue-600 transition-all active:scale-[0.98]"
-                      >
-                        Back to List
+                        View All Activity <FiChevronRight size={12} />
                       </button>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             )}
