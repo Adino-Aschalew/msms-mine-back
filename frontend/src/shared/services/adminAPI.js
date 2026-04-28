@@ -39,7 +39,10 @@ export const adminAPI = {
   },
 
   
-  toggleUserStatus: async (userId, isActive) => {
+  toggleUserStatus: async (userId, isActive, currentUserId) => {
+    if (userId === currentUserId) {
+      throw new Error('You cannot suspend yourself');
+    }
     const response = await apiClient.put(`/admin/users/${userId}/status`, {
       is_active: isActive
     });
@@ -75,6 +78,14 @@ export const adminAPI = {
 
   createRegularAdmin: async (userData) => {
     const response = await apiClient.post('/admin/regular-admins', userData);
+    return response;
+  },
+
+  deleteAdmin: async (userId, currentUserId) => {
+    if (userId === currentUserId) {
+      throw new Error('You cannot delete yourself');
+    }
+    const response = await apiClient.delete(`/admin/admins/${userId}`);
     return response;
   }
 };

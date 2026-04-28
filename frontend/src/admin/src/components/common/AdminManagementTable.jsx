@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Search, Filter, Eye, Edit, Ban, Trash2, Download, Plus, ChevronLeft, ChevronRight, ChevronDown, X, User, Mail, Calendar, Shield } from 'lucide-react';
 import { adminAPI } from '../../../../shared/services/adminAPI';
+import { useAuth } from '../../../../shared/contexts/AuthContext';
 
 const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -269,37 +271,43 @@ const AdminManagementTable = ({ admins, onAddAdmin, setAdmins, refreshData }) =>
                           View Details
                         </span>
                       </button>
-                      <button 
-                        onClick={() => openModal(admin, 'edit')}
-                        className="group relative p-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all duration-200 hover:scale-105 hover:shadow-md"
-                      >
-                        <Edit className="h-4 w-4" />
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                          Edit Admin
-                        </span>
-                      </button>
-                      <button 
-                        onClick={() => openModal(admin, 'suspend')}
-                        className={`group relative p-2.5 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                          admin.status === 'active' 
-                            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-                            : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30'
-                        }`}
-                      >
-                        {admin.status === 'active' ? <Ban className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                          {admin.status === 'active' ? 'Suspend Admin' : 'Activate Admin'}
-                        </span>
-                      </button>
-                      <button 
-                        onClick={() => openModal(admin, 'delete')}
-                        className="group relative p-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-105 hover:shadow-md"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                          Delete Admin
-                        </span>
-                      </button>
+                      {admin.id !== user?.id && (
+                        <button 
+                          onClick={() => openModal(admin, 'edit')}
+                          className="group relative p-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                            Edit Admin
+                          </span>
+                        </button>
+                      )}
+                      {admin.id !== user?.id && (
+                        <>
+                          <button 
+                            onClick={() => openModal(admin, 'suspend')}
+                            className={`group relative p-2.5 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                              admin.status === 'active' 
+                                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                                : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30'
+                            }`}
+                          >
+                            {admin.status === 'active' ? <Ban className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                              {admin.status === 'active' ? 'Suspend Admin' : 'Activate Admin'}
+                            </span>
+                          </button>
+                          <button 
+                            onClick={() => openModal(admin, 'delete')}
+                            className="group relative p-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                              Delete Admin
+                            </span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

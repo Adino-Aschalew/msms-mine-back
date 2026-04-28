@@ -19,7 +19,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
-  const [profileImage, setProfileImage] = useState('https://i.pravatar.cc/150?img=1');
+  const [profileImage, setProfileImage] = useState('');
   const profileDropdownRef = useRef(null);
   const themeDropdownRef = useRef(null);
 
@@ -355,21 +355,21 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
               onClick={() => setProfileOpen(!profileOpen)}
               className="flex items-center gap-2 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center overflow-hidden">
-                <img 
-                  src={profileImage} 
-                  alt="Profile" 
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    const fallbackDiv = document.createElement('div');
-                    fallbackDiv.className = 'h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center';
-                    const userIcon = document.createElement('div');
-                    userIcon.innerHTML = '<FiUser class="h-4 w-4 text-white" />';
-                    fallbackDiv.appendChild(userIcon);
-                    e.target.parentElement.appendChild(fallbackDiv);
-                  }}
-                />
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                {!profileImage || profileImage === 'https://i.pravatar.cc/150?img=1' ? (
+                  <FiUser className="h-4 w-4 text-white" />
+                ) : (
+                  <img 
+                    src={profileImage} 
+                    alt="Profile" 
+                    className="h-full w-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      const parent = e.target.parentElement;
+                      parent.innerHTML = '<FiUser class="h-4 w-4 text-white" />';
+                    }}
+                  />
+                )}
               </div>
               <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {user?.first_name} {user?.last_name}
@@ -378,25 +378,27 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
             </button>
 
             {profileOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-white/30 bg-gradient-to-br from-white/60 via-white/40 to-white/20 backdrop-blur-xl shadow-2xl dark:border-gray-600/30 dark:from-gray-800/60 dark:via-gray-800/40 dark:to-gray-800/20">
+              <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
                 <div className="p-4">
                   {}
-                  <div className="flex items-center gap-4 pb-4 border-b border-white/20 dark:border-gray-600/20 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md overflow-hidden">
-                      <img 
-                        src={profileImage} 
-                        alt="Profile" 
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          const fallbackDiv = document.createElement('div');
-                          fallbackDiv.className = 'h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md';
-                          const userIcon = document.createElement('div');
-                          userIcon.innerHTML = '<FiUser class="h-6 w-6 text-white" />';
-                          fallbackDiv.appendChild(userIcon);
-                          e.target.parentElement.appendChild(fallbackDiv);
-                        }}
-                      />
+                  <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700 mb-4">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                      {!profileImage || profileImage === 'https://i.pravatar.cc/150?img=1' ? (
+                        <FiUser className="h-6 w-6 text-white" />
+                      ) : (
+                        <img 
+                          src={profileImage} 
+                          alt="Profile" 
+                          className="h-full w-full object-cover rounded-full"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const parent = e.target.parentElement;
+                            const icon = document.createElement('div');
+                            icon.innerHTML = '<FiUser class="h-6 w-6 text-white" />';
+                            parent.innerHTML = '<FiUser class="h-6 w-6 text-white" />';
+                          }}
+                        />
+                      )}
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white">

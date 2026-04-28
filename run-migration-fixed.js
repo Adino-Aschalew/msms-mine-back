@@ -9,7 +9,7 @@ const dbConfig = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'microfinance_system',
-  port: process.env.DB_PORT || 3306,
+  port: process.env.DB_PORT || 3307,
   multipleStatements: true
 };
 

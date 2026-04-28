@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Camera, Save, Edit3 } from 'lucide-react';
+import { useAuth } from '../../../../shared/contexts/AuthContext';
 
 const Profile = () => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     fullName: 'John Doe',
@@ -12,6 +14,18 @@ const Profile = () => {
   });
 
   const [avatarPreview, setAvatarPreview] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        fullName: `${user.first_name} ${user.last_name}`,
+        email: user.email,
+        phone: user.phone_number || 'Enter your phone pls',
+        role: user.role || 'Admin',
+        joinDate: new Date(user.created_at).toISOString().split('T')[0] || '2024-01-15'
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -80,7 +94,17 @@ const Profile = () => {
                     <Camera className="h-4 w-4 text-white" />
                     <input
                       type="file"
-                      accept="image}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="lg:col-span-2">
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Profile Information</h2>
