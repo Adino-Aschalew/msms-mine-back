@@ -92,13 +92,31 @@ const DashboardPage = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching HR dashboard stats...');
       const response = await hrAPI.getDashboardStats();
+      console.log('HR dashboard response:', response);
       
       const stats = response?.success ? response.data : (response?.data || response);
+      console.log('Parsed stats:', stats);
       setDashboardData(stats || {});
     } catch (err) {
       console.error('HR Dashboard error:', err);
-      setError('Failed to fetch HR dashboard data. Please try again.');
+      console.error('Error response:', err.response);
+      console.error('Error status:', err.response?.status);
+      console.error('Error data:', err.response?.data);
+      
+      // Check if it's an authentication error
+      if (err.message?.includes('Invalid token') || err.response?.status === 401) {
+        setError('Authentication failed. Please log in again.');
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+        return;
+      }
+      
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch HR dashboard data. Please try again.';
+      setError(errorMessage);
       
       setDashboardData({
         totalEmployees: 0,

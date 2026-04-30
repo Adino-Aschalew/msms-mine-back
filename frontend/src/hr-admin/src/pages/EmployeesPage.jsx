@@ -33,6 +33,17 @@ export default function EmployeesPage() {
       setEmployees(Array.isArray(employeesData) ? employeesData : (employeesData?.employees || []));
     } catch (err) {
       console.error('Error fetching employees:', err);
+      console.error('Error status:', err.response?.status);
+      
+      // Check if it's an authentication error
+      if (err.message?.includes('Invalid token') || err.response?.status === 401) {
+        setError('Authentication failed. Please log in again.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+        return;
+      }
+      
       setError('Failed to fetch employees. Please check your connection.');
     } finally {
       if (showLoading) setLoading(false);
