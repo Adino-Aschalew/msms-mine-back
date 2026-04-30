@@ -1796,6 +1796,7 @@ class AdminController {
         backup_notifications: true,
         loan_notifications: true,
         payment_notifications: true,
+        marketing_emails: false,
         debug_mode: false,
         log_level: 'INFO',
         backup_schedule: 'daily',

@@ -11,6 +11,10 @@ class HrService {
       let whereClause = 'WHERE 1=1';
       const params = [];
 
+      // Filter to show only employees, not admins
+      whereClause += ' AND u.role = ?';
+      params.push('EMPLOYEE');
+
       if (filters.department) {
         whereClause += ' AND ep.department = ?';
         params.push(filters.department);
