@@ -79,6 +79,16 @@ export const hrAPI = {
     return response.data;
   },
 
+  getPerformanceTrends: async () => {
+    const response = await apiClient.get('/hr/performance-trends');
+    return response.data;
+  },
+
+  getDepartmentPerformance: async () => {
+    const response = await apiClient.get('/hr/department-performance');
+    return response.data;
+  },
+
   
   getReportsData: async (reportType = 'payroll') => {
     const response = await apiClient.get(`/hr/reports?reportType=${reportType}`);

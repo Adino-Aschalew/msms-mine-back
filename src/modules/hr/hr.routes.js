@@ -47,6 +47,8 @@ router.post('/employees', auditMiddleware('EMPLOYEE_CREATED'), HrController.crea
 router.get('/performance-stats', HrController.getPerformanceStats);
 router.get('/performance-reviews', HrController.getPerformanceReviews);
 router.post('/performance-reviews', auditMiddleware('PERFORMANCE_REVIEW_CREATED'), HrController.createPerformanceReview);
+router.get('/performance-trends', HrController.getPerformanceTrends);
+router.get('/department-performance', HrController.getDepartmentPerformance);
 
 
 router.get('/reports', HrController.getReportsData);

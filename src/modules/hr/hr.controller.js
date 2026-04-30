@@ -513,6 +513,38 @@ class HrController {
     }
   }
 
+  static async getPerformanceTrends(req, res) {
+    try {
+      const trends = await HrService.getPerformanceTrends();
+      res.json({
+        success: true,
+        data: trends
+      });
+    } catch (error) {
+      console.error('Get performance trends error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch performance trends'
+      });
+    }
+  }
+
+  static async getDepartmentPerformance(req, res) {
+    try {
+      const deptPerformance = await HrService.getDepartmentPerformance();
+      res.json({
+        success: true,
+        data: deptPerformance
+      });
+    } catch (error) {
+      console.error('Get department performance error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch department performance'
+      });
+    }
+  }
+
   static async getReportsData(req, res) {
     try {
       const { reportType = 'payroll' } = req.query;

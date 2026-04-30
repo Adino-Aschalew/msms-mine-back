@@ -1638,6 +1638,75 @@ class HrService {
       throw error;
     }
   }
+
+  static async getPerformanceTrends() {
+    try {
+      const [trends] = await query(`
+        SELECT 
+          DATE_FORMAT(pr.review_date, '%b') as month,
+          ep.department,
+          AVG(pr.score) as avg_score
+        FROM performance_reviews pr
+        LEFT JOIN employee_profiles ep ON pr.employee_id = ep.employee_id
+        WHERE pr.review_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+          AND pr.status = 'Completed'
+          AND ep.department IS NOT NULL
+        GROUP BY DATE_FORMAT(pr.review_date, '%Y-%m'), ep.department
+        ORDER BY pr.review_date ASC
+      `);
+
+      const months = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+      const departments = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations'];
+      
+      const trendsByDepartment = {};
+      departments.forEach(dept => {
+        trendsByDepartment[dept] = {};
+      });
+
+      (trends || []).forEach(t => {
+        if (trendsByDepartment[t.department]) {
+          trendsByDepartment[t.department][t.month] = parseFloat(t.avg_score) || 0;
+        }
+      });
+
+      return {
+        labels: months,
+        datasets: departments.map(dept => ({
+          label: dept,
+          data: months.map(month => trendsByDepartment[dept][month] || null)
+        }))
+      };
+    } catch (error) {
+      console.error('getPerformanceTrends error:', error);
+      return { labels: [], datasets: [] };
+    }
+  }
+
+  static async getDepartmentPerformance() {
+    try {
+      const [deptStats] = await query(`
+        SELECT 
+          ep.department,
+          AVG(pr.score) as avg_score,
+          COUNT(*) as total_reviews
+        FROM performance_reviews pr
+        LEFT JOIN employee_profiles ep ON pr.employee_id = ep.employee_id
+        WHERE pr.status = 'Completed'
+          AND ep.department IS NOT NULL
+        GROUP BY ep.department
+        ORDER BY avg_score DESC
+      `);
+
+      return (deptStats || []).map(d => ({
+        department: d.department,
+        averageScore: parseFloat(d.avg_score) || 0,
+        totalReviews: d.total_reviews || 0
+      }));
+    } catch (error) {
+      console.error('getDepartmentPerformance error:', error);
+      return [];
+    }
+  }
 }
 
 module.exports = HrService;
