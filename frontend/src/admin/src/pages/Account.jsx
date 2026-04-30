@@ -79,6 +79,95 @@ const Account = () => {
     }
   };
 
+  const getActivityIcon = (action) => {
+    const actionLower = action?.toLowerCase() || '';
+    
+    if (actionLower.includes('login') || actionLower.includes('logout')) {
+      return <Globe className="h-6 w-6 text-blue-500" />;
+    } else if (actionLower.includes('password') || actionLower.includes('security')) {
+      return <Shield className="h-6 w-6 text-green-500" />;
+    } else if (actionLower.includes('profile') || actionLower.includes('update')) {
+      return <User className="h-6 w-6 text-purple-500" />;
+    } else if (actionLower.includes('notification') || actionLower.includes('alert')) {
+      return <Bell className="h-6 w-6 text-yellow-500" />;
+    } else if (actionLower.includes('delete') || actionLower.includes('remove')) {
+      return <X className="h-6 w-6 text-red-500" />;
+    } else if (actionLower.includes('create') || actionLower.includes('add')) {
+      return <CheckCircle className="h-6 w-6 text-green-500" />;
+    } else {
+      return <Activity className="h-6 w-6 text-gray-500" />;
+    }
+  };
+
+  const getActivityDetails = (action) => {
+    const actionLower = action?.toLowerCase() || '';
+    
+    if (actionLower.includes('login')) {
+      return {
+        title: 'Login Activity',
+        description: 'You logged into the system'
+      };
+    } else if (actionLower.includes('logout')) {
+      return {
+        title: 'Logout',
+        description: 'You logged out of the system'
+      };
+    } else if (actionLower.includes('password')) {
+      return {
+        title: 'Password Changed',
+        description: 'Your password was successfully changed'
+      };
+    } else if (actionLower.includes('profile')) {
+      return {
+        title: 'Profile Updated',
+        description: 'Your profile information was updated'
+      };
+    } else if (actionLower.includes('notification')) {
+      return {
+        title: 'Notification Settings',
+        description: 'Your notification preferences were updated'
+      };
+    } else if (actionLower.includes('create')) {
+      return {
+        title: 'Record Created',
+        description: 'A new record was created'
+      };
+    } else if (actionLower.includes('delete')) {
+      return {
+        title: 'Record Deleted',
+        description: 'A record was deleted'
+      };
+    } else if (actionLower.includes('update')) {
+      return {
+        title: 'Record Updated',
+        description: 'A record was updated'
+      };
+    } else {
+      return {
+        title: action || 'Activity',
+        description: 'System activity recorded'
+      };
+    }
+  };
+
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Unknown time';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
+
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -431,62 +520,44 @@ const Account = () => {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-8">Recent Activity</h3>
         
-        <div className="space-y-6">
-          {[
-            {
-              icon: <User className="h-6 w-6 text-blue-500" />,
-              title: 'Profile Updated',
-              description: 'Your profile information was successfully updated',
-              time: '2 hours ago',
-              type: 'success'
-            },
-            {
-              icon: <Shield className="h-6 w-6 text-green-500" />,
-              title: 'Password Changed',
-              description: 'Your password was successfully changed',
-              time: '1 day ago',
-              type: 'success'
-            },
-            {
-              icon: <Bell className="h-6 w-6 text-yellow-500" />,
-              title: 'Notification Settings Updated',
-              description: 'Your notification preferences were updated',
-              time: '3 days ago',
-              type: 'warning'
-            },
-            {
-              icon: <Users className="h-6 w-6 text-purple-500" />,
-              title: 'New Team Member Added',
-              description: 'A new team member was added to your organization',
-              time: '5 days ago',
-              type: 'info'
-            },
-            {
-              icon: <Globe className="h-6 w-6 text-red-500" />,
-              title: 'Login from New Device',
-              description: 'New login detected from Chrome on Windows',
-              time: '1 week ago',
-              type: 'error'
-            }
-          ].map((activity, index) => (
-            <div key={index} className="flex items-start gap-6 p-6 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-              <div className="flex-shrink-0">
-                {activity.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-lg font-medium text-gray-900 dark:text-white">{activity.title}</p>
-                <p className="text-base text-gray-600 dark:text-gray-400 mt-2">{activity.description}</p>
-                <div className="flex items-center gap-3 mt-3">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</span>
+        {activitiesLoading ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading activities...</p>
+          </div>
+        ) : activities.length === 0 ? (
+          <div className="text-center py-8">
+            <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">No recent activity found</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {activities.map((activity, index) => {
+              const icon = getActivityIcon(activity.action);
+              const { title, description } = getActivityDetails(activity.action);
+              const time = formatTimeAgo(activity.created_at);
+              
+              return (
+                <div key={index} className="flex items-start gap-6 p-6 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                  <div className="flex-shrink-0">
+                    {icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-lg font-medium text-gray-900 dark:text-white">{title}</p>
+                    <p className="text-base text-gray-600 dark:text-gray-400 mt-2">{description}</p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-500 dark:text-gray-400">{time}</span>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-shrink-0">
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
