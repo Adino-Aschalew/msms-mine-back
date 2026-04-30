@@ -65,6 +65,11 @@ export const adminAPI = {
     return response;
   },
 
+  getUserActivity: async (limit = 10) => {
+    const response = await apiClient.get(`/admin/activity?limit=${limit}`);
+    return response;
+  },
+
   getSystemConfig: async () => {
     const response = await apiClient.get('/admin/system/config');
     return response;
