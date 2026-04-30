@@ -19,6 +19,14 @@ const Account = () => {
   const [loading, setLoading] = useState(false);
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    pushNotifications: true,
+    securityAlerts: true,
+    systemUpdates: true,
+    marketingEmails: false
+  });
+  const [notificationLoading, setNotificationLoading] = useState(false);
   
   const [profileImage, setProfileImage] = useState('');
   
@@ -63,6 +71,60 @@ const Account = () => {
       fetchActivities();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      fetchNotificationSettings();
+    }
+  }, [activeTab]);
+
+  const fetchNotificationSettings = async () => {
+    setNotificationLoading(true);
+    try {
+      const response = await adminAPI.getSystemConfig();
+      if (response.data && response.data.success) {
+        const config = response.data.data;
+        setNotificationSettings({
+          emailNotifications: config.email_notifications !== undefined ? config.email_notifications : true,
+          pushNotifications: config.system_alerts !== undefined ? config.system_alerts : true,
+          securityAlerts: config.system_alerts !== undefined ? config.system_alerts : true,
+          systemUpdates: config.user_activity_logs !== undefined ? config.user_activity_logs : true,
+          marketingEmails: config.marketing_emails !== undefined ? config.marketing_emails : false
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching notification settings:', error);
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  const handleNotificationToggle = async (key) => {
+    const newSettings = {
+      ...notificationSettings,
+      [key]: !notificationSettings[key]
+    };
+    setNotificationSettings(newSettings);
+
+    // Map to system config keys
+    const configPayload = {
+      email_notifications: newSettings.emailNotifications,
+      system_alerts: newSettings.securityAlerts,
+      user_activity_logs: newSettings.systemUpdates,
+      backup_notifications: newSettings.securityAlerts,
+      loan_notifications: newSettings.emailNotifications,
+      payment_notifications: newSettings.emailNotifications,
+      marketing_emails: newSettings.marketingEmails
+    };
+
+    try {
+      await adminAPI.updateSystemConfig(configPayload);
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      // Revert on error
+      setNotificationSettings(notificationSettings);
+    }
+  };
 
   const fetchActivities = async () => {
     setActivitiesLoading(true);
@@ -468,22 +530,6 @@ const Account = () => {
           </button>
         </div>
       </div>
-
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-8">Two-Factor Authentication</h3>
-        
-        <div className="space-y-6">
-          <div className="flex items-center justify-between p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <div>
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Enable 2FA</h4>
-              <p className="text-base text-gray-600 dark:text-gray-400">Add an extra layer of security to your account</p>
-            </div>
-            <button className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-              <span className="inline-block h-6 w-6 rounded-full bg-white transform translate-x-0 transition-transform"></span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 
@@ -492,25 +538,41 @@ const Account = () => {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-8">Notification Preferences</h3>
         
-        <div className="space-y-6">
-          {[
-            { title: 'Email Notifications', description: 'Receive notifications via email' },
-            { title: 'Push Notifications', description: 'Receive push notifications in your browser' },
-            { title: 'Security Alerts', description: 'Get notified about security-related activities' },
-            { title: 'System Updates', description: 'Stay informed about system updates and maintenance' },
-            { title: 'Marketing Emails', description: 'Receive promotional emails and newsletters' }
-          ].map((item, index) => (
-            <div key={index} className="flex items-center justify-between p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{item.title}</h4>
-                <p className="text-base text-gray-600 dark:text-gray-400">{item.description}</p>
+        {notificationLoading ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading notification settings...</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {[
+              { key: 'emailNotifications', title: 'Email Notifications', description: 'Receive notifications via email' },
+              { key: 'pushNotifications', title: 'Push Notifications', description: 'Receive push notifications in your browser' },
+              { key: 'securityAlerts', title: 'Security Alerts', description: 'Get notified about security-related activities' },
+              { key: 'systemUpdates', title: 'System Updates', description: 'Stay informed about system updates and maintenance' },
+              { key: 'marketingEmails', title: 'Marketing Emails', description: 'Receive promotional emails and newsletters' }
+            ].map((item) => (
+              <div key={item.key} className="flex items-center justify-between p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{item.title}</h4>
+                  <p className="text-base text-gray-600 dark:text-gray-400">{item.description}</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle(item.key)}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    notificationSettings[item.key] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 rounded-full bg-white transform transition-transform ${
+                      notificationSettings[item.key] ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
-              <button className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                <span className="inline-block h-6 w-6 rounded-full bg-white transform translate-x-0 transition-transform"></span>
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
