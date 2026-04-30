@@ -139,7 +139,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
             className={`w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 shadow-sm hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 ${
               errors.firstName ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
             }`}
-            placeholder="John"
+            placeholder="Abebe"
           />
           {errors.firstName && (
             <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -161,7 +161,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
             className={`w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 shadow-sm hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 ${
               errors.lastName ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
             }`}
-            placeholder="Doe"
+            placeholder="Kebede"
           />
           {errors.lastName && (
             <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -185,7 +185,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
           className={`w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 shadow-sm hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 ${
             errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
           }`}
-          placeholder="john.doe@example.com"
+          placeholder="abebe@example.com"
         />
         {errors.email && (
           <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
