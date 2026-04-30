@@ -24,7 +24,7 @@ import ViewEmployeeModal from './ViewEmployeeModal';
 
 export default function EmployeeTable({ employees, onDelete, onUpdate }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('All');
+  const [salarySort, setSalarySort] = useState('default');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,6 +44,75 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
     setSortConfig({ key, direction });
   };
 
+  const handleExport = () => {
+    // Get filtered data to export
+    const dataToExport = filteredData;
+    
+    // Define CSV headers
+    const headers = [
+      'Employee ID',
+      'First Name',
+      'Last Name',
+      'Email',
+      'Phone',
+      'Department',
+      'Job Role',
+      'Job Grade',
+      'Employment Status',
+      'Salary',
+      'Hire Date'
+    ];
+    
+    // Convert data to CSV format
+    const csvRows = [];
+    
+    // Add headers
+    csvRows.push(headers.join(','));
+    
+    // Add data rows
+    dataToExport.forEach(emp => {
+      const row = [
+        emp.employee_id || '',
+        emp.first_name || '',
+        emp.last_name || '',
+        emp.email || '',
+        emp.phone || '',
+        emp.department || '',
+        emp.job_role || '',
+        emp.job_grade || '',
+        emp.employment_status || '',
+        emp.salary || '',
+        emp.hire_date ? format(new Date(emp.hire_date), 'yyyy-MM-dd') : ''
+      ];
+      
+      // Escape commas and quotes in values
+      const escapedRow = row.map(value => {
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      });
+      
+      csvRows.push(escapedRow.join(','));
+    });
+    
+    // Create CSV content
+    const csvContent = csvRows.join('\n');
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `employees_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredData = useMemo(() => {
     let filtered = [...employees];
 
@@ -57,34 +126,34 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
       );
     }
 
-    if (departmentFilter !== 'All') {
-      filtered = filtered.filter(emp => emp.department === departmentFilter);
-    }
-
     if (statusFilter !== 'All') {
       filtered = filtered.filter(emp => emp.employment_status === statusFilter);
     }
 
-    filtered.sort((a, b) => {
-      let valA = a[sortConfig.key];
-      let valB = b[sortConfig.key];
-
-      
-      if (sortConfig.key === 'name') {
-        valA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
-        valB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
-      }
-
-      if (typeof valA === 'string') valA = valA.toLowerCase();
-      if (typeof valB === 'string') valB = valB.toLowerCase();
-
-      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
+    if (salarySort !== 'default') {
+      filtered.sort((a, b) => {
+        const salaryA = parseFloat(a.salary) || 0;
+        const salaryB = parseFloat(b.salary) || 0;
+        return salarySort === 'high-to-low' ? salaryB - salaryA : salaryA - salaryB;
+      });
+    } else {
+      filtered.sort((a, b) => {
+        let valA = a[sortConfig.key];
+        let valB = b[sortConfig.key];
+        if (sortConfig.key === 'name') {
+          valA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
+          valB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
+        }
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
 
     return filtered;
-  }, [searchTerm, departmentFilter, statusFilter, sortConfig, employees]);
+  }, [searchTerm, salarySort, statusFilter, sortConfig, employees]);
 
   const pageCount = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -156,26 +225,29 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
 
           <div className="flex flex-wrap items-center gap-3">
             <select
-              value={departmentFilter}
-              onChange={(e) => { setDepartmentFilter(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              value={salarySort}
+              onChange={(e) => { setSalarySort(e.target.value); setCurrentPage(1); }}
+              className="px-6 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             >
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept === 'All' ? 'All Departments' : dept}</option>
-              ))}
+              <option value="default">Default Sort</option>
+              <option value="high-to-low">High to Low</option>
+              <option value="low-to-high">Low to High</option>
             </select>
 
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="px-6 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             >
               {statuses.map(status => (
                 <option key={status} value={status}>{status === 'All' ? 'All Statuses' : status}</option>
               ))}
             </select>
 
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+            <button 
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
             </button>
