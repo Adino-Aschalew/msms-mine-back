@@ -54,6 +54,11 @@ export default function PerformancePage() {
   const [performanceReviews, setPerformanceReviews] = useState([]);
   const [kpiData, setKpiData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState({
+    trends: { labels: [], datasets: [] },
+    department: []
+  });
+  const [chartLoading, setChartLoading] = useState(true);
 
   
   useEffect(() => {
@@ -63,15 +68,23 @@ export default function PerformancePage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [statsRes, reviewsRes] = await Promise.all([
+      const [statsRes, reviewsRes, trendsRes, deptRes, employeeStatsRes, departmentDataRes] = await Promise.all([
         hrAPI.getPerformanceStats(),
-        hrAPI.getPerformanceReviews(1, 100)
+        hrAPI.getPerformanceReviews(1, 100),
+        hrAPI.getPerformanceTrends(),
+        hrAPI.getDepartmentPerformance(),
+        hrAPI.getEmployeeStats(),
+        hrAPI.getDepartmentData()
       ]);
       
-      const r_data = Array.isArray(reviewsRes) ? reviewsRes : (reviewsRes?.data || []);
+      const r_data = Array.isArray(reviewsRes?.data) ? reviewsRes.data.map(review => ({
+        ...review,
+        employeeName: `${review.first_name || ''} ${review.last_name || ''}`.trim(),
+        reviewer: `${review.reviewer_first_name || ''} ${review.reviewer_last_name || ''}`.trim() || 'Not assigned'
+      })) : [];
       setPerformanceReviews(r_data);
       
-      const s_data = statsRes?.data || {};
+      const s_data = { ...statsRes?.data, ...employeeStatsRes?.data } || {};
       
       setKpiData([
         {
@@ -84,13 +97,13 @@ export default function PerformancePage() {
           description: 'Company-wide average'
         },
         {
-          title: 'Total Reviews',
-          value: (s_data.total_reviews || 0).toString(),
+          title: 'Total Employees',
+          value: (s_data.total_employees || 0).toString(),
           change: '+0',
           trend: 'up',
-          icon: Target,
+          icon: Users,
           color: 'purple',
-          description: 'All time'
+          description: 'All employees'
         },
         {
           title: 'Completed',
@@ -111,74 +124,75 @@ export default function PerformancePage() {
           description: 'Awaiting action'
         }
       ]);
+      
+      const t_data = trendsRes?.data || { labels: [], datasets: [] };
+      const d_data = deptRes?.data || [];
+      const dept_employee_data = departmentDataRes?.data || [];
+      
+      // Transform department data for bar chart
+      const employeeDistributionData = {
+        labels: dept_employee_data.map(d => d.department || 'Unknown'),
+        datasets: [{
+          label: 'Employee Count',
+          data: dept_employee_data.map(d => d.employee_count || 0),
+          backgroundColor: dept_employee_data.map((_, i) => getChartColors(i).bg),
+          borderColor: dept_employee_data.map((_, i) => getChartColors(i).border),
+          borderWidth: 2,
+          borderRadius: 8,
+          barThickness: 40
+        }]
+      };
+      
+      setChartData({
+        trends: t_data,
+        department: d_data,
+        employeeDistribution: employeeDistributionData
+      });
     } catch (err) {
       console.error('Failed to fetch performance data', err);
     } finally {
       setLoading(false);
+      setChartLoading(false);
     }
   };
 
   
+  const getChartColors = (index) => {
+    const colors = [
+      { border: 'rgb(59, 130, 246)', bg: 'rgba(59, 130, 246, 0.8)' },
+      { border: 'rgb(16, 185, 129)', bg: 'rgba(16, 185, 129, 0.8)' },
+      { border: 'rgb(245, 158, 11)', bg: 'rgba(245, 158, 11, 0.8)' },
+      { border: 'rgb(139, 92, 246)', bg: 'rgba(139, 92, 246, 0.8)' },
+      { border: 'rgb(236, 72, 153)', bg: 'rgba(236, 72, 153, 0.8)' },
+      { border: 'rgb(34, 197, 94)', bg: 'rgba(34, 197, 94, 0.8)' }
+    ];
+    return colors[index % colors.length];
+  };
+
+  
   const performanceTrendsData = {
-    labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
-    datasets: [
-      {
-        label: 'Engineering',
-        data: [85, 87, 86, 88, 90, 92],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    labels: chartData.trends.labels || [],
+    datasets: (chartData.trends.datasets || []).map((ds, i) => {
+      const color = getChartColors(i);
+      return {
+        label: ds.label,
+        data: ds.data,
+        borderColor: color.border,
+        backgroundColor: color.bg.replace('0.8', '0.1'),
         tension: 0.4,
         fill: true
-      },
-      {
-        label: 'Sales',
-        data: [78, 80, 82, 81, 85, 88],
-        borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: 'Marketing',
-        data: [82, 84, 83, 87, 89, 95],
-        borderColor: 'rgb(245, 158, 11)',
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: 'HR',
-        data: [75, 77, 76, 78, 80, 80],
-        borderColor: 'rgb(139, 92, 246)',
-        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-        tension: 0.4,
-        fill: true
-      }
-    ]
+      };
+    })
   };
 
   
   const departmentPerformanceData = {
-    labels: ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations'],
+    labels: (chartData.department || []).map(d => d.department),
     datasets: [{
       label: 'Average Performance Score',
-      data: [92, 88, 95, 80, 85, 87],
-      backgroundColor: [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(245, 158, 11, 0.8)',
-        'rgba(139, 92, 246, 0.8)',
-        'rgba(236, 72, 153, 0.8)',
-        'rgba(34, 197, 94, 0.8)'
-      ],
-      borderColor: [
-        'rgb(59, 130, 246)',
-        'rgb(16, 185, 129)',
-        'rgb(245, 158, 11)',
-        'rgb(139, 92, 246)',
-        'rgb(236, 72, 153)',
-        'rgb(34, 197, 94)'
-      ],
+      data: (chartData.department || []).map(d => d.averageScore),
+      backgroundColor: (chartData.department || []).map((_, i) => getChartColors(i).bg),
+      borderColor: (chartData.department || []).map((_, i) => getChartColors(i).border),
       borderWidth: 2
     }]
   };
@@ -587,131 +601,102 @@ export default function PerformancePage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <BarChart3 className="text-blue-500" size={20} />
-              Monthly Progress Bars
+              Employee Distribution
             </h2>
             <select className="px-3 py-1 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
               Last 6 Months
             </select>
           </div>
           <div className="h-64">
-            <SafeBarChart 
-              key="performance-bars"
-              data={{
-                labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
-                datasets: [
-                  {
-                    label: 'Engineering',
-                    data: [85, 87, 86, 88, 90, 92],
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: 'rgb(59, 130, 246)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barThickness: 40
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-gray-500 dark:text-gray-400">Loading chart data...</div>
+              </div>
+            ) : (
+              <SafeBarChart 
+                key="employee-distribution"
+                data={chartData.employeeDistribution || { labels: [], datasets: [] }} 
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                      labels: {
+                        color: isDark ? '#e5e7eb' : '#374151',
+                        font: {
+                          size: 12
+                        },
+                        padding: 15
+                      }
+                    },
+                    tooltip: {
+                      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                      titleColor: isDark ? '#e5e7eb' : '#111827',
+                      bodyColor: isDark ? '#e5e7eb' : '#111827',
+                      borderColor: isDark ? '#374151' : '#e5e7eb',
+                      borderWidth: 1,
+                      padding: 12,
+                      displayColors: true,
+                      callbacks: {
+                        label: function(context) {
+                          return context.dataset.label + ': ' + context.parsed.y;
+                        }
+                      }
+                    }
                   },
-                  {
-                    label: 'Sales',
-                    data: [78, 80, 82, 81, 85, 88],
-                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                    borderColor: 'rgb(16, 185, 129)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barThickness: 40
-                  },
-                  {
-                    label: 'Marketing',
-                    data: [82, 84, 83, 87, 89, 95],
-                    backgroundColor: 'rgba(245, 158, 11, 0.8)',
-                    borderColor: 'rgb(245, 158, 11)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barThickness: 40
-                  }
-                ]
-              }} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'top',
-                    labels: {
-                      color: isDark ? '#e5e7eb' : '#374151',
-                      font: {
-                        size: 12
+                  scales: {
+                    x: {
+                      grid: {
+                        display: false
                       },
-                      padding: 15
-                    }
-                  },
-                  tooltip: {
-                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                    titleColor: isDark ? '#e5e7eb' : '#111827',
-                    bodyColor: isDark ? '#e5e7eb' : '#111827',
-                    borderColor: isDark ? '#374151' : '#e5e7eb',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                      label: function(context) {
-                        return context.dataset.label + ': ' + context.parsed.y + '%';
-                      }
-                    }
-                  }
-                },
-                scales: {
-                  x: {
-                    grid: {
-                      display: false
-                    },
-                    ticks: {
-                      color: isDark ? '#9ca3af' : '#6b7280',
-                      font: {
-                        size: 12,
-                        weight: '500'
-                      }
-                    },
-                    title: {
-                      display: true,
-                      text: 'Months',
-                      color: isDark ? '#e5e7eb' : '#374151',
-                      font: {
-                        size: 14,
-                        weight: 'bold'
-                      }
-                    }
-                  },
-                  y: {
-                    grid: {
-                      color: isDark ? '#374151' : '#e5e7eb',
-                      drawBorder: false
-                    },
-                    ticks: {
-                      color: isDark ? '#9ca3af' : '#6b7280',
-                      font: {
-                        size: 12
+                      ticks: {
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        font: {
+                          size: 12,
+                          weight: '500'
+                        }
                       },
-                      callback: function(value) {
-                        return value + '%';
+                      title: {
+                        display: true,
+                        text: 'Months',
+                        color: isDark ? '#e5e7eb' : '#374151',
+                        font: {
+                          size: 14,
+                          weight: 'bold'
+                        }
                       }
                     },
-                    title: {
-                      display: true,
-                      text: 'Performance Score',
-                      color: isDark ? '#e5e7eb' : '#374151',
-                      font: {
-                        size: 14,
-                        weight: 'bold'
-                      }
-                    },
-                    beginAtZero: true,
-                    max: 100
+                    y: {
+                      grid: {
+                        color: isDark ? '#374151' : '#e5e7eb',
+                        drawBorder: false
+                      },
+                      ticks: {
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        font: {
+                          size: 12
+                        }
+                      },
+                      title: {
+                        display: true,
+                        text: 'Number of Employees',
+                        color: isDark ? '#e5e7eb' : '#374151',
+                        font: {
+                          size: 14,
+                          weight: 'bold'
+                        }
+                      },
+                      beginAtZero: true
+                    }
+                  },
+                  animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
                   }
-                },
-                animation: {
-                  duration: 1000,
-                  easing: 'easeInOutQuart'
-                }
-              }} 
-            />
+                }}
+              />
+            )}
           </div>
         </div>
 
@@ -726,11 +711,17 @@ export default function PerformancePage() {
             </button>
           </div>
           <div className="h-64">
-            <SafePieChart 
-              key="department-pie"
-              data={departmentPerformanceData} 
-              options={chartOptions} 
-            />
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-gray-500 dark:text-gray-400">Loading chart data...</div>
+              </div>
+            ) : (
+              <SafePieChart 
+                key="department-pie"
+                data={departmentPerformanceData} 
+                options={chartOptions} 
+              />
+            )}
           </div>
         </div>
       </div>
