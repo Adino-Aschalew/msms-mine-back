@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../shared/contexts/AuthContext';
+import { adminAPI } from '../../../shared/services/adminAPI';
 
 const Account = () => {
   const { theme } = useTheme();
@@ -16,6 +17,8 @@ const Account = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
   
   const [profileImage, setProfileImage] = useState('');
   
@@ -54,6 +57,27 @@ const Account = () => {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'activity') {
+      fetchActivities();
+    }
+  }, [activeTab]);
+
+  const fetchActivities = async () => {
+    setActivitiesLoading(true);
+    try {
+      const response = await adminAPI.getUserActivity(20);
+      if (response.data && response.data.success) {
+        setActivities(response.data.data.activities || []);
+      }
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      setActivities([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -462,36 +486,6 @@ const Account = () => {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-8">Activity Statistics</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full mb-4">
-              <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">127</p>
-            <p className="text-base text-gray-600 dark:text-gray-400">Total Activities</p>
-          </div>
-          
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full mb-4">
-              <Shield className="h-8 w-8 text-green-600 dark:text-green-400" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">24</p>
-            <p className="text-base text-gray-600 dark:text-gray-400">Security Actions</p>
-          </div>
-          
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full mb-4">
-              <Users className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">8</p>
-            <p className="text-base text-gray-600 dark:text-gray-400">Team Activities</p>
-          </div>
         </div>
       </div>
     </div>
