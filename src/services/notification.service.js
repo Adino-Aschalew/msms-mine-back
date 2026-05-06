@@ -4,13 +4,21 @@ const { query } = require('../config/database');
 class NotificationService {
   static async sendEmail(to, subject, message, options = {}) {
     try {
+      console.log('[NotificationService] Attempting to send email to:', to);
+      console.log('[NotificationService] SMTP config:', {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        user: process.env.SMTP_USER ? 'SET' : 'NOT_SET',
+        pass: process.env.SMTP_PASS ? 'SET' : 'NOT_SET'
+      });
       
       if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        console.log('Email configuration not found, skipping email send');
-        return { success: false, message: 'Email not configured' };
+        console.error('[NotificationService] Email configuration missing');
+        throw new Error('Email configuration not found. Please check SMTP settings in .env file.');
       }
 
       const transporter = nodemailer.createTransport({
+        service: 'gmail',
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         secure: process.env.SMTP_SECURE === 'true',
@@ -30,13 +38,25 @@ class NotificationService {
 
       const result = await transporter.sendMail(mailOptions);
       
+      console.log('[NotificationService] Email sent successfully:', {
+        messageId: result.messageId,
+        response: result.response
+      });
       
       await this.logNotification('EMAIL', to, subject, message, 'SENT');
       
-      return { success: true, messageId: result.messageId };
+      return { 
+        success: true, 
+        messageId: result.messageId,
+        response: result.response
+      };
     } catch (error) {
-      console.error('Email send error:', error);
-      
+      console.error('[NotificationService] Email send error:', {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response
+      });
       
       await this.logNotification('EMAIL', to, subject, message, 'FAILED', error.message);
       

@@ -1,5 +1,6 @@
 const express = require('express');
 const authRoutes = require('./modules/auth/auth.routes');
+const emailVerificationRoutes = require('./routes/emailVerification.routes');
 const userRoutes = require('./modules/users/user.routes');
 const savingsRoutes = require('./modules/savings/savings.routes');
 
@@ -51,6 +52,8 @@ router.get('/hr/validate/:employeeId', authMiddleware, async (req, res) => {
 
 
 router.use('/auth', authRoutes);
+router.use('/email-verification', emailVerificationRoutes);
+router.use('/otp', require('./routes/otp.routes'));
 router.use('/users', userRoutes);
 router.use('/savings', savingsRoutes);
 router.use('/hr', hrRoutes);
@@ -62,5 +65,6 @@ router.use('/reports', reportRoutes);
 router.use('/ai', aiRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/settings', require('./routes/settings.routes'));
 
 module.exports = router;

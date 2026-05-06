@@ -1,4 +1,5 @@
 import React, { createContext, useState } from 'react';
+import { notificationService } from '../../../shared/services/notificationService';
 
 const NotificationContext = createContext();
 
@@ -29,6 +30,24 @@ export const NotificationProvider = ({ children }) => {
       read: true,
     },
   ]);
+
+  // Helper function to get icon for notification type
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'savings_request_submitted':
+        return '📋'; // Document icon for requests
+      case 'savings_request_approved':
+        return '✅'; // Checkmark for approvals
+      case 'savings_request_rejected':
+        return '❌'; // X mark for rejections
+      case 'savings_account_activated':
+        return '💰'; // Money icon for savings
+      case 'savings_rate_updated':
+        return '📈'; // Chart for rate updates
+      default:
+        return '📢'; // Default notification icon
+    }
+  };
 
   const addNotification = (notification) => {
     const newNotification = {
@@ -65,6 +84,7 @@ export const NotificationProvider = ({ children }) => {
     markAllAsRead,
     clearNotifications,
     unreadCount,
+    getNotificationIcon,
   };
 
   return (

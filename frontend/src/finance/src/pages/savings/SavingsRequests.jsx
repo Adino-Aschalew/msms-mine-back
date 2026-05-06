@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, X, Eye, FileText, User, Calendar, CreditCard, Loader2, TrendingUp, AlertCircle, Filter, Search, RefreshCw, Users, DollarSign, Clock } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { savingsAPI } from '../../../../shared/services/savingsAPI';
+import { notificationService } from '../../../../shared/services/notificationService';
 
 const SavingsRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -70,6 +71,23 @@ const SavingsRequests = () => {
     try {
       setIsSubmitting(true);
       await savingsAPI.handleSavingsRequest(requestId, status, comments);
+      
+      // Find the request details for notification
+      const request = requests.find(r => r.id === requestId);
+      
+      // Trigger notification for employee
+      if (status === 'APPROVED') {
+        await notificationService.notifySavingsRequestApproved({
+          newRate: request.new_percentage,
+          comments: comments
+        });
+        // Refresh employee dashboard to show updated savings rate
+        await notificationService.refreshEmployeeDashboard();
+      } else {
+        await notificationService.notifySavingsRequestRejected({
+          comments: comments
+        });
+      }
       
       addNotification({
         type: status === 'APPROVED' ? 'success' : 'warning',

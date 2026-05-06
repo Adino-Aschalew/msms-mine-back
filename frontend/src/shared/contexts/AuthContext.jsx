@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/authAPI';
+import { notificationService } from '../services/notificationService';
 
 
 export const ROLES = {
@@ -30,6 +31,8 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [isForcedPasswordChange, setIsForcedPasswordChange] = useState(false);
+  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -39,21 +42,33 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  const login = async (credentials, role) => {
+  const login = async (credentials, role = 'EMPLOYEE') => {
     const { identifier, password } = credentials;
     
     setLoading(true);
     setError(null);
     
     try {
-      console.log('[auth] login start', { identifier, role });
-      const response = await authAPI.login(identifier, password, role);
+      console.log('[auth] login start', { identifier });
+      const response = await authAPI.login(identifier, password);
       console.log('[auth] login success', {
         hasToken: !!response?.token,
         hasRefreshToken: !!response?.refreshToken,
         userRole: response?.user?.role,
         userId: response?.user?.id,
+        requiresEmailVerification: response?.user?.requires_email_verification,
+        isFirstLogin: response?.user?.is_first_login,
+        emailVerified: response?.user?.email_verified
       });
+      
+      // Check if OTP verification is required for employees
+      if (response.user.requires_otp_verification) {
+        console.log('[auth] OTP verification required, showing modal');
+        setPendingUser(response.user);
+        setShowEmailVerificationModal(true); // Reuse the same modal for OTP
+        // Don't set tokens or user state yet
+        return response.user;
+      }
       
       // Set tokens first before updating user state
       const apiClient = (await import('../services/api')).default;
@@ -78,6 +93,26 @@ export const AuthProvider = ({ children }) => {
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEmailVerificationSuccess = async (user, token, refreshToken) => {
+    console.log('[auth] OTP verification successful, setting user state and tokens');
+    
+    // Set tokens first
+    const apiClient = (await import('../services/api')).default;
+    apiClient.setTokens(token, refreshToken);
+    console.log('[auth] OTP verification tokens saved to api client + localStorage');
+    
+    // Then update user state
+    setUser(user);
+    setShowEmailVerificationModal(false);
+    setPendingUser(null);
+    
+    // Check for password change requirement after OTP verification
+    if (user.password_change_required) {
+      setIsForcedPasswordChange(true);
+      setShowPasswordChangeModal(true);
     }
   };
 
@@ -128,6 +163,9 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       await authAPI.changePassword(passwordData);
+      
+      // Trigger notification for password change
+      await notificationService.notifyPasswordChange();
     } catch (err) {
       const errorMessage = err.message || 'Password change failed';
       setError(errorMessage);
@@ -221,6 +259,10 @@ export const AuthProvider = ({ children }) => {
     setShowPasswordChangeModal,
     isForcedPasswordChange,
     setIsForcedPasswordChange,
+    showEmailVerificationModal,
+    setShowEmailVerificationModal,
+    pendingUser,
+    handleEmailVerificationSuccess,
     ROLES
   };
 

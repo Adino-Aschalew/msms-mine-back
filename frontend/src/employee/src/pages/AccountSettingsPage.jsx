@@ -24,7 +24,81 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../../../shared/contexts/AuthContext';
+import { employeeAPI } from '../../../shared/services/employeeAPI';
+import { savingsAPI } from '../../../shared/services/savingsAPI';
+import { loansAPI } from '../../../shared/services/loansAPI';
 
+// Export functions
+const exportToCSV = (data, filename) => {
+  const headers = Object.keys(data[0] || {});
+  const csvContent = [
+    headers.join(','),
+    ...data.map(row => headers.map(header => {
+      const value = row[header];
+      // Handle values that might contain commas or quotes
+      if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const exportToPDF = async (data, filename) => {
+  // Simple PDF generation using browser's print functionality
+  // For a more robust solution, you might want to use a library like jsPDF
+  const printWindow = window.open('', '_blank');
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${filename}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        h1 { color: #333; }
+        .date { color: #666; font-size: 12px; margin-bottom: 20px; }
+      </style>
+    </head>
+    <body>
+      <h1>${filename}</h1>
+      <div class="date">Generated on: ${new Date().toLocaleDateString()}</div>
+      <table>
+        <thead>
+          <tr>
+            ${Object.keys(data[0] || {}).map(key => `<th>${key}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(row => 
+            `<tr>${Object.values(row).map(value => `<td>${value}</td>`).join('')}</tr>`
+          ).join('')}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 250);
+};
 
 const Section = ({ title, description, children, icon: Icon }) => (
   <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -98,6 +172,51 @@ const AccountSettingsPage = () => {
     { id: 'system', label: 'System', icon: Monitor, desc: 'Follows OS setting', color: 'blue' },
   ];
 
+  // Export handlers
+  const handleExportPayroll = async () => {
+    try {
+      // Generate mock payroll data (in real app, this would come from API)
+      const payrollData = [
+        { Month: 'January 2024', Salary: '15000 ETB', Savings: '1500 ETB', Loan: '500 ETB', Tax: '2250 ETB', Insurance: '750 ETB', NetPay: '10000 ETB', Status: 'Completed' },
+        { Month: 'December 2023', Salary: '15000 ETB', Savings: '1500 ETB', Loan: '500 ETB', Tax: '2250 ETB', Insurance: '750 ETB', NetPay: '10000 ETB', Status: 'Completed' },
+        { Month: 'November 2023', Salary: '15000 ETB', Savings: '1500 ETB', Loan: '0 ETB', Tax: '2250 ETB', Insurance: '750 ETB', NetPay: '10500 ETB', Status: 'Completed' },
+      ];
+      exportToCSV(payrollData, 'payroll-history');
+    } catch (error) {
+      console.error('Error exporting payroll data:', error);
+      alert('Failed to export payroll data. Please try again.');
+    }
+  };
+
+  const handleExportSavings = async () => {
+    try {
+      // Generate mock savings data (in real app, this would come from API)
+      const savingsData = [
+        { Month: 'January 2024', Contribution: '1500 ETB', Balance: '18000 ETB', Rate: '10%', Status: 'Active' },
+        { Month: 'December 2023', Contribution: '1500 ETB', Balance: '16500 ETB', Rate: '10%', Status: 'Active' },
+        { Month: 'November 2023', Contribution: '1500 ETB', Balance: '15000 ETB', Rate: '10%', Status: 'Active' },
+      ];
+      exportToCSV(savingsData, 'savings-history');
+    } catch (error) {
+      console.error('Error exporting savings data:', error);
+      alert('Failed to export savings data. Please try again.');
+    }
+  };
+
+  const handleExportLoans = async () => {
+    try {
+      // Generate mock loan data (in real app, this would come from API)
+      const loanData = [
+        { LoanID: 'LN001', Type: 'Personal', Amount: '50000 ETB', Purpose: 'Emergency', Status: 'Active', MonthlyPayment: '500 ETB', RemainingBalance: '45000 ETB', StartDate: '2023-12-01', EndDate: '2024-11-01' },
+        { LoanID: 'LN002', Type: 'Education', Amount: '30000 ETB', Purpose: 'Course Fees', Status: 'Completed', MonthlyPayment: '300 ETB', RemainingBalance: '0 ETB', StartDate: '2023-01-01', EndDate: '2023-12-01' },
+      ];
+      exportToPDF(loanData, 'loan-records');
+    } catch (error) {
+      console.error('Error exporting loan data:', error);
+      alert('Failed to export loan data. Please try again.');
+    }
+  };
+
   const handlePasswordChange = (e) => {
     e.preventDefault();
     setPasswordError('');
@@ -162,7 +281,7 @@ const AccountSettingsPage = () => {
       {activeTab === 'appearance' && (
         <div className="space-y-4">
           <Section title="Theme" description="Choose how the interface looks">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-3 gap-3">
               {themeOptions.map(opt => {
                 const Icon = opt.icon;
                 const isActive = theme === opt.id;
@@ -183,7 +302,7 @@ const AccountSettingsPage = () => {
                       <p className={`text-sm font-bold ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-200'}`}>{opt.label}</p>
                       <p className="text-xs text-gray-400">{opt.desc}</p>
                     </div>
-                    {isActive && <FiCheck className="w-4 h-4 text-blue-600 ml-auto" />}
+                    {isActive && <Check className="w-4 h-4 text-blue-600 ml-auto" />}
                   </button>
                 );
               })}
@@ -217,13 +336,13 @@ const AccountSettingsPage = () => {
           <Section title="Change Password" description="Update your login credentials">
             {passwordSuccess && (
               <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2">
-                <FiCheck className="w-4 h-4 text-emerald-600" />
+                <Check className="w-4 h-4 text-emerald-600" />
                 <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Password changed successfully.</p>
               </div>
             )}
             {passwordError && (
               <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2">
-                <FiAlertCircle className="w-4 h-4 text-red-500" />
+                <AlertCircle className="w-4 h-4 text-red-500" />
                 <p className="text-sm font-bold text-red-600 dark:text-red-400">{passwordError}</p>
               </div>
             )}
@@ -248,7 +367,7 @@ const AccountSettingsPage = () => {
                       onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key] }))}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showPasswords[key] ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                      {showPasswords[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
@@ -258,7 +377,7 @@ const AccountSettingsPage = () => {
                 disabled={!passwords.current || !passwords.next || !passwords.confirm}
                 className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
               >
-                <FiLock className="inline w-4 h-4 mr-2" />
+                <Lock className="inline w-4 h-4 mr-2" />
                 Update Password
               </button>
             </form>
@@ -290,17 +409,20 @@ const AccountSettingsPage = () => {
           <Section title="Export Your Data" description="Download a copy of your account data">
             <div className="space-y-3">
               {[
-                { label: 'Payroll History', desc: 'All payroll records as CSV', format: 'CSV' },
-                { label: 'Savings History', desc: 'Monthly savings deductions', format: 'CSV' },
-                { label: 'Loan Records', desc: 'Loan requests and repayments', format: 'PDF' },
+                { label: 'Payroll History', desc: 'All payroll records as CSV', format: 'CSV', handler: handleExportPayroll },
+                { label: 'Savings History', desc: 'Monthly savings deductions', format: 'CSV', handler: handleExportSavings },
+                { label: 'Loan Records', desc: 'Loan requests and repayments', format: 'PDF', handler: handleExportLoans },
               ].map(row => (
                 <div key={row.label} className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-700 rounded-xl">
                   <div>
                     <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{row.label}</p>
                     <p className="text-xs text-gray-400">{row.desc}</p>
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-bold uppercase tracking-wider">
-                    <FiDownload className="w-3.5 h-3.5" />
+                  <button 
+                    onClick={row.handler}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-bold uppercase tracking-wider"
+                  >
+                    <Download className="w-3.5 h-3.5" />
                     {row.format}
                   </button>
                 </div>
@@ -312,7 +434,7 @@ const AccountSettingsPage = () => {
             <div className="space-y-4">
               <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl">
                 <div className="flex items-start gap-3 mb-4">
-                  <FiAlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-red-800 dark:text-red-400 uppercase tracking-tight">Delete Account</p>
                     <p className="text-xs text-red-600 dark:text-red-500 mt-1">
@@ -334,7 +456,7 @@ const AccountSettingsPage = () => {
                     onClick={logout}
                     className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black uppercase tracking-widest text-sm disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                   >
-                    <FiTrash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                     Delete My Account
                   </button>
                 </div>

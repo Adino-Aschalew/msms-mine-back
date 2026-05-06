@@ -19,6 +19,7 @@ router.post('/change-password', authMiddleware, validateChangePassword, auditMid
 router.post('/force-change-password', authMiddleware, auditMiddleware('PASSWORD_CHANGE'), AuthController.forceChangePassword);
 router.post('/forgot-password', validateForgotPassword, auditMiddleware('PASSWORD_RESET_REQUEST'), AuthController.forgotPassword);
 router.post('/reset-password', validateResetPassword, auditMiddleware('PASSWORD_RESET'), AuthController.resetPassword);
+router.post('/complete-otp-verification', auditMiddleware('OTP_VERIFICATION'), AuthController.completeOTPVerification);
 router.get('/profile', authMiddleware, AuthController.getProfile);
 router.put('/profile', authMiddleware, validateUpdateProfile, auditMiddleware('PROFILE_UPDATE', 'employee_profiles'), AuthController.updateProfile);
 

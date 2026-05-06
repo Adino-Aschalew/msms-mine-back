@@ -82,6 +82,17 @@ export const NOTIFICATION_TYPES = {
   WITHDRAWAL_REQUEST: 'withdrawal_request',
   SYSTEM_UPDATE: 'system_update',
   GUARANTOR_REQUIRED: 'guarantor_required',
+  PASSWORD_CHANGE: 'password_change',
+  SAVING_ACTIVATED: 'saving_activated',
+  LOAN_APPLY_PENDING: 'loan_apply_pending',
+  SALARY_UPDATED: 'salary_updated',
+  PAYROLL_DEDUCTION: 'payroll_deduction',
+  EXPORT_COMPLETED: 'export_completed',
+  PROFILE_UPDATED: 'profile_updated',
+  SAVINGS_REQUEST_SUBMITTED: 'savings_request_submitted',
+  SAVINGS_REQUEST_APPROVED: 'savings_request_approved',
+  SAVINGS_REQUEST_REJECTED: 'savings_request_rejected',
+  SAVINGS_RATE_UPDATED: 'savings_rate_updated',
 };
 
 export const NOTIFICATION_TYPE_LABELS = {
@@ -93,6 +104,17 @@ export const NOTIFICATION_TYPE_LABELS = {
   [NOTIFICATION_TYPES.WITHDRAWAL_REQUEST]: 'Withdrawal Request',
   [NOTIFICATION_TYPES.SYSTEM_UPDATE]: 'System Update',
   [NOTIFICATION_TYPES.GUARANTOR_REQUIRED]: 'Guarantor Required',
+  [NOTIFICATION_TYPES.PASSWORD_CHANGE]: 'Password Changed',
+  [NOTIFICATION_TYPES.SAVING_ACTIVATED]: 'Savings Activated',
+  [NOTIFICATION_TYPES.LOAN_APPLY_PENDING]: 'Loan Application Pending',
+  [NOTIFICATION_TYPES.SALARY_UPDATED]: 'Salary Updated',
+  [NOTIFICATION_TYPES.PAYROLL_DEDUCTION]: 'Payroll Deduction',
+  [NOTIFICATION_TYPES.EXPORT_COMPLETED]: 'Export Completed',
+  [NOTIFICATION_TYPES.PROFILE_UPDATED]: 'Profile Updated',
+  [NOTIFICATION_TYPES.SAVINGS_REQUEST_SUBMITTED]: 'Savings Request Submitted',
+  [NOTIFICATION_TYPES.SAVINGS_REQUEST_APPROVED]: 'Savings Request Approved',
+  [NOTIFICATION_TYPES.SAVINGS_REQUEST_REJECTED]: 'Savings Request Rejected',
+  [NOTIFICATION_TYPES.SAVINGS_RATE_UPDATED]: 'Savings Rate Updated',
 };
 
 export const PRIORITY_LEVELS = {

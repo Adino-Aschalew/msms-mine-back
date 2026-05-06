@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { loansAPI } from '../../../shared/services/loansAPI';
 import { savingsAPI } from '../../../shared/services/savingsAPI';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
+import { notificationService } from '../../../shared/services/notificationService';
 import { DollarSign, Calendar, FileText, User, Building, Phone, Mail, Briefcase, CheckCircle, XCircle, AlertCircle, ChevronRight, Upload, CreditCard, Shield, TrendingUp } from 'lucide-react';
 
 const FieldLabel = ({ children, required, icon }) => (
@@ -208,6 +209,13 @@ const LoanRequestPage = () => {
       console.log('Payload to send:', payload);
 
       await loansAPI.applyForLoan(payload);
+      
+      // Trigger notification for loan application
+      await notificationService.notifyLoanApplication({
+        type: selectedLoanType?.label || 'Loan',
+        amount: formData.requestedAmount
+      });
+      
       setSubmitSuccess(true);
     } catch (error) {
       console.error('❌ Error applying for loan:', error);

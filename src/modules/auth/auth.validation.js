@@ -47,14 +47,12 @@ const validateLogin = (req, res, next) => {
   req.body.role = normalizedRole;
   
   
-  if (normalizedRole !== 'EMPLOYEE') {
-    
-    if (!identifier.includes('@')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Staff and administrators must log in with their email or identifier containing @'
-      });
-    }
+  // All users must use email login now
+  if (!identifier.includes('@')) {
+    return res.status(400).json({
+      success: false,
+      message: 'All users must log in with their email address'
+    });
   }
   
   next();

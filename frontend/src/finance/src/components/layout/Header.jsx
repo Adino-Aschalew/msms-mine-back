@@ -4,7 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import NotificationDropdown from '../widgets/NotificationDropdown.jsx';
-import SearchBar from '../widgets/SearchBar.jsx';
+// import SearchBar from '../widgets/SearchBar.jsx';
 
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
@@ -12,7 +12,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
+  // const [showSearch, setShowSearch] = useState(false);
 
   return (
     <>
@@ -150,13 +150,13 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
       </header>
 
       {}
-      {showSearch && (
+      {/* {showSearch && (
         <SearchBar
           isOpen={showSearch}
           onClose={() => setShowSearch(false)}
           isModal={true}
         />
-      )}
+      )} */}
     </>
   );
 };

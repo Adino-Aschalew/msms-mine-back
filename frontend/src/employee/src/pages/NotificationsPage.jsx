@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiBell, FiCheck, FiX, FiFilter, FiTrash2, FiMail, FiDollarSign, FiCreditCard, FiAlertCircle, FiSearch, FiCalendar, FiCheckCircle, FiInfo, FiMessageSquare, FiClock, FiTrendingUp, FiShield, FiSettings, FiArchive, FiStar } from 'react-icons/fi';
+import { FiBell, FiCheck, FiX, FiFilter, FiTrash2, FiMail, FiDollarSign, FiCreditCard, FiAlertCircle, FiSearch, FiCalendar, FiCheckCircle, FiInfo, FiMessageSquare, FiClock, FiTrendingUp, FiShield, FiSettings, FiArchive, FiStar, FiUser, FiDownload } from 'react-icons/fi';
 import { notificationsAPI } from '../../../shared/services/notificationsAPI';
 
 const NotificationsPage = () => {
@@ -48,6 +48,20 @@ const NotificationsPage = () => {
         return <FiInfo className="w-5 h-5" />;
       case 'guarantor_required':
         return <FiMessageSquare className="w-5 h-5" />;
+      case 'password_change':
+        return <FiShield className="w-5 h-5" />;
+      case 'saving_activated':
+        return <FiTrendingUp className="w-5 h-5" />;
+      case 'loan_apply_pending':
+        return <FiClock className="w-5 h-5" />;
+      case 'salary_updated':
+        return <FiDollarSign className="w-5 h-5" />;
+      case 'payroll_deduction':
+        return <FiCreditCard className="w-5 h-5" />;
+      case 'export_completed':
+        return <FiDownload className="w-5 h-5" />;
+      case 'profile_updated':
+        return <FiUser className="w-5 h-5" />;
       default:
         return <FiBell className="w-5 h-5" />;
     }
@@ -62,7 +76,14 @@ const NotificationsPage = () => {
       'loan_repayment': 'orange',
       'withdrawal_request': 'indigo',
       'system_update': 'gray',
-      'guarantor_required': 'yellow'
+      'guarantor_required': 'yellow',
+      'password_change': 'red',
+      'saving_activated': 'green',
+      'loan_apply_pending': 'orange',
+      'salary_updated': 'blue',
+      'payroll_deduction': 'purple',
+      'export_completed': 'emerald',
+      'profile_updated': 'blue'
     };
     
     const color = colorMap[type] || 'gray';
@@ -189,9 +210,13 @@ const NotificationsPage = () => {
       if (filter === 'read') return notification.is_read;
       if (filter === 'high') return notification.priority === 'high' || notification.notification_type === 'ERROR';
       if (filter === 'action_required') return false; 
-      if (filter === 'loans') return notification.title?.toLowerCase().includes('loan');
-      if (filter === 'savings') return notification.title?.toLowerCase().includes('savings');
-      if (filter === 'system') return notification.notification_type === 'INFO';
+      if (filter === 'loans') return notification.title?.toLowerCase().includes('loan') || notification.type?.toLowerCase().includes('loan');
+      if (filter === 'savings') return notification.title?.toLowerCase().includes('savings') || notification.type?.toLowerCase().includes('saving');
+      if (filter === 'system') return notification.notification_type === 'INFO' || notification.type?.toLowerCase().includes('system');
+      if (filter === 'profile') return notification.title?.toLowerCase().includes('profile') || notification.type?.toLowerCase().includes('profile');
+      if (filter === 'security') return notification.title?.toLowerCase().includes('password') || notification.type?.toLowerCase().includes('password');
+      if (filter === 'payroll') return notification.title?.toLowerCase().includes('salary') || notification.title?.toLowerCase().includes('payroll') || notification.type?.toLowerCase().includes('salary') || notification.type?.toLowerCase().includes('payroll');
+      if (filter === 'exports') return notification.title?.toLowerCase().includes('export') || notification.type?.toLowerCase().includes('export');
       return true;
     };
     
@@ -295,6 +320,10 @@ const NotificationsPage = () => {
                 <option value="loans">Loans</option>
                 <option value="savings">Savings</option>
                 <option value="system">System</option>
+                <option value="profile">Profile</option>
+                <option value="security">Security</option>
+                <option value="payroll">Payroll</option>
+                <option value="exports">Exports</option>
               </select>
             </div>
           </div>

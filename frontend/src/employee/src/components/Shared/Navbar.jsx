@@ -31,7 +31,8 @@ import {
   FiMessageSquare,
   FiFilter,
   FiCheckSquare,
-  FiSquare
+  FiSquare,
+  FiDownload
 } from 'react-icons/fi';
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
@@ -76,13 +77,43 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const [filterType, setFilterType] = useState('all');
 
   const typeToIconAndColor = (notificationType) => {
-    const t = String(notificationType || '').toUpperCase();
+    const t = String(notificationType || '').toLowerCase();
     switch (t) {
-      case 'SUCCESS':
+      case 'loan_approval':
         return { Icon: FiCheckCircle, color: 'green' };
-      case 'WARNING':
+      case 'loan_rejection':
+        return { Icon: FiX, color: 'red' };
+      case 'savings_deduction':
+        return { Icon: FiDollarSign, color: 'blue' };
+      case 'savings_rate_update':
+        return { Icon: FiTrendingUp, color: 'purple' };
+      case 'loan_repayment':
+        return { Icon: FiCreditCard, color: 'orange' };
+      case 'withdrawal_request':
+        return { Icon: FiArchive, color: 'indigo' };
+      case 'system_update':
+        return { Icon: FiInfo, color: 'gray' };
+      case 'guarantor_required':
+        return { Icon: FiMessageSquare, color: 'yellow' };
+      case 'password_change':
+        return { Icon: FiShield, color: 'red' };
+      case 'saving_activated':
+        return { Icon: FiTrendingUp, color: 'green' };
+      case 'loan_apply_pending':
+        return { Icon: FiClock, color: 'orange' };
+      case 'salary_updated':
+        return { Icon: FiDollarSign, color: 'blue' };
+      case 'payroll_deduction':
+        return { Icon: FiCreditCard, color: 'purple' };
+      case 'export_completed':
+        return { Icon: FiDownload, color: 'emerald' };
+      case 'profile_updated':
+        return { Icon: FiUser, color: 'blue' };
+      case 'success':
+        return { Icon: FiCheckCircle, color: 'green' };
+      case 'warning':
         return { Icon: FiAlertCircle, color: 'orange' };
-      case 'ERROR':
+      case 'error':
         return { Icon: FiX, color: 'red' };
       default:
         return { Icon: FiInfo, color: 'blue' };
@@ -169,12 +200,53 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
 
   const unreadCount = notifications.filter((notif) => !notif.is_read).length;
 
+  // Debug: Log user data structure
+  console.log('👤 Navbar User Data:', user);
+  console.log('📅 User date fields:', {
+    created_at: user?.created_at,
+    join_date: user?.join_date,
+    date_joined: user?.date_joined,
+    employment_start_date: user?.employment_start_date
+  });
+  console.log('✉️ Email verification status:', {
+    email_verified: user?.email_verified,
+    is_verified: user?.is_verified,
+    verified: user?.verified,
+    email: user?.email
+  });
   
   const userStats = {
     savingsRate: 25,
     loanProgress: 68,
     creditScore: 750,
-    memberSince: '2022'
+    memberSince: (() => {
+      const dateFields = [
+        { field: 'created_at', data: user?.created_at },
+        { field: 'join_date', data: user?.join_date },
+        { field: 'date_joined', data: user?.date_joined },
+        { field: 'employment_start_date', data: user?.employment_start_date },
+        { field: 'hire_date', data: user?.hire_date },
+        { field: 'start_date', data: user?.start_date }
+      ];
+      
+      for (const { field, data } of dateFields) {
+        if (data) {
+          try {
+            const date = new Date(data);
+            const year = date.getFullYear();
+            // Validate the year is reasonable (not too old or future)
+            if (year >= 1990 && year <= new Date().getFullYear()) {
+              return year.toString();
+            }
+          } catch (error) {
+            console.warn(`⚠️ Invalid date in field ${field}:`, data);
+          }
+        }
+      }
+      
+      // Fallback to current year
+      return new Date().getFullYear().toString();
+    })()
   };
 
   return (
@@ -257,22 +329,31 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                       All ({notifications.length})
                     </button>
                     <button
-                      onClick={() => setFilterType('SUCCESS')}
-                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'SUCCESS'
+                      onClick={() => setFilterType('profile_updated')}
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'profile_updated'
                           ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                      Success
+                      Profile
                     </button>
                     <button
-                      onClick={() => setFilterType('ERROR')}
-                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'ERROR'
+                      onClick={() => setFilterType('loan_apply_pending')}
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'loan_apply_pending'
                           ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                      Errors
+                      Loans
+                    </button>
+                    <button
+                      onClick={() => setFilterType('salary_updated')}
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${filterType === 'salary_updated'
+                          ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                        }`}
+                    >
+                      Payroll
                     </button>
                   </div>
                 </div>
@@ -436,9 +517,9 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                 <div className="border-t border-gray-200 dark:border-gray-700 p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Member since {userStats.memberSince}</span>
-                    <div className="flex items-center space-x-1 text-xs text-green-600 dark:text-green-400">
+                    <div className={`flex items-center space-x-1 text-xs ${(user?.email_verified ?? user?.is_verified ?? user?.verified ?? true) ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
                       <FiShield className="w-3 h-3" />
-                      <span>Verified</span>
+                      <span>{(user?.email_verified ?? user?.is_verified ?? user?.verified ?? true) ? 'Verified' : 'Not Verified'}</span>
                     </div>
                   </div>
 

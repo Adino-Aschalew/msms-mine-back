@@ -12,8 +12,7 @@ class FinanceService {
       
       let savingsTotals, loanTotals, savingsTransactions, loanTransactions, payrollSummary;
       
-      try {
-        [savingsTotals] = await query(`
+      [savingsTotals] = await query(`
           SELECT 
             SUM(current_balance) as total_savings,
             COUNT(*) as active_accounts,
@@ -22,13 +21,8 @@ class FinanceService {
           WHERE account_status = 'ACTIVE'
           ${savingsDateFilter}
         `);
-      } catch (error) {
-        console.warn('Savings totals query failed:', error.message);
-        savingsTotals = [{ total_savings: 0, active_accounts: 0, avg_balance: 0 }];
-      }
       
-      try {
-        [loanTotals] = await query(`
+      [loanTotals] = await query(`
           SELECT 
             SUM(remaining_balance) as total_loans,
             COUNT(*) as active_loans,
@@ -38,14 +32,9 @@ class FinanceService {
           WHERE status IN ('ACTIVE', 'OVERDUE')
           ${loanDateFilter}
         `);
-      } catch (error) {
-        console.warn('Loan totals query failed:', error.message);
-        loanTotals = [{ total_loans: 0, active_loans: 0, avg_loan_balance: 0, overdue_loans: 0 }];
-      }
       
       
-      try {
-        [savingsTransactions] = await query(`
+      [savingsTransactions] = await query(`
           SELECT 
             COUNT(*) as total_transactions,
             SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as total_contributions,
@@ -55,28 +44,8 @@ class FinanceService {
           WHERE 1=1
           ${this.getDateFilter(period, 'transaction_date')}
         `);
-      } catch (error) {
-        console.warn('Savings transactions query failed:', error.message);
-        
-        try {
-          [savingsTransactions] = await query(`
-            SELECT 
-              COUNT(*) as total_transactions,
-              SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END) as total_contributions,
-              SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN amount ELSE 0 END) as total_withdrawals,
-              0 as total_interest
-            FROM savings_transactions 
-            WHERE 1=1
-            ${this.getDateFilter(period, 'transaction_date')}
-          `);
-        } catch (fallbackError) {
-          console.warn('Fallback savings transactions query also failed:', fallbackError.message);
-          savingsTransactions = [{ total_transactions: 0, total_contributions: 0, total_withdrawals: 0, total_interest: 0 }];
-        }
-      }
       
-      try {
-        [loanTransactions] = await query(`
+      [loanTransactions] = await query(`
           SELECT 
             COUNT(*) as total_transactions,
             SUM(CASE WHEN status = 'PAID' THEN amount ELSE 0 END) as total_payments,
@@ -86,15 +55,9 @@ class FinanceService {
           WHERE 1=1
           ${this.getDateFilter(period, 'repayment_date')}
         `);
-      } catch (error) {
-        console.warn('Loan transactions query failed:', error.message);
-        loanTransactions = [{ total_transactions: 0, total_payments: 0, total_interest: 0, total_penalties: 0 }];
-        loanTransactions = [{ total_transactions: 0, total_payments: 0, total_interest: 0, total_penalties: 0, total_disbursements: 0 }];
-      }
       
       
-      try {
-        [payrollSummary] = await query(`
+      [payrollSummary] = await query(`
           SELECT 
             COUNT(*) as total_payrolls,
             SUM(total_employees) as total_records_processed,
@@ -105,10 +68,6 @@ class FinanceService {
           AND status = 'PROCESSED'
           ${payrollDateFilter}
         `);
-      } catch (error) {
-        console.warn('Payroll summary query failed:', error.message);
-        payrollSummary = [{ total_payrolls: 0, total_records_processed: 0, total_payroll_amount: 0, avg_salary: 0 }];
-      }
       
       const totalSavings = parseFloat(savingsTotals[0]?.total_savings || 0);
       const totalLoans = parseFloat(loanTotals[0]?.total_loans || 0);

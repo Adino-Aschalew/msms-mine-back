@@ -22,7 +22,9 @@ import RecentTransactionsTable from '../../components/tables/RecentTransactionsT
 import AccountsOverview from '../../components/widgets/AccountsOverview';
 import DateFilter from '../../components/widgets/DateFilter';
 import { financeAPI } from '../../../../shared/services/financeAPI';
+import { savingsAPI } from '../../../../shared/services/savingsAPI';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import appEvents from '../../../../shared/utils/eventEmitter';
 
 const Dashboard = () => {
@@ -41,31 +43,54 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [overviewData, setOverviewData] = useState(null);
+  const [savingsStats, setSavingsStats] = useState(null);
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     fetchDashboardData();
-    
+    fetchSavingsStats();
     
     const handlePayrollUpdate = (payrollData) => {
       console.log('Finance Dashboard: Payroll data updated, refreshing...', payrollData);
       fetchDashboardData();
     };
     
-    appEvents.on('payrollDataUpdated', handlePayrollUpdate);
-    
+    appEvents.on('payrollUpdate', handlePayrollUpdate);
     
     return () => {
-      appEvents.off('payrollDataUpdated', handlePayrollUpdate);
+      appEvents.off('payrollUpdate', handlePayrollUpdate);
     };
   }, [dateRange]);
+
+  const fetchSavingsStats = async () => {
+    try {
+      const response = await savingsAPI.getSavingsRequests();
+      const requests = response.requests || [];
+      const stats = {
+        total: requests.length,
+        pending: requests.filter(r => r.status === 'PENDING').length,
+        approved: requests.filter(r => r.status === 'APPROVED').length,
+        rejected: requests.filter(r => r.status === 'REJECTED').length,
+        thisMonth: requests.filter(r => {
+          const requestDate = new Date(r.created_at);
+          const now = new Date();
+          return requestDate.getMonth() === now.getMonth() && 
+                 requestDate.getFullYear() === now.getFullYear();
+        }).length
+      };
+      setSavingsStats(stats);
+    } catch (error) {
+      console.error('Failed to fetch savings stats:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
       console.log('🔄 Finance Dashboard: Fetching data...');
-      const response = await financeAPI.getFinancialOverview(dateRange);
+      const response = await financeAPI.getAnalytics({ period: dateRange });
       console.log('📊 Finance Dashboard Response:', response);
       console.log('📊 Response structure:', JSON.stringify(response, null, 2));
       
@@ -81,31 +106,21 @@ const Dashboard = () => {
       setDashboardData(data);
       setOverviewData(data);
     } catch (err) {
+      console.error('Finance Dashboard error:', err);
       
+      // Provide specific error messages based on the error
       if (err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED')) {
         setError('Unable to connect to the server. Please check if the backend is running.');
+      } else if (err.status === 500) {
+        setError('Server error occurred. Please check the database connection and try again.');
+      } else if (err.message) {
+        setError(`Failed to fetch finance data: ${err.message}`);
       } else {
         setError('Failed to fetch finance dashboard data');
       }
-      console.error('Finance Dashboard error:', err);
       
-      
-      setDashboardData({
-        revenue: 0,
-        expenses: 0,
-        netProfit: 0,
-        revenueGrowth: 0,
-        expensesGrowth: 0,
-        profitGrowth: 0,
-        cashBalance: 0,
-        cashChange: 0,
-        accountsReceivable: 0,
-        receivableChange: 0,
-        accountsPayable: 0,
-        payableChange: 0,
-        expenseBreakdown: [],
-        monthlyCashFlow: []
-      });
+      // Don't set fallback data - let the error state show
+      setDashboardData(null);
     } finally {
       setLoading(false);
     }
@@ -115,52 +130,61 @@ const Dashboard = () => {
   const kpiData = [
     {
       title: 'Total Revenue',
-      value: formatCompactNumber((overviewData?.savings?.total_savings || 0) + (overviewData?.loans?.total_payments || 0)),
+      value: formatCompactNumber(overviewData?.revenue || 0),
       change: `+${(overviewData?.revenueGrowth || '0')}%`,
-      trend: overviewData?.revenueGrowth >= 0 ? 'up' : 'down',
+      trend: (overviewData?.revenueGrowth || 0) >= 0 ? 'up' : 'down',
       icon: DollarSign,
       color: 'green',
     },
     {
       title: 'Total Expenses',
-      value: formatCompactNumber((overviewData?.savings?.total_withdrawals || 0) + (overviewData?.payroll?.total_amount || 0)),
+      value: formatCompactNumber(overviewData?.expenses || 0),
       change: `+${(overviewData?.expensesGrowth || '0')}%`,
-      trend: overviewData?.expensesGrowth >= 0 ? 'up' : 'down',
+      trend: (overviewData?.expensesGrowth || 0) >= 0 ? 'up' : 'down',
       icon: Wallet,
       color: 'red',
     },
     {
       title: 'Net Profit',
-      value: formatCompactNumber(((overviewData?.savings?.total_savings || 0) + (overviewData?.loans?.total_payments || 0)) - ((overviewData?.savings?.total_withdrawals || 0) + (overviewData?.payroll?.total_amount || 0))),
+      value: formatCompactNumber(overviewData?.netProfit || 0),
       change: `+${(overviewData?.profitGrowth || '0')}%`,
-      trend: overviewData?.profitGrowth >= 0 ? 'up' : 'down',
+      trend: (overviewData?.profitGrowth || 0) >= 0 ? 'up' : 'down',
       icon: TrendingUp,
       color: 'green',
     },
     {
       title: 'Cash Balance',
-      value: formatCompactNumber(overviewData?.savings?.total_savings || 0),
+      value: formatCompactNumber(overviewData?.cashBalance || 0),
       change: `+${(overviewData?.cashChange || '0')}%`,
-      trend: overviewData?.cashChange >= 0 ? 'up' : 'down',
+      trend: (overviewData?.cashChange || 0) >= 0 ? 'up' : 'down',
       icon: Wallet,
       color: 'purple',
     },
     {
       title: 'Accounts Receivable',
-      value: formatCompactNumber(overviewData?.loans?.total_loans || 0),
+      value: formatCompactNumber(overviewData?.accountsReceivable || 0),
       change: (overviewData?.receivableChange >= 0 ? '+' : '') + Math.abs(overviewData?.receivableChange || 0) + '%',
-      trend: overviewData?.receivableChange >= 0 ? 'up' : 'down',
+      trend: (overviewData?.receivableChange || 0) >= 0 ? 'up' : 'down',
       icon: ArrowUpRight,
       color: 'orange',
     },
     {
       title: 'Accounts Payable',
-      value: formatCompactNumber(overviewData?.payroll?.total_amount || 0),
-      change: `+${(overviewData?.payableChange || '0')}%`,
-      trend: overviewData?.payableChange >= 0 ? 'up' : 'down',
+      value: formatCompactNumber(overviewData?.accountsPayable || 0),
+      change: (overviewData?.payableChange >= 0 ? '+' : '') + Math.abs(overviewData?.payableChange || 0) + '%',
+      trend: (overviewData?.payableChange || 0) >= 0 ? 'up' : 'down',
       icon: ArrowDownRight,
-      color: 'yellow',
-    }
+      color: 'red',
+    },
+    // Add savings statistics KPI card
+    ...(savingsStats ? [{
+      title: 'Savings Requests',
+      value: savingsStats.total.toString(),
+      change: `+${savingsStats.thisMonth} this month`,
+      trend: 'up',
+      icon: CheckSquare,
+      color: savingsStats.pending > 0 ? 'amber' : 'green'
+    }] : [])
   ];
 
   if (loading) {

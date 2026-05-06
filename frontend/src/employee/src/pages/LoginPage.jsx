@@ -7,7 +7,7 @@ const LoginPage = () => {
   const { login } = useAuth();
   const { theme } = useTheme();
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -26,24 +26,26 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
 
+    if (!formData.identifier.trim()) {
+      setError('Please enter your email address');
+      setLoading(false);
+      return;
+    }
+    if (!formData.password) {
+      setError('Please enter your password');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const loginData = {
+        identifier: formData.identifier,
+        password: formData.password
+      };
       
-      if (formData.email === 'employee@company.com' && formData.password === 'password') {
-        const userData = {
-          id: 'EMP001',
-          name: 'John Doe',
-          email: 'employee@company.com',
-          department: 'Engineering',
-          position: 'Senior Developer',
-          employeeId: 'EMP001',
-        };
-        login(userData);
-      } else {
-        setError('Invalid credentials. Use employee@company.com / password');
-      }
+      await login(loginData, 'employee');
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,18 +69,18 @@ const LoginPage = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email Address
               </label>
               <input
-                id="email"
-                name="email"
+                id="identifier"
+                name="identifier"
                 type="email"
                 required
-                value={formData.email}
+                value={formData.identifier}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                placeholder="employee@company.com"
+                placeholder="Enter your email address"
               />
             </div>
             
@@ -128,12 +130,7 @@ const LoginPage = () => {
             </button>
           </div>
 
-          <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Demo credentials: employee@company.com / password
-            </p>
-          </div>
-        </form>
+                  </form>
       </div>
     </div>
   );

@@ -21,6 +21,7 @@ import {
   Bell
 } from 'lucide-react';
 import EnterpriseSavingsAPI from '../../../shared/services/enterpriseSavingsAPI';
+import { notificationService } from '../../../shared/services/notificationService';
 
 const MySavingsDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -36,13 +37,50 @@ const MySavingsDashboard = () => {
     loadConstraints();
   }, []);
 
+  // Listen for savings updates from finance admin approvals
+  useEffect(() => {
+    const handleSavingsUpdate = () => {
+      console.log('🔄 Savings updated, refreshing dashboard...');
+      loadDashboardData();
+    };
+
+    window.addEventListener('savingsUpdated', handleSavingsUpdate);
+    
+    return () => {
+      window.removeEventListener('savingsUpdated', handleSavingsUpdate);
+    };
+  }, []);
+
   const loadDashboardData = async () => {
     try {
+      // Check if user is authenticated before making request
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.log('🔍 No token found, skipping dashboard load');
+        setError('Please log in to view your savings dashboard');
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
+      console.log('🔍 Loading dashboard with token:', !!token);
       const data = await EnterpriseSavingsAPI.getSavingsDashboard();
+      console.log('🔍 Dashboard data received:', data);
+      console.log('🔍 Insights data:', data.insights);
+      console.log('🔍 Projected annual savings:', data.insights?.projectedAnnualSavings);
       setDashboardData(data);
     } catch (err) {
-      setError(err.message || 'Failed to load dashboard data');
+      console.error('❌ Dashboard load error:', err);
+      
+      // Handle specific authentication errors
+      if (err.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000);
+      } else {
+        setError(err.message || 'Failed to load dashboard data');
+      }
     } finally {
       setLoading(false);
     }
@@ -59,44 +97,137 @@ const MySavingsDashboard = () => {
 
   const handleSimulate = async (newValue, savingsType, effectiveDate) => {
     try {
+      // Check if user is authenticated before making request
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('You must be logged in to simulate savings changes');
+        return;
+      }
+      
+      console.log('🔍 Simulating savings with token:', !!token);
       const simulation = await EnterpriseSavingsAPI.simulateSavingsChange(
         newValue, 
         savingsType, 
         effectiveDate
       );
+      console.log('🔍 Simulation data received:', simulation);
+      console.log('🔍 Current annual savings:', simulation.current?.annualSavings);
+      console.log('🔍 Proposed annual savings:', simulation.proposed?.annualSavings);
       setSimulationData(simulation);
     } catch (err) {
-      setError(err.message || 'Simulation failed');
+      console.error('❌ Simulation error:', err);
+      
+      // Handle specific authentication errors
+      if (err.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000);
+      } else {
+        setError(err.message || 'Simulation failed');
+      }
     }
   };
 
   const handleSubmitRequest = async (requestData) => {
     try {
-      await EnterpriseSavingsAPI.submitSavingsRequest(requestData);
+      // Check if user is authenticated before making request
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('You must be logged in to submit a savings request');
+        return;
+      }
+      
+      console.log('🔍 Submitting savings request with token:', !!token);
+      const result = await EnterpriseSavingsAPI.submitSavingsRequest(requestData);
+      console.log('✅ Savings request submitted successfully:', result);
+      
+      // Trigger notification for finance admins
+      try {
+        await notificationService.notifySavingsRequestSubmitted({
+          employeeName: employee?.first_name + ' ' + employee?.last_name || 'Employee',
+          department: employee?.department || 'Unknown',
+          oldRate: account?.saving_percentage || 0,
+          newRate: formData.newValue,
+          reason: formData.reason
+        });
+      } catch (notificationError) {
+        console.error('❌ Failed to send notification:', notificationError);
+        // Don't fail the request if notification fails
+      }
+      
       setShowRequestForm(false);
       setSimulationData(null);
       loadDashboardData(); 
     } catch (err) {
-      setError(err.message || 'Failed to submit request');
+      console.error('❌ Savings request error:', err);
+      
+      // Handle specific authentication errors
+      if (err.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        // Optionally redirect to login
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000);
+      } else {
+        setError(err.message || 'Failed to submit request');
+      }
     }
   };
 
   const handleActivate = async () => {
     try {
-      setLoading(true);
-      const result = await EnterpriseSavingsAPI.createSavingsAccount(); 
+      // Check if user is authenticated before making request
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('You must be logged in to activate your savings account');
+        return;
+      }
       
+      setLoading(true);
+      console.log('🔍 Activating savings account with token:', !!token);
+      const result = await EnterpriseSavingsAPI.createSavingsAccount(); 
       
       const message = result.is_default 
         ? `Savings account activated successfully with ${result.saving_percentage}% default contribution rate!` 
         : `Savings account activated successfully with ${result.saving_percentage}% contribution rate!`;
       
-      
       console.log(message);
+      
+      // Trigger notification for savings activation
+      try {
+        await notificationService.notifySavingActivated();
+      } catch (notificationError) {
+        console.error('❌ Failed to send notification:', notificationError);
+        // Don't fail the activation if notification fails
+      }
+      
+      // Trigger notification for finance admins
+      try {
+        await notificationService.notifySavingsAccountActivated({
+          name: employee?.first_name + ' ' + employee?.last_name || 'Employee',
+          department: employee?.department || 'Unknown',
+          rate: result.saving_percentage,
+          projectedAnnualSavings: getProjectedAnnualSavings()
+        });
+      } catch (notificationError) {
+        console.error('❌ Failed to send notification:', notificationError);
+        // Don't fail the activation if notification fails
+      }
       
       await loadDashboardData();
     } catch (err) {
-      setError(err.message || 'Failed to activate account');
+      console.error('❌ Account activation error:', err);
+      
+      // Handle specific authentication errors
+      if (err.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000);
+      } else {
+        setError(err.message || 'Failed to activate account');
+      }
     } finally {
       setLoading(false);
     }
@@ -148,7 +279,76 @@ const MySavingsDashboard = () => {
     );
   }
 
-  const { account, insights, financialHealth, employee, restrictions } = dashboardData;
+  const { account, insights, financialHealth, employee, restrictions } = dashboardData || {};
+
+  // Debug: Log available data for calculations
+  console.log('🔍 Available data for annual savings calculations:');
+  console.log('  Full dashboardData:', dashboardData);
+  console.log('  Account:', account);
+  console.log('  Insights:', insights);
+  console.log('  Employee:', employee);
+  console.log('  Financial Health:', financialHealth);
+  console.log('  Account salary:', account?.salary);
+  console.log('  Account savings rate:', account?.saving_percentage);
+  console.log('  Insights projected annual savings:', insights?.projectedAnnualSavings);
+
+  // Calculate annual savings if not provided by backend
+  const calculateAnnualSavings = (salary, savingsRate) => {
+    if (!salary || !savingsRate || isNaN(salary) || isNaN(savingsRate)) {
+      return 0;
+    }
+    return (salary * savingsRate) / 100;
+  };
+
+  // Get projected annual savings with fallback calculation
+  const getProjectedAnnualSavings = () => {
+    if (insights?.projectedAnnualSavings && !isNaN(insights.projectedAnnualSavings)) {
+      console.log('✅ Using backend projected annual savings:', insights.projectedAnnualSavings);
+      return insights.projectedAnnualSavings;
+    }
+    
+    // Fallback calculation using account data
+    if (account?.salary && account?.saving_percentage) {
+      const calculated = calculateAnnualSavings(account.salary, account.saving_percentage);
+      console.log('🔧 Calculated annual savings from account data:', calculated);
+      console.log('  Salary:', account.salary);
+      console.log('  Savings rate:', account.saving_percentage);
+      return calculated;
+    }
+    
+    console.log('❌ No data available for annual savings calculation');
+    return 0;
+  };
+
+  // Get simulation annual savings with fallback calculation
+  const getSimulationAnnualSavings = (simulation, type = 'current') => {
+    const data = simulation?.[type];
+    console.log(`🔍 Getting simulation annual savings for ${type}:`, data);
+    
+    if (data?.annualSavings && !isNaN(data.annualSavings)) {
+      console.log(`✅ Using backend simulation ${type} annual savings:`, data.annualSavings);
+      return data.annualSavings;
+    }
+    
+    // Fallback calculation using simulation data
+    if (data?.salary && data?.savingsRate) {
+      const calculated = calculateAnnualSavings(data.salary, data.savingsRate);
+      console.log(`🔧 Calculated simulation ${type} annual savings:`, calculated);
+      console.log(`  Salary:`, data.salary);
+      console.log(`  Savings rate:`, data.savingsRate);
+      return calculated;
+    }
+    
+    // Use current account data as fallback
+    if (account?.salary && type === 'current') {
+      const calculated = calculateAnnualSavings(account.salary, account.saving_percentage);
+      console.log(`🔧 Using account data fallback for ${type}:`, calculated);
+      return calculated;
+    }
+    
+    console.log(`❌ No data available for simulation ${type} annual savings`);
+    return 0;
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Activity },
@@ -256,7 +456,7 @@ const MySavingsDashboard = () => {
           </div>
           <div className="space-y-1">
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {EnterpriseSavingsAPI.formatCompactCurrency(insights.projectedAnnualSavings)}
+              {EnterpriseSavingsAPI.formatCompactCurrency(getProjectedAnnualSavings())}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Annual projection</p>
           </div>
@@ -798,13 +998,13 @@ const SavingsRequestForm = ({ onClose, onSubmit, onSimulate, currentData, constr
                   <div>
                     <p className="text-sm text-purple-600 dark:text-purple-400">Current Year</p>
                     <p className="text-xl font-bold text-purple-900 dark:text-purple-100">
-                      {EnterpriseSavingsAPI.formatCurrency(simulationData.current.annualSavings)}
+                      {EnterpriseSavingsAPI.formatCurrency(getSimulationAnnualSavings(simulationData, 'current'))}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-purple-600 dark:text-purple-400">With New Rate</p>
                     <p className="text-xl font-bold text-purple-900 dark:text-purple-100">
-                      {EnterpriseSavingsAPI.formatCurrency(simulationData.proposed.annualSavings)}
+                      {EnterpriseSavingsAPI.formatCurrency(getSimulationAnnualSavings(simulationData, 'proposed'))}
                     </p>
                   </div>
                 </div>

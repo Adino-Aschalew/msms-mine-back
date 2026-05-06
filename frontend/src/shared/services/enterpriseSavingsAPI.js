@@ -64,23 +64,50 @@ class EnterpriseSavingsAPI {
 
   
   static formatCurrency(amount) {
-    return new Intl.NumberFormat('en-ET', {
-      style: 'currency',
-      currency: 'ETB',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
+    // Handle invalid values
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      return 'ETB 0.00';
+    }
+    
+    try {
+      return new Intl.NumberFormat('en-ET', {
+        style: 'currency',
+        currency: 'ETB',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(amount);
+    } catch (error) {
+      // Fallback for unsupported locales
+      return `ETB ${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    }
   }
 
   
   static formatCompactCurrency(amount) {
+    // Handle invalid values
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      return 'ETB 0.00';
+    }
+    
     if (amount >= 1000000) {
       return (amount / 1000000).toFixed(2).replace(/\.00$/, '') + 'M ETB';
     }
     if (amount >= 1000) {
       return (amount / 1000).toFixed(1).replace(/\.0$/, '') + 'K ETB';
     }
-    return this.formatCurrency(amount);
+    
+    // For amounts less than 1000, use the regular formatCurrency with fallback
+    try {
+      return new Intl.NumberFormat('en-ET', {
+        style: 'currency',
+        currency: 'ETB',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(amount);
+    } catch (error) {
+      // Fallback for unsupported locales
+      return `ETB ${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    }
   }
 
   

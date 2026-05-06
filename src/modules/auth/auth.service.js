@@ -139,9 +139,14 @@ class AuthService {
         message: 'Password has been reset successfully'
       };
 
-    } catch (error) {
-      console.error('Reset password error:', error);
-      throw new Error(error.message || 'Failed to reset password');
+    } catch (err) {
+      console.error('Reset password error details:', {
+        message: err.message,
+        stack: err.stack,
+        code: err.code,
+        errno: err.errno
+      });
+      throw new Error(err.message || 'Failed to reset password');
     }
   }
 
@@ -150,7 +155,7 @@ class AuthService {
       console.log('Login attempt - identifier:', identifier);
       
       if (!identifier || !password) {
-        throw new Error('Username/ID and password are required');
+        throw new Error('Email and password are required');
       }
 
       // Fetch security configuration
@@ -166,14 +171,9 @@ class AuthService {
         user = await this.findByEmail(identifier);
         console.log('Email-based login, found user:', user ? `YES (role: ${user.role})` : 'NO');
         
-        // Block employees from using email login - they must use employee ID
-        if (user && user.role === 'EMPLOYEE') {
-          throw new Error('Employees must log in with their Employee ID, not email');
-        }
-        
-        // Only allow admin/staff roles to use email login
-        if (user && !['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'].includes(user.role)) {
-          throw new Error('Invalid role for email-based login. Only admin and staff roles can use email login.');
+        // Allow all roles to use email login
+        if (user && ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE', 'EMPLOYEE'].includes(user.role)) {
+          console.log('Email login successful for role:', user.role);
         }
         
         if (user && ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'].includes(user.role)) {
@@ -186,15 +186,16 @@ class AuthService {
         user = await this.findByEmployeeId(identifier.toUpperCase());
         console.log('Employee ID login, found user:', user ? `YES (role: ${user.role})` : 'NO');
         
-        if (user && user.role !== 'EMPLOYEE') {
-          throw new Error('Staff and administrators must log in with their email address');
+        // Allow all users to choose between email or employee ID
+        if (user) {
+          console.log('Employee ID login successful for role:', user.role);
         }
       }
       
       if (!user || !user.is_active) {
         console.log('Login failed: User not found or not active');
         await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
-        throw new Error('Invalid credentials. Please check your username/ID and password.');
+        throw new Error('Invalid credentials. Please check your email and password.');
       }
 
       // Check if user is locked out due to too many failed attempts
@@ -235,6 +236,14 @@ class AuthService {
       }
       
       console.log('Login successful for user:', user.id, 'role:', user.role);
+      console.log('Full user object from database:', user);
+      console.log('User object keys:', Object.keys(user));
+      console.log('Email verification fields from DB:', {
+        email_verified: user.email_verified,
+        is_first_login: user.is_first_login,
+        type_of_email_verified: typeof user.email_verified,
+        type_of_is_first_login: typeof user.is_first_login
+      });
       
       // Reset failed login attempts on successful login
       await query('UPDATE users SET failed_login_attempts = 0, last_failed_login = NULL, last_login = NOW() WHERE id = ?', [user.id]);
@@ -258,7 +267,9 @@ class AuthService {
               last_name: user.last_name,
               department: user.department,
               job_grade: user.job_grade,
-              password_change_required: true
+              password_change_required: true,
+              email_verified: user.email_verified,
+              created_at: user.created_at
             },
             token: null,
             refreshToken: null,
@@ -284,6 +295,17 @@ class AuthService {
         { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
       );
 
+      // Check if OTP verification is required for unverified employees only
+      const requiresOTPVerification = user.role === 'EMPLOYEE' && !user.email_verified;
+      
+      console.log('[auth] OTP verification check:', {
+        userRole: user.role,
+        emailVerified: user.email_verified,
+        requiresOTPVerification,
+        userId: user.id,
+        email: user.email
+      });
+
       return {
         user: {
           id: user.id,
@@ -295,13 +317,157 @@ class AuthService {
           last_name: user.last_name,
           department: user.department,
           job_grade: user.job_grade,
-          password_change_required: user.password_change_required || false
+          password_change_required: user.password_change_required || false,
+          requires_otp_verification: requiresOTPVerification,
+          email_verified: user.email_verified,
+          created_at: user.created_at
+        },
+        token: requiresOTPVerification ? null : token, // Don't provide token until OTP verified
+        refreshToken: requiresOTPVerification ? null : refreshToken
+      };
+    } catch (err) {
+      console.error('Login error details:', {
+        message: err.message,
+        stack: err.stack,
+        code: err.code,
+        errno: err.errno
+      });
+      throw new Error(err.message || 'Login failed');
+    }
+  }
+
+  static async completeEmailVerification(userId, ip, userAgent) {
+    try {
+      // Get user details
+      const user = await query('SELECT * FROM users WHERE id = ? AND is_active = 1', [userId]);
+      
+      if (!user || user.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const userData = user[0];
+
+      // Mark first login as completed
+      await query(
+        'UPDATE users SET is_first_login = FALSE, updated_at = NOW() WHERE id = ?',
+        [userId]
+      );
+
+      // Fetch security configuration
+      const securityConfig = await this.getSecurityConfig();
+
+      // Generate tokens
+      const sessionTimeoutMinutes = securityConfig.session_timeout_minutes;
+      const token = jwt.sign(
+        { userId: userData.id, employee_id: userData.employee_id, role: userData.role },
+        process.env.JWT_SECRET,
+        { expiresIn: `${sessionTimeoutMinutes}m` }
+      );
+      
+      const refreshToken = jwt.sign(
+        { userId: userData.id },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      );
+
+      // Log successful login completion
+      await auditLog(userId, 'LOGIN_COMPLETED', 'users', userId, null, { email: userData.email }, ip, userAgent);
+
+      return {
+        user: {
+          id: userData.id,
+          employee_id: userData.employee_id,
+          username: userData.username,
+          email: userData.email,
+          role: userData.role,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          department: userData.department,
+          job_grade: userData.job_grade,
+          password_change_required: userData.password_change_required || false,
+          requires_email_verification: false,
+          is_first_login: false,
+          email_verified: true
+        },
+        token,
+        refreshToken
+      };
+
+    } catch (error) {
+      console.error('Complete email verification error:', error);
+      throw error;
+    }
+  }
+
+  static async completeOTPVerification(userId, ip, userAgent) {
+    try {
+      // Get user details
+      const user = await query('SELECT * FROM users WHERE id = ? AND is_active = 1', [userId]);
+      
+      if (!user || user.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const userData = user[0];
+
+      // Mark user as email verified after successful OTP verification
+      await query(
+        'UPDATE users SET email_verified = TRUE, updated_at = NOW() WHERE id = ?',
+        [userId]
+      );
+
+      console.log('[auth] User marked as email verified:', { userId, email: userData.email });
+
+      // Fetch security configuration
+      const securityConfig = await this.getSecurityConfig();
+
+      // Generate tokens
+      const sessionTimeoutMinutes = securityConfig.session_timeout_minutes;
+      const token = jwt.sign(
+        { userId: userData.id, employee_id: userData.employee_id, role: userData.role },
+        process.env.JWT_SECRET,
+        { expiresIn: `${sessionTimeoutMinutes}m` }
+      );
+      
+      const refreshToken = jwt.sign(
+        { userId: userData.id },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      );
+
+      // Log successful login completion and email verification
+      await auditLog(userId, 'LOGIN_COMPLETED', 'users', userId, null, { 
+        email: userData.email, 
+        email_verified: true 
+      }, ip, userAgent);
+
+      await auditLog(userId, 'EMAIL_VERIFIED', 'users', userId, null, { 
+        email: userData.email 
+      }, ip, userAgent);
+
+      return {
+        success: true,
+        message: 'OTP verification completed successfully',
+        user: {
+          id: userData.id,
+          employee_id: userData.employee_id,
+          username: userData.username,
+          email: userData.email,
+          role: userData.role,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          department: userData.department,
+          job_grade: userData.job_grade,
+          password_change_required: userData.password_change_required || false,
+          email_verified: true, // Include in response for frontend
+          created_at: userData.created_at
         },
         token,
         refreshToken
       };
     } catch (error) {
-      throw error;
+      console.error('Complete OTP verification error:', error);
+      throw new Error('Failed to complete OTP verification');
     }
   }
 
@@ -416,6 +582,14 @@ class AuthService {
       `;
       const users = await query(selectQuery, [email]);
       console.log('Query result:', users);
+      if (users[0]) {
+        console.log('User fields from DB:', Object.keys(users[0]));
+        console.log('Email verification fields:', {
+          is_first_login: users[0].is_first_login,
+          email_verified: users[0].email_verified,
+          role: users[0].role
+        });
+      }
       return users[0] || null;
     } catch (error) {
       console.error('Database error in findByEmail:', error);

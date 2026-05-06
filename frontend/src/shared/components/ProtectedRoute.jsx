@@ -10,6 +10,7 @@ const normalizeRole = (dbRole) => {
   if (r === 'finance_admin') return 'finance';
   if (r === 'admin')         return 'admin';
   if (r === 'loan_committee') return 'loan_committee';
+  if (r === 'hr') return 'hr';
   if (r === 'employee') return 'employee';
   return r;
 };
@@ -47,11 +48,27 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     comparison: userRole !== requiredRole?.toLowerCase()
   });
 
-  // Support multiple roles for admin access
+  // Support multiple roles for admin and HR access
+  const isAdminRoute = requiredRole.toLowerCase() === 'admin';
+  const isEmployeeRoute = requiredRole.toLowerCase() === 'employee';
+  const adminAccess = isAdminRoute && ['admin'].includes(userRole);
+  const employeeAccess = isEmployeeRoute && ['employee', 'hr'].includes(userRole);
+  const exactMatch = userRole === requiredRole.toLowerCase();
+  
   const hasAccess = requiredRole ? 
-    (requiredRole.toLowerCase() === 'admin' && ['admin'].includes(userRole)) ||
-    userRole === requiredRole.toLowerCase()
+    adminAccess || employeeAccess || exactMatch
     : true;
+    
+  console.log('[route] access evaluation', {
+    requiredRole: requiredRole?.toLowerCase(),
+    userRole,
+    isAdminRoute,
+    isEmployeeRoute,
+    adminAccess,
+    employeeAccess,
+    exactMatch,
+    hasAccess
+  });
 
   if (requiredRole && !hasAccess) {
     console.log('[route] blocked: role mismatch', {

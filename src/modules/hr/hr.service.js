@@ -1707,6 +1707,110 @@ class HrService {
       return [];
     }
   }
+
+  static async deleteEmployee(userId, adminId, ip, userAgent) {
+    try {
+      // Start transaction
+      await query('START TRANSACTION');
+
+      // Check if employee exists and get details for audit
+      const employee = await query(
+        `SELECT u.id, u.employee_id, u.email, u.first_name, u.last_name, u.role, ep.department 
+         FROM users u 
+         LEFT JOIN employee_profiles ep ON u.id = ep.user_id 
+         WHERE u.id = ? AND u.role = 'EMPLOYEE'`,
+        [userId]
+      );
+
+      if (!employee || employee.length === 0) {
+        await query('ROLLBACK');
+        throw new Error('Employee not found');
+      }
+
+      const employeeData = employee[0];
+
+      // Check if employee has active loans
+      const activeLoans = await query(
+        'SELECT COUNT(*) as count FROM loans WHERE user_id = ? AND status IN ("PENDING", "APPROVED", "DISBURSED")',
+        [userId]
+      );
+
+      if (activeLoans[0].count > 0) {
+        await query('ROLLBACK');
+        throw new Error('Cannot delete employee with active loans. Please settle all loans first.');
+      }
+
+      // Check if employee has outstanding savings balance
+      const savingsBalance = await query(
+        'SELECT balance FROM savings_accounts WHERE user_id = ?',
+        [userId]
+      );
+
+      if (savingsBalance.length > 0 && savingsBalance[0].balance > 0) {
+        await query('ROLLBACK');
+        throw new Error('Cannot delete employee with outstanding savings balance. Please withdraw all funds first.');
+      }
+
+      // Delete related records manually (additional safety beyond CASCADE)
+      
+      // Delete employee profile
+      await query('DELETE FROM employee_profiles WHERE user_id = ?', [userId]);
+      
+      // Delete performance reviews
+      await query('DELETE FROM performance_reviews WHERE user_id = ?', [userId]);
+      
+      // Delete attendance records (if table exists)
+      try {
+        await query('DELETE FROM attendance WHERE user_id = ?', [userId]);
+      } catch (err) {
+        // Table might not exist, continue
+      }
+
+      // Delete payroll records (if table exists)
+      try {
+        await query('DELETE FROM payroll WHERE user_id = ?', [userId]);
+      } catch (err) {
+        // Table might not exist, continue
+      }
+
+      // Delete the user (this will cascade delete related records)
+      const deleteResult = await query('DELETE FROM users WHERE id = ?', [userId]);
+
+      if (deleteResult.affectedRows === 0) {
+        await query('ROLLBACK');
+        throw new Error('Failed to delete employee');
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+
+      // Log the deletion
+      await auditLog(adminId, 'EMPLOYEE_DELETED', 'users', userId, null, {
+        employeeId: employeeData.employee_id,
+        email: employeeData.email,
+        name: `${employeeData.first_name} ${employeeData.last_name}`,
+        department: employeeData.department,
+        role: employeeData.role
+      }, ip, userAgent);
+
+      return {
+        success: true,
+        message: 'Employee deleted successfully',
+        deletedEmployee: {
+          id: employeeData.id,
+          employeeId: employeeData.employee_id,
+          email: employeeData.email,
+          name: `${employeeData.first_name} ${employeeData.last_name}`,
+          department: employeeData.department
+        }
+      };
+
+    } catch (error) {
+      await query('ROLLBACK');
+      console.error('Delete employee error:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = HrService;

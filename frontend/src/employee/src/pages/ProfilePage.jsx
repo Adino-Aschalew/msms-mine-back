@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   User, Mail, Phone, Calendar, MapPin, Edit2, Camera, Save, X, Briefcase, Shield, Lock,
-  Award, TrendingUp, Activity, Target, Settings, ChevronRight, BadgeCheck, Sparkles,
-  Building, Check, Eye, EyeOff
+  Settings, ChevronRight, BadgeCheck, Sparkles, Building, Check, Eye, EyeOff
 } from 'lucide-react';
-import { useAuth } from '../../../shared/contexts/AuthContext';
+import { useAuth } from '../../../shared/contexts/AuthContext.jsx';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
+import { notificationService } from '../../../shared/services/notificationService';
 import { formatDate } from 'date-fns';
 
 
@@ -24,13 +24,13 @@ const InputField = ({ label, value, onChange, disabled, type = 'text', icon: Ico
   <div className="group">
     <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">{label}</label>
     <div className="relative">
-      {Icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon className="w-5 h-5" /></div>}
+      {Icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-200"><Icon className="w-5 h-5" /></div>}
       {textarea ? (
         <textarea value={value} onChange={(e) => onChange?.(e.target.value)} disabled={disabled} rows={4}
-          className={`w-full px-4 py-3 rounded-xl border-2 transition-all ${Icon ? 'pl-12' : ''} ${disabled ? 'bg-gray-50 border-gray-200 text-gray-500' : 'bg-white border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'}`} />
+          className={`w-full px-4 py-3 rounded-xl border-2 transition-all ${Icon ? 'pl-12' : ''} ${disabled ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-gray-900 dark:text-white'}`} />
       ) : (
         <input type={type} value={value} onChange={(e) => onChange?.(e.target.value)} disabled={disabled}
-          className={`w-full px-4 py-3 rounded-xl border-2 transition-all ${Icon ? 'pl-12' : ''} ${disabled ? 'bg-gray-50 border-gray-200 text-gray-500' : 'bg-white border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'}`} />
+          className={`w-full px-4 py-3 rounded-xl border-2 transition-all ${Icon ? 'pl-12' : ''} ${disabled ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-gray-900 dark:text-white'}`} />
       )}
     </div>
   </div>
@@ -55,10 +55,10 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-bold">{title}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5" /></button>
+      <div className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-bold dark:text-white">{title}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-6">{children}</div>
       </div>
@@ -81,8 +81,45 @@ const ProfilePage = () => {
   const showNotification = (message, type = 'success') => setToast({ message, type });
 
   const handleSave = async () => {
-    try { await updateProfile({ name: formData.fullName }); setIsEditing(false); showNotification('Profile updated!'); }
-    catch (error) { showNotification('Update failed', 'error'); }
+    try {
+      // Prepare data in different possible formats the backend might expect
+      const updateData = {
+        // Try common field names
+        name: formData.fullName,
+        fullName: formData.fullName,
+        first_name: formData.fullName.split(' ')[0] || formData.fullName,
+        last_name: formData.fullName.split(' ').slice(1).join(' ') || '',
+        // Also include other fields that might be expected
+        phone: formData.phone,
+        address: formData.address,
+        date_of_birth: formData.dateOfBirth,
+        emergency_contact: formData.emergencyContact,
+        bio: formData.bio,
+      };
+      
+      // Update the profile via AuthContext (which handles API call)
+      await updateProfile(updateData);
+      
+      // Trigger notification for profile update
+      const changedFields = Object.keys(updateData).filter(key => {
+        if (key === 'first_name' || key === 'last_name' || key === 'name' || key === 'fullName') return 'Name';
+        if (key === 'phone') return 'Phone';
+        if (key === 'address') return 'Address';
+        if (key === 'date_of_birth') return 'Date of Birth';
+        if (key === 'emergency_contact') return 'Emergency Contact';
+        if (key === 'bio') return 'Bio';
+        return key;
+      });
+      await notificationService.notifyProfileUpdate(changedFields);
+      
+      setIsEditing(false);
+      showNotification('Profile updated!');
+    }
+    catch (error) { 
+      console.error('Profile update error:', error);
+      console.error('Error details:', error.response?.data);
+      showNotification('Update failed', 'error'); 
+    }
   };
 
   const handleCancel = () => { loadProfileData(); setIsEditing(false); };
@@ -92,7 +129,11 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file?.type.startsWith('image/')) { showNotification('Please select an image', 'error'); return; }
     const reader = new FileReader();
-    reader.onload = (ev) => { updateProfile({ avatar: ev.target.result }); showNotification('Avatar updated!'); };
+    reader.onload = (ev) => { 
+      // Update local state immediately for better UX
+      updateProfile({ avatar: ev.target.result }); 
+      showNotification('Avatar updated!'); 
+    };
     reader.readAsDataURL(file);
   };
 
@@ -135,11 +176,11 @@ const ProfilePage = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-black dark:to-black pb-12">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {}
-      <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-30">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -188,14 +229,14 @@ const ProfilePage = () => {
 
       {}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
           {}
-          <div className="border-b border-gray-100">
+          <div className="border-b border-gray-100 dark:border-gray-700">
             <div className="flex gap-1 p-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon, isActive = activeTab === tab.id;
                 return (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                     <Icon className="w-4 h-4" />{tab.label}
                   </button>
                 );
@@ -245,17 +286,6 @@ const ProfilePage = () => {
                     <InputField label="Employment Type" value={formData.employmentType} disabled icon={Sparkles} />
                   </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-emerald-100 rounded-lg"><TrendingUp className="w-5 h-5 text-emerald-600" /></div>
-                    <h3 className="text-xl font-bold">Performance</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard label="Attendance" value="94%" icon={Activity} color="blue" />
-                    <StatCard label="Goals" value="112%" icon={Target} color="green" />
-                    <StatCard label="Rating" value="4.8/5" icon={Award} color="purple" />
-                  </div>
-                </div>
               </div>
             )}
 
@@ -266,12 +296,12 @@ const ProfilePage = () => {
                   <h3 className="text-xl font-bold">Security</h3>
                 </div>
                 {[{ icon: Lock, title: 'Change Password', desc: 'Update your password', action: 'Change', onClick: () => setShowPasswordModal(true) }, { icon: Shield, title: '2FA', desc: 'Add extra security', action: 'Enable' }, { icon: Settings, title: 'Privacy', desc: 'Control preferences', action: <ChevronRight className="w-5 h-5" /> }].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-300 transition-colors">
+                  <div key={i} className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-white rounded-xl"><item.icon className="w-6 h-6 text-gray-600" /></div>
-                      <div><h4 className="font-bold">{item.title}</h4><p className="text-sm text-gray-500">{item.desc}</p></div>
+                      <div className="p-3 bg-white dark:bg-gray-700 rounded-xl"><item.icon className="w-6 h-6 text-gray-600 dark:text-gray-300" /></div>
+                      <div><h4 className="font-bold dark:text-white">{item.title}</h4><p className="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p></div>
                     </div>
-                    <button onClick={item.onClick} className="px-4 py-2 bg-white border border-gray-200 rounded-xl font-medium text-sm hover:bg-gray-50">{item.action}</button>
+                    <button onClick={item.onClick} className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-600 dark:text-white">{item.action}</button>
                   </div>
                 ))}
               </div>
@@ -285,27 +315,27 @@ const ProfilePage = () => {
         <form onSubmit={handlePasswordSubmit} className="space-y-5">
           {[{ key: 'currentPassword', label: 'Current' }, { key: 'newPassword', label: 'New' }, { key: 'confirmPassword', label: 'Confirm' }].map(({ key, label }) => (
             <div key={key}>
-              <label className="block text-xs font-bold uppercase text-gray-500 mb-2">{label}</label>
+              <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">{label}</label>
               <div className="relative">
                 <input type={showPasswords[key] ? 'text' : 'password'} value={passwordData[key]} onChange={(e) => setPasswordData(p => ({ ...p, [key]: e.target.value }))}
-                  className="w-full px-4 py-3 pr-10 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" required />
-                <button type="button" onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key] }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  className="w-full px-4 py-3 pr-10 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-gray-900 dark:text-white" required />
+                <button type="button" onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key] }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300">
                   {showPasswords[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
           ))}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+              <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
               <div>
-                <h4 className="font-bold text-sm">Requirements</h4>
-                <ul className="text-sm text-blue-600 mt-1"><li>• Min 8 chars • Upper & lower • Numbers</li></ul>
+                <h4 className="font-bold text-sm dark:text-white">Requirements</h4>
+                <ul className="text-sm text-blue-600 dark:text-blue-400 mt-1"><li>• Min 8 chars • Upper & lower • Numbers</li></ul>
               </div>
             </div>
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-gray-100">Cancel</button>
+            <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 px-4 py-3 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Cancel</button>
             <button type="submit" className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium">Update</button>
           </div>
         </form>

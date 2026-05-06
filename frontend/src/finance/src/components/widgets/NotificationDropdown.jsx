@@ -5,7 +5,7 @@ import { useNotifications } from '../../contexts/NotificationContext.jsx';
 import { formatDistanceToNow } from 'date-fns';
 
 const NotificationDropdown = ({ notifications, onClose }) => {
-  const { markAsRead, markAllAsRead } = useNotifications();
+  const { markAsRead, markAllAsRead, getNotificationIcon } = useNotifications();
 
   const getIcon = (type) => {
     switch (type) {
@@ -15,6 +15,16 @@ const NotificationDropdown = ({ notifications, onClose }) => {
         return <AlertCircle className="h-5 w-5 text-yellow-500" />;
       case 'error':
         return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'savings_request_submitted':
+        return <div className="h-5 w-5 text-blue-500 flex items-center justify-center">📋</div>;
+      case 'savings_request_approved':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'savings_request_rejected':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'savings_account_activated':
+        return <div className="h-5 w-5 text-emerald-500 flex items-center justify-center">💰</div>;
+      case 'savings_rate_updated':
+        return <div className="h-5 w-5 text-purple-500 flex items-center justify-center">📈</div>;
       default:
         return <Info className="h-5 w-5 text-blue-500" />;
     }

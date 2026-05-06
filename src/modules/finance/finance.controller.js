@@ -136,25 +136,10 @@ class FinanceController {
       });
     } catch (error) {
       console.error('Get analytics error:', error);
-      
-      res.json({
-        success: true,
-        data: {
-          revenue: 0,
-          expenses: 0,
-          netProfit: 0,
-          revenueGrowth: 0,
-          expensesGrowth: 0,
-          profitGrowth: 0,
-          cashBalance: 0,
-          cashChange: 0,
-          accountsReceivable: 0,
-          receivableChange: 0,
-          accountsPayable: 0,
-          payableChange: 0,
-          expenseBreakdown: [],
-          monthlyCashFlow: []
-        }
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch analytics data',
+        error: error.message
       });
     }
   }

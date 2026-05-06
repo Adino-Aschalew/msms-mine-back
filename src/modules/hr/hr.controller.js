@@ -629,6 +629,37 @@ class HrController {
       });
     }
   }
+
+  static async deleteEmployee(req, res) {
+    try {
+      const { userId } = req.params;
+      const adminId = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Employee ID is required'
+        });
+      }
+
+      const result = await HrService.deleteEmployee(userId, adminId, ip, userAgent);
+
+      res.json({
+        success: true,
+        message: result.message,
+        data: result.deletedEmployee
+      });
+
+    } catch (error) {
+      console.error('Delete employee error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to delete employee'
+      });
+    }
+  }
 }
 
 module.exports = HrController;

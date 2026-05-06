@@ -3,7 +3,7 @@ import apiClient from '../services/api';
 
 export const authAPI = {
   
-  login: async (identifier, password, role) => {
+  login: async (identifier, password, role = 'EMPLOYEE') => {
     const response = await apiClient.post('/auth/login', {
       identifier,
       password,

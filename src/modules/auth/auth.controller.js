@@ -7,7 +7,7 @@ class AuthController {
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
       
-      const result = await AuthService.login(identifier, password, role, ip, userAgent);
+      const result = await AuthService.login(identifier, password, ip, userAgent);
       
       res.json({
         success: true,
@@ -133,9 +133,34 @@ class AuthController {
       const userId = req.userId;
       const profile = await AuthService.getProfile(userId);
       
+      // Structure data to match frontend expectations
+      const responseData = {
+        user: {
+          id: profile.id,
+          name: `${profile.first_name} ${profile.last_name}`,
+          email: profile.email,
+          role: profile.role,
+          created_at: profile.created_at
+        },
+        employeeProfile: {
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone_number,
+          address: profile.address,
+          department: profile.department,
+          position: profile.job_title,
+          employee_id: profile.employee_id,
+          hire_date: profile.created_at, // Using created_at as fallback
+          employment_type: profile.employment_status || 'Full-time',
+          date_of_birth: null, // Add if available in schema
+          emergency_contact: null, // Add if available in schema
+          bio: null // Add if available in schema
+        }
+      };
+      
       res.json({
         success: true,
-        data: profile
+        data: responseData
       });
     } catch (error) {
       console.error('Get profile error:', error);
@@ -206,6 +231,24 @@ class AuthController {
       res.status(500).json({
         success: false,
         message: 'Internal server error'
+      });
+    }
+  }
+
+  static async completeOTPVerification(req, res) {
+    try {
+      const { userId } = req.body;
+      const ip = req.ip || req.connection.remoteAddress;
+      const userAgent = req.get('User-Agent');
+
+      const result = await AuthService.completeOTPVerification(userId, ip, userAgent);
+
+      res.json(result);
+    } catch (error) {
+      console.error('Complete OTP verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to complete OTP verification'
       });
     }
   }

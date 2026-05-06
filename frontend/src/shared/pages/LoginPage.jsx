@@ -18,6 +18,7 @@ const LoginPage = () => {
 
   const from = location.state?.from?.pathname || '/';
 
+  
   const getRoleRedirectPathFromUser = (user) => {
     const role = user?.role ? String(user.role).toUpperCase().trim() : '';
     console.log('[login] role mapping', { 
@@ -68,7 +69,7 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.identifier.trim()) {
-      setError('Please enter your username or Employee ID');
+      setError('Please enter your email address');
       return;
     }
     if (!formData.password) {
@@ -82,26 +83,36 @@ const LoginPage = () => {
     try {
       console.log('[login] submit', { identifier: formData.identifier, isEmailMode, from });
       
-      const inferredRole = isEmailMode ? 'admin' : 'employee';
-      const loggedInUser = await login(formData, inferredRole);
+      const loggedInUser = await login(formData, 'EMPLOYEE');
       console.log('[login] user object received:', loggedInUser);
       
       // Add small delay to ensure authentication state is fully set
       setTimeout(() => {
         const roleBasedPath = getRoleRedirectPathFromUser(loggedInUser);
-        // Prevent users from accessing routes that don't match their role
-        const redirectPath = (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'EMPLOYEE') 
-          ? roleBasedPath 
-          : (from !== '/' && from.startsWith('/employee') && (loggedInUser?.role === 'ADMIN' || loggedInUser?.role === 'SUPER_ADMIN'))
-          ? roleBasedPath
-          : (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'LOAN_COMMITTEE')
-          ? roleBasedPath
-          : (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'HR')
-          ? roleBasedPath
-          : (from !== '/' && from.startsWith('/admin') && (loggedInUser?.role === 'FINANCE' || loggedInUser?.role === 'FINANCE_ADMIN'))
-          ? roleBasedPath
-          : (from !== '/' ? from : roleBasedPath);
-        console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role, from });
+        const userRole = String(loggedInUser?.role).toUpperCase().trim();
+        
+        // For HR users, always prioritize their dashboard unless coming from a specific HR route
+        let redirectPath;
+        if (userRole === 'HR' && from !== '/' && !from.startsWith('/hr')) {
+          redirectPath = roleBasedPath; // Send HR users to their dashboard
+        } else {
+          // Use existing logic for other cases
+          redirectPath = (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'EMPLOYEE') 
+            ? roleBasedPath 
+            : (from !== '/' && from.startsWith('/employee') && (loggedInUser?.role === 'ADMIN' || loggedInUser?.role === 'SUPER_ADMIN'))
+            ? roleBasedPath
+            : (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'LOAN_COMMITTEE')
+            ? roleBasedPath
+            : (from !== '/' && from.startsWith('/admin') && loggedInUser?.role === 'HR')
+            ? roleBasedPath
+            : (from !== '/' && from.startsWith('/admin') && (loggedInUser?.role === 'FINANCE' || loggedInUser?.role === 'FINANCE_ADMIN'))
+            ? roleBasedPath
+            : (from !== '/' && from.startsWith('/hr') && loggedInUser?.role === 'EMPLOYEE')
+            ? roleBasedPath
+            : (from !== '/' ? from : roleBasedPath);
+        }
+        
+        console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role, from, roleBasedPath });
         console.log('[login] about to navigate to:', redirectPath);
         navigate(redirectPath, { replace: true });
       }, 200);
@@ -198,24 +209,24 @@ const LoginPage = () => {
               className="block text-sm font-medium mb-2"
               style={{ color: 'rgba(203,213,225,1)' }}
             >
-              {isEmailMode ? 'Email Address' : 'Username / Employee ID'}
+              Email Address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <FiUser
                   className="w-4 h-4 transition-colors duration-200"
-                  style={{ color: isEmailMode ? '#60a5fa' : 'rgba(148,163,184,0.7)' }}
+                  style={{ color: '#60a5fa' }}
                 />
               </div>
               <input
                 id="identifier"
                 name="identifier"
-                type="text"
+                type="email"
                 autoComplete="username"
                 required
                 value={formData.identifier}
                 onChange={handleChange}
-                placeholder="Employee ID or email address"
+                placeholder="Enter your email address"
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 44px',

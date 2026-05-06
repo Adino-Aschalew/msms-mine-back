@@ -36,6 +36,7 @@ router.get('/employees/:userId', HrController.getEmployeeById);
 router.put('/employees/:userId/profile', HrController.updateEmployeeProfile);
 router.put('/employees/:userId/verify', auditMiddleware('EMPLOYEE_VERIFIED'), HrController.verifyEmployee);
 router.put('/employees/:userId/status', auditMiddleware('EMPLOYMENT_STATUS_UPDATE'), HrController.updateEmploymentStatus);
+router.delete('/employees/:userId', auditMiddleware('EMPLOYEE_DELETED'), HrController.deleteEmployee);
 
 
 router.post('/employees/bulk-verify', auditMiddleware('BULK_EMPLOYEE_VERIFICATION'), HrController.bulkVerifyEmployees);
