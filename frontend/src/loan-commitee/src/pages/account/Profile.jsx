@@ -50,7 +50,8 @@ const Profile = () => {
     certifications: [],
     office: '',
     manager: '',
-    emergencyContact: ''
+    emergencyContact: '',
+    profilePicture: null
   });
 
   const [systemStats, setSystemStats] = useState({
@@ -113,7 +114,8 @@ const Profile = () => {
           certifications: data.certifications || [],
           office: data.office || '',
           manager: data.manager || '',
-          emergencyContact: data.emergency_contact || ''
+          emergencyContact: data.emergency_contact || '',
+          profilePicture: data.profile_picture || null
         });
       }
 
@@ -241,6 +243,7 @@ const Profile = () => {
         office: profile.office,
         manager: profile.manager,
         emergency_contact: profile.emergencyContact,
+        profile_picture: profile.profilePicture
       };
       
       const res = await committeeAPI.updateProfile(profileData);
@@ -265,8 +268,15 @@ const Profile = () => {
     setHasChanges(false);
   };
 
-  const handleAvatarUpload = () => {
-    console.log('Uploading avatar');
+  const handleAvatarUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handleProfileChange('profilePicture', reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   
@@ -300,6 +310,7 @@ const Profile = () => {
             office: data.office || prev.office,
             manager: data.manager || prev.manager,
             emergencyContact: data.emergencyContact || data.emergency_contact || prev.emergencyContact,
+            profilePicture: data.profile_picture || prev.profilePicture
           }));
         }
 
@@ -474,16 +485,23 @@ const Profile = () => {
               <div className="text-center">
                 {}
                 <div className="relative inline-block">
-                  <div className="w-28 h-28 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-xl ring-4 ring-white dark:ring-gray-700">
-                    <User className="w-14 h-14 text-white" />
+                  <div className="w-28 h-28 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-xl ring-4 ring-white dark:ring-gray-700 overflow-hidden">
+                    {profile.profilePicture ? (
+                      <img src={profile.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-14 h-14 text-white" />
+                    )}
                   </div>
                   {isEditing && (
-                    <button
-                      onClick={handleAvatarUpload}
-                      className="absolute bottom-0 right-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-full shadow-lg hover:scale-110 transition-transform"
-                    >
+                    <label className="absolute bottom-0 right-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-full shadow-lg hover:scale-110 transition-transform cursor-pointer">
                       <Camera className="w-5 h-5" />
-                    </button>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleAvatarUpload}
+                      />
+                    </label>
                   )}
                 </div>
 

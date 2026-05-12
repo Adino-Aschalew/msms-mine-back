@@ -39,8 +39,8 @@ const LoanDetails = () => {
       try {
         setLoading(true);
         const response = await committeeAPI.getApplicationById(id);
-        if (response && response.data && response.data.success) {
-          const app = response.data.data;
+        if (response && response.success) {
+          const app = response.data;
           const mappedData = {
             id: app.id,
             employee: {

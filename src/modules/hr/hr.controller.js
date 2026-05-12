@@ -565,24 +565,13 @@ class HrController {
   static async getUserProfile(req, res) {
     try {
       const userId = req.userId;
-      
-      
+      const AuthService = require('../auth/auth.service');
+      const profile = await AuthService.getProfile(userId);
       
       res.json({
         success: true,
         data: {
-          user: {
-            id: userId,
-            username: req.user?.username || 'hr@msms.com',
-            email: req.user?.email || 'hr@msms.com',
-            role: req.user?.role || 'HR',
-            first_name: 'HR',
-            last_name: 'Manager',
-            department: 'Human Resources',
-            job_grade: 'MANAGER',
-            phone: null,
-            address: null
-          },
+          user: profile,
           loginActivity: []
         }
       });

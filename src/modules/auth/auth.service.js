@@ -511,7 +511,7 @@ class AuthService {
 
       
       const employeeProfile = await query(`
-        SELECT phone_number, address, department, job_title
+        SELECT phone_number, address, department, job_title, profile_picture
         FROM employee_profiles 
         WHERE user_id = ?
       `, [userId]);
@@ -531,6 +531,7 @@ class AuthService {
         department: profile.department || user.department || '',
         job_title: profile.job_title || '',
         job_grade: user.job_grade,
+        profile_picture: profile.profile_picture || null,
         employment_status: user.employment_status,
         created_at: user.created_at,
         last_login: user.last_login
@@ -540,24 +541,7 @@ class AuthService {
     }
   }
 
-  static async updateProfile(userId, profileData, ip, userAgent) {
-    try {
-      const { first_name, last_name, phone, address } = profileData;
-      
-      await this.updateUserProfile(userId, {
-        first_name,
-        last_name,
-        phone,
-        address
-      });
 
-      await auditLog(userId, 'PROFILE_UPDATE', 'employee_profiles', userId, null, { first_name, last_name, phone, address }, ip, userAgent);
-
-      return { message: 'Profile updated successfully' };
-    } catch (error) {
-      throw error;
-    }
-  }
 
   
   static async findByEmployeeId(employee_id) {
@@ -694,7 +678,8 @@ class AuthService {
       first_name, 
       last_name, 
       phone_number,
-      address
+      address,
+      profile_picture
     } = profileData;
 
     try {
@@ -712,15 +697,15 @@ class AuthService {
       if (profiles.length > 0) {
         await query(`
           UPDATE employee_profiles 
-          SET first_name = ?, last_name = ?, phone_number = ?, address = ?, updated_at = NOW()
+          SET first_name = ?, last_name = ?, phone_number = ?, address = ?, profile_picture = ?, updated_at = NOW()
           WHERE user_id = ?
-        `, [first_name, last_name, phone_number, address || null, userId]);
+        `, [first_name, last_name, phone_number, address || null, profile_picture || null, userId]);
       } else {
         
         await query(`
-          INSERT INTO employee_profiles (user_id, first_name, last_name, phone_number, address)
-          VALUES (?, ?, ?, ?, ?)
-        `, [userId, first_name, last_name, phone_number, address || null]);
+          INSERT INTO employee_profiles (user_id, first_name, last_name, phone_number, address, profile_picture)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `, [userId, first_name, last_name, phone_number, address || null, profile_picture || null]);
       }
 
       

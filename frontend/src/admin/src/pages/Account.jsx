@@ -63,6 +63,12 @@ const Account = () => {
         job_title: user.job_title || '',
         role: user.role || 'Admin'
       }));
+      if (user.profile_picture) {
+        setProfileImage(user.profile_picture);
+      } else {
+        const savedImage = localStorage.getItem('userProfileImage');
+        if (savedImage) setProfileImage(savedImage);
+      }
     }
   }, [user]);
 
@@ -82,8 +88,8 @@ const Account = () => {
     setNotificationLoading(true);
     try {
       const response = await adminAPI.getSystemConfig();
-      if (response.data && response.data.success) {
-        const config = response.data.data;
+      if (response && response.success) {
+        const config = response.data;
         setNotificationSettings({
           emailNotifications: config.email_notifications !== undefined ? config.email_notifications : true,
           pushNotifications: config.system_alerts !== undefined ? config.system_alerts : true,
@@ -127,11 +133,12 @@ const Account = () => {
   };
 
   const fetchActivities = async () => {
+    if (!user?.id) return;
     setActivitiesLoading(true);
     try {
-      const response = await adminAPI.getUserActivity(20);
-      if (response.data && response.data.success) {
-        setActivities(response.data.data.activities || []);
+      const response = await adminAPI.getUserActivity(user.id, 20);
+      if (response && response.success) {
+        setActivities(response.data.activities || []);
       }
     } catch (error) {
       console.error('Error fetching activities:', error);
@@ -257,7 +264,8 @@ const Account = () => {
         first_name: formData.first_name,
         last_name: formData.last_name,
         phone_number: formData.phone_number,
-        address: formData.address || ''
+        address: formData.address || '',
+        profile_picture: profileImage
       });
       setIsEditing(false);
       showStatus('success', 'Your profile has been updated successfully.');

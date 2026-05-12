@@ -126,7 +126,10 @@ class ApiClient {
     }
 
     try {
+<<<<<<< HEAD
       // Use clean fetch without this.request to avoid recursion
+=======
+>>>>>>> Fixsetings
       const response = await fetch(`${this.baseURL}/auth/refresh-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

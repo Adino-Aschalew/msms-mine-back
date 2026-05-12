@@ -17,6 +17,7 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -109,8 +110,11 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
       }
 
       if (response.success) {
-        if (onSubmit) onSubmit(response.data);
-        onClose();
+        setShowSuccess(true);
+        setTimeout(() => {
+          if (onSubmit) onSubmit(response.data || payload);
+          onClose();
+        }, 2000);
       } else {
         setErrors({ submit: response.message || 'Failed to create admin' });
       }
@@ -325,26 +329,35 @@ const AddAdminForm = ({ onClose, onSubmit }) => {
       
       {}
       <div className="flex gap-4 pt-6">
-        <button
-          onClick={onClose}
-          type="button"
-          disabled={isSubmitting}
-          className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70"
-        >
-          {isSubmitting ? (
-            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-          ) : (
+        {showSuccess ? (
+          <div className="w-full py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl font-bold flex items-center justify-center gap-2 animate-in zoom-in-95">
             <CheckCircle className="h-5 w-5" />
-          )}
-          {isSubmitting ? 'Creating...' : 'Create Admin'}
-        </button>
+            Admin Added Successfully!
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={onClose}
+              type="button"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {isSubmitting ? (
+                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <CheckCircle className="h-5 w-5" />
+              )}
+              {isSubmitting ? 'Creating...' : 'Create Admin'}
+            </button>
+          </>
+        )}
       </div>
       {errors.submit && (
         <p className="mt-4 text-center text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-100 font-medium">

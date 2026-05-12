@@ -6,14 +6,14 @@ import ProtectedRoute from './shared/components/ProtectedRoute';
 import PasswordChangeModal from './shared/components/PasswordChangeModal';
 
 
-const AdminModule = React.lazy(() => import('./modules/components/AdminModule'));
-const HrModule = React.lazy(() => import('./modules/components/HrModule'));
-const FinanceModule = React.lazy(() => import('./modules/components/FinanceModule'));
-const EmployeeModule = React.lazy(() => import('./modules/components/EmployeeModule'));
-const LoanModule = React.lazy(() => import('./modules/components/LoanModule'));
-const LoginPage = React.lazy(() => import('./shared/pages/LoginPage'));
-const EmailVerificationPage = React.lazy(() => import('./shared/pages/EmailVerificationPage'));
-const UnauthorizedPage = React.lazy(() => import('./shared/pages/UnauthorizedPage'));
+const AdminModule = React.lazy(() => import('./modules/components/AdminModule.jsx'));
+const HrModule = React.lazy(() => import('./modules/components/HrModule.jsx'));
+const FinanceModule = React.lazy(() => import('./modules/components/FinanceModule.jsx'));
+const EmployeeModule = React.lazy(() => import('./modules/components/EmployeeModule.jsx'));
+const LoanModule = React.lazy(() => import('./modules/components/LoanModule.jsx'));
+const LoginPage = React.lazy(() => import('./shared/pages/LoginPage.jsx'));
+const EmailVerificationPage = React.lazy(() => import('./shared/pages/EmailVerificationPage.jsx'));
+const UnauthorizedPage = React.lazy(() => import('./shared/pages/UnauthorizedPage.jsx'));
 
 function App() {
   return (

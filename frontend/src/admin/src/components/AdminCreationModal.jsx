@@ -18,7 +18,7 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
+  const [errors, setErrors] = useState({});
 
   const resetForm = () => {
     setFormData({
@@ -33,7 +33,7 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
       committee_level: '',
       max_loan_amount: ''
     });
-    setErrors([]);
+    setErrors({});
   };
 
   const handleClose = () => {
@@ -42,60 +42,62 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
   };
 
   const validateForm = () => {
-    const newErrors = [];
+    const newErrors = {};
 
     if (!formData.employee_id || formData.employee_id.trim() === '') {
-      newErrors.push('Employee ID is required');
+      newErrors.employee_id = 'Employee ID is required';
     } else if (formData.employee_id.length < 3 || formData.employee_id.length > 20) {
-      newErrors.push('Employee ID must be 3-20 characters');
+      newErrors.employee_id = 'Employee ID must be 3-20 characters';
     }
 
     if (!formData.first_name || formData.first_name.trim() === '') {
-      newErrors.push('First name is required');
+      newErrors.first_name = 'First name is required';
     }
 
     if (!formData.last_name || formData.last_name.trim() === '') {
-      newErrors.push('Last name is required');
+      newErrors.last_name = 'Last name is required';
     }
 
     if (!formData.email || formData.email.trim() === '') {
-      newErrors.push('Email is required');
+      newErrors.email = 'Email is required';
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
-        newErrors.push('Valid email is required');
+        newErrors.email = 'Please enter a valid email address (e.g., name@company.com)';
       }
     }
 
     if (!formData.phone_number || formData.phone_number.trim() === '') {
-      newErrors.push('Phone number is required');
+      newErrors.phone_number = 'Phone number is required';
     }
 
     if (!formData.department || formData.department.trim() === '') {
-      newErrors.push('Department is required');
+      newErrors.department = 'Department is required';
     }
 
     if (!formData.job_title || formData.job_title.trim() === '') {
-      newErrors.push('Job title is required');
+      newErrors.job_title = 'Job title is required';
     }
 
     if (!formData.password || formData.password.trim() === '') {
-      newErrors.push('Password is required');
+      newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
-      newErrors.push('Password must be at least 8 characters long');
+      newErrors.password = 'Password must be at least 8 characters long';
     } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.push('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+      newErrors.password = 'Password needs at least one uppercase, one lowercase, and one number';
     }
 
-    
     if (adminType === 'loan-committee') {
       if (formData.max_loan_amount && (isNaN(formData.max_loan_amount) || parseFloat(formData.max_loan_amount) < 0)) {
-        newErrors.push('Maximum loan amount must be a positive number');
+        newErrors.max_loan_amount = 'Please enter a valid positive number for the loan amount';
+      }
+      if (!formData.committee_level) {
+        newErrors.committee_level = 'Committee level is required';
       }
     }
 
     setErrors(newErrors);
-    return newErrors.length === 0;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -146,7 +148,17 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
       window.location.reload();
       
     } catch (error) {
-      setErrors([error.message || 'Failed to create admin']);
+      console.error('Submission error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create admin';
+      
+      // Try to map server error message to specific fields if possible
+      if (errorMessage.toLowerCase().includes('email')) {
+        setErrors({ email: errorMessage });
+      } else if (errorMessage.toLowerCase().includes('employee id')) {
+        setErrors({ employee_id: errorMessage });
+      } else {
+        setErrors({ general: errorMessage });
+      }
     } finally {
       setLoading(false);
     }
@@ -217,14 +229,12 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
             </div>
           </div>
 
-          {errors.length > 0 && (
+          {errors.general && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-6 mb-4">
               <div className="flex">
                 <div className="ml-3">
-                  <p className="text-sm text-red-700">
-                    {errors.map((error, index) => (
-                      <span key={index}>{error}{index < errors.length - 1 && ', '}</span>
-                    ))}
+                  <p className="text-sm text-red-700 font-medium">
+                    {errors.general}
                   </p>
                 </div>
               </div>
@@ -245,10 +255,11 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     type="text"
                     value={formData.employee_id}
                     onChange={(e) => setFormData({ ...formData, employee_id: e.target.value.toUpperCase() })}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`block w-full pl-10 pr-3 py-2 border ${errors.employee_id ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                     placeholder="e.g., HR001"
                   />
                 </div>
+                {errors.employee_id && <p className="mt-1 text-xs text-red-600 font-medium">{errors.employee_id}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -260,8 +271,9 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`mt-1 block w-full border ${errors.first_name ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                   />
+                  {errors.first_name && <p className="mt-1 text-xs text-red-600 font-medium">{errors.first_name}</p>}
                 </div>
 
                 <div>
@@ -272,8 +284,9 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     type="text"
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`mt-1 block w-full border ${errors.last_name ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                   />
+                  {errors.last_name && <p className="mt-1 text-xs text-red-600 font-medium">{errors.last_name}</p>}
                 </div>
               </div>
 
@@ -289,9 +302,10 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`block w-full pl-10 pr-3 py-2 border ${errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                   />
                 </div>
+                {errors.email && <p className="mt-1 text-xs text-red-600 font-medium">{errors.email}</p>}
               </div>
 
               <div>
@@ -306,9 +320,10 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     type="tel"
                     value={formData.phone_number}
                     onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`block w-full pl-10 pr-3 py-2 border ${errors.phone_number ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                   />
                 </div>
+                {errors.phone_number && <p className="mt-1 text-xs text-red-600 font-medium">{errors.phone_number}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -319,13 +334,14 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                   <select
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`mt-1 block w-full border ${errors.department ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                   >
                     <option value="">Select Department</option>
                     {getDepartmentOptions().map((dept) => (
                       <option key={dept} value={dept}>{dept}</option>
                     ))}
                   </select>
+                  {errors.department && <p className="mt-1 text-xs text-red-600 font-medium">{errors.department}</p>}
                 </div>
 
                 <div>
@@ -340,9 +356,10 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                       type="text"
                       value={formData.job_title}
                       onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className={`block w-full pl-10 pr-3 py-2 border ${errors.job_title ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                     />
                   </div>
+                  {errors.job_title && <p className="mt-1 text-xs text-red-600 font-medium">{errors.job_title}</p>}
                 </div>
               </div>
 
@@ -355,13 +372,14 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     <select
                       value={formData.committee_level}
                       onChange={(e) => setFormData({ ...formData, committee_level: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className={`mt-1 block w-full border ${errors.committee_level ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                     >
                       <option value="">Select Level</option>
                       {getCommitteeLevelOptions().map((level) => (
                         <option key={level} value={level}>{level}</option>
                       ))}
                     </select>
+                    {errors.committee_level && <p className="mt-1 text-xs text-red-600 font-medium">{errors.committee_level}</p>}
                   </div>
 
                   <div>
@@ -372,10 +390,11 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                       type="number"
                       value={formData.max_loan_amount}
                       onChange={(e) => setFormData({ ...formData, max_loan_amount: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className={`mt-1 block w-full border ${errors.max_loan_amount ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                       placeholder="0.00"
                       step="0.01"
                     />
+                    {errors.max_loan_amount && <p className="mt-1 text-xs text-red-600 font-medium">{errors.max_loan_amount}</p>}
                   </div>
                 </div>
               )}
@@ -392,7 +411,7 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className={`block w-full pl-10 pr-10 py-2 border ${errors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors`}
                   />
                   <button
                     type="button"
@@ -402,9 +421,13 @@ const AdminCreationModal = ({ isOpen, onClose, adminType }) => {
                     {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  Password must be at least 8 characters with uppercase, lowercase, and number
-                </p>
+                {errors.password ? (
+                  <p className="mt-1 text-xs text-red-600 font-medium">{errors.password}</p>
+                ) : (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Password must be at least 8 characters with uppercase, lowercase, and number
+                  </p>
+                )}
               </div>
             </div>
           </form>
