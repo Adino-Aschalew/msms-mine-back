@@ -86,6 +86,13 @@ const LoginPage = () => {
       const loggedInUser = await login(formData, 'EMPLOYEE');
       console.log('[login] user object received:', loggedInUser);
       
+      // Check for OTP verification requirement
+      if (loggedInUser?.requires_otp_verification) {
+        console.log('[login] OTP verification required, navigating to /verify-email');
+        navigate('/verify-email', { replace: true });
+        return;
+      }
+      
       // Add small delay to ensure authentication state is fully set
       setTimeout(() => {
         const roleBasedPath = getRoleRedirectPathFromUser(loggedInUser);
