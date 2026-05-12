@@ -368,13 +368,7 @@ const LoginPage = () => {
         {}
         <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center justify-between text-xs" style={{ color: 'rgba(100,116,139,1)' }}>
-            <span>© 2026 MSMS · All rights reserved</span>
-            <span
-              className="px-2 py-1 rounded-md"
-              style={{ background: 'rgba(30,41,59,0.6)', color: 'rgba(148,163,184,0.8)' }}
-            >
-              Our Version 1.0.0
-            </span>
+            <span className='text-center justify-center flex items-center m-auto'>© 2026 MSMS · All rights reserved</span>
           </div>
         </div>
       </div>
