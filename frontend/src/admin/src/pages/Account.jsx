@@ -82,8 +82,8 @@ const Account = () => {
     setNotificationLoading(true);
     try {
       const response = await adminAPI.getSystemConfig();
-      if (response.data && response.data.success) {
-        const config = response.data.data;
+      if (response && response.success) {
+        const config = response.data;
         setNotificationSettings({
           emailNotifications: config.email_notifications !== undefined ? config.email_notifications : true,
           pushNotifications: config.system_alerts !== undefined ? config.system_alerts : true,
@@ -127,11 +127,12 @@ const Account = () => {
   };
 
   const fetchActivities = async () => {
+    if (!user?.id) return;
     setActivitiesLoading(true);
     try {
-      const response = await adminAPI.getUserActivity(20);
-      if (response.data && response.data.success) {
-        setActivities(response.data.data.activities || []);
+      const response = await adminAPI.getUserActivity(user.id, 20);
+      if (response && response.success) {
+        setActivities(response.data.activities || []);
       }
     } catch (error) {
       console.error('Error fetching activities:', error);
