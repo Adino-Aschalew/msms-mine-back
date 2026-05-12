@@ -1,20 +1,20 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../../shared/contexts/AuthContext';
-import AdminLayout from '../../admin/src/components/layout/Layout';
-import Dashboard from '../../admin/src/pages/Dashboard';
-import AdminManagement from '../../admin/src/pages/AdminManagement';
-import Analytics from '../../admin/src/pages/Analytics';
-import Settings from '../../admin/src/pages/Settings';
-import Account from '../../admin/src/pages/Account';
-import Security from '../../admin/src/account/pages/Security';
-import Sessions from '../../admin/src/account/pages/Sessions';
-import Activity from '../../admin/src/account/pages/Activity';
-import Preferences from '../../admin/src/account/pages/Preferences';
-import DangerZone from '../../admin/src/account/pages/DangerZone';
-import Reports from '../../admin/src/pages/Reports';
+import AdminLayout from '../../admin/src/components/layout/Layout.jsx';
+import Dashboard from '../../admin/src/pages/Dashboard.jsx';
+import AdminManagement from '../../admin/src/pages/AdminManagement.jsx';
+import Analytics from '../../admin/src/pages/Analytics.jsx';
+import Settings from '../../admin/src/pages/Settings.jsx';
+import Account from '../../admin/src/pages/Account.jsx';
+import Security from '../../admin/src/account/pages/Security.jsx';
+import Sessions from '../../admin/src/account/pages/Sessions.jsx';
+import Activity from '../../admin/src/account/pages/Activity.jsx';
+import Preferences from '../../admin/src/account/pages/Preferences.jsx';
+import DangerZone from '../../admin/src/account/pages/DangerZone.jsx';
+import Reports from '../../admin/src/pages/Reports.jsx';
 
-import { ThemeProvider } from '../../admin/src/contexts/ThemeContext2';
+import { ThemeProvider } from '../../admin/src/contexts/ThemeContext2.jsx';
 
 const AdminModule = () => {
   const { user } = useAuth();
