@@ -1528,7 +1528,7 @@ class HrService {
 
   static async updateUserProfile(userId, profileData) {
     try {
-      const { first_name, last_name, phone, address } = profileData;
+      const { first_name, last_name, phone, address, profile_picture } = profileData;
 
       
       const [existing] = await query('SELECT user_id FROM employee_profiles WHERE user_id = ?', [userId]);
@@ -1537,15 +1537,15 @@ class HrService {
         
         await query(`
           UPDATE employee_profiles 
-          SET first_name = ?, last_name = ?, phone = ?, address = ?, updated_at = NOW()
+          SET first_name = ?, last_name = ?, phone = ?, address = ?, profile_picture = ?, updated_at = NOW()
           WHERE user_id = ?
-        `, [first_name, last_name, phone, address, userId]);
+        `, [first_name, last_name, phone, address, profile_picture || null, userId]);
       } else {
         
         await query(`
-          INSERT INTO employee_profiles (user_id, first_name, last_name, phone, address, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-        `, [userId, first_name, last_name, phone, address]);
+          INSERT INTO employee_profiles (user_id, first_name, last_name, phone, address, profile_picture, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `, [userId, first_name, last_name, phone, address, profile_picture || null]);
       }
 
       return { message: 'Profile updated successfully' };

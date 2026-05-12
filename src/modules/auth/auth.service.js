@@ -541,24 +541,7 @@ class AuthService {
     }
   }
 
-  static async updateProfile(userId, profileData, ip, userAgent) {
-    try {
-      const { first_name, last_name, phone, address } = profileData;
-      
-      await this.updateUserProfile(userId, {
-        first_name,
-        last_name,
-        phone,
-        address
-      });
 
-      await auditLog(userId, 'PROFILE_UPDATE', 'employee_profiles', userId, null, { first_name, last_name, phone, address }, ip, userAgent);
-
-      return { message: 'Profile updated successfully' };
-    } catch (error) {
-      throw error;
-    }
-  }
 
   
   static async findByEmployeeId(employee_id) {

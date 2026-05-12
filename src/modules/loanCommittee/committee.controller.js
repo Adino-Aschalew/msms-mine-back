@@ -730,6 +730,7 @@ class CommitteeController {
           ep.address as office,
           ep.employment_status,
           ep.hire_date as join_date,
+          ep.profile_picture,
           ep.created_at as profile_created_at
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
@@ -857,7 +858,8 @@ class CommitteeController {
         email,
         phone,
         address,
-        bio
+        bio,
+        profile_picture
       } = req.body;
 
       
@@ -885,14 +887,15 @@ class CommitteeController {
             last_name = ?,
             phone = ?,
             address = ?,
+            profile_picture = ?,
             updated_at = NOW()
           WHERE user_id = ?
-        `, [firstName, lastName, phone, address, userId]);
+        `, [firstName, lastName, phone, address, profile_picture || null, userId]);
       } else {
         await query(`
-          INSERT INTO employee_profiles (user_id, first_name, last_name, phone, address, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-        `, [userId, firstName, lastName, phone, address]);
+          INSERT INTO employee_profiles (user_id, first_name, last_name, phone, address, profile_picture, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `, [userId, firstName, lastName, phone, address, profile_picture || null]);
       }
 
       res.json({
