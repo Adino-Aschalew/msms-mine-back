@@ -127,8 +127,8 @@ const AccountProfile = () => {
         first_name: profile.firstName,
         last_name: profile.lastName,
         phone_number: profile.phone,
-        address: profile.location
-        
+        address: profile.location,
+        profile_picture: profile.avatar
       };
       
       console.log('Sending update data:', updateData);
