@@ -63,6 +63,12 @@ const Account = () => {
         job_title: user.job_title || '',
         role: user.role || 'Admin'
       }));
+      if (user.profile_picture) {
+        setProfileImage(user.profile_picture);
+      } else {
+        const savedImage = localStorage.getItem('userProfileImage');
+        if (savedImage) setProfileImage(savedImage);
+      }
     }
   }, [user]);
 
@@ -258,7 +264,8 @@ const Account = () => {
         first_name: formData.first_name,
         last_name: formData.last_name,
         phone_number: formData.phone_number,
-        address: formData.address || ''
+        address: formData.address || '',
+        profile_picture: profileImage
       });
       setIsEditing(false);
       showStatus('success', 'Your profile has been updated successfully.');
