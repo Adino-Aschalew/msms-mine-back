@@ -42,6 +42,7 @@ export default function AccountPage() {
     joinDate: '',
     manager: ''
   });
+  const [profileImage, setProfileImage] = useState(null);
 
   
   useEffect(() => {
@@ -58,23 +59,22 @@ export default function AccountPage() {
         
         if (user && Object.keys(user).length > 0) {
           console.log('Profile data object:', data);
-          console.log('User object:', user);
-          console.log('Available fields:', Object.keys(user));
-          console.log('All user properties:', JSON.stringify(user, null, 2));
-          
-          setProfileData(user);
+          setProfileData(data);
           setFormData({
-            first_Name: user.first_name || user.firstName || user.first_Name || user.username?.split('@')[0] || '',
-            lastName: user.last_name || user.lastName || user.username?.split('@')[0] || '',
+            first_Name: user.first_name || '',
+            lastName: user.last_name || '',
             email: user.email || '',
             phone: user.phone || user.phone_number || '',
             address: user.address || '',
             department: user.department || '',
-            role: user.role || user.job_grade || '',
-            employeeId: user.employee_id || user.employeeId || user.id || '',
-            joinDate: user.hire_date || user.joinDate || user.join_date || '',
-            manager: user.manager || ''
+            role: user.role || '',
+            employeeId: user.employee_id || '',
+            joinDate: user.hire_date || '',
+            manager: 'N/A'
           });
+          if (user.profile_picture) {
+            setProfileImage(user.profile_picture);
+          }
           console.log('AccountPage - Profile data:', user);
           console.log('AccountPage - Form data after setting:', formData);
         } else {
@@ -144,6 +144,37 @@ export default function AccountPage() {
     setAppearanceSettings(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setLoading(true);
+      await hrAPI.updateUserProfile({
+        first_name: formData.first_Name,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        address: formData.address,
+        profile_picture: profileImage
+      });
+      setIsEditing(false);
+      alert('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderTabContent = () => {
     if (loading) {
       return (
@@ -183,13 +214,27 @@ export default function AccountPage() {
               {}
               <div className="flex items-center gap-6 mb-6">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-                    {formData.first_Name.charAt(0)}{formData.lastName.charAt(0)}
-                  </div>
+                  {profileImage ? (
+                    <img 
+                      src={profileImage} 
+                      alt="Profile" 
+                      className="w-24 h-24 rounded-full object-cover border-2 border-blue-500"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+                      {formData.first_Name.charAt(0)}{formData.lastName.charAt(0)}
+                    </div>
+                  )}
                   {isEditing && (
-                    <button className="absolute bottom-0 right-0 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+                    <label className="absolute bottom-0 right-0 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors cursor-pointer shadow-lg">
                       <Camera size={16} />
-                    </button>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleImageUpload}
+                      />
+                    </label>
                   )}
                 </div>
                 <div>
@@ -273,8 +318,8 @@ export default function AccountPage() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => setIsEditing(false)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    onClick={handleSaveProfile}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-md"
                   >
                     <Save size={16} />
                     <span>Save Changes</span>

@@ -3,12 +3,14 @@ import AdminManagementTable from '../components/common/AdminManagementTable';
 import Modal from '../components/common/Modal';
 import AddAdminForm from '../components/common/AddAdminForm';
 import { adminAPI } from '../../../shared/services/adminAPI';
+import { CheckCircle } from 'lucide-react';
 
 const AdminManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   useEffect(() => {
     fetchAdmins();
@@ -91,11 +93,10 @@ const AdminManagement = () => {
   };
 
   const handleAddAdmin = async (adminData) => {
-    
-    
-    
+    setSuccess(`Successfully added ${adminData.first_name} ${adminData.last_name} as ${adminData.role}`);
     fetchAdmins();
     setIsModalOpen(false);
+    setTimeout(() => setSuccess(null), 5000);
   };
 
   return (
@@ -110,17 +111,25 @@ const AdminManagement = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-800">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-800 mb-6">
           {error}
         </div>
       ) : (
-        <div>
-          <AdminManagementTable 
-            admins={admins} 
-            onAddAdmin={() => setIsModalOpen(true)}
-            refreshData={fetchAdmins}
-          />
-        </div>
+        <>
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4 text-green-800 mb-6 flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+              <CheckCircle className="h-5 w-5" />
+              {success}
+            </div>
+          )}
+          <div>
+            <AdminManagementTable 
+              admins={admins} 
+              onAddAdmin={() => setIsModalOpen(true)}
+              refreshData={fetchAdmins}
+            />
+          </div>
+        </>
       )}
 
       <Modal 
