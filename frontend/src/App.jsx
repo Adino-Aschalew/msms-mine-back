@@ -4,7 +4,6 @@ import { ThemeProvider } from './shared/contexts/ThemeContext';
 import { AuthProvider, useAuth } from './shared/contexts/AuthContext';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 import PasswordChangeModal from './shared/components/PasswordChangeModal';
-import EmailVerificationModal from './shared/components/EmailVerificationModal';
 
 
 const AdminModule = React.lazy(() => import('./modules/components/AdminModule'));
@@ -13,6 +12,7 @@ const FinanceModule = React.lazy(() => import('./modules/components/FinanceModul
 const EmployeeModule = React.lazy(() => import('./modules/components/EmployeeModule'));
 const LoanModule = React.lazy(() => import('./modules/components/LoanModule'));
 const LoginPage = React.lazy(() => import('./shared/pages/LoginPage'));
+const EmailVerificationPage = React.lazy(() => import('./shared/pages/EmailVerificationPage'));
 const UnauthorizedPage = React.lazy(() => import('./shared/pages/UnauthorizedPage'));
 
 function App() {
@@ -30,14 +30,11 @@ function AppContent() {
     showPasswordChangeModal,
     setShowPasswordChangeModal,
     isForcedPasswordChange,
-    showEmailVerificationModal,
-    setShowEmailVerificationModal,
     pendingUser,
     handleEmailVerificationSuccess
   } = useAuth();
 
   console.log('[App] render', { 
-    showEmailVerificationModal, 
     showPasswordChangeModal, 
     pendingUser: pendingUser?.email 
   });
@@ -54,6 +51,7 @@ function AppContent() {
         >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/verify-email" element={<EmailVerificationPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -107,14 +105,6 @@ function AppContent() {
           </Routes>
         </React.Suspense>
       </Router>
-      {/* Email Verification Modal - appears before password change */}
-      <EmailVerificationModal
-        isVisible={showEmailVerificationModal}
-        onClose={() => setShowEmailVerificationModal(false)}
-        email={pendingUser?.email || ''}
-        onVerificationSuccess={handleEmailVerificationSuccess}
-        userId={pendingUser?.id}
-      />
       <PasswordChangeModal
         isOpen={showPasswordChangeModal}
         onClose={() => setShowPasswordChangeModal(false)}
