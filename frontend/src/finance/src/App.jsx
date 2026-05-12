@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import MinimalLayout from './components/layout/MinimalLayout';
-import MinimalDashboard from './pages/dashboard/MinimalDashboard';
-import MinimalPayroll from './pages/payroll/MinimalPayroll';
-import MinimalSavingsRequests from './pages/savings/MinimalSavingsRequests';
+
 // Import legacy components for gradual migration
 import Layout from './components/layout/Layout.jsx';
 import Header from './components/layout/Header.jsx';
@@ -39,10 +36,6 @@ function FinanceApp() {
       <MinimalLayout>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<MinimalDashboard />} />
-          <Route path="/payroll" element={<MinimalPayroll />} />
-          <Route path="/savings/requests" element={<MinimalSavingsRequests />} />
-          
           {/* Legacy Routes - Keep for gradual migration */}
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/transactions/income" element={<Transactions filter="income" />} />
