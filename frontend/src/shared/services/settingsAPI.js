@@ -1,162 +1,43 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import apiClient from './api';
 
 class SettingsAPI {
-  // Get authentication token from localStorage
-  static getAuthHeaders() {
-    const token = localStorage.getItem('token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  }
-
   // User Preferences
   static async getUserPreferences(category) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/settings/user/${category}`, {
-        headers: this.getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error getting user preferences:', error);
-      throw error;
-    }
+    const response = await apiClient.get(`/settings/user/${category}`);
+    return response;
   }
 
   static async updateUserPreferences(category, settings) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/settings/user/${category}`, {
-        method: 'PUT',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify({ settings })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error updating user preferences:', error);
-      throw error;
-    }
+    const response = await apiClient.put(`/settings/user/${category}`, { settings });
+    return response;
   }
 
   static async getAllUserPreferences() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/settings/user/all`, {
-        headers: this.getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error getting all user preferences:', error);
-      throw error;
-    }
+    const response = await apiClient.get('/settings/user/all');
+    return response;
   }
 
   // System Settings (Admin/HR only)
   static async getSystemSettings(category) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/settings/system/${category}`, {
-        headers: this.getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error getting system settings:', error);
-      throw error;
-    }
+    const response = await apiClient.get(`/settings/system/${category}`);
+    return response;
   }
 
   static async updateSystemSettings(category, settings) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/settings/system/${category}`, {
-        method: 'PUT',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify({ settings })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error updating system settings:', error);
-      throw error;
-    }
+    const response = await apiClient.put(`/settings/system/${category}`, { settings });
+    return response;
   }
 
   // Security
   static async changePassword(passwordData) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/settings/change-password`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(passwordData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error changing password:', error);
-      throw error;
-    }
+    const response = await apiClient.post('/settings/change-password', passwordData);
+    return response;
   }
 
   // Login Attempts
   static async getLoginAttempts(params = {}) {
-    try {
-      const queryString = new URLSearchParams(params).toString();
-      const url = `${API_BASE_URL}/settings/login-attempts${queryString ? '?' + queryString : ''}`;
-      
-      const response = await fetch(url, {
-        headers: this.getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Check if response is CSV (for export)
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('text/csv')) {
-        return {
-          success: true,
-          isCSV: true,
-          data: await response.text()
-        };
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error getting login attempts:', error);
-      throw error;
-    }
+    const response = await apiClient.get('/settings/login-attempts', params);
+    return response;
   }
 
   // Helper methods for common operations
