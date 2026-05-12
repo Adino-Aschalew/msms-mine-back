@@ -875,10 +875,10 @@ class AdminController {
   
   static async getSystemActivity(req, res) {
     try {
-      const { limit = 50, page = 1 } = req.query;
+      const { limit = 50, page = 1, userId } = req.query;
       const offset = (page - 1) * limit;
 
-      const [activities] = await pool.execute(`
+      let queryStr = `
         SELECT 
           al.action,
           al.created_at,
@@ -889,13 +889,23 @@ class AdminController {
           u.role
         FROM audit_logs al
         LEFT JOIN users u ON al.user_id = u.id
-        ORDER BY al.created_at DESC
-        LIMIT ? OFFSET ?
-      `, [Number(limit), Number(offset)]);
+      `;
+      const queryParams = [];
 
-      const [totalCount] = await pool.execute(
-        'SELECT COUNT(*) as count FROM audit_logs'
-      );
+      if (userId) {
+        queryStr += ' WHERE al.user_id = ?';
+        queryParams.push(userId);
+      }
+
+      queryStr += ' ORDER BY al.created_at DESC LIMIT ? OFFSET ?';
+      queryParams.push(Number(limit), Number(offset));
+
+      const [activities] = await pool.execute(queryStr, queryParams);
+
+      const countQuery = userId 
+        ? 'SELECT COUNT(*) as count FROM audit_logs WHERE user_id = ?' 
+        : 'SELECT COUNT(*) as count FROM audit_logs';
+      const [totalCount] = await pool.execute(countQuery, userId ? [userId] : []);
 
       res.json({
         success: true,

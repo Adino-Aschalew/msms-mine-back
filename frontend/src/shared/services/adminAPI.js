@@ -65,8 +65,8 @@ export const adminAPI = {
     return response;
   },
 
-  getUserActivity: async (limit = 10) => {
-    const response = await apiClient.get(`/admin/activity?limit=${limit}`);
+  getUserActivity: async (userId, limit = 10) => {
+    const response = await apiClient.get(`/admin/activity?userId=${userId}&limit=${limit}`);
     return response;
   },
 
