@@ -52,12 +52,27 @@ class ApiClient {
       config.headers['Content-Type'] = 'application/json';
     }
 
+<<<<<<< HEAD
+=======
+    // Always get the latest tokens from localStorage before request
+    const currentToken = localStorage.getItem('authToken');
+    const currentRefreshToken = localStorage.getItem('refreshToken');
+    
+>>>>>>> 401Err
     if (currentToken) {
       config.headers.Authorization = `Bearer ${currentToken}`;
     }
 
     try {
+<<<<<<< HEAD
       console.log(`[api] ${config.method || 'GET'} ${endpoint}`, {
+=======
+      console.log('[api] Making request:', {
+        url,
+        method: config.method || 'GET',
+        hasBody: !!config.body,
+        headers: config.headers,
+>>>>>>> 401Err
         hasAuth: !!config.headers.Authorization
       });
       
@@ -79,6 +94,7 @@ class ApiClient {
         }
       }
       
+<<<<<<< HEAD
       if (!response.ok) {
         const errorText = await response.text();
         let errorData;
@@ -106,6 +122,49 @@ class ApiClient {
         return await response.json();
       } else {
         return await response.text();
+=======
+      const data = await response.json();
+      
+      console.log('[api] Response received:', {
+        status: response.status,
+        ok: response.ok,
+        message: data?.message
+      });
+
+      // Handle 401 token-related errors with a retry mechanism
+      if (response.status === 401) {
+        const isTokenError = data.message?.toLowerCase().includes('token');
+        console.log('[api] 401 detected', { isTokenError, message: data?.message });
+
+        if (isTokenError) {
+          console.log('[api] Attempting token refresh...');
+          try {
+            await this.refreshAccessToken();
+            
+            // Clone the original request with the new token
+            const retryConfig = {
+              ...config,
+              headers: {
+                ...config.headers,
+                Authorization: `Bearer ${this.token}`
+              }
+            };
+            
+            console.log('[api] Retrying request with new token:', endpoint);
+            const retryResponse = await fetch(url, retryConfig);
+            const retryData = await retryResponse.json();
+            
+            if (!retryResponse.ok) {
+              throw new Error(retryData.message || `HTTP ${retryResponse.status}`);
+            }
+            
+            return retryData;
+          } catch (refreshError) {
+            console.error('[api] Refresh failed or retry failed:', refreshError);
+            throw new Error(data.message || 'Authentication failed');
+          }
+        }
+>>>>>>> 401Err
       }
     } catch (error) {
       if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
@@ -117,12 +176,21 @@ class ApiClient {
     }
   }
 
+<<<<<<< HEAD
   async refreshAccessToken(providedRefreshToken) {
     const refreshToken = providedRefreshToken || localStorage.getItem('refreshToken');
     if (!refreshToken) {
       console.log('[api] refreshAccessToken: no token');
       this.clearTokens();
       return null;
+=======
+  
+  async refreshAccessToken() {
+    const currentRefreshToken = localStorage.getItem('refreshToken');
+    if (!currentRefreshToken) {
+      console.log('[api] refreshAccessToken: missing refreshToken');
+      throw new Error('No refresh token available');
+>>>>>>> 401Err
     }
 
     try {
@@ -132,8 +200,15 @@ class ApiClient {
 >>>>>>> Fixsetings
       const response = await fetch(`${this.baseURL}/auth/refresh-token`, {
         method: 'POST',
+<<<<<<< HEAD
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
+=======
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: currentRefreshToken }),
+>>>>>>> 401Err
       });
 
       const data = await response.json();
