@@ -1,6 +1,7 @@
 const { query, pool } = require('../../config/database');
 const bcrypt = require('bcryptjs');
 const { generateEmployeeId } = require('../../utils/helpers');
+const NotificationService = require('../../services/notification.service');
 
 class AdminController {
   
@@ -255,6 +256,8 @@ class AdminController {
       `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
+      const currentAdminId = req.user.id;
+      const currentAdminName = `${req.user.first_name} ${req.user.last_name}`;
 
       
       await pool.execute(`
@@ -263,6 +266,19 @@ class AdminController {
           phone_number, department, job_grade, job_title, status, hire_date, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, 'active', CURDATE(), NOW())
       `, [userId, employee_id, first_name, last_name, phone_number, department, job_title]);
+
+      
+      try {
+        await NotificationService.createNotification(
+          currentAdminId,
+          'New HR Admin Added',
+          `You have successfully added ${first_name} ${last_name} (${employee_id}) as a new HR Admin.`,
+          'SUCCESS',
+          { employee_id }
+        );
+      } catch (notifError) {
+        console.error('Failed to create notification for admin creation:', notifError);
+      }
 
       res.status(201).json({
         success: true,
@@ -340,6 +356,7 @@ class AdminController {
       `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
+      const currentAdminId = req.user.id;
 
       
       await pool.execute(`
@@ -349,6 +366,19 @@ class AdminController {
           max_loan_amount, status, hire_date, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, ?, ?, 'active', CURDATE(), NOW())
       `, [userId, employee_id, first_name, last_name, phone_number, department, job_title, committee_level, max_loan_amount || 100000]);
+
+      
+      try {
+        await NotificationService.createNotification(
+          currentAdminId,
+          'New Loan Committee Admin Added',
+          `You have successfully added ${first_name} ${last_name} (${employee_id}) as a new Loan Committee Admin.`,
+          'SUCCESS',
+          { employee_id }
+        );
+      } catch (notifError) {
+        console.error('Failed to create notification for admin creation:', notifError);
+      }
 
       res.status(201).json({
         success: true,
@@ -1027,6 +1057,7 @@ class AdminController {
       `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
+      const currentAdminId = req.user.id;
 
       
       await pool.execute(`
@@ -1035,6 +1066,19 @@ class AdminController {
           phone_number, department, job_grade, job_title, status, hire_date, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, 'active', CURDATE(), NOW())
       `, [userId, employee_id, first_name, last_name, phone_number, department, job_title]);
+
+      
+      try {
+        await NotificationService.createNotification(
+          currentAdminId,
+          'New Finance Admin Added',
+          `You have successfully added ${first_name} ${last_name} (${employee_id}) as a new Finance Admin.`,
+          'SUCCESS',
+          { employee_id }
+        );
+      } catch (notifError) {
+        console.error('Failed to create notification for admin creation:', notifError);
+      }
 
       res.status(201).json({
         success: true,
@@ -1110,6 +1154,7 @@ class AdminController {
       `, [employee_id, email, first_name, last_name, email, phone_number, hashedPassword]);
 
       const userId = result.insertId;
+      const currentAdminId = req.user.id;
 
       
       await pool.execute(`
@@ -1118,6 +1163,19 @@ class AdminController {
           phone_number, department, job_grade, job_title, status, hire_date, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, 'GRADE_1', ?, 'active', CURDATE(), NOW())
       `, [userId, employee_id, first_name, last_name, phone_number, department, job_title]);
+
+      
+      try {
+        await NotificationService.createNotification(
+          currentAdminId,
+          'New Admin Added',
+          `You have successfully added ${first_name} ${last_name} (${employee_id}) as a new Regular Admin.`,
+          'SUCCESS',
+          { employee_id }
+        );
+      } catch (notifError) {
+        console.error('Failed to create notification for admin creation:', notifError);
+      }
 
       res.status(201).json({
         success: true,
