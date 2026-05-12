@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [isForcedPasswordChange, setIsForcedPasswordChange] = useState(false);
-  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
   const [pendingUser, setPendingUser] = useState(null);
 
   useEffect(() => {
@@ -63,11 +62,10 @@ export const AuthProvider = ({ children }) => {
       
       // Check if OTP verification is required for employees
       if (response.user.requires_otp_verification) {
-        console.log('[auth] OTP verification required, showing modal');
+        console.log('[auth] OTP verification required');
         setPendingUser(response.user);
-        setShowEmailVerificationModal(true); // Reuse the same modal for OTP
         // Don't set tokens or user state yet
-        return response.user;
+        return { ...response.user, requires_otp_verification: true };
       }
       
       // Set tokens first before updating user state
@@ -106,7 +104,6 @@ export const AuthProvider = ({ children }) => {
     
     // Then update user state
     setUser(user);
-    setShowEmailVerificationModal(false);
     setPendingUser(null);
     
     // Check for password change requirement after OTP verification
@@ -259,8 +256,6 @@ export const AuthProvider = ({ children }) => {
     setShowPasswordChangeModal,
     isForcedPasswordChange,
     setIsForcedPasswordChange,
-    showEmailVerificationModal,
-    setShowEmailVerificationModal,
     pendingUser,
     handleEmailVerificationSuccess,
     ROLES
