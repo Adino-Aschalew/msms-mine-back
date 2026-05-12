@@ -133,34 +133,9 @@ class AuthController {
       const userId = req.userId;
       const profile = await AuthService.getProfile(userId);
       
-      // Structure data to match frontend expectations
-      const responseData = {
-        user: {
-          id: profile.id,
-          name: `${profile.first_name} ${profile.last_name}`,
-          email: profile.email,
-          role: profile.role,
-          created_at: profile.created_at
-        },
-        employeeProfile: {
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          phone: profile.phone_number,
-          address: profile.address,
-          department: profile.department,
-          position: profile.job_title,
-          employee_id: profile.employee_id,
-          hire_date: profile.created_at, // Using created_at as fallback
-          employment_type: profile.employment_status || 'Full-time',
-          date_of_birth: null, // Add if available in schema
-          emergency_contact: null, // Add if available in schema
-          bio: null // Add if available in schema
-        }
-      };
-      
       res.json({
         success: true,
-        data: responseData
+        data: profile
       });
     } catch (error) {
       console.error('Get profile error:', error);
