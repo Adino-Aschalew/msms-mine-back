@@ -48,9 +48,12 @@ class ApiClient {
       config.headers['Content-Type'] = 'application/json';
     }
 
+    // Always get the latest tokens from localStorage before request
+    const currentToken = localStorage.getItem('authToken');
+    const currentRefreshToken = localStorage.getItem('refreshToken');
     
-    if (this.token) {
-      config.headers.Authorization = `Bearer ${this.token}`;
+    if (currentToken) {
+      config.headers.Authorization = `Bearer ${currentToken}`;
     }
 
     try {
@@ -58,7 +61,6 @@ class ApiClient {
         url,
         method: config.method || 'GET',
         hasBody: !!config.body,
-        bodyType: config.body instanceof FormData ? 'FormData' : typeof config.body,
         headers: config.headers,
         hasAuth: !!config.headers.Authorization
       });
@@ -66,36 +68,47 @@ class ApiClient {
       const response = await fetch(url, config);
       
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { message: errorText || 'Request failed' };
-        }
-        
-        const error = new Error(errorData.message || `HTTP ${response.status}`);
-        error.status = response.status;
-        error.data = errorData;
-        throw error;
-      }
-      
       const data = await response.json();
-
       
-      if (response.status === 401 && data.message?.includes('token')) {
-        console.log('[api] 401 token-related, attempting refresh', {
-          endpoint,
-          message: data?.message,
-          hasRefreshToken: !!this.refreshToken,
-        });
-        await this.refreshAccessToken();
-        
-        config.headers.Authorization = `Bearer ${this.token}`;
-        const retryResponse = await fetch(url, config);
-        return await retryResponse.json();
+      console.log('[api] Response received:', {
+        status: response.status,
+        ok: response.ok,
+        message: data?.message
+      });
+
+      // Handle 401 token-related errors with a retry mechanism
+      if (response.status === 401) {
+        const isTokenError = data.message?.toLowerCase().includes('token');
+        console.log('[api] 401 detected', { isTokenError, message: data?.message });
+
+        if (isTokenError) {
+          console.log('[api] Attempting token refresh...');
+          try {
+            await this.refreshAccessToken();
+            
+            // Clone the original request with the new token
+            const retryConfig = {
+              ...config,
+              headers: {
+                ...config.headers,
+                Authorization: `Bearer ${this.token}`
+              }
+            };
+            
+            console.log('[api] Retrying request with new token:', endpoint);
+            const retryResponse = await fetch(url, retryConfig);
+            const retryData = await retryResponse.json();
+            
+            if (!retryResponse.ok) {
+              throw new Error(retryData.message || `HTTP ${retryResponse.status}`);
+            }
+            
+            return retryData;
+          } catch (refreshError) {
+            console.error('[api] Refresh failed or retry failed:', refreshError);
+            throw new Error(data.message || 'Authentication failed');
+          }
+        }
       }
 
       if (!response.ok) {
@@ -133,7 +146,8 @@ class ApiClient {
 
   
   async refreshAccessToken() {
-    if (!this.refreshToken) {
+    const currentRefreshToken = localStorage.getItem('refreshToken');
+    if (!currentRefreshToken) {
       console.log('[api] refreshAccessToken: missing refreshToken');
       throw new Error('No refresh token available');
     }
@@ -144,7 +158,7 @@ class ApiClient {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ refreshToken: this.refreshToken }),
+        body: JSON.stringify({ refreshToken: currentRefreshToken }),
       });
 
       const data = await response.json();
