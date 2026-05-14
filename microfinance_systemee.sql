@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3307
--- Generation Time: May 13, 2026 at 12:57 AM
+-- Generation Time: May 06, 2026 at 07:42 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -213,35 +213,35 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `table_name`, `record_id`, 
 (144, 9, 'EMPLOYMENT_STATUS_UPDATE', NULL, 13, NULL, '{\"employment_status\":\"TERMINATED\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:29:46'),
 (145, 9, 'EMPLOYMENT_STATUS_UPDATE', 'employee_profiles', 13, NULL, '{\"old_status\":\"TERMINATED\",\"new_status\":\"TERMINATED\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:29:53'),
 (146, 9, 'EMPLOYMENT_STATUS_UPDATE', NULL, 13, NULL, '{\"employment_status\":\"TERMINATED\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:29:53'),
-(147, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:30:23'),
-(148, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:32:10'),
+(147, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:30:23'),
+(148, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:32:10'),
 (149, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:36:30'),
 (150, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:36:42'),
 (151, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:36:52'),
 (152, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:37:01'),
-(153, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:37:12'),
-(154, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:43:29'),
+(153, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:37:12'),
+(154, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:43:29'),
 (155, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:47:19'),
-(156, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:47:29'),
-(157, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:47:53'),
-(158, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\",\"attempts\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:20'),
-(159, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:25'),
-(160, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\",\"attempts\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:46'),
-(161, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\",\"attempts\":2}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:54'),
-(162, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:50:12'),
-(163, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:52:12'),
-(164, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:52:16'),
-(165, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:54:15'),
-(166, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:54:24'),
-(167, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:56:14'),
-(168, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:59:38'),
-(169, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 21:28:47'),
-(170, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 21:33:08'),
+(156, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:47:29'),
+(157, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:47:53'),
+(158, 14, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\",\"attempts\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:20'),
+(159, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:25'),
+(160, 14, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\",\"attempts\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:46'),
+(161, 14, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\",\"attempts\":2}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:49:54'),
+(162, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:50:12'),
+(163, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:52:12'),
+(164, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:52:16'),
+(165, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:54:15'),
+(166, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:54:24'),
+(167, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:56:14'),
+(168, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 19:59:38'),
+(169, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 21:28:47'),
+(170, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 21:33:08'),
 (171, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"test@example.com\",\"error\":\"Cannot read properties of undefined (reading \'checkRateLimit\')\"}', '::1', 'node', '2026-05-05 21:34:34'),
 (172, NULL, 'OTP_VERIFY_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"test@example.com\",\"error\":\"Cannot read properties of undefined (reading \'checkRateLimit\')\"}', '::1', 'node', '2026-05-05 21:34:34'),
 (173, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"test@example.com\",\"error\":\"Cannot read properties of undefined (reading \'checkRateLimit\')\"}', '::1', 'node', '2026-05-05 21:36:42'),
 (174, NULL, 'OTP_VERIFY_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"test@example.com\",\"error\":\"Cannot read properties of undefined (reading \'checkRateLimit\')\"}', '::1', 'node', '2026-05-05 21:36:43'),
-(175, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 21:40:25'),
+(175, 14, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-05 21:40:25'),
 (176, NULL, 'OTP_SEND_ATTEMPT_INVALID_USER', 'otp_records', NULL, NULL, '{\"email\":\"test@example.com\"}', '::1', 'node', '2026-05-05 21:41:02'),
 (177, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"test@example.com\",\"reason\":\"No OTP found for this email. Please request a new one.\",\"remainingAttempts\":3}', '::1', 'node', '2026-05-05 21:41:02'),
 (178, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', 'node', '2026-05-05 21:42:21'),
@@ -249,123 +249,7 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `table_name`, `record_id`, 
 (180, 5, 'EMAIL_VERIFIED', 'users', 5, NULL, '{\"email\":\"john.doe@msms.com\"}', '::1', 'node', '2026-05-05 21:42:23'),
 (181, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', 'node', '2026-05-05 21:48:12'),
 (182, 5, 'LOGIN_COMPLETED', 'users', 5, NULL, '{\"email\":\"john.doe@msms.com\",\"email_verified\":true}', '::1', 'node', '2026-05-05 21:48:12'),
-(183, 5, 'EMAIL_VERIFIED', 'users', 5, NULL, '{\"email\":\"john.doe@msms.com\"}', '::1', 'node', '2026-05-05 21:48:12'),
-(184, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 17:53:07'),
-(185, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 17:53:47'),
-(186, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 17:58:13'),
-(187, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"error\":\"Failed to generate OTP\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 17:58:14'),
-(188, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', NULL, '2026-05-06 17:59:57'),
-(189, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', NULL, '2026-05-06 18:00:27'),
-(190, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', NULL, '2026-05-06 18:01:40'),
-(191, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', NULL, '2026-05-06 18:01:52'),
-(192, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', NULL, '2026-05-06 18:02:38'),
-(193, NULL, 'OTP_SEND_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"Failed to generate OTP\"}', '::1', NULL, '2026-05-06 18:03:25'),
-(194, 5, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"loginContext\":{\"ipAddress\":\"::1\"}}', '::1', NULL, '2026-05-06 18:07:45'),
-(195, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:08:32'),
-(196, NULL, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"loginContext\":{\"ipAddress\":\"::1\",\"userAgent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"}}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:08:34'),
-(197, NULL, 'OTP_RESENT', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"loginContext\":{\"ipAddress\":\"::1\",\"userAgent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"}}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:09:48'),
-(198, 5, 'LOGIN_COMPLETED', 'users', 5, NULL, '{\"email\":\"john.doe@msms.com\",\"email_verified\":true}', '::1', NULL, '2026-05-06 18:11:47'),
-(199, 5, 'EMAIL_VERIFIED', 'users', 5, NULL, '{\"email\":\"john.doe@msms.com\"}', '::1', NULL, '2026-05-06 18:11:47'),
-(200, 5, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"loginContext\":{\"ipAddress\":\"::1\"}}', '::1', NULL, '2026-05-06 18:11:51'),
-(201, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:12:49'),
-(202, NULL, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"loginContext\":{\"ipAddress\":\"::1\",\"userAgent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"}}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:12:51'),
-(203, NULL, 'OTP_VERIFY_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"error\":\"OTPService.verifyOTPCode is not a function\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:14:22'),
-(204, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:14:46'),
-(205, NULL, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"loginContext\":{\"ipAddress\":\"::1\",\"userAgent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"}}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:14:48'),
-(206, NULL, 'OTP_VERIFY_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"error\":\"OTPService.verifyOTPCode is not a function\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:15:12'),
-(207, 5, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"loginContext\":{\"ipAddress\":\"::1\"}}', '::1', NULL, '2026-05-06 18:15:40'),
-(208, NULL, 'OTP_VERIFY_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"OTPService.verifyOTPCode is not a function\"}', '::1', NULL, '2026-05-06 18:15:40'),
-(209, NULL, 'OTP_VERIFY_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"OTPService.verifyOTPCode is not a function\"}', '::1', NULL, '2026-05-06 18:15:40'),
-(210, NULL, 'OTP_VERIFY_ERROR', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"error\":\"OTPService.verifyOTPCode is not a function\"}', '::1', NULL, '2026-05-06 18:15:40'),
-(211, 5, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"loginContext\":{\"ipAddress\":\"::1\"}}', '::1', NULL, '2026-05-06 18:16:01'),
-(212, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"No OTP found for this email. Please request a new one.\",\"remainingAttempts\":3}', '::1', NULL, '2026-05-06 18:16:01'),
-(213, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"No OTP found for this email. Please request a new one.\",\"remainingAttempts\":3}', '::1', NULL, '2026-05-06 18:16:01'),
-(214, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"No OTP found for this email. Please request a new one.\",\"remainingAttempts\":3}', '::1', NULL, '2026-05-06 18:16:02'),
-(215, 5, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"loginContext\":{\"ipAddress\":\"::1\"}}', '::1', NULL, '2026-05-06 18:16:53'),
-(216, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"Invalid OTP. 2 attempts remaining.\",\"remainingAttempts\":2}', '::1', NULL, '2026-05-06 18:16:53'),
-(217, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"No OTP found for this email. Please request a new one.\",\"remainingAttempts\":3}', '::1', NULL, '2026-05-06 18:16:53'),
-(218, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"No OTP found for this email. Please request a new one.\",\"remainingAttempts\":3}', '::1', NULL, '2026-05-06 18:16:54'),
-(219, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:17:14'),
-(220, NULL, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"loginContext\":{\"ipAddress\":\"::1\",\"userAgent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"}}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:17:17'),
-(221, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"reason\":\"No OTP found for this email. Please request a new one.\",\"remainingAttempts\":3}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:17:33'),
-(222, 5, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"loginContext\":{\"ipAddress\":\"::1\"}}', '::1', NULL, '2026-05-06 18:18:29'),
-(223, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"Invalid OTP. 2 attempts remaining.\",\"remainingAttempts\":2}', '::1', NULL, '2026-05-06 18:18:30'),
-(224, 5, 'OTP_SENT', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"loginContext\":{\"ipAddress\":\"::1\"}}', '::1', NULL, '2026-05-06 18:19:00'),
-(225, NULL, 'OTP_VERIFY_FAILED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\",\"reason\":\"Invalid OTP. 2 attempts remaining.\",\"remainingAttempts\":2}', '::1', NULL, '2026-05-06 18:19:01'),
-(226, NULL, 'OTP_VERIFIED', 'otp_records', NULL, NULL, '{\"email\":\"john.doe@msms.com\"}', '::1', NULL, '2026-05-06 18:19:38'),
-(227, NULL, 'OTP_RESENT', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"loginContext\":{\"ipAddress\":\"::1\",\"userAgent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"}}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:19:47'),
-(228, NULL, 'OTP_VERIFIED', 'otp_records', NULL, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:20:18'),
-(229, NULL, 'LOGIN_COMPLETED', 'users', 14, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\",\"email_verified\":true}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:20:19'),
-(230, NULL, 'EMAIL_VERIFIED', 'users', 14, NULL, '{\"email\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:20:19'),
-(231, NULL, 'PASSWORD_CHANGED', 'users', 14, NULL, '{\"password_change_required\":false,\"forced_change\":true}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:20:48'),
-(232, NULL, 'PASSWORD_CHANGE', NULL, NULL, NULL, '{\"newPassword\":\"Adino@1234\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:20:48'),
-(233, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 18:21:58'),
-(234, 11, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"dushu@gmail.com\",\"attempts\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 19:04:11'),
-(235, 11, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"dushu@gmail.com\",\"attempts\":2}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 19:04:22'),
-(236, 11, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"dushu@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 19:04:29'),
-(237, 11, 'PASSWORD_CHANGED', 'users', 11, NULL, '{\"password_change_required\":false,\"forced_change\":true}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 19:04:47'),
-(238, 11, 'PASSWORD_CHANGE', NULL, NULL, NULL, '{\"newPassword\":\"Adino@1234\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 19:04:48'),
-(239, 11, 'SAVINGS_ACCOUNT_CREATE', 'savings_accounts', 2, NULL, '{\"saving_percentage\":15}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 19:17:55'),
-(240, 11, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"dushu@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 19:36:46');
-INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `table_name`, `record_id`, `old_values`, `new_values`, `ip_address`, `user_agent`, `created_at`) VALUES
-(241, 11, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"dushu@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:11:12'),
-(242, 11, 'REQUEST_CREATED', 'savings_requests', 1, NULL, '{\"old_value\":\"15.00\",\"new_value\":25,\"savings_type\":\"PERCENTAGE\"}', NULL, NULL, '2026-05-06 20:11:59'),
-(243, 11, 'REQUEST_SUBMITTED', 'savings_requests', 1, NULL, '{\"new_value\":\"25\",\"savings_type\":\"PERCENTAGE\",\"effective_date\":\"2026-05-30\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:11:59'),
-(244, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:30:48'),
-(245, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:30:54'),
-(246, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:30:56'),
-(247, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:30:57'),
-(248, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:31:09'),
-(249, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:31:18'),
-(250, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:31:25'),
-(251, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:31:26'),
-(252, NULL, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"adinoaschalew1995@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-05-06 20:31:40'),
-(253, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:30:50'),
-(254, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:30:57'),
-(255, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:31:11'),
-(256, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:31:13'),
-(257, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:31:22'),
-(258, NULL, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"adinoaschlew@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:31:24'),
-(259, 8, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"abebe@gmail.com\",\"attempts\":6}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:32:12'),
-(260, 7, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"ade@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:33:15'),
-(261, 7, 'HR_ADMIN_CREATED', NULL, NULL, NULL, '{\"first_name\":\"girma\",\"last_name\":\"hibret\",\"email\":\"hibret@gmail.com\",\"phone_number\":\"+652347236\",\"password\":\"Ade@1234\",\"role\":\"HR_ADMIN\",\"department\":\"HR\",\"job_title\":\"HR Manager\",\"employee_id\":\"ADM82549\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 18:51:23'),
-(262, 7, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"ade@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 19:08:25'),
-(263, 7, 'LOGIN_FAILED', 'users', NULL, NULL, '{\"identifier\":\"ade@gmail.com\",\"attempts\":1}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 19:20:02'),
-(264, 7, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"ade@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 19:20:05'),
-(265, 7, 'FINANCE_ADMIN_CREATED', NULL, NULL, NULL, '{\"first_name\":\"awe \",\"last_name\":\"xdfv\",\"email\":\"df@zsdf.f\",\"phone_number\":\"+652347236\",\"password\":\"Ade@1234\",\"role\":\"FINANCE_ADMIN\",\"department\":\"Finance\",\"job_title\":\"Finance Manager\",\"employee_id\":\"ADM45670\",\"group\":\"FINANCE\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 19:20:46'),
-(266, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 19:22:15'),
-(267, 7, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"ade@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 19:27:00'),
-(268, 7, 'TOKEN_REFRESH', 'users', 7, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:07:07'),
-(269, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:11:28'),
-(270, 15, 'SETTINGS_UPDATED', 'user_preferences', NULL, NULL, '{\"category\":\"personal\",\"settings\":[\"theme\",\"emailNotifications\",\"pushNotifications\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:22:13'),
-(271, 15, 'SETTINGS_UPDATED', 'user_preferences', NULL, NULL, '{\"category\":\"personal\",\"settings\":[\"theme\",\"emailNotifications\",\"pushNotifications\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:22:15'),
-(272, 15, 'DASHBOARD_STATS_UPDATED', 'dashboard_stats', NULL, NULL, '{}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:28:06'),
-(273, 15, 'DASHBOARD_STATS_UPDATED', NULL, NULL, NULL, '{\"lastUpdated\":\"2026-05-12T20:28:06.449Z\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:28:06'),
-(274, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:33:39'),
-(275, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:39:02'),
-(276, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:41:13'),
-(277, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:41:29'),
-(278, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:41:53'),
-(279, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:45:21'),
-(280, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:46:03'),
-(281, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:47:24'),
-(282, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:49:00'),
-(283, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:51:19'),
-(284, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:55:13'),
-(285, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:56:02'),
-(286, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:57:30'),
-(287, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 20:58:56'),
-(288, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 21:03:01'),
-(289, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 21:04:19'),
-(290, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 21:05:53'),
-(291, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 21:07:07'),
-(292, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 21:08:15'),
-(293, 15, 'TOKEN_REFRESH', 'users', 15, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 22:14:33'),
-(294, 15, 'TOKEN_REFRESH', 'users', 15, NULL, NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 22:14:33'),
-(295, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 22:15:53'),
-(296, 15, 'LOGIN_SUCCESS', 'users', NULL, NULL, '{\"identifier\":\"hibret@gmail.com\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 22:22:31'),
-(297, 15, 'DASHBOARD_STATS_UPDATED', 'dashboard_stats', NULL, NULL, '{}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 22:41:56'),
-(298, 15, 'DASHBOARD_STATS_UPDATED', NULL, NULL, NULL, '{\"totalEmployees\":9,\"activeEmployees\":8,\"terminatedRate\":0,\"employeeGrowthRate\":0,\"pendingApprovals\":8,\"lastUpdated\":\"2026-05-12T22:41:54.362Z\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-12 22:41:56');
+(183, 5, 'EMAIL_VERIFIED', 'users', 5, NULL, '{\"email\":\"john.doe@msms.com\"}', '::1', 'node', '2026-05-05 21:48:12');
 
 -- --------------------------------------------------------
 
@@ -391,7 +275,7 @@ CREATE TABLE `employee_profiles` (
   `phone` varchar(20) DEFAULT NULL,
   `phone_number` varchar(20) DEFAULT NULL,
   `address` text DEFAULT NULL,
-  `profile_picture` longtext DEFAULT NULL,
+  `profile_picture` varchar(500) DEFAULT NULL,
   `committee_level` int(11) DEFAULT 1,
   `max_loan_amount` decimal(15,2) DEFAULT 100000.00,
   `hr_verified` tinyint(1) DEFAULT 0,
@@ -413,7 +297,7 @@ INSERT INTO `employee_profiles` (`profile_id`, `user_id`, `employee_id`, `first_
 (11, 11, 'EMP0034', 'kucha', 'mula', 'dushu', 'Legal', 'Full-time', NULL, 'dfggg', 230000.00, 'ACTIVE', 'active', '2026-05-05', '+234345', NULL, 'eerg', NULL, 1, 100000.00, 0, NULL, '2026-05-05 18:36:46', '2026-05-05 18:36:46'),
 (12, 12, 'EMP0112', 'birhan', 'tiru', 'gomma', 'Engineering', 'Full-time', NULL, 'kjdh ehjfkj', 34000.00, 'ACTIVE', 'active', '2026-05-05', '+87243698', NULL, 'kjefh', NULL, 1, 100000.00, 0, NULL, '2026-05-05 19:00:54', '2026-05-05 19:00:54'),
 (13, 13, 'EMP432', 'ABABA', 'KARA', 'TSEW', 'Engineering', 'Full-time', NULL, 'gouttt', 45550.00, 'TERMINATED', 'active', '2026-05-05', '+12356789', NULL, 'esf efrsedf', NULL, 1, 100000.00, 0, NULL, '2026-05-05 19:16:38', '2026-05-05 19:29:53'),
-(15, 15, 'ADM82549', 'girma', 'hibret', NULL, 'HR', 'GRADE_1', 'HR Manager', NULL, 0.00, 'ACTIVE', 'active', '2026-05-12', NULL, '+652347236', NULL, NULL, 1, 100000.00, 0, NULL, '2026-05-12 18:51:23', '2026-05-12 18:51:23');
+(14, 14, 'EMP4545', 'dgf', 'dfg', 'dfg', 'Engineering', 'Full-time', NULL, 'dgfdrgf', 56666.00, 'ACTIVE', 'active', '2026-05-05', '+734693846589', NULL, 'dsgfdgf', NULL, 1, 100000.00, 0, NULL, '2026-05-05 19:29:22', '2026-05-05 19:29:22');
 
 -- --------------------------------------------------------
 
@@ -593,13 +477,6 @@ CREATE TABLE `notifications` (
   `read_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `notifications`
---
-
-INSERT INTO `notifications` (`id`, `user_id`, `title`, `message`, `notification_type`, `is_read`, `reference_id`, `link`, `created_at`, `read_at`) VALUES
-(1, 7, 'New Finance Admin Added', 'You have successfully added awe  xdfv (ADM45670) as a new Finance Admin.', 'SUCCESS', 0, 'ADM45670', NULL, '2026-05-12 19:20:46', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -616,6 +493,18 @@ CREATE TABLE `otp_records` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Stores OTP codes for email verification with security features';
+
+--
+-- Triggers `otp_records`
+--
+DELIMITER $$
+CREATE TRIGGER `cleanup_expired_otps` AFTER INSERT ON `otp_records` FOR EACH ROW BEGIN
+    DELETE FROM otp_records 
+    WHERE expires_at < NOW() 
+    AND id != NEW.id;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -760,8 +649,7 @@ CREATE TABLE `savings_accounts` (
 --
 
 INSERT INTO `savings_accounts` (`id`, `user_id`, `employee_id`, `savings_type`, `saving_percentage`, `fixed_amount`, `current_balance`, `total_contributions`, `interest_earned`, `account_status`, `is_active`, `is_frozen`, `is_paused`, `current_version_id`, `lock_period_end_date`, `last_contribution_date`, `last_request_date`, `total_requests_count`, `approved_requests_count`, `created_at`, `updated_at`) VALUES
-(1, 5, 'EMP001', 'PERCENTAGE', 15.00, 0.00, 5000.00, 5000.00, 0.00, 'ACTIVE', 1, 0, 0, 1, NULL, NULL, NULL, 0, 0, '2026-04-06 16:50:49', '2026-04-06 16:50:49'),
-(2, 11, 'EMP0034', 'PERCENTAGE', 15.00, 0.00, 0.00, 0.00, 0.00, 'ACTIVE', 1, 0, 0, 2, NULL, NULL, '2026-05-06', 1, 0, '2026-05-06 19:17:54', '2026-05-06 20:11:59');
+(1, 5, 'EMP001', 'PERCENTAGE', 15.00, 0.00, 5000.00, 5000.00, 0.00, 'ACTIVE', 1, 0, 0, 1, NULL, NULL, NULL, 0, 0, '2026-04-06 16:50:49', '2026-04-06 16:50:49');
 
 -- --------------------------------------------------------
 
@@ -821,13 +709,6 @@ CREATE TABLE `savings_requests` (
   `final_approved_at` timestamp NULL DEFAULT NULL,
   `final_approval_comments` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `savings_requests`
---
-
-INSERT INTO `savings_requests` (`id`, `employee_id`, `user_id`, `request_type`, `old_value`, `new_value`, `savings_type`, `effective_date`, `requested_effective_date`, `status`, `workflow_stage`, `salary_snapshot`, `loan_deductions_snapshot`, `current_deduction_ratio`, `projected_deduction_ratio`, `simulation_result`, `reason`, `urgency_level`, `submitted_by`, `submitted_at`, `updated_at`, `final_approved_by`, `final_approved_at`, `final_approval_comments`) VALUES
-(1, 'EMP0034', 11, 'PERCENTAGE_CHANGE', 15.00, 25.00, 'PERCENTAGE', '2026-05-30', '2026-05-30', 'PENDING', 'SUBMITTED', 230000.00, 0.00, 15.00, 25.00, '{\"current\":{\"value\":\"15.00\",\"type\":\"PERCENTAGE\",\"deduction\":34500,\"netSalary\":195500,\"deductionRatio\":15},\"proposed\":{\"value\":25,\"type\":\"PERCENTAGE\",\"deduction\":57500,\"netSalary\":172500,\"deductionRatio\":25},\"impact\":{\"monthlyDifference\":23000,\"annualDifference\":276000,\"projectedAnnualSavings\":690000},\"validation\":{\"isValid\":true,\"violations\":[]},\"effectiveDate\":\"2026-05-30\",\"canSubmit\":true}', 'awewe qweawe qweaw q2EAQWE', 'NORMAL', 11, '2026-05-06 20:11:59', '2026-05-06 20:11:59', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -901,8 +782,7 @@ CREATE TABLE `savings_versions` (
 --
 
 INSERT INTO `savings_versions` (`id`, `user_id`, `version_number`, `savings_type`, `savings_value`, `status`, `effective_date`, `expiry_date`, `created_at`, `activated_at`, `replaced_at`) VALUES
-(1, 5, 1, 'PERCENTAGE', 15.00, 'ACTIVE', '2024-01-15', NULL, '2026-04-06 16:50:49', '2026-04-06 16:50:49', NULL),
-(2, 11, 1, 'PERCENTAGE', 15.00, 'ACTIVE', '2026-05-06', NULL, '2026-05-06 19:17:55', '2026-05-06 19:17:55', NULL);
+(1, 5, 1, 'PERCENTAGE', 15.00, 'ACTIVE', '2024-01-15', NULL, '2026-04-06 16:50:49', '2026-04-06 16:50:49', NULL);
 
 -- --------------------------------------------------------
 
@@ -960,21 +840,6 @@ INSERT INTO `system_configuration` (`id`, `config_key`, `config_value`, `config_
 -- --------------------------------------------------------
 
 --
--- Table structure for table `system_settings`
---
-
-CREATE TABLE `system_settings` (
-  `id` int(11) NOT NULL,
-  `category` varchar(50) NOT NULL,
-  `settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`settings`)),
-  `updated_by` int(11) NOT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `users`
 --
 
@@ -1009,37 +874,15 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `employee_id`, `username`, `email`, `password_hash`, `role`, `is_active`, `email_verified`, `is_first_login`, `password_change_required`, `reset_token`, `reset_token_expiry`, `first_name`, `last_name`, `phone_number`, `created_at`, `updated_at`, `last_login`, `failed_login_attempts`, `last_failed_login`, `password_changed_at`, `email_verification_code`, `email_verification_expires`) VALUES
-(5, 'EMP001', 'EMP001', 'john.doe@msms.com', '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW', 'EMPLOYEE', 1, 1, 1, 0, NULL, NULL, 'John', 'Doe', NULL, '2026-04-06 16:50:48', '2026-05-06 18:11:47', '2026-04-09 18:32:53', 0, NULL, NULL, NULL, NULL),
-(7, 'ADMIN002', 'ade', 'ade@gmail.com', '$2a$12$FXEl0UKSCeNKACx9zwe2XuoUPbWwsyb7Eq5b9.57684YysNIqmCiK', 'ADMIN', 1, 1, 1, 0, NULL, NULL, 'Bulaa', 'mula', NULL, '2026-04-28 18:26:41', '2026-05-12 19:27:00', '2026-05-12 19:27:00', 0, NULL, NULL, NULL, NULL),
-(8, 'ADM06187', 'abebe@gmail.com', 'abebe@gmail.com', '$2a$12$EGG2hhqfUZ2OgUR47UKmneJIBKZNm.I/RRMROY3jlXyl4s9SzN0Um', 'HR', 1, 0, 1, 0, NULL, NULL, 'Abebe', 'Kebede', '+123456789', '2026-04-30 17:51:46', '2026-05-12 18:32:12', '2026-04-30 19:00:09', 6, '2026-05-12 21:32:12', NULL, NULL, NULL),
+(5, 'EMP001', 'EMP001', 'john.doe@msms.com', '$2a$12$A233dQjDh42aflzqUNiOZ.7oGI3Iw0h0jLav891EVw1qey8JPRWoW', 'EMPLOYEE', 1, 1, 1, 0, NULL, NULL, 'John', 'Doe', NULL, '2026-04-06 16:50:48', '2026-05-05 21:48:12', '2026-04-09 18:32:53', 0, NULL, NULL, NULL, NULL),
+(7, 'ADMIN002', 'ade', 'ade@gmail.com', '$2a$12$FXEl0UKSCeNKACx9zwe2XuoUPbWwsyb7Eq5b9.57684YysNIqmCiK', 'ADMIN', 1, 1, 1, 0, NULL, NULL, 'Bulaa', 'mula', NULL, '2026-04-28 18:26:41', '2026-05-05 18:59:15', '2026-05-05 18:59:15', 0, NULL, NULL, NULL, NULL),
+(8, 'ADM06187', 'abebe@gmail.com', 'abebe@gmail.com', '$2a$12$EGG2hhqfUZ2OgUR47UKmneJIBKZNm.I/RRMROY3jlXyl4s9SzN0Um', 'HR', 1, 0, 1, 0, NULL, NULL, 'Abebe', 'Kebede', '+123456789', '2026-04-30 17:51:46', '2026-05-05 18:18:24', '2026-04-30 19:00:09', 5, '2026-05-05 21:18:24', NULL, NULL, NULL),
 (9, 'ADM20468', 'chala@gmail.com', 'chala@gmail.com', '$2a$12$Tt.nvdZ50ujZtjgDlcRmJ./JjxlsiYqd/fa42q3xy4xjIsbrUFF/i', 'HR', 1, 0, 1, 0, NULL, NULL, 'kassa', 'chala', '+123456789', '2026-05-05 18:27:00', '2026-05-05 19:26:19', '2026-05-05 19:26:19', 0, NULL, NULL, NULL, NULL),
 (10, 'EMP023', 'kibret@gmail.com', 'kibret@gmail.com', '$2a$12$cRNl0WVXH49qThU3yO0mCO6ecPZExHPHDvIa.Ebu5PP4FwfZcPiIy', 'EMPLOYEE', 1, 0, 1, 0, NULL, NULL, NULL, NULL, NULL, '2026-05-05 18:29:21', '2026-05-05 19:44:52', '2026-05-05 18:35:29', 1, '2026-05-05 21:51:51', NULL, NULL, NULL),
-(11, 'EMP0034', 'dushu@gmail.com', 'dushu@gmail.com', '$2a$12$tQvgJdvY7OHO4xBnLIbEgeZuXux0T/a3DVnin4z64.qMfJ1fJcyja', 'EMPLOYEE', 1, 1, 1, 0, NULL, NULL, 'kucha', 'mula', NULL, '2026-05-05 18:36:46', '2026-05-06 20:11:12', '2026-05-06 20:11:12', 0, NULL, NULL, NULL, NULL),
+(11, 'EMP0034', 'dushu@gmail.com', 'dushu@gmail.com', '$2a$12$5fG2QkJD/IQndbPZgu2.Ue37iIaLvD1Jra5LGUb760GZdfYvCdamO', 'EMPLOYEE', 1, 0, 1, 0, NULL, NULL, NULL, NULL, NULL, '2026-05-05 18:36:46', '2026-05-05 19:44:52', '2026-05-05 19:14:56', 0, NULL, NULL, NULL, NULL),
 (12, 'EMP0112', 'gamma@gmail.com', 'gamma@gmail.com', '$2a$12$bM5xiIXtjIcLyEX8lOIJZ./PTyE5mGqcBv2MbhqfrGuuxc31cIFPW', 'EMPLOYEE', 1, 0, 1, 0, NULL, NULL, NULL, NULL, NULL, '2026-05-05 19:00:54', '2026-05-05 19:44:52', '2026-05-05 19:01:23', 0, NULL, NULL, NULL, NULL),
-(13, 'EMP432', 'adinoaschlew@gmail.com', 'adinoaschlew@gmail.com', '$2a$12$qXIoFbB9riaY4ks6nR.cV.FrtF//NWU.EeSC.94JTeHc0gdGAVVCa', 'EMPLOYEE', 0, 0, 1, 0, NULL, NULL, NULL, NULL, NULL, '2026-05-05 19:16:37', '2026-05-12 18:28:01', '2026-05-05 19:23:46', 0, NULL, NULL, NULL, NULL),
-(15, 'ADM82549', 'hibret@gmail.com', 'hibret@gmail.com', '$2a$12$cMFieHH7/dRMvAW6Myh5/OCGXS1szYQetGdwrPTYUUlqcAB7eptRm', 'HR', 1, 0, 1, 0, NULL, NULL, 'girma', 'hibret', '+652347236', '2026-05-12 18:51:23', '2026-05-12 22:22:30', '2026-05-12 22:22:30', 0, NULL, NULL, NULL, NULL);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `user_preferences`
---
-
-CREATE TABLE `user_preferences` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `category` varchar(50) NOT NULL,
-  `settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`settings`)),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `user_preferences`
---
-
-INSERT INTO `user_preferences` (`id`, `user_id`, `category`, `settings`, `updated_at`, `created_at`) VALUES
-(1, 15, 'personal', '{\"theme\":\"dark\",\"emailNotifications\":true,\"pushNotifications\":true}', '2026-05-12 20:22:15', '2026-05-12 20:22:13');
+(13, 'EMP432', 'adinoaschlew@gmail.com', 'adinoaschlew@gmail.com', '$2a$12$qXIoFbB9riaY4ks6nR.cV.FrtF//NWU.EeSC.94JTeHc0gdGAVVCa', 'EMPLOYEE', 0, 0, 1, 0, NULL, NULL, NULL, NULL, NULL, '2026-05-05 19:16:37', '2026-05-05 19:44:52', '2026-05-05 19:23:46', 0, NULL, NULL, NULL, NULL),
+(14, 'EMP4545', 'adinoaschalew1995@gmail.com', 'adinoaschalew1995@gmail.com', '$2a$12$We2CoC7I10SXLnjVk0WR0.8dQcMEoiAnXreAPLs1GOnVTtHGjqnSy', 'EMPLOYEE', 1, 0, 1, 1, NULL, NULL, NULL, NULL, NULL, '2026-05-05 19:29:21', '2026-05-05 21:40:24', '2026-05-05 21:40:24', 0, NULL, NULL, NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -1064,8 +907,7 @@ ALTER TABLE `audit_logs`
   ADD KEY `idx_action` (`action`),
   ADD KEY `idx_table_name` (`table_name`),
   ADD KEY `idx_created_at` (`created_at`),
-  ADD KEY `idx_record_id` (`record_id`),
-  ADD KEY `idx_audit_logs_user_action` (`user_id`,`action`,`created_at`);
+  ADD KEY `idx_record_id` (`record_id`);
 
 --
 -- Indexes for table `employee_profiles`
@@ -1079,7 +921,7 @@ ALTER TABLE `employee_profiles`
   ADD KEY `idx_employment_status` (`employment_status`),
   ADD KEY `idx_hr_verified` (`hr_verified`),
   ADD KEY `idx_department` (`department`),
-  ADD KEY `idx_profile_picture` (`profile_picture`(768)),
+  ADD KEY `idx_profile_picture` (`profile_picture`),
   ADD KEY `idx_salary` (`salary`);
 
 --
@@ -1289,15 +1131,6 @@ ALTER TABLE `system_configuration`
   ADD KEY `idx_config_type` (`config_type`);
 
 --
--- Indexes for table `system_settings`
---
-ALTER TABLE `system_settings`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_category` (`category`),
-  ADD KEY `updated_by` (`updated_by`),
-  ADD KEY `idx_system_settings_category` (`category`);
-
---
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -1316,15 +1149,6 @@ ALTER TABLE `users`
   ADD KEY `idx_users_is_first_login` (`is_first_login`);
 
 --
--- Indexes for table `user_preferences`
---
-ALTER TABLE `user_preferences`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_user_category` (`user_id`,`category`),
-  ADD KEY `idx_user_preferences_user_id` (`user_id`),
-  ADD KEY `idx_user_preferences_category` (`category`);
-
---
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -1338,13 +1162,13 @@ ALTER TABLE `ai_forecasts`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=299;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=184;
 
 --
 -- AUTO_INCREMENT for table `employee_profiles`
 --
 ALTER TABLE `employee_profiles`
-  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `generated_reports`
@@ -1386,13 +1210,13 @@ ALTER TABLE `loan_transactions`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `otp_records`
 --
 ALTER TABLE `otp_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `payroll_batches`
@@ -1422,7 +1246,7 @@ ALTER TABLE `performance_reviews`
 -- AUTO_INCREMENT for table `savings_accounts`
 --
 ALTER TABLE `savings_accounts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `savings_configuration`
@@ -1434,7 +1258,7 @@ ALTER TABLE `savings_configuration`
 -- AUTO_INCREMENT for table `savings_requests`
 --
 ALTER TABLE `savings_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `savings_transactions`
@@ -1452,7 +1276,7 @@ ALTER TABLE `savings_update_requests`
 -- AUTO_INCREMENT for table `savings_versions`
 --
 ALTER TABLE `savings_versions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `system_configuration`
@@ -1461,22 +1285,10 @@ ALTER TABLE `system_configuration`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=98;
 
 --
--- AUTO_INCREMENT for table `system_settings`
---
-ALTER TABLE `system_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
-
---
--- AUTO_INCREMENT for table `user_preferences`
---
-ALTER TABLE `user_preferences`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Constraints for dumped tables
@@ -1609,18 +1421,6 @@ ALTER TABLE `savings_update_requests`
 --
 ALTER TABLE `savings_versions`
   ADD CONSTRAINT `savings_versions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `system_settings`
---
-ALTER TABLE `system_settings`
-  ADD CONSTRAINT `system_settings_ibfk_1` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `user_preferences`
---
-ALTER TABLE `user_preferences`
-  ADD CONSTRAINT `user_preferences_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
