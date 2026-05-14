@@ -1,39 +1,15 @@
-import { useState, useEffect } from 'react';
-import {
-  Users,
-  UserMinus,
-  UserX,
-  UserCheck,
-  Briefcase,
-  Clock,
-  RefreshCw
-} from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  rectSortingStrategy
-} from '@dnd-kit/sortable';
-import { restrictToWindowEdges } from '@dnd-kit/modifiers';
+import React, { useState, useEffect } from 'react';
+import { Users, UserPlus, TrendingUp, Calendar } from 'lucide-react';
+import StatCard from '../components/Dashboard/StatCard';
+import PieChart from '../components/charts/PieChart';
+import LineChart from '../components/charts/LineChart';
+import BarChart from '../components/charts/BarChart';
+import ProgressBar from '../components/common/ProgressBar';
+import ActivityFeed from '../components/Dashboard/ActivityFeed';
 import { hrAPI } from '../../../shared/services/hrAPI';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 
-import StatCard from '../components/Dashboard/StatCard';
-import ActivityFeed from '../components/Dashboard/ActivityFeed';
-import SortableWidget from '../components/Dashboard/SortableWidget';
-import SuccessModal from '../components/Dashboard/SuccessModal';
-
 const DashboardPage = () => {
-  
   const formatCompactNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'METB';
@@ -43,46 +19,11 @@ const DashboardPage = () => {
     return num.toString();
   };
 
-  
-  const initialTopWidgets = [
-    {
-      id: 'stat-employees',
-      component: <StatCard title="Total Employees" value="1,245" icon={Users} trend="up" trendValue="12%" colorClass="bg-blue-500" />
-    },
-    {
-      id: 'stat-terminated',
-      component: <StatCard title="Terminated User" value="12" icon={UserX} trend="up" trendValue="2%" colorClass="bg-rose-500" />
-    },
-    {
-      id: 'stat-active',
-      component: <StatCard title="Active User" value="1,233" icon={UserCheck} trend="up" trendValue="10%" colorClass="bg-emerald-500" />
-    },
-    {
-      id: 'stat-pending',
-      component: <StatCard title="Pending Approvals" value="12" icon={Clock} trend="down" trendValue="2%" colorClass="bg-violet-500" />
-    }
-  ];
-
-  const initialBottomWidgets = [
-    { id: 'activity-feed', component: <ActivityFeed />, className: "col-span-1 lg:col-span-3" }
-  ];
-
-  const [topWidgets, setTopWidgets] = useState(initialTopWidgets);
-  const [bottomWidgets, setBottomWidgets] = useState(initialBottomWidgets);
+  const [dateRange, setDateRange] = useState('30days');
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [updating, setUpdating] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { user } = useAuth();
-
-  
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   useEffect(() => {
     fetchDashboardData();
@@ -135,59 +76,140 @@ const DashboardPage = () => {
     }
   };
 
-  const updateDashboard = async () => {
-    try {
-      setUpdating(true);
-
-      
-      const statsToUpdate = {
-        totalEmployees: dashboardData?.totalEmployees || 0,
-        activeEmployees: dashboardData?.activeEmployees || 0,
-        terminatedRate: dashboardData?.terminatedRate || 0,
-        employeeGrowthRate: dashboardData?.employeeGrowthRate || 0,
-        pendingApprovals: dashboardData?.pendingApprovals || 0,
-        lastUpdated: new Date().toISOString()
-      };
-
-      const response = await hrAPI.updateDashboardStats(statsToUpdate);
-
-      
-      await fetchDashboardData();
-
-      
-      setShowSuccessModal(true);
-
-    } catch (err) {
-      console.error('Update dashboard error:', err);
-      setError('Failed to update dashboard');
-    } finally {
-      setUpdating(false);
+  
+  const statsData = [
+    {
+      title: 'Total Employees',
+      value: formatCompactNumber(dashboardData?.totalEmployees || 0),
+      change: dashboardData?.employeeGrowthRate || '+0%',
+      changeType: (dashboardData?.employeeGrowthRate || '').startsWith('+') ? 'increase' : 'decrease',
+      icon: <Users className="h-6 w-6" />,
+      color: 'blue'
+    },
+    {
+      title: 'Active Employees',
+      value: formatCompactNumber(dashboardData?.activeEmployees || 0),
+      change: dashboardData?.activeRate || '+0%',
+      changeType: (dashboardData?.activeRate || '').startsWith('+') ? 'increase' : 'decrease',
+      icon: <UserPlus className="h-6 w-6" />,
+      color: 'green'
+    },
+    {
+      title: 'Pending Approvals',
+      value: formatCompactNumber(dashboardData?.pendingApprovals || 0),
+      change: dashboardData?.approvalRate || '+0%',
+      changeType: (dashboardData?.approvalRate || '').startsWith('+') ? 'increase' : 'decrease',
+      icon: <Calendar className="h-6 w-6" />,
+      color: 'yellow'
+    },
+    {
+      title: 'Growth Rate',
+      value: dashboardData?.employeeGrowthRate || '0%',
+      change: dashboardData?.employeeGrowthRate || '+0%',
+      changeType: (dashboardData?.employeeGrowthRate || '').startsWith('+') ? 'increase' : 'decrease',
+      icon: <TrendingUp className="h-6 w-6" />,
+      color: 'purple'
     }
+  ];
+
+  
+  const pieChartData = {
+    labels: ['Active Employees', 'Terminated', 'Pending'],
+    datasets: [
+      {
+        data: [
+          dashboardData?.activeEmployees || 0,
+          dashboardData?.terminated || 0,
+          dashboardData?.pendingApprovals || 0
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.9)',
+          'rgba(239, 68, 68, 0.9)',
+          'rgba(168, 85, 247, 0.9)'
+        ],
+        borderColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(239, 68, 68, 1)',
+          'rgba(168, 85, 247, 1)'
+        ],
+        borderWidth: 2,
+        hoverOffset: 4
+      },
+    ],
   };
 
   
-  const dynamicTopWidgets = [
-    {
-      id: 'stat-employees',
-      component: <StatCard title="Total Employees" value={formatCompactNumber(dashboardData?.totalEmployees || 0)} icon={Users} trend="up" trendValue={`${dashboardData?.employeeGrowthRate || '0'}%`} colorClass="bg-blue-500" />
-    },
-    {
-      id: 'stat-terminated',
-      component: <StatCard title="Terminated User" value={formatCompactNumber(dashboardData?.terminated || 0)} icon={UserX} trend="up" trendValue={`${dashboardData?.terminatedRate || '0'}%`} colorClass="bg-rose-500" />
-    },
-    {
-      id: 'stat-active',
-      component: <StatCard title="Active User" value={formatCompactNumber(dashboardData?.activeEmployees || 0)} icon={UserCheck} trend="up" trendValue={`${dashboardData?.activeRate || '0'}%`} colorClass="bg-emerald-500" />
-    },
-    {
-      id: 'stat-pending',
-      component: <StatCard title="Pending Approvals" value={formatCompactNumber(dashboardData?.pendingApprovals || 0)} icon={Clock} trend="down" trendValue={`${dashboardData?.approvalRate || '0'}%`} colorClass="bg-violet-500" />
-    }
+  const progressData = [
+    { label: 'Active Rate', value: parseFloat(dashboardData?.activeRate) || 0, color: 'purple' },
+    { label: 'Growth Rate', value: parseFloat(dashboardData?.employeeGrowthRate) || 0, color: 'blue' },
+    { label: 'Approval Rate', value: parseFloat(dashboardData?.approvalRate) || 0, color: 'green' },
+    { label: 'Termination Rate', value: parseFloat(dashboardData?.terminatedRate) || 0, color: 'red' }
   ];
 
-  const dynamicBottomWidgets = [
-    { id: 'activity-feed', component: <ActivityFeed activities={dashboardData?.recentActivities} />, className: "col-span-1 lg:col-span-3" }
-  ];
+  
+  const getLineChartData = () => {
+    const labels = dateRange === '7days' 
+      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      : dateRange === '30days'
+      ? Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`)
+      : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const baseValue = dashboardData?.totalEmployees || 1000;
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Employees',
+          data: labels.map((_, index) => Math.floor(baseValue + (index * baseValue * 0.02))),
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4,
+          fill: true,
+        },
+      ],
+    };
+  };
+
+  
+  const barChartData = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        label: 'Activity Level',
+        data: [
+          (dashboardData?.totalEmployees || 100) * 0.08,
+          (dashboardData?.totalEmployees || 100) * 0.09,
+          (dashboardData?.totalEmployees || 100) * 0.07,
+          (dashboardData?.totalEmployees || 100) * 0.09,
+          (dashboardData?.totalEmployees || 100) * 0.10,
+          (dashboardData?.totalEmployees || 100) * 0.05,
+          (dashboardData?.totalEmployees || 100) * 0.04
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(34, 197, 94, 0.8)',
+          'rgba(168, 85, 247, 0.8)',
+          'rgba(251, 146, 60, 0.8)',
+          'rgba(239, 68, 68, 0.8)',
+          'rgba(156, 163, 175, 0.8)',
+          'rgba(107, 114, 128, 0.8)'
+        ],
+        borderColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(34, 197, 94, 1)',
+          'rgba(168, 85, 247, 1)',
+          'rgba(251, 146, 60, 1)',
+          'rgba(239, 68, 68, 1)',
+          'rgba(156, 163, 175, 1)',
+          'rgba(107, 114, 128, 1)'
+        ],
+        borderWidth: 2,
+        borderRadius: 8,
+        barThickness: 40
+      },
+    ],
+  };
 
   if (loading) {
     return (
@@ -209,95 +231,102 @@ const DashboardPage = () => {
     );
   }
 
-  const handleDragEndTop = (event) => {
-    const { active, over } = event;
-    if (active.id !== over.id) {
-      setTopWidgets((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
-  };
-
-  const handleDragEndBottom = (event) => {
-    const { active, over } = event;
-    if (active.id !== over.id) {
-      setBottomWidgets((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
-  };
-
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-6">
+      {}
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard Overview</h1>
-          <p className="text-muted-foreground text-sm">Welcome back, {user?.first_name || 'HR Admin'}. Here is what is happening today.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Welcome back, <span className='text-blue-600'>{user?.first_name || 'HR Admin'}.</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
+            Here's what's happening with your HR dashboard today.
+          </p>
+          <div className="mt-4 flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">System Active</span>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+          </div>
         </div>
-
-        <button
-          onClick={updateDashboard}
-          disabled={updating || !dashboardData}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors shadow-sm font-medium text-sm w-full sm:w-auto justify-center"
-        >
-          <RefreshCw className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`} />
-          <span>{updating ? 'Updating...' : 'Update Dashboard'}</span>
-        </button>
       </div>
 
       {}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEndTop}
-        modifiers={[restrictToWindowEdges]}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SortableContext
-            items={dynamicTopWidgets.map(w => w.id)}
-            strategy={rectSortingStrategy}
-          >
-            {dynamicTopWidgets.map(widget => (
-              <SortableWidget key={widget.id} id={widget.id}>
-                {widget.component}
-              </SortableWidget>
-            ))}
-          </SortableContext>
-        </div>
-      </DndContext>
+      <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {statsData.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
 
       {}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEndBottom}
-        modifiers={[restrictToWindowEdges]}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <SortableContext
-            items={dynamicBottomWidgets.map(w => w.id)}
-            strategy={rectSortingStrategy}
-          >
-            {dynamicBottomWidgets.map(widget => (
-              <SortableWidget key={widget.id} id={widget.id} className={widget.className}>
-                {widget.component}
-              </SortableWidget>
-            ))}
-          </SortableContext>
+      <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
+        {}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Employee Distribution</h3>
+          <PieChart data={pieChartData} />
         </div>
-      </DndContext>
+
+        {}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Activity Analytics</h3>
+          <div className="space-y-2">
+            {progressData.map((item, index) => (
+              <ProgressBar key={index} {...item} />
+            ))}
+          </div>
+          <div className="mt-4">
+            <BarChart data={barChartData} />
+          </div>
+        </div>
+      </div>
 
       {}
-      <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        title="Dashboard Updated Successfully!"
-        message="Your dashboard statistics have been updated and saved to the database. The latest data is now displayed."
-      />
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Employee Growth</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setDateRange('7days')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                dateRange === '7days' 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
+              7 Days
+            </button>
+            <button
+              onClick={() => setDateRange('30days')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                dateRange === '30days' 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
+              30 Days
+            </button>
+            <button
+              onClick={() => setDateRange('year')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                dateRange === 'year' 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
+              Year
+            </button>
+          </div>
+        </div>
+        <LineChart data={getLineChartData()} />
+      </div>
+
+      {}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <ActivityFeed activities={dashboardData?.recentActivities} />
+      </div>
     </div>
   );
 }
