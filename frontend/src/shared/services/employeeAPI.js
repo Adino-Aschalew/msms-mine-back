@@ -41,7 +41,7 @@ export const employeeAPI = {
 
   
   getPayrollHistory: async (page = 1, limit = 10) => {
-    
-    return { transactions: [], pagination: { page, limit, total: 0, pages: 0 } };
+    const response = await apiClient.get('/users/me/payroll', { params: { page, limit } });
+    return response.data;
   }
 };

@@ -761,19 +761,65 @@ class FinanceService {
       const totalWithdrawals = parseFloat(overview.transactions?.savings?.total_withdrawals || 0);
       const totalPayroll = parseFloat(overview.payroll?.total_amount || 0);
       
+      const currentRevenue = totalContributions + totalPayments;
+      const currentExpenses = totalWithdrawals + totalPayroll;
+      const currentProfit = Math.abs(currentRevenue - currentExpenses);
+      
+      // Calculate Previous Period for Growth
+      let prevPeriodFilter = '';
+      if (period === 'MONTHLY') {
+        prevPeriodFilter = "AND DATE_FORMAT(transaction_date, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')";
+      } else if (period === 'YEARLY') {
+        prevPeriodFilter = "AND YEAR(transaction_date) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 YEAR))";
+      }
+
+      let revenueGrowth = 0, expensesGrowth = 0, profitGrowth = 0, cashChange = 0, receivableChange = 0, payableChange = 0;
+      
+      try {
+        if (prevPeriodFilter) {
+          const prevTotals = await query(`
+            SELECT 
+              COALESCE(SUM(CASE WHEN transaction_type = 'CONTRIBUTION' THEN amount ELSE 0 END), 0) as prev_savings_in,
+              COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END), 0) as prev_loan_in,
+              COALESCE(SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN amount ELSE 0 END), 0) as prev_savings_out,
+              COALESCE(SUM(CASE WHEN transaction_type = 'PAYROLL' THEN amount ELSE 0 END), 0) as prev_payroll
+            FROM (
+              SELECT 'CONTRIBUTION' as transaction_type, amount, transaction_date FROM savings_transactions WHERE transaction_type = 'CONTRIBUTION'
+              UNION ALL
+              SELECT 'WITHDRAWAL' as transaction_type, amount, transaction_date FROM savings_transactions WHERE transaction_type = 'WITHDRAWAL'
+              UNION ALL
+              SELECT 'PAYROLL' as transaction_type, total_amount as amount, processed_date as transaction_date FROM payroll_batches WHERE status = 'PROCESSED'
+              UNION ALL
+              SELECT 'PAYMENT' as transaction_type, amount, repayment_date as transaction_date FROM loan_repayments WHERE status = 'PAID'
+            ) as transactions
+            WHERE 1=1 ${prevPeriodFilter}
+          `);
+
+          const prevRevenue = parseFloat(prevTotals[0]?.prev_savings_in || 0) + parseFloat(prevTotals[0]?.prev_loan_in || 0);
+          const prevExpenses = parseFloat(prevTotals[0]?.prev_savings_out || 0) + parseFloat(prevTotals[0]?.prev_payroll || 0);
+          const prevProfit = Math.abs(prevRevenue - prevExpenses);
+
+          if (prevRevenue > 0) revenueGrowth = ((currentRevenue - prevRevenue) / prevRevenue) * 100;
+          if (prevExpenses > 0) expensesGrowth = ((currentExpenses - prevExpenses) / prevExpenses) * 100;
+          if (prevProfit > 0) profitGrowth = ((currentProfit - prevProfit) / prevProfit) * 100;
+        }
+      } catch (error) {
+        console.warn('Failed to calculate previous period growth:', error.message);
+      }
+
       return {
-        revenue: totalContributions + totalPayments,
-        expenses: totalWithdrawals + totalPayroll,
-        netProfit: Math.abs((totalContributions + totalPayments) - (totalWithdrawals + totalPayroll)),
-        revenueGrowth: 15.5, 
-        expensesGrowth: 8.2,
-        profitGrowth: 12.7,
+        revenue: currentRevenue,
+        expenses: currentExpenses,
+        netProfit: currentProfit,
+        revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+        expensesGrowth: Math.round(expensesGrowth * 10) / 10,
+        profitGrowth: Math.round(profitGrowth * 10) / 10,
         cashBalance: parseFloat(overview.total_assets || 0),
-        cashChange: 5.2,
+        cashChange: Math.round((revenueGrowth - expensesGrowth) * 10) / 10, // Simulated based on performance
         accountsReceivable: parseFloat(overview.transactions?.loans?.total_disbursements || 0),
-        receivableChange: -2.1,
+        receivableChange: Math.round(revenueGrowth * 10) / 10,
         accountsPayable: totalPayroll,
-        payableChange: 3.4,
+        payableChange: Math.round(expensesGrowth * 10) / 10,
         expenseBreakdown: expenses,
         monthlyCashFlow: cashFlow || [],
         pendingApprovals: {

@@ -3,16 +3,11 @@ const { query, transaction } = require('../config/database');
 class Guarantor {
   static async addGuarantor(loanApplicationId, userId, guarantorData) {
     const {
-      guarantor_type,
       guarantor_name,
       guarantor_id,
       relationship,
-      monthly_income,
       contact_phone,
       contact_email,
-      address,
-      id_document_path,
-      income_proof_path
     } = guarantorData;
     
     const checkQuery = `
@@ -34,13 +29,13 @@ class Guarantor {
     const insertQuery = `
       INSERT INTO guarantors 
       (loan_application_id, user_id, guarantor_type, guarantor_name, guarantor_id, relationship,
-       monthly_income, contact_phone, contact_email, address, id_document_path, income_proof_path)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       contact_phone, contact_email)
+      VALUES (?, ?, 'INTERNAL', ?, ?, ?, ?, ?)
     `;
     
     const insertResult = await query(insertQuery, [
-      loanApplicationId, userId, guarantor_type, guarantor_name, guarantor_id, relationship,
-      monthly_income, contact_phone, contact_email, address, id_document_path, income_proof_path
+      loanApplicationId, userId, guarantor_name, guarantor_id, relationship,
+      contact_phone, contact_email
     ]);
     
     return insertResult.insertId;
@@ -87,13 +82,13 @@ class Guarantor {
     
     const updateQuery = `
       UPDATE guarantors 
-      SET guarantor_name = ?, relationship = ?, monthly_income = ?, 
-          contact_phone = ?, contact_email = ?, address = ?, updated_at = NOW()
+      SET guarantor_name = ?, relationship = ?, 
+          contact_phone = ?, contact_email = ?, updated_at = NOW()
       WHERE id = ?
     `;
     
     await query(updateQuery, [
-      guarantor_name, relationship, monthly_income, contact_phone, contact_email, address, guarantorId
+      guarantor_name, relationship, contact_phone, contact_email, guarantorId
     ]);
   }
   

@@ -73,6 +73,8 @@ const Disbursements = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [showRepaymentSchedule, setShowRepaymentSchedule] = useState(false);
+  const [repaymentSchedule, setRepaymentSchedule] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
   const [viewMode, setViewMode] = useState('table'); 
   const [selectedDisbursements, setSelectedDisbursements] = useState(new Set());
   const [processingActions, setProcessingActions] = useState(new Set());
@@ -123,14 +125,7 @@ const Disbursements = () => {
     { value: 'failed', label: 'Failed' }
   ];
 
-  const repaymentSchedule = [
-    { month: 1, dueDate: '2024-04-20', amount: 625, status: 'pending', balance: 14375 },
-    { month: 2, dueDate: '2024-05-20', amount: 625, status: 'pending', balance: 13750 },
-    { month: 3, dueDate: '2024-06-20', amount: 625, status: 'pending', balance: 13125 },
-    { month: 4, dueDate: '2024-07-20', amount: 625, status: 'pending', balance: 12500 },
-    { month: 5, dueDate: '2024-08-20', amount: 625, status: 'pending', balance: 11875 },
-    { month: 6, dueDate: '2024-09-20', amount: 625, status: 'pending', balance: 11250 }
-  ];
+
 
   const filteredDisbursements = disbursements.filter(disbursement => {
     const matchesSearch = !searchTerm || 
@@ -244,9 +239,21 @@ const Disbursements = () => {
     
   };
 
-  const handleViewSchedule = (loan) => {
+  const handleViewSchedule = async (loan) => {
     setSelectedLoan(loan);
     setShowRepaymentSchedule(true);
+    setScheduleLoading(true);
+    try {
+      const res = await committeeAPI.getRepaymentSchedule(loan.id);
+      if (res?.data?.success) {
+        setRepaymentSchedule(res.data.data.schedule || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch repayment schedule:', error);
+      setRepaymentSchedule([]);
+    } finally {
+      setScheduleLoading(false);
+    }
   };
 
   return (
@@ -973,27 +980,41 @@ const Disbursements = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                    {repaymentSchedule.map((payment) => (
-                      <tr key={payment.month} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                          {payment.month}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                          {payment.dueDate}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {formatMoney(payment.amount)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`status-badge ${getStatusBadge(payment.status)}`}>
-                            {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                          {formatMoney(payment.balance)}
+                    {scheduleLoading ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
+                          Loading repayment schedule...
                         </td>
                       </tr>
-                    ))}
+                    ) : repaymentSchedule.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
+                          No repayment schedule found for this loan.
+                        </td>
+                      </tr>
+                    ) : (
+                      repaymentSchedule.map((payment) => (
+                        <tr key={payment.month} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            {payment.month}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                            {payment.due_date || payment.dueDate}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {formatMoney(payment.amount)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`status-badge ${getStatusBadge(payment.status)}`}>
+                              {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                            {formatMoney(payment.balance)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

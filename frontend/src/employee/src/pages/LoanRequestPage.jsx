@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loansAPI } from '../../../shared/services/loansAPI';
-import { savingsAPI } from '../../../shared/services/savingsAPI';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
-import { DollarSign, Calendar, FileText, User, Building, Phone, Mail, Briefcase, CheckCircle, XCircle, AlertCircle, ChevronRight, Upload, CreditCard, Shield, TrendingUp } from 'lucide-react';
+import { DollarSign, Calendar, FileText, User, Briefcase, CheckCircle, XCircle, AlertCircle, TrendingUp, Search, Info, Shield, ChevronRight, Printer, Download, Save, RefreshCcw } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const FieldLabel = ({ children, required, icon }) => (
   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
@@ -13,260 +14,322 @@ const FieldLabel = ({ children, required, icon }) => (
 );
 
 const inputCls =
-  'w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-100 placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 transition-all duration-200';
+  'w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-100 placeholder-gray-400 transition-all duration-200';
 
-const cardCls = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden';
-const headerCls = 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 px-6 py-4 border-b border-gray-100 dark:border-gray-700';
-const sectionTitleCls = 'text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2';
+const cardCls = 'bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden';
 
 const LoanRequestPage = () => {
   const navigate = useNavigate();
-  const [selectedLoanType, setSelectedLoanType] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [showActiveLoanModal, setShowActiveLoanModal] = useState(false);
+  const [profile, setProfile] = useState(null);
 
-  
-  const formatCompactNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'METB';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'KETB';
-    }
-    return num.toString();
-  };
+  const [financials, setFinancials] = useState({
+    salary: 0,
+    savings_balance: 0,
+    max_loan_by_savings: 0,
+    max_monthly_repayment: 0,
+    has_active_loan: false,
+    loading: true
+  });
 
   const [formData, setFormData] = useState({
     requestedAmount: '',
     loanPurpose: '',
     loanDuration: '',
-    guarantorType: 'internal',
+    startDeductionDate: '',
     guarantor: {
       employeeId: '',
       fullName: '',
-      email: '',
       department: '',
-      position: '',
-      phoneNumber: '',
       relationship: '',
-      employer: '',
-      jobPosition: '',
-      monthlySalary: '',
-      workAddress: '',
-      homeAddress: '',
-    },
+      isValid: false,
+      validating: false,
+      error: ''
+    }
   });
 
-  const [eligibility, setEligibility] = useState({
-    savingsBalance: false,
-    salaryRule: false,
-    employmentDuration: false,
-    guarantorInfo: false,
+  const [calcResult, setCalcResult] = useState({
+    monthlyPayment: 0,
+    totalInterest: 0,
+    totalPayment: 0,
+    schedule: [],
+    loading: false
   });
-
-  const [employeeData, setEmployeeData] = useState({
-    savingsBalance: 0,
-    salary: 0,
-    employmentDuration: 0,
-    loading: true,
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [showPendingModal, setShowPendingModal] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 3;
 
   useEffect(() => {
-    const fetchProfileAndSavings = async () => {
+    const fetchInitialData = async () => {
       try {
-        const [profileRes, savingsRes, savingsTransRes] = await Promise.all([
-          employeeAPI.getProfile(),
-          savingsAPI.getSavingsAccount().catch(() => null),
-          savingsAPI.getSavingsTransactions(1, 100).catch(() => ({ transactions: [] })),
+        const [eligibilityRes, profileRes] = await Promise.all([
+          loansAPI.getLoanEligibility(),
+          employeeAPI.getProfile()
         ]);
 
-        const profileData = profileRes?.data || profileRes;
-        const eProfile = profileData?.employeeProfile || profileData?.employee_profile || {};
-        const savingsData = savingsRes?.data || savingsRes;
-        const savingsTransactions = savingsTransRes?.transactions || [];
+        if (eligibilityRes.success) {
+          const { financials: f, user_data: u } = eligibilityRes.data;
+          setFinancials({
+            salary: f.salary,
+            savings_balance: f.savings_balance,
+            max_loan_by_savings: f.max_loan_by_savings,
+            max_monthly_repayment: f.max_monthly_repayment,
+            has_active_loan: (u.active_loans > 0 || u.pending_applications > 0),
+            loading: false
+          });
 
-        console.log('Loan Request - Savings data:', savingsData);
-        console.log('Loan Request - Savings transactions:', savingsTransactions);
-
-        
-        const actualSavingsBalance = savingsTransactions.reduce((sum, transaction) => {
-          if (transaction.transaction_type === 'CONTRIBUTION' || transaction.transaction_type === 'DEPOSIT') {
-            return sum + parseFloat(transaction.amount || 0);
+          if (u.active_loans > 0 || u.pending_applications > 0) {
+            setShowActiveLoanModal(true);
           }
-          if (transaction.transaction_type === 'WITHDRAWAL') {
-            return sum - parseFloat(transaction.amount || 0);
-          }
-          return sum;
-        }, 0);
+        }
 
-        const savingsBalance = actualSavingsBalance > 0 ? actualSavingsBalance : parseFloat(savingsData?.total_contributions || savingsData?.current_balance || 0);
-
-        const hireDateStr = eProfile.hire_date || eProfile.created_at;
-        const hireDate = hireDateStr ? new Date(hireDateStr) : new Date();
-        const daysEmployed = Math.floor((new Date() - hireDate) / (1000 * 60 * 60 * 24));
-
-        console.log('Loan Request - Calculated savings balance:', savingsBalance);
-
-        setEmployeeData({
-          savingsBalance: savingsBalance,
-          salary: parseFloat(eProfile.salary || 0),
-          employmentDuration: Math.floor(daysEmployed / 30),
-          loading: false,
-        });
+        if (profileRes.success || profileRes.data) {
+          const profileData = profileRes.data || profileRes;
+          // Flatten the structure for easier access if it's nested
+          setProfile({
+            ...(profileData.user || {}),
+            ...(profileData.employeeProfile || profileData.employee_profile || profileData || {})
+          });
+        }
       } catch (error) {
-        console.error('Error fetching profile for loan request:', error);
-        setEmployeeData((prev) => ({ ...prev, loading: false }));
+        console.error('Error fetching initial data:', error);
+        setFinancials(prev => ({ ...prev, loading: false }));
       }
     };
-
-    fetchProfileAndSavings();
+    fetchInitialData();
   }, []);
 
-  const loanTypes = [
-    { id: 'emergency', name: 'Emergency Loan', maxAmount: 10000, maxDuration: 12, apr: '8.5%', icon: AlertCircle, color: 'red' },
-    { id: 'personal', name: 'Personal Loan', maxAmount: 25000, maxDuration: 36, apr: '6.8%', icon: User, color: 'blue' },
-    { id: 'education', name: 'Education Loan', maxAmount: 20000, maxDuration: 24, apr: '5.2%', icon: FileText, color: 'green' },
-    { id: 'medical', name: 'Medical Loan', maxAmount: 15000, maxDuration: 18, apr: '7.1%', icon: Shield, color: 'purple' },
-  ];
-
+  // Real-time calculator trigger
   useEffect(() => {
-    checkEligibility();
-  }, [formData.requestedAmount, formData.loanDuration, formData.guarantorType, formData.guarantor]);
+    const calculate = async () => {
+      if (formData.requestedAmount > 0 && formData.loanDuration > 0) {
+        setCalcResult(prev => ({ ...prev, loading: true }));
+        try {
+          // Simple local calculation for live feel, could also call API
+          const amount = parseFloat(formData.requestedAmount);
+          const months = parseInt(formData.loanDuration);
+          const monthlyPayment = amount / months;
 
-  const checkEligibility = () => {
-    const amount = parseFloat(formData.requestedAmount) || 0;
-    const duration = parseInt(formData.loanDuration) || 0;
-    const monthlyInstallment = amount > 0 && duration > 0 ? amount / duration : 0;
-    setEligibility({
-      savingsBalance: amount <= employeeData.savingsBalance * 2,
-      salaryRule: monthlyInstallment <= employeeData.salary * 0.4,
-      
-      employmentDuration: true, 
-      guarantorInfo:
-        formData.guarantorType === 'internal'
-          ? !!(formData.guarantor.employeeId && formData.guarantor.relationship)
-          : !!(formData.guarantor.fullName && formData.guarantor.email && formData.guarantor.employer),
-    });
+          // Generate schedule
+          const schedule = [];
+          let balance = amount;
+          for (let i = 1; i <= months; i++) {
+            balance -= monthlyPayment;
+            schedule.push({
+              month: `Month ${i}`,
+              deduction: monthlyPayment.toFixed(2),
+              remaining: Math.max(0, balance).toFixed(2)
+            });
+          }
+
+          setCalcResult({
+            monthlyPayment: Math.round(monthlyPayment * 100) / 100,
+            totalInterest: 0, // Interest-free as per basic formula: Amount / Months
+            totalPayment: amount,
+            schedule,
+            loading: false
+          });
+        } catch (error) {
+          console.error('Calculation error:', error);
+          setCalcResult(prev => ({ ...prev, loading: false }));
+        }
+      }
+    };
+    calculate();
+  }, [formData.requestedAmount, formData.loanDuration]);
+
+  const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const validateGuarantor = async (employeeId) => {
+    if (!employeeId) return;
+    if (employeeId === profile?.employee_id || employeeId === profile?.employeeProfile?.employee_id) {
+      setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, isValid: false, validating: false, error: 'You cannot be your own guarantor' } }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, validating: true, error: '', isValid: false } }));
+    try {
+      const res = await loansAPI.checkGuarantorCapacity(employeeId, formData.requestedAmount);
+      if (res.success && res.data.eligible) {
+        setFormData(prev => ({
+          ...prev,
+          guarantor: {
+            ...prev.guarantor,
+            isValid: true,
+            validating: false,
+            fullName: res.data.guarantor_data.name,
+            department: res.data.guarantor_data.department
+          }
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, isValid: false, validating: false, error: res.data.reason || 'Invalid guarantor' } }));
+      }
+    } catch (error) {
+      console.error('Guarantor validation error:', error);
+      const errorMessage = error.data?.message || error.message || 'Validation failed';
+      setFormData(prev => ({ 
+        ...prev, 
+        guarantor: { 
+          ...prev.guarantor, 
+          validating: false, 
+          error: errorMessage 
+        } 
+      }));
+    }
   };
 
-  const isEligible = Object.values(eligibility).every(Boolean);
-
-  const handleInputChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
-  const handleGuarantorChange = (field, value) =>
-    setFormData((prev) => ({ ...prev, guarantor: { ...prev.guarantor, [field]: value } }));
-
-  
-  const handleEmployeeIdChange = (employeeId) => {
-    handleGuarantorChange('employeeId', employeeId);
-  };
-
-  const handleFileUpload = (field, file) => {
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('File size must be less than 5MB'); return; }
-    handleGuarantorChange(field, file);
-  };
-
-  const calculateMonthlyInstallment = () => {
-    const a = parseFloat(formData.requestedAmount) || 0;
-    const d = parseInt(formData.loanDuration) || 0;
-    return a > 0 && d > 0 ? (a / d).toFixed(2) : '0.00';
-  };
+  const isEligible =
+    formData.requestedAmount > 0 &&
+    formData.requestedAmount <= financials.max_loan_by_savings &&
+    calcResult.monthlyPayment <= financials.max_monthly_repayment &&
+    !financials.has_active_loan;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
-    
-    console.log('Form data:', formData);
-    console.log('Is eligible:', isEligible);
-    console.log('Selected loan type:', selectedLoanType);
-    
-    if (!isEligible || !selectedLoanType) {
-      console.log('Not eligible or no loan type selected');
-      return;
-    }
-    
-    setIsSubmitting(true);
+    if (!isEligible || !formData.guarantor.isValid) return;
 
+    setIsSubmitting(true);
     try {
-      const payload = {
+      await loansAPI.applyForLoan({
         loan_amount: parseFloat(formData.requestedAmount),
         loan_purpose: formData.loanPurpose,
         loan_term_months: parseInt(formData.loanDuration),
-        interest_rate: parseFloat((selectedLoanType?.apr || '5').replace('%', '')),
-        monthly_payment: parseFloat(calculateMonthlyInstallment()),
-        guarantor_details: JSON.stringify(
-          formData.guarantorType === 'internal'
-            ? { type: 'internal', employeeId: formData.guarantor.employeeId, relationship: formData.guarantor.relationship }
-            : { type: 'external', fullName: formData.guarantor.fullName, employer: formData.guarantor.employer, email: formData.guarantor.email }
-        ),
-      };
-      
-      console.log('Payload to send:', payload);
-
-      await loansAPI.applyForLoan(payload);
+        start_deduction_date: formData.startDeductionDate,
+        guarantor_details: JSON.stringify({
+          type: 'internal',
+          employeeId: formData.guarantor.employeeId,
+          relationship: formData.guarantor.relationship
+        })
+      });
       setSubmitSuccess(true);
     } catch (error) {
-      console.error('❌ Error applying for loan:', error);
-      console.log('📋 Error details:', {
-        message: error.message,
-        status: error.status,
-        data: error.data,
-        response: error.response,
-        stack: error.stack
-      });
-      console.log('🔍 Error data:', error.data);
-      console.log('🔍 Error response:', error.response);
-      console.log('🔍 Error status:', error.status);
-      console.log('🔍 Error message from data:', error.data?.message);
-      console.log('🔍 Error message direct:', error.message);
-      console.log('🔍 Full error object:', JSON.stringify(error, null, 2));
-      
-      const errorMessage = error.data?.message || error.message || 'Failed to submit loan request.';
-      
-      
-      if (errorMessage.includes('pending loan applications') || 
-          errorMessage.includes('Has pending loan') ||
-          errorMessage.includes('Has pending loan applications')) {
-        console.log('Showing pending modal for message:', errorMessage);
-        setShowPendingModal(true);
-      } else {
-        console.log('Setting error message:', errorMessage);
-        setErrorMsg(errorMessage);
-      }
+      setErrorMsg(error.data?.message || 'Failed to submit loan request');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const saveDraft = () => {
+    localStorage.setItem('loan_draft', JSON.stringify(formData));
+    alert('Draft saved temporarily to your browser.');
+  };
+
+  const loadDraft = () => {
+    const draft = localStorage.getItem('loan_draft');
+    if (draft) {
+      setFormData(JSON.parse(draft));
+    }
+  };
+
+  const handleReset = () => {
+    if (window.confirm('Are you sure you want to clear all form data?')) {
+      setFormData({
+        requestedAmount: '',
+        loanPurpose: '',
+        loanDuration: '',
+        startDeductionDate: '',
+        guarantor: {
+          employeeId: '',
+          fullName: '',
+          department: '',
+          relationship: '',
+          isValid: false,
+          validating: false,
+          error: ''
+        }
+      });
+      setErrorMsg('');
+    }
+  };
+
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF();
+      const eProfile = profile?.employeeProfile || profile?.employee_profile || profile || {};
+
+      console.log('Generating PDF with profile:', eProfile);
+
+      // Header
+      doc.setFontSize(20);
+      doc.text('Loan Application Report', 105, 15, { align: 'center' });
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+
+      // Employee Info
+      doc.setFontSize(12);
+      doc.text('Employee Information', 14, 35);
+      autoTable(doc, {
+        startY: 38,
+        body: [
+          ['Name', `${profile?.first_name || 'N/A'} ${profile?.last_name || ''}`],
+          ['Employee ID', profile?.employee_id || 'N/A'],
+          ['Department', profile?.department || 'N/A'],
+          ['Monthly Salary', `${profile?.salary || 0} ETB`]
+        ],
+        theme: 'grid'
+      });
+
+      // Guarantor Info
+      if (formData.guarantor.isValid) {
+        doc.text('Guarantor Information', 14, (doc.lastAutoTable?.finalY || 80) + 10);
+        autoTable(doc, {
+          startY: (doc.lastAutoTable?.finalY || 80) + 13,
+          body: [
+            ['Name', formData.guarantor.fullName],
+            ['Employee ID', formData.guarantor.employeeId],
+            ['Department', formData.guarantor.department],
+            ['Relationship', formData.guarantor.relationship || 'N/A']
+          ],
+          theme: 'grid'
+        });
+      }
+
+      // Loan Details
+      doc.text('Loan Details', 14, (doc.lastAutoTable?.finalY || 120) + 10);
+      autoTable(doc, {
+        startY: (doc.lastAutoTable?.finalY || 120) + 13,
+        body: [
+          ['Requested Amount', `${formData.requestedAmount} ETB`],
+          ['Loan Purpose', formData.loanPurpose || 'N/A'],
+          ['Repayment Period', `${formData.loanDuration} Months`],
+          ['Monthly Deduction', `${calcResult.monthlyPayment} ETB`],
+          ['Total Repayment', `${calcResult.totalPayment} ETB`]
+        ],
+        theme: 'grid'
+      });
+
+      // Repayment Schedule
+      if (calcResult.schedule && calcResult.schedule.length > 0) {
+        doc.addPage();
+        doc.text('Repayment Schedule', 14, 15);
+        autoTable(doc, {
+          startY: 20,
+          head: [['Month', 'Monthly Deduction (ETB)', 'Remaining Balance (ETB)']],
+          body: calcResult.schedule.map(row => [row.month, row.deduction, row.remaining]),
+        });
+      }
+
+      doc.save(`Loan_Application_${eProfile?.employee_id || 'unverified'}.pdf`);
+    } catch (error) {
+      console.error('PDF Generation Error:', error);
+      alert('Failed to generate PDF. Please check if all fields are filled correctly.');
+    }
+  };
+
   if (submitSuccess) {
     return (
-      <div className="w-full px-4 py-8">
-        <div className={`${cardCls} text-center p-8 max-w-4xl mx-auto`}>
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
-          </div>
-          <h2 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-3">Loan Request Submitted Successfully!</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">
-            Your loan request has been successfully recorded and is now pending review by the loan committee. You will receive an update once a decision has been made.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => navigate('/employee/loans')}
-              className="px-6 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 rounded-lg flex items-center justify-center gap-2"
-            >
-              <CreditCard className="w-4 h-4" />
-              View My Loans
+      <div className="w-full px-4 py-12 max-w-2xl mx-auto text-center">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Application Submitted Successfully</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">Your request is now pending verification. Once approved, you can download the formal agreement.</p>
+
+          <div className="flex flex-col gap-3">
+            <button onClick={generatePDF} className="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 flex items-center justify-center gap-2">
+              <Download className="w-4 h-4" /> Download Application PDF
             </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all duration-200 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-            >
-              <FileText className="w-4 h-4" />
-              New Application
+            <button onClick={() => navigate('/employee/loans')} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">
+              Go to Dashboard
             </button>
           </div>
         </div>
@@ -275,508 +338,309 @@ const LoanRequestPage = () => {
   }
 
   return (
-    <div className="w-full px-4 py-8">
-      {}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-            <DollarSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Loan Application</h1>
-            <p className="text-gray-600 dark:text-gray-400">Apply for a loan in just a few simple steps</p>
-          </div>
+    <div className="w-full px-4 py-8 max-w-7xl mx-auto">
+      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Loan Request Management</h1>
         </div>
-        
-        {}
-        <div className="mt-6">
-          <div className="flex items-center px-60 mb-4">
-            <div className={`flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg transition-all duration-300 z-10 ${
-              1 <= currentStep
-                ? 'bg-blue-600 text-white shadow-lg transform scale-110'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-            }`}>
-              {1 < currentStep ? (
-                <CheckCircle className="w-6 h-6" />
-              ) : (
-                <span>1</span>
-              )}
-            </div>
-            <div className={`flex-1 h-1 bg-gradient-to-r rounded-[33px] ${
-              1 < currentStep 
-                ? 'from-blue-500 to-blue-600' 
-                : 'from-gray-300 to-gray-400'
-            }`} />
-            <div className={`flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg transition-all duration-300 z-10 ${
-              2 <= currentStep
-                ? 'bg-blue-600 text-white shadow-lg transform scale-110'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-            }`}>
-              {2 < currentStep ? (
-                <CheckCircle className="w-6 h-6" />
-              ) : (
-                <span>2</span>
-              )}
-            </div>
-            <div className={`flex-1 h-1 bg-gradient-to-r rounded-[33px] ${
-              2 < currentStep 
-                ? 'from-blue-500 to-blue-600' 
-                : 'from-gray-300 to-gray-400'
-            }`} />
-            <div className={`flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg transition-all duration-300 z-10 ${
-              3 <= currentStep
-                ? 'bg-blue-600 text-white shadow-lg transform scale-110'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-            }`}>
-              {3 < currentStep ? (
-                <CheckCircle className="w-6 h-6" />
-              ) : (
-                <span>3</span>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-between items-center px-55 text-sm font-medium">
-            <div className={`text-center ${
-              currentStep >= 1 ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'
-            }`}>
-              <span>Loan Details</span>
-            </div>
-            <div className={`text-center ${
-              currentStep >= 2 ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'
-            }`}>
-              <span>Guarantor Info</span>
-            </div>
-            <div className={`text-center ${
-              currentStep >= 3 ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'
-            }`}>
-              <span>Review & Submit</span>
-            </div>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={loadDraft} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg flex items-center gap-2 hover:bg-blue-100 text-sm font-medium">
+             <RefreshCcw className="w-4 h-4" /> Load Draft
+          </button>
+          <button onClick={handleReset} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-200 text-sm font-medium">
+            <RefreshCcw className="w-4 h-4" /> Reset
+          </button>
+          <button onClick={generatePDF} disabled={!formData.requestedAmount || !formData.loanDuration} className="px-4 py-2 bg-green-50 text-green-600 border border-green-200 rounded-lg flex items-center gap-2 hover:bg-green-100 disabled:opacity-50 text-sm font-medium">
+            <Printer className="w-4 h-4" /> Print
+          </button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        {}
-        <div className={`${cardCls} mb-8`}>
-          <div className={headerCls}>
-            <h2 className={sectionTitleCls}>
-              <TrendingUp className="w-5 h-5" />
-              Your Financial Profile
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-100 dark:border-green-800">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wider">Available Savings</span>
-                </div>
-                <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                  {formatCompactNumber(employeeData.savingsBalance)} ETB
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Monthly Salary</span>
-                </div>
-                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                  {formatCompactNumber(employeeData.salary)} ETB
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 p-4 rounded-lg border border-purple-100 dark:border-purple-800">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <span className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider">Employment Duration</span>
-                </div>
-                <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                  {employeeData.employmentDuration} months
-                </div>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8 space-y-8">
+          {/* Loan Request Section */}
+          <div className={`${cardCls}`}>
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <FileText className="w-4 h-4" /> 2. Loan Request Section
+              </h2>
             </div>
-          </div>
-        </div>
-
-        {}
-        <div className={`${cardCls} mb-6`}>
-          <div className={headerCls}>
-            <h2 className={sectionTitleCls}>
-              <DollarSign className="w-5 h-5" />
-              Loan Details
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <FieldLabel required icon={<DollarSign />}>Loan Type</FieldLabel>
-                <select
-                  className={inputCls}
-                  value={selectedLoanType?.id || ''}
-                  onChange={(e) => {
-                    const type = loanTypes.find((t) => t.id === e.target.value);
-                    setSelectedLoanType(type);
-                  }}
-                  required
-                >
-                  <option value="" disabled>Select Loan Type</option>
-                  {loanTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name} - {type.apr} APR
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedLoanType && (
-                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Loan Limits</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Maximum Amount:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{formatCompactNumber(selectedLoanType.maxAmount)} ETB</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Maximum Duration:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{selectedLoanType.maxDuration} months</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Interest Rate:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{selectedLoanType.apr}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <FieldLabel required icon={<DollarSign />}>Requested Amount (ETB)</FieldLabel>
+                <FieldLabel required icon={<DollarSign className="w-4 h-4" />}>Requested Amount (ETB)</FieldLabel>
                 <input
                   type="number"
+                  min="1"
                   value={formData.requestedAmount}
-                  onChange={e => handleInputChange('requestedAmount', e.target.value)}
-                  className={inputCls}
-                  max={selectedLoanType?.maxAmount}
-                  placeholder="e.g. 5000"
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === "" || parseFloat(val) >= 0) {
+                      handleInputChange('requestedAmount', val);
+                    }
+                  }}
+                  className={`${inputCls} ${formData.requestedAmount && parseFloat(formData.requestedAmount) <= 0 ? 'border-red-500' : ''}`}
+                  placeholder="Enter amount (Greater than 0)"
                   required
                 />
+                {formData.requestedAmount && parseFloat(formData.requestedAmount) <= 0 && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1 font-medium">
+                    <XCircle className="w-3 h-3" /> Amount must be greater than zero
+                  </p>
+                )}
+                {formData.requestedAmount > financials.max_loan_by_savings && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1 font-medium">
+                    <XCircle className="w-3 h-3" /> Exceeds 2x savings limit ({financials.max_loan_by_savings.toLocaleString()} ETB)
+                  </p>
+                )}
               </div>
 
               <div>
-                <FieldLabel required icon={<Calendar />}>Loan Duration (Months)</FieldLabel>
+                <FieldLabel required icon={<Calendar className="w-4 h-4" />}>Repayment Period (Months)</FieldLabel>
                 <input
                   type="number"
-                  value={formData.loanDuration}
-                  onChange={e => handleInputChange('loanDuration', e.target.value)}
-                  className={inputCls}
                   min="1"
-                  max={selectedLoanType?.maxDuration}
-                  placeholder="e.g. 12"
+                  value={formData.loanDuration}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === "" || parseInt(val) >= 0) {
+                      handleInputChange('loanDuration', val);
+                    }
+                  }}
+                  className={`${inputCls} ${formData.loanDuration && parseInt(formData.loanDuration) <= 0 ? 'border-red-500' : ''}`}
+                  placeholder="e.g., 12 (Greater than 0)"
+                  required
+                />
+                {formData.loanDuration && parseInt(formData.loanDuration) <= 0 && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1 font-medium">
+                    <XCircle className="w-3 h-3" /> Period must be greater than zero
+                  </p>
+                )}
+                {calcResult.monthlyPayment > financials.max_monthly_repayment && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1 font-medium">
+                    <XCircle className="w-3 h-3" /> Exceeds 33% salary limit ({financials.max_monthly_repayment.toFixed(2)} ETB)
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <FieldLabel required icon={<Calendar className="w-4 h-4" />}>Start Deduction Date</FieldLabel>
+                <input
+                  type="date"
+                  value={formData.startDeductionDate}
+                  onChange={e => handleInputChange('startDeductionDate', e.target.value)}
+                  className={inputCls}
                   required
                 />
               </div>
 
               <div className="md:col-span-2">
-                <FieldLabel required icon={<FileText />}>Loan Purpose</FieldLabel>
+                <FieldLabel required icon={<FileText className="w-4 h-4" />}>Loan Purpose</FieldLabel>
                 <textarea
                   value={formData.loanPurpose}
                   onChange={e => handleInputChange('loanPurpose', e.target.value)}
-                  className={inputCls}
-                  rows={3}
-                  placeholder="Detailed reason for the loan request..."
+                  className={`${inputCls} h-24 resize-none`}
+                  placeholder="Provide a reason for the loan request"
                   required
                 />
               </div>
             </div>
           </div>
-        </div>
 
-        {}
-        <div className={`${cardCls} mb-6`}>
-          <div className={headerCls}>
-            <h2 className={sectionTitleCls}>
-              <User className="w-5 h-5" />
-              Guarantor Information
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="flex gap-6 mb-6">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  value="internal" 
-                  checked={formData.guarantorType === 'internal'} 
-                  onChange={e => handleInputChange('guarantorType', e.target.value)} 
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
-                />
-                <Building className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Internal Employee</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  value="external" 
-                  checked={formData.guarantorType === 'external'} 
-                  onChange={e => handleInputChange('guarantorType', e.target.value)} 
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
-                />
-                <User className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">External Party</span>
-              </label>
+          {/* Internal Guarantor Section */}
+          <div className={`${cardCls}`}>
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <Shield className="w-4 h-4" /> 3. Internal Guarantor Section
+              </h2>
             </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <FieldLabel required icon={<Search className="w-4 h-4" />}>Guarantor Employee ID</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.guarantor.employeeId}
+                    onChange={e => handleInputChange('guarantor', { ...formData.guarantor, employeeId: e.target.value.toUpperCase() })}
+                    className={inputCls}
+                    placeholder="EMP001"
+                    required
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => validateGuarantor(formData.guarantor.employeeId)}
+                  className="h-11 px-6 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center gap-2"
+                >
+                  {formData.guarantor.validating ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Verify
+                </button>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {formData.guarantorType === 'internal' ? (
-                <>
-                  <div>
-                    <FieldLabel required icon={<Briefcase />}>Employee ID</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.employeeId} 
-                      onChange={e => handleEmployeeIdChange(e.target.value)} 
-                      className={inputCls} 
-                      required 
-                      placeholder="Enter employee ID (e.g., EMP001)"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldLabel required icon={<User />}>Relationship to Applicant</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.relationship} 
-                      onChange={e => handleGuarantorChange('relationship', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                      placeholder="e.g., Colleague, Friend, Family"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <FieldLabel required icon={<User />}>Full Name</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.fullName} 
-                      onChange={e => handleGuarantorChange('fullName', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<Mail />}>Email</FieldLabel>
-                    <input 
-                      type="email" 
-                      value={formData.guarantor.email} 
-                      onChange={e => handleGuarantorChange('email', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<Phone />}>Phone Number</FieldLabel>
-                    <input 
-                      type="tel" 
-                      value={formData.guarantor.phoneNumber} 
-                      onChange={e => handleGuarantorChange('phoneNumber', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<Building />}>Employer</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.employer} 
-                      onChange={e => handleGuarantorChange('employer', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<Briefcase />}>Job Position</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.jobPosition} 
-                      onChange={e => handleGuarantorChange('jobPosition', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel required icon={<DollarSign />}>Monthly Salary</FieldLabel>
-                    <input 
-                      type="number" 
-                      value={formData.guarantor.monthlySalary} 
-                      onChange={e => handleGuarantorChange('monthlySalary', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldLabel required icon={<User />}>Relationship to Applicant</FieldLabel>
-                    <input 
-                      type="text" 
-                      value={formData.guarantor.relationship} 
-                      onChange={e => handleGuarantorChange('relationship', e.target.value)} 
-                      className={inputCls} 
-                      required 
-                    />
-                  </div>
+              <div>
+                <FieldLabel required icon={<User className="w-4 h-4" />}>Relationship</FieldLabel>
+                <input
+                  type="text"
+                  value={formData.guarantor.relationship}
+                  onChange={e => handleInputChange('guarantor', { ...formData.guarantor, relationship: e.target.value })}
+                  className={inputCls}
+                  placeholder="e.g., Colleague"
+                  required
+                />
+              </div>
 
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <div>
-                      <FieldLabel icon={<Upload />}>ID Document</FieldLabel>
-                      <div className="relative">
-                        <input 
-                          type="file" 
-                          onChange={e => handleFileUpload('idDocument', e.target.files[0])} 
-                          className={`${inputCls} !pr-12`} 
-                          accept=".pdf,.jpg,.jpeg,.png" 
-                        />
-                        <Upload className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-                    <div>
-                      <FieldLabel icon={<Upload />}>Employment Proof</FieldLabel>
-                      <div className="relative">
-                        <input 
-                          type="file" 
-                          onChange={e => handleFileUpload('employmentProof', e.target.files[0])} 
-                          className={`${inputCls} !pr-12`} 
-                          accept=".pdf,.jpg,.jpeg,.png" 
-                        />
-                        <Upload className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
+              {formData.guarantor.isValid && (
+                <div className="md:col-span-2 bg-green-50 dark:bg-green-900/20 p-4 rounded-lg flex justify-between items-center border border-green-100 dark:border-green-800">
+                  <div>
+                    <p className="text-xs text-green-600 font-bold uppercase">Verified Employee Found</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{formData.guarantor.fullName} — {formData.guarantor.department}</p>
                   </div>
-                </>
+                  <CheckCircle className="text-green-500 w-6 h-6" />
+                </div>
               )}
+              {formData.guarantor.error && <p className="text-red-500 text-xs mt-1 md:col-span-2 flex items-center gap-1 font-medium"><XCircle className="w-3 h-3" /> {formData.guarantor.error}</p>}
+            </div>
+          </div>
+
+          {/* Repayment Schedule Table */}
+          <div className={`${cardCls}`}>
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20 flex justify-between items-center">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <Calendar className="w-4 h-4" /> 6. Repayment Schedule
+              </h2>
+              <span className="text-xs font-medium text-gray-400">Fixed Monthly Deduction</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-900/40 text-gray-500 uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="px-6 py-3 font-bold">Month</th>
+                    <th className="px-6 py-3 font-bold">Monthly Deduction</th>
+                    <th className="px-6 py-3 font-bold">Remaining Balance</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {calcResult.schedule.length > 0 ? (
+                    calcResult.schedule.slice(0, 5).map((row, i) => (
+                      <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{row.month}</td>
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{row.deduction} ETB</td>
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{row.remaining} ETB</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="px-6 py-10 text-center text-gray-400 italic">Enter loan amount and period to generate schedule</td>
+                    </tr>
+                  )}
+                  {calcResult.schedule.length > 5 && (
+                    <tr>
+                      <td colSpan="3" className="px-6 py-3 text-center text-blue-600 text-xs font-bold cursor-pointer hover:underline">
+                        + {calcResult.schedule.length - 5} More Months (View in PDF)
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        {}
-        <div className={`${cardCls} p-6`}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Application Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Installment</span>
-                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCompactNumber(calculateMonthlyInstallment())} ETB</span>
+        {/* Sidebar Summary & Workflow */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className={`${cardCls} p-6 border-l-4 border-blue-600`}>
+            <h3 className="font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              Loan Calculation Section
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
+                <p className="text-xs text-blue-600 font-bold uppercase mb-1">Monthly Deduction</p>
+                <div className="text-3xl font-black text-blue-700 dark:text-blue-400">
+                  {calcResult.monthlyPayment.toLocaleString()} <span className="text-sm font-normal">ETB</span>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Eligibility Check</h4>
-                  <div className="space-y-2">
-                    <div className={`flex items-center gap-2 text-sm ${
-                      eligibility.savingsBalance ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                    }`}>
-                      {eligibility.savingsBalance ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                      <span>Savings Balance Requirement</span>
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${
-                      eligibility.salaryRule ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                    }`}>
-                      {eligibility.salaryRule ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                      <span>Within 40% Salary Limit</span>
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${
-                      eligibility.employmentDuration ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                    }`}>
-                      {eligibility.employmentDuration ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                      <span>Minimum 6 Months Employment (Temporarily Disabled)</span>
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${
-                      eligibility.guarantorInfo ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                    }`}>
-                      {eligibility.guarantorInfo ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                      <span>Guarantor Information Complete</span>
-                    </div>
-                  </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Loan Amount</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{(parseFloat(formData.requestedAmount) || 0).toLocaleString()} ETB</span>
                 </div>
-                {!isEligible && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg">
-                    <p className="text-sm text-red-700 dark:text-red-400 font-medium">
-                      ⚠️ All eligibility requirements must be met to submit the application.
-                    </p>
-                  </div>
-                )}
-                {errorMsg && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg">
-                    <p className="text-sm text-red-700 dark:text-red-400 font-medium">
-                      Error: {errorMsg}
-                    </p>
-                  </div>
-                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Repayment Months</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{formData.loanDuration || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm border-t border-gray-100 dark:border-gray-700 pt-3">
+                  <span className="text-gray-700 dark:text-gray-300 font-bold">Total Payable</span>
+                  <span className="font-black text-gray-900 dark:text-white">{calcResult.totalPayment.toLocaleString()} ETB</span>
+                </div>
               </div>
             </div>
-            
-            <div className="flex flex-col justify-center">
-              <button
-                type="submit"
-                disabled={!isEligible || !selectedLoanType || isSubmitting}
-                className={`w-full px-8 py-4 font-semibold text-lg transition-all duration-200 rounded-xl ${
-                  isEligible && selectedLoanType && !isSubmitting
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+          </div>
+
+          <div className={`${cardCls} p-6`}>
+            <h3 className="font-bold text-gray-900 dark:text-white mb-4">5. Validation Rules</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">Active Employee Status</span>
+                <CheckCircle className="text-green-500 w-4 h-4" />
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-col">
+                  <span className="text-gray-500">Salary Rule (≤33%)</span>
+                  <p className="text-[10px] text-gray-400">Max: {financials.max_monthly_repayment.toFixed(2)} ETB</p>
+                </div>
+                {calcResult.monthlyPayment <= financials.max_monthly_repayment ? <CheckCircle className="text-green-500 w-4 h-4" /> : <XCircle className="text-red-400 w-4 h-4" />}
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">Guarantor Verified</span>
+                {formData.guarantor.isValid ? <CheckCircle className="text-green-500 w-4 h-4" /> : <XCircle className="text-gray-300 w-4 h-4" />}
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">No Active Loan Processes</span>
+                {!financials.has_active_loan ? <CheckCircle className="text-green-500 w-4 h-4" /> : <XCircle className="text-red-400 w-4 h-4" />}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={saveDraft}
+              className="w-full py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+            >
+              <Save className="w-5 h-5 text-gray-400" /> Save Draft
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!isEligible || !formData.guarantor.isValid || isSubmitting}
+              className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${isEligible && formData.guarantor.isValid && !isSubmitting
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Processing Application...
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Submit Loan Application
-                  </div>
-                )}
-              </button>
-              
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
-                By submitting, you confirm that all information provided is accurate and complete.
-              </p>
-            </div>
+            >
+              {isSubmitting ? 'Submitting...' : <><CheckCircle className="w-5 h-5" /> Submit Request</>}
+            </button>
+            <p className="text-[10px] text-gray-400 text-center">
+              Deductions will begin automatically via payroll once fully approved.
+            </p>
           </div>
         </div>
-      </form>
+      </div>
 
-      {}
-      {showPendingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-                Pending Loan Application
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                You already have a pending loan application. You cannot submit another loan request until your current application is processed (approved or rejected).
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={() => setShowPendingModal(false)}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  I Understand
-                </button>
-                <button
-                  onClick={() => window.location.href = '/employee/loans'}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
-                >
-                  View My Applications
-                </button>
-              </div>
+      {/* Active Loan Modal */}
+      {showActiveLoanModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 max-w-md w-full p-8 rounded-2xl text-center shadow-2xl animate-in zoom-in duration-300">
+            <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Active Application Found</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Organizational policy prevents multiple active loan requests. Please complete or cancel your current process before starting a new one.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => navigate('/employee/loans')} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">
+                Track Application
+              </button>
+              <button onClick={generatePDF} className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200">
+                Print Summary
+              </button>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Camera, Save, Edit2, Upload, Briefcase, Building, CheckCircle, Shield, Award, AlertTriangle, Settings, Lock, Bell, Activity, Target, Users, ChevronRight, Clock } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useAuth } from '../../../../shared/contexts/AuthContext.jsx';
 import { useTheme } from '../../contexts/ThemeContext';
 import { authAPI } from '../../../../shared/services/authAPI';
 

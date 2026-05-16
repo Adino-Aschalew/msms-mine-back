@@ -8,28 +8,16 @@ class GuarantorController {
       const userId = req.userId;
       const guarantorData = req.body;
       
-      const { guarantor_type, guarantor_name, guarantor_id, relationship, monthly_income, contact_phone } = guarantorData;
+      const { guarantor_name, guarantor_id, relationship, contact_phone } = guarantorData;
       
-      if (!guarantor_type || !guarantor_name || !guarantor_id || !relationship || !monthly_income || !contact_phone) {
+      if (!guarantor_name || !guarantor_id || !relationship || !contact_phone) {
         return res.status(400).json({
           success: false,
           message: 'All required fields must be provided'
         });
       }
       
-      if (!['INTERNAL', 'EXTERNAL'].includes(guarantor_type)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Guarantor type must be INTERNAL or EXTERNAL'
-        });
-      }
-      
-      if (monthly_income <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Monthly income must be positive'
-        });
-      }
+
       
       const guarantorId = await Guarantor.addGuarantor(applicationId, userId, guarantorData);
       

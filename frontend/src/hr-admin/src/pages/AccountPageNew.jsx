@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { hrAPI } from '../../../shared/services/hrAPI';
 import { useAuth } from '../../../shared/contexts/AuthContext';
+import { authAPI } from '../../../shared/services/authAPI';
 
 export default function AccountPage() {
   const { user } = useAuth();
@@ -30,6 +31,8 @@ export default function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState({ text: '', type: '' });
   const [formData, setFormData] = useState({
     first_Name: '',
     lastName: '',
@@ -142,6 +145,41 @@ export default function AccountPage() {
 
   const handleAppearanceChange = (field, value) => {
     setAppearanceSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const onPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordFeedback({ text: '', type: '' });
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordFeedback({ text: 'Passwords do not match', type: 'error' });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      setPasswordFeedback({ text: 'Password must be at least 8 characters', type: 'error' });
+      return;
+    }
+
+    try {
+      setPasswordLoading(true);
+      const res = await authAPI.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword
+      });
+
+      if (res.success || res.message === 'Password changed successfully') {
+        setPasswordFeedback({ text: 'Password changed successfully!', type: 'success' });
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setPasswordFeedback({ text: res.message || 'Failed to change password', type: 'error' });
+      }
+    } catch (error) {
+      setPasswordFeedback({ text: error.response?.data?.message || error.message || 'Failed to change password', type: 'error' });
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const renderTabContent = () => {
@@ -353,7 +391,15 @@ export default function AccountPage() {
             {}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Change Password</h3>
-              <div className="space-y-4">
+              {passwordFeedback.text && (
+                <div className={`mb-4 p-4 rounded-lg flex items-center gap-3 ${
+                  passwordFeedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {passwordFeedback.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+                  <p className="text-sm font-medium">{passwordFeedback.text}</p>
+                </div>
+              )}
+              <form onSubmit={onPasswordSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Current Password
@@ -362,6 +408,7 @@ export default function AccountPage() {
                     type="password"
                     value={passwordData.currentPassword}
                     onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
+                    required
                     className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
@@ -373,6 +420,7 @@ export default function AccountPage() {
                     type="password"
                     value={passwordData.newPassword}
                     onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                    required
                     className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
@@ -384,13 +432,18 @@ export default function AccountPage() {
                     type="password"
                     value={passwordData.confirmPassword}
                     onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                    required
                     className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                  Update Password
+                <button 
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+                >
+                  {passwordLoading ? <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Update Password'}
                 </button>
-              </div>
+              </form>
             </div>
 
             {}

@@ -64,13 +64,7 @@ const Profile = () => {
     pendingReviews: 8
   });
 
-  const recentActivity = [
-    { id: 1, type: 'approved', loanId: 'LN-2024-089', amount: '$45,000', time: '2 hours ago', status: 'completed' },
-    { id: 2, type: 'reviewed', loanId: 'LN-2024-090', amount: '$28,000', time: '5 hours ago', status: 'pending' },
-    { id: 3, type: 'rejected', loanId: 'LN-2024-088', amount: '$75,000', time: '1 day ago', status: 'completed' },
-    { id: 4, type: 'approved', loanId: 'LN-2024-087', amount: '$32,000', time: '2 days ago', status: 'completed' },
-    { id: 5, type: 'reviewed', loanId: 'LN-2024-086', amount: '$18,000', time: '3 days ago', status: 'approved' }
-  ];
+  const [recentActivity, setRecentActivity] = useState([]);
 
   const handleProfileChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -155,20 +149,29 @@ const Profile = () => {
 
         
         const statsRes = await committeeAPI.getCommitteeStats();
-        if (statsRes.data?.success && statsRes.data?.data) {
-          const stats = statsRes.data.data;
+        if (statsRes && statsRes.success && statsRes.data) {
+          const stats = statsRes.data;
+          const personal = stats.personal || {};
           setSystemStats(prev => ({
             ...prev,
-            totalLoansReviewed: stats.totalLoansReviewed || stats.total_reviews || prev.totalLoansReviewed,
-            loansApproved: stats.loansApproved || stats.approved || prev.loansApproved,
-            loansRejected: stats.loansRejected || stats.rejected || prev.loansRejected,
-            averageReviewTime: stats.averageReviewTime || stats.avg_review_time || prev.averageReviewTime,
-            accuracyRate: stats.accuracyRate || stats.accuracy || prev.accuracyRate,
-            committeesServed: stats.committeesServed || stats.committees || prev.committeesServed,
-            yearsOfService: stats.yearsOfService || stats.years || prev.yearsOfService,
-            currentWorkload: stats.currentWorkload || stats.workload || prev.currentWorkload,
-            pendingReviews: stats.pendingReviews || stats.pending || prev.pendingReviews,
+            totalLoansReviewed: personal.applications_reviewed || 0,
+            loansApproved: personal.applications_approved || 0,
+            loansRejected: personal.applications_rejected || 0,
+            currentWorkload: personal.info_requested || 0, 
+            pendingReviews: stats.applications?.pending_applications || 0
           }));
+        }
+
+        const activityRes = await committeeAPI.getActivityLog({ limit: 10 });
+        if (activityRes && activityRes.success && activityRes.data) {
+          setRecentActivity(activityRes.data.map(act => ({
+            id: act.id,
+            type: act.type === 'loan' ? (act.action.includes('approve') ? 'approved' : (act.action.includes('reject') ? 'rejected' : 'reviewed')) : 'reviewed',
+            loanId: act.details?.applicationId || 'System',
+            amount: act.details?.requestedAmount || act.details?.approved_amount || '-',
+            time: new Date(act.timestamp).toLocaleDateString(),
+            status: act.action.includes('success') ? 'completed' : 'pending'
+          })));
         }
       } catch (err) {
         console.error('Error fetching profile data:', err);

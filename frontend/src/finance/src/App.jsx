@@ -23,49 +23,55 @@ import Accounts from './pages/accounts/Accounts.jsx';
  import Notifications from './pages/notifications/Notifications.jsx';
 import Help from './pages/help/Help.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
+import { AuthProvider } from '../../../shared/contexts/AuthContext';
+import { ThemeProvider } from '../../../shared/contexts/ThemeContext';
 
 function FinanceApp() {
   console.log('FinanceApp component is rendering');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   return (
-    <NotificationProvider>
-      <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-black">
-        <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
-          <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-black">
-            <div className="p-4 sm:p-6 lg:p-8">
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/transactions" element={<Transactions />} />
-                <Route path="/transactions/income" element={<Transactions filter="income" />} />
-                <Route path="/transactions/expenses" element={<Transactions filter="expenses" />} />
-                <Route path="/transactions/transfers" element={<Transactions filter="transfers" />} />
-                <Route path="/accounts" element={<Accounts />} />
-                <Route path="/payroll" element={<Payroll />} />
-                <Route path="/payroll/import" element={<PayrollImport />} />
-                <Route path="/payroll/history" element={<PayrollHistory />} />
-                <Route path="/payroll/reports" element={<PayrollReports />} />
-                <Route path="/employees" element={<Employees />} />
-                <Route path="/budgets" element={<Budgets />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/settings" element={<Settings />} />
-                 <Route path="/account/profile" element={<AccountProfile />} />
-                 <Route path="/account/security" element={<AccountSecurity />} />
-                 <Route path="/savings/requests" element={<SavingsRequests />} />
-                 <Route path="/help" element={<Help />} />
-              </Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-black">
+            <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+            <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+              <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+              <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-black">
+                <div className="p-4 sm:p-6 lg:p-8">
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/transactions" element={<Transactions />} />
+                    <Route path="/transactions/income" element={<Transactions filter="income" />} />
+                    <Route path="/transactions/expenses" element={<Transactions filter="expenses" />} />
+                    <Route path="/transactions/transfers" element={<Transactions filter="transfers" />} />
+                    <Route path="/accounts" element={<Accounts />} />
+                    <Route path="/payroll" element={<Payroll />} />
+                    <Route path="/payroll/import" element={<PayrollImport />} />
+                    <Route path="/payroll/history" element={<PayrollHistory />} />
+                    <Route path="/payroll/reports" element={<PayrollReports />} />
+                    <Route path="/employees" element={<Employees />} />
+                    <Route path="/budgets" element={<Budgets />} />
+                    <Route path="/invoices" element={<Invoices />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/users" element={<Users />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/settings" element={<Settings />} />
+                     <Route path="/account/profile" element={<AccountProfile />} />
+                     <Route path="/account/security" element={<AccountSecurity />} />
+                     <Route path="/savings/requests" element={<SavingsRequests />} />
+                     <Route path="/help" element={<Help />} />
+                  </Routes>
+                </div>
+              </main>
             </div>
-          </main>
-        </div>
-      </div>
-    </NotificationProvider>
+          </div>
+        </NotificationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

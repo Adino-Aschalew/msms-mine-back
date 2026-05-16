@@ -12,6 +12,7 @@ const FinanceModule = React.lazy(() => import('./modules/components/FinanceModul
 const EmployeeModule = React.lazy(() => import('./modules/components/EmployeeModule'));
 const LoanModule = React.lazy(() => import('./modules/components/LoanModule'));
 const LoginPage = React.lazy(() => import('./shared/pages/LoginPage'));
+const EmailVerificationPage = React.lazy(() => import('./shared/pages/EmailVerificationPage'));
 const UnauthorizedPage = React.lazy(() => import('./shared/pages/UnauthorizedPage'));
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
 
 function AppContent() {
   const {
+    user,
     showPasswordChangeModal,
     setShowPasswordChangeModal,
     isForcedPasswordChange
@@ -43,6 +45,7 @@ function AppContent() {
         >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/verify-email" element={<ProtectedRoute><EmailVerificationPage /></ProtectedRoute>} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -97,7 +100,7 @@ function AppContent() {
         </React.Suspense>
       </Router>
       <PasswordChangeModal
-        isOpen={showPasswordChangeModal}
+        isOpen={showPasswordChangeModal && (user?.email_verified || user?.role?.toLowerCase() !== 'employee')}
         onClose={() => setShowPasswordChangeModal(false)}
         isForced={isForcedPasswordChange}
       />

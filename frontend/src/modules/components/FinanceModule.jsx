@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import FinanceLayout from '../../finance/src/components/layout/Layout';
 import { ThemeProvider } from '../../finance/src/contexts/ThemeContext';
 import { NotificationProvider } from '../../finance/src/contexts/NotificationContext';
-import { AuthProvider } from '../../finance/src/contexts/AuthContext';
 import Dashboard from '../../finance/src/pages/dashboard/Dashboard';
 import Transactions from '../../finance/src/pages/transactions/Transactions';
 import PayrollImport from '../../finance/src/pages/payroll/PayrollImport';
@@ -28,36 +27,34 @@ const FinanceModule = () => {
   return (
     <ThemeProvider>
       <NotificationProvider>
-        <AuthProvider>
-          <Routes>
-            <Route element={<FinanceLayout />}>
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="transactions" element={<Transactions />} />
-              <Route path="transactions/income" element={<Transactions filter="income" />} />
-              <Route path="transactions/expenses" element={<Transactions filter="expenses" />} />
-              <Route path="transactions/transfers" element={<Transactions filter="transfers" />} />
-              <Route path="accounts" element={<Accounts />} />
-              <Route path="payroll" element={<Payroll />} />
-              <Route path="payroll/import" element={<PayrollImport />} />
-              <Route path="payroll/history" element={<PayrollHistory />} />
-              <Route path="payroll/reports" element={<PayrollReports />} />
-              <Route path="employees" element={<Employees />} />
-              <Route path="budgets" element={<Budgets />} />
-              <Route path="invoices" element={<Invoices />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="users" element={<Users />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="account/profile" element={<AccountProfile />} />
-              <Route path="account/security" element={<AccountSecurity />} />
-              <Route path="savings/requests" element={<SavingsRequests />} />
-              <Route path="help" element={<Help />} />
-            </Route>
-            <Route path="*" element={<Navigate to="dashboard" replace />} />
-          </Routes>
-        </AuthProvider>
+        <Routes>
+          <Route element={<FinanceLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="transactions" element={<Transactions />} />
+            <Route path="transactions/income" element={<Transactions filter="income" />} />
+            <Route path="transactions/expenses" element={<Transactions filter="expenses" />} />
+            <Route path="transactions/transfers" element={<Transactions filter="transfers" />} />
+            <Route path="accounts" element={<Accounts />} />
+            <Route path="payroll" element={<Payroll />} />
+            <Route path="payroll/import" element={<PayrollImport />} />
+            <Route path="payroll/history" element={<PayrollHistory />} />
+            <Route path="payroll/reports" element={<PayrollReports />} />
+            <Route path="employees" element={<Employees />} />
+            <Route path="budgets" element={<Budgets />} />
+            <Route path="invoices" element={<Invoices />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="users" element={<Users />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="account/profile" element={<AccountProfile />} />
+            <Route path="account/security" element={<AccountSecurity />} />
+            <Route path="savings/requests" element={<SavingsRequests />} />
+            <Route path="help" element={<Help />} />
+          </Route>
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
+        </Routes>
       </NotificationProvider>
     </ThemeProvider>
   );

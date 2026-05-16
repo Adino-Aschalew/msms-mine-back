@@ -39,7 +39,10 @@ const MySavingsDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const data = await EnterpriseSavingsAPI.getSavingsDashboard();
+      setError('');
+      const response = await EnterpriseSavingsAPI.getSavingsDashboard();
+      // Backend returns { success, data } — apiClient returns full body
+      const data = response?.data || response;
       setDashboardData(data);
     } catch (err) {
       setError(err.message || 'Failed to load dashboard data');
@@ -50,7 +53,8 @@ const MySavingsDashboard = () => {
 
   const loadConstraints = async () => {
     try {
-      const data = await EnterpriseSavingsAPI.getSavingsConstraints();
+      const response = await EnterpriseSavingsAPI.getSavingsConstraints();
+      const data = response?.data || response;
       setConstraints(data);
     } catch (err) {
       console.error('Failed to load constraints:', err);

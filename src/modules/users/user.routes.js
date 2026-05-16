@@ -19,6 +19,11 @@ router.get('/stats', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserControl
 
 
 router.get('/profile', selfOrRoleCheck([]), UserController.getProfile);
+router.get('/me/payroll', (req, res, next) => {
+  const PayrollController = require('../../controllers/payrollController');
+  req.params.userId = req.userId;
+  PayrollController.getEmployeePayrollHistory(req, res, next);
+});
 
 
 router.get('/search', roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']), UserController.searchUsers);

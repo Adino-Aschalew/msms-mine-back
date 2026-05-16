@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { committeeAPI } from '../../services/committeeAPI';
+import { authAPI } from '../../../../shared/services/authAPI';
 import {
   Shield,
   Key,
@@ -72,88 +74,56 @@ const Security = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [securityData, setSecurityData] = useState(null);
+  const [message, setMessage] = useState({ text: '', type: '' });
 
+  useEffect(() => {
+    fetchSecurityData();
+  }, []);
+
+  const fetchSecurityData = async () => {
+    try {
+      setLoading(true);
+      const res = await committeeAPI.getSecurityOverview();
+      if (res.success && res.data) {
+        setSecurityData(res.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch security data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const securityMetrics = securityData?.metrics || {
+    totalLogins: 0,
+    successfulLogins: 0,
+    failedLogins: 0,
+    uniqueDevices: 0,
+    uniqueLocations: 0,
+    securityEvents: 0,
+    blockedAttempts: 0,
+    lastSecurityScan: null
+  };
+
+  const recentActivity = securityData?.recentActivity || [];
+
+  const activeSessions = []; // Placeholder until backend support is added
+  
   const securitySettings = {
     passwordStrength: 'strong',
-    lastPasswordChange: '2024-03-10',
+    lastPasswordChange: securityData?.metrics?.lastPasswordChange || 'Never',
     twoFactorEnabled: false,
-    loginAttempts: 0,
+    loginAttempts: securityData?.metrics?.failedLogins || 0,
     sessionTimeout: 60,
     autoLock: true,
     encryptionEnabled: true,
     backupEnabled: true,
-    securityScore: 85,
+    securityScore: securityData?.metrics?.securityScore || 85,
     riskLevel: 'low'
   };
-
-  const securityMetrics = {
-    totalLogins: 1247,
-    successfulLogins: 1245,
-    failedLogins: 2,
-    uniqueDevices: 8,
-    uniqueLocations: 5,
-    securityEvents: 3,
-    blockedAttempts: 12,
-    lastSecurityScan: '2024-03-16 08:00:00'
-  };
-
-  const recentActivity = [
-    {
-      id: 1,
-      action: 'Password changed',
-      timestamp: '2024-03-10 14:30:22',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      location: 'New York, NY',
-      status: 'success',
-      severity: 'info',
-      details: 'Password successfully updated via secure portal'
-    },
-    {
-      id: 2,
-      action: 'Login from new device',
-      timestamp: '2024-03-08 09:15:45',
-      ip: '192.168.1.105',
-      device: 'Safari on iPhone',
-      location: 'Boston, MA',
-      status: 'success',
-      severity: 'warning',
-      details: 'First login from this device - verification required'
-    },
-    {
-      id: 3,
-      action: 'Failed login attempt',
-      timestamp: '2024-03-07 16:45:12',
-      ip: '192.168.1.200',
-      device: 'Unknown',
-      location: 'Unknown',
-      status: 'failed',
-      severity: 'danger',
-      details: 'Invalid credentials - account temporarily locked'
-    },
-    {
-      id: 4,
-      action: 'Two-factor authentication disabled',
-      timestamp: '2024-03-05 11:20:33',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      location: 'New York, NY',
-      status: 'success',
-      severity: 'warning',
-      details: '2FA disabled by user - security reduced'
-    },
-    {
-      id: 5,
-      action: 'Security scan completed',
-      timestamp: '2024-03-16 08:00:00',
-      ip: 'System',
-      device: 'Security System',
-      location: 'System',
-      status: 'success',
-      severity: 'info',
-      details: 'Automated security scan completed - no threats found'
-    }
-  ];
 
   const securityFeatures = [
     {
@@ -210,28 +180,41 @@ const Security = () => {
     setPasswordForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    
+    setMessage({ text: '', type: '' });
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('New passwords do not match!');
+      setMessage({ text: 'New passwords do not match!', type: 'danger' });
       return;
     }
     
     if (passwordForm.newPassword.length < 8) {
-      alert('Password must be at least 8 characters long!');
+      setMessage({ text: 'Password must be at least 8 characters long!', type: 'danger' });
       return;
     }
     
-    
-    console.log('Password change submitted:', passwordForm);
-    setShowPasswordForm(false);
-    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setShowPasswordModal(true); 
-    
-    
-    securitySettings.lastPasswordChange = new Date().toISOString().split('T')[0];
+    try {
+      setPasswordLoading(true);
+      const res = await authAPI.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        confirmPassword: passwordForm.confirmPassword
+      });
+      
+      if (res.success || res.message === 'Password changed successfully') {
+        setMessage({ text: 'Password changed successfully!', type: 'success' });
+        setShowPasswordForm(false);
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordModal(true);
+      } else {
+        setMessage({ text: res.message || 'Failed to change password', type: 'danger' });
+      }
+    } catch (error) {
+      setMessage({ text: error.response?.data?.message || error.message || 'Failed to change password', type: 'danger' });
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const handleTwoFactorToggle = () => {
@@ -517,6 +500,15 @@ const Security = () => {
               <Shield className="w-5 h-5 text-gray-400" />
             </div>
 
+            {message.text && (
+              <div className={`mb-4 p-4 rounded-xl border flex items-center gap-3 ${
+                message.type === 'success' ? 'bg-success-50 border-success-200 text-success-700' : 'bg-danger-50 border-danger-200 text-danger-700'
+              }`}>
+                {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
+                <p className="font-medium">{message.text}</p>
+              </div>
+            )}
+
             {!showPasswordForm ? (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -617,8 +609,11 @@ const Security = () => {
                   <button
                     type="submit"
                     className="btn btn-primary flex-1"
+                    disabled={passwordLoading}
                   >
-                    Update Password
+                    {passwordLoading ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : 'Update Password'}
                   </button>
                 </div>
               </form>

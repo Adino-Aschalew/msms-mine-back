@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { FiTrendingUp, FiDollarSign, FiCreditCard, FiActivity, FiCalendar } from 'react-icons/fi';
+import { FiTrendingUp, FiDollarSign, FiCreditCard, FiActivity, FiCalendar, FiAlertCircle } from 'react-icons/fi';
 import StatCard from '../components/Shared/StatCard';
-import { LineChart, BarChart } from '../components/Shared/Chart';
+import { LineChart } from '../components/Shared/Chart';
 import { loansAPI } from '../services/api';
-import { savingsAPI } from '../../../shared/services/savingsAPI';
+import EnterpriseSavingsAPI from '../../../shared/services/enterpriseSavingsAPI';
+import apiClient from '../../../shared/services/api';
 import appEvents from '../../../shared/utils/eventEmitter';
 
 const DashboardPage = () => {
-  
+
   const formatCompactNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'METB';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'KETB';
-    }else if (num >= 10000) {
-      return (num / 10000).toFixed(1) + 'KETB';
-    }
-    return num.toString();
+    if (!num || isNaN(num)) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'METB';
+    if (num >= 10000) return (num / 1000).toFixed(1) + 'KETB';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'KETB';
+    return Number(num).toFixed(0);
+  };
+
+  const formatCurrency = (num) => {
+    if (!num || isNaN(num)) return '0.00 ETB';
+    return new Intl.NumberFormat('en-ET', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + ' ETB';
   };
 
   const [dashboardData, setDashboardData] = useState({
@@ -44,15 +47,15 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    
-    
+
+
     const handleLoanApproved = () => {
       console.log('🔄 Loan approved event received, refreshing dashboard...');
       fetchDashboardData();
     };
-    
+
     appEvents.on('loanApproved', handleLoanApproved);
-    
+
     return () => {
       appEvents.off('loanApproved', handleLoanApproved);
     };
@@ -62,234 +65,104 @@ const DashboardPage = () => {
     try {
       setDashboardData(prev => ({ ...prev, loading: true, error: null }));
 
-      console.log('🔄 Starting dashboard data fetch...');
-      
-      // Fetch each API call separately to identify which one fails
-      let loansData = [], applicationsData = [], savingsData = null, savingsTransData = [], loanTransData = [];
-      
+      // --- 1. Enterprise Savings Dashboard ---
+      let savingsDashboard = null;
+      try {
+        const savRes = await EnterpriseSavingsAPI.getSavingsDashboard();
+        savingsDashboard = savRes?.data || savRes || null;
+      } catch (err) {
+        console.warn('Savings dashboard not available:', err.message);
+      }
+
+      // --- 2. Loans ---
+      let loansData = [], applicationsData = [];
       try {
         const loansRes = await loansAPI.getMyLoans();
-        console.log('✅ Loans API success:', loansRes);
         loansData = loansRes?.data?.data || loansRes?.data || loansRes || [];
         loansData = Array.isArray(loansData) ? loansData : [];
-      } catch (err) {
-        console.error('❌ Loans API failed:', err);
-      }
-      
+      } catch (err) { console.warn('Loans fetch failed:', err.message); }
+
       try {
-        const applicationsRes = await loansAPI.getMyApplications();
-        console.log('✅ Applications API success:', applicationsRes);
-        applicationsData = applicationsRes?.data?.data || applicationsRes?.data || applicationsRes || [];
+        const appRes = await loansAPI.getMyApplications();
+        applicationsData = appRes?.data?.data || appRes?.data || appRes || [];
         applicationsData = Array.isArray(applicationsData) ? applicationsData : [];
-      } catch (err) {
-        console.error('❌ Applications API failed:', err);
-      }
-      
+      } catch (err) { console.warn('Applications fetch failed:', err.message); }
+
+      // --- 3. Payroll (for gross salary) ---
+      let latestPayroll = null;
       try {
-        const savingsRes = await savingsAPI.getSavingsAccount();
-        console.log('✅ Savings API success:', savingsRes);
-        savingsData = savingsRes;
-      } catch (err) {
-        console.error('❌ Savings API failed:', err);
-      }
-      
-      try {
-        const savingsTransRes = await savingsAPI.getSavingsTransactions(1, 10);
-        console.log('✅ Savings Transactions API success:', savingsTransRes);
-        savingsTransData = savingsTransRes?.transactions || [];
-      } catch (err) {
-        console.error('❌ Savings Transactions API failed:', err);
-        savingsTransData = [];
-      }
-      
-      // Skip loan transactions API as it doesn't exist
-      // try {
-      //   const loanTransRes = await loansAPI.getMyTransactions({ limit: 10 });
-      //   console.log('✅ Loan Transactions API success:', loanTransRes);
-      //   loanTransData = loanTransRes?.data || [];
-      // } catch (err) {
-      //   console.error('❌ Loan Transactions API failed:', err);
-      //   loanTransData = [];
-      // }
-      
-      
-      let savings = { current_balance: 0, saving_percentage: 0, salary: 0 };
-      if (savingsData) {
-        if (savingsData.data) {
-          savings = savingsData.data;
-        } else if (savingsData.current_balance !== undefined) {
-          savings = savingsData;
-        }
-      }
-      console.log('Savings data:', savings);
-      
-      const savingsTransactions = savingsTransData;
-      const loanTransactions = loanTransData;
-      console.log(' Loans data:', loansData);
-      console.log(' Loans count:', loansData.length);
-      if (loansData.length > 0) {
-        console.log(' First loan status:', loansData[0].status);
-        console.log(' First loan:', loansData[0]);
-      }
+        const payrollRes = await apiClient.get('/users/me/payroll', { page: 1, limit: 1 });
+        const payrollList = payrollRes?.data?.data || payrollRes?.data || payrollRes || [];
+        latestPayroll = Array.isArray(payrollList) ? payrollList[0] : null;
+      } catch (err) { console.warn('Payroll fetch failed:', err.message); }
 
-      
-      const activeLoansCount = loansData.filter(loan => 
-        loan.status && (loan.status === 'ACTIVE' || loan.status.toLowerCase() === 'active')
-      ).length;
-      const totalLoanBalance = loansData.reduce((sum, loan) => sum + parseFloat(loan.outstanding_balance || 0), 0);
-      const loanMonthlyDeduction = loansData.reduce((sum, loan) => sum + parseFloat(loan.monthly_deduction || 0), 0);
+      // --- Compute stats ---
+      const account = savingsDashboard?.account || {};
+      const savingsBalance = parseFloat(account.current_balance || savingsDashboard?.totalContributions || 0);
+      const savingRate = parseFloat(account.saving_percentage || 0);
+      const grossSalary = parseFloat(latestPayroll?.gross_salary || account.salary || 0);
 
-      
-      const actualSavingsBalance = savingsTransactions.reduce((sum, transaction) => {
-        if (transaction.transaction_type === 'CONTRIBUTION' || transaction.transaction_type === 'DEPOSIT') {
-          return sum + parseFloat(transaction.amount || 0);
-        }
-        if (transaction.transaction_type === 'WITHDRAWAL') {
-          return sum - parseFloat(transaction.amount || 0);
-        }
-        return sum;
-      }, 0);
+      const activeLoansCount = loansData.filter(l => ['ACTIVE', 'active'].includes(l.status)).length;
+      const totalLoanBalance = loansData.reduce((s, l) => s + parseFloat(l.outstanding_balance || 0), 0);
+      const loanMonthlyDeduction = loansData.reduce((s, l) => s + parseFloat(l.monthly_deduction || 0), 0);
+      const savingsMonthlyDeduction = grossSalary * savingRate / 100;
 
-      const balance = actualSavingsBalance > 0 ? actualSavingsBalance : parseFloat(savings.total_contributions || savings.current_balance || 0);
-      const salary = parseFloat(savings.salary || 0);
-      const savingRate = parseFloat(savings.saving_percentage || 0);
-      const savingsMonthlyDeduction = (salary * savingRate / 100);
-
-      console.log('Savings transactions:', savingsTransactions);
-      console.log('Calculated values:', { 
-        actualSavingsBalance, 
-        balance, 
-        salary, 
-        savingRate, 
-        savingsMonthlyDeduction 
-      });
-
-      
+      // --- Recent Activity ---
       const recentActivity = [
-        ...(applicationsData.map(app => ({
+        ...applicationsData.map(app => ({
           id: `app-${app.id}`,
           type: 'loan_request',
           title: 'Loan Application',
-          description: `${app.purpose} - ${parseFloat(app.requested_amount).toLocaleString()} ETB`,
+          description: `${app.purpose || 'Loan'} — ${formatCurrency(app.requested_amount)}`,
           date: app.created_at,
-          status: app.status.toLowerCase(),
-        }))),
-        ...(loansData.map(loan => ({
-          id: `loan-act-${loan.id}`,
+          status: (app.status || '').toLowerCase(),
+        })),
+        ...loansData.map(loan => ({
+          id: `loan-${loan.id}`,
           type: 'loan_approval',
-          title: 'Loan Active',
-          description: `Disbursed ${parseFloat(loan.loan_amount).toLocaleString()} ETB`,
+          title: 'Active Loan',
+          description: `Disbursed ${formatCurrency(loan.loan_amount)}`,
           date: loan.disbursement_date || loan.created_at,
           status: 'completed',
-        })))
+        }))
       ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 
-      
-      const recentTransactions = [
-        ...(savingsTransactions.map(st => ({
-          id: `sav-t-${st.transaction_id || st.id}`,
-          date: st.transaction_date,
-          type: st.transaction_type === 'CONTRIBUTION' ? 'Savings Contribution' : st.transaction_type,
-          amount: `${parseFloat(st.amount).toLocaleString()} ETB`,
-          status: 'Completed',
-          rawDate: new Date(st.transaction_date)
-        }))),
-        ...(loanTransactions.map(lt => ({
-          id: `loan-t-${lt.id}`,
-          date: lt.transaction_date,
-          type: lt.transaction_type === 'DISBURSEMENT' ? 'Loan Disbursement' : 'Loan Repayment',
-          amount: `${parseFloat(lt.amount).toLocaleString()} ETB`,
-          status: 'Completed',
-          rawDate: new Date(lt.transaction_date)
-        })))
-      ].sort((a, b) => b.rawDate - a.rawDate).slice(0, 5);
+      // --- Recent Transactions (savings) ---
+      const savingsTrans = savingsDashboard?.recentTransactions || [];
+      const recentTransactions = savingsTrans.slice(0, 5).map((st, i) => ({
+        id: `sav-t-${st.transaction_id || st.id || i}`,
+        date: st.transaction_date || st.created_at,
+        type: st.transaction_type === 'CONTRIBUTION' ? 'Savings Contribution' : (st.transaction_type || 'Transaction'),
+        amount: formatCurrency(st.amount),
+        status: 'Completed',
+        rawDate: new Date(st.transaction_date || st.created_at)
+      }));
 
-      
-      const generateLoanBalanceData = () => {
-        if (loansData.length === 0 || totalLoanBalance === 0) {
-          return Array(12).fill(0);
-        }
-        
-        
-        const activeLoans = loansData.filter(loan => loan.status === 'ACTIVE');
-        if (activeLoans.length === 0) {
-          return Array(12).fill(0);
-        }
-        
-        
-        const monthsData = [];
-        const now = new Date();
-        
-        for (let i = 11; i >= 0; i--) {
-          const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          let monthBalance = 0;
-          
-          activeLoans.forEach(loan => {
-            const loanStartDate = new Date(loan.created_at || loan.disbursement_date);
-            const loanAmount = parseFloat(loan.loan_amount || 0);
-            const monthlyPayment = parseFloat(loan.monthly_payment || loan.monthly_deduction || 0);
-            const outstandingBalance = parseFloat(loan.outstanding_balance || 0);
-            
-            
-            const monthsSinceStart = Math.max(0, 
-              (monthDate.getFullYear() - loanStartDate.getFullYear()) * 12 + 
-              (monthDate.getMonth() - loanStartDate.getMonth())
-            );
-            
-            
-            let balanceAtMonth = loanAmount - (monthlyPayment * monthsSinceStart);
-            
-            
-            const repaymentsBeforeMonth = loanTransData.filter(t => {
-              const transDate = new Date(t.transaction_date || t.created_at);
-              return t.loan_id === loan.id && 
-                     t.transaction_type === 'REPAYMENT' &&
-                     transDate <= monthDate;
-            }).reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
-            
-            balanceAtMonth = loanAmount - repaymentsBeforeMonth;
-            
-            
-            balanceAtMonth = Math.max(0, Math.max(outstandingBalance, balanceAtMonth));
-            
-            monthBalance += balanceAtMonth;
-          });
-          
-          monthsData.push(monthBalance);
-        }
-        
-        return monthsData;
-      };
-      
-      const loanBalanceOverTime = generateLoanBalanceData();
-      
-      
+      // --- Chart data ---
       const generateMonthLabels = () => {
-        const labels = [];
-        const now = new Date();
+        const labels = [], now = new Date();
         for (let i = 11; i >= 0; i--) {
-          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          labels.push(date.toLocaleString('default', { month: 'short' }));
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          labels.push(d.toLocaleString('default', { month: 'short' }));
         }
         return labels;
       };
-      
       const monthLabels = generateMonthLabels();
 
       setDashboardData({
         stats: {
-          savingsBalance: balance,
+          savingsBalance,
           currentSavingRate: savingRate,
           activeLoans: activeLoansCount,
           outstandingLoanBalance: totalLoanBalance,
-          monthlyPayrollDeduction: (loanMonthlyDeduction + savingsMonthlyDeduction),
-          salary: salary,
+          monthlyPayrollDeduction: loanMonthlyDeduction + savingsMonthlyDeduction,
+          salary: grossSalary,
         },
         savingsGrowthData: {
           labels: monthLabels,
           datasets: [{
             label: 'Savings Balance',
-            data: balance === 0 ? Array(12).fill(0) : Array(12).fill(balance),
+            data: Array(12).fill(savingsBalance),
             borderColor: 'rgb(59, 130, 246)',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             tension: 0.4,
@@ -300,7 +173,7 @@ const DashboardPage = () => {
           labels: monthLabels,
           datasets: [{
             label: 'Loan Balance',
-            data: loanBalanceOverTime,
+            data: Array(12).fill(totalLoanBalance),
             borderColor: 'rgb(239, 68, 68)',
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             tension: 0.4,
@@ -313,12 +186,8 @@ const DashboardPage = () => {
         error: null,
       });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setDashboardData(prev => ({
-        ...prev,
-        loading: false,
-        error: 'Failed to load dashboard data'
-      }));
+      console.error('Dashboard fetch error:', error);
+      setDashboardData(prev => ({ ...prev, loading: false, error: 'Failed to load dashboard data' }));
     }
   };
 
@@ -378,7 +247,7 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Monthly Salary"
-          value={`${formatCompactNumber(dashboardData.stats.salary)}`}
+          value={formatCompactNumber(dashboardData.stats.salary)}
           change="Your gross monthly income"
           changeType="neutral"
           icon={<FiDollarSign className="w-6 h-6" />}
@@ -386,14 +255,14 @@ const DashboardPage = () => {
         />
         <StatCard
           title="Savings Balance"
-          value={`${formatCompactNumber(dashboardData.stats.savingsBalance)}`}
-          change={dashboardData.stats.savingsBalance > 0 ? "Total accumulated savings" : "Start your savings today"}
+          value={formatCompactNumber(dashboardData.stats.savingsBalance)}
+          change={dashboardData.stats.savingsBalance > 0 ? 'Total accumulated savings' : 'Start your savings today'}
           changeType="positive"
           icon={<FiTrendingUp className="w-6 h-6" />}
           color="success"
         />
         <StatCard
-          title="Current Saving Rate"
+          title="Saving Rate"
           value={`${dashboardData.stats.currentSavingRate}%`}
           change="of your monthly salary"
           changeType="neutral"
@@ -410,16 +279,16 @@ const DashboardPage = () => {
         />
         <StatCard
           title="Outstanding Balance"
-          value={`${formatCompactNumber(dashboardData.stats.outstandingLoanBalance)}`}
-          change={dashboardData.stats.outstandingLoanBalance > 0 ? "Remaining principal + interest" : "No active loan debt"}
-          changeType={dashboardData.stats.outstandingLoanBalance > 0 ? "negative" : "positive"}
+          value={formatCompactNumber(dashboardData.stats.outstandingLoanBalance)}
+          change={dashboardData.stats.outstandingLoanBalance > 0 ? 'Remaining principal + interest' : 'No active loan debt'}
+          changeType={dashboardData.stats.outstandingLoanBalance > 0 ? 'negative' : 'positive'}
           icon={<FiDollarSign className="w-6 h-6" />}
           color="danger"
         />
         <StatCard
           title="Monthly Deduction"
-          value={`${formatCompactNumber(dashboardData.stats.monthlyPayrollDeduction)}`}
-          change={`Next: ${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`}
+          value={formatCompactNumber(dashboardData.stats.monthlyPayrollDeduction)}
+          change={`Savings + Loan repayments`}
           changeType="neutral"
           icon={<FiCalendar className="w-6 h-6" />}
           color="warning"

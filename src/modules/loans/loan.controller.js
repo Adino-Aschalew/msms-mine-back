@@ -636,6 +636,20 @@ class LoanController {
         WHERE user_id = ? AND status = 'ACTIVE'
       `, [userId]);
 
+      const activeLoanResult = await query(`
+        SELECT 
+          id,
+          principal_amount,
+          remaining_balance,
+          monthly_repayment,
+          status
+        FROM loans 
+        WHERE user_id = ? AND status = 'ACTIVE'
+        LIMIT 1
+      `, [userId]);
+
+      const activeLoan = activeLoanResult[0] || null;
+
       const recentActivity = await query(`
         SELECT 
           id,
@@ -670,6 +684,7 @@ class LoanController {
             outstandingLoanBalance: loanStats?.outstanding_balance ?? 0,
             monthlyPayrollDeduction: deductions?.sum_deductions ?? 0
           },
+          activeLoan,
           recentActivity,
           loanBalanceGrowth
         }
@@ -679,6 +694,68 @@ class LoanController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch employee dashboard'
+      });
+    }
+  }
+
+  static async calculateLoanSchedule(req, res) {
+    try {
+      const { loan_amount, loan_term_months, interest_rate } = req.query;
+      
+      const amount = parseFloat(loan_amount);
+      const term = parseInt(loan_term_months);
+      const rate = parseFloat(interest_rate || 5); 
+
+      if (!amount || !term) {
+        return res.status(400).json({
+          success: false,
+          message: 'Loan amount and term are required'
+        });
+      }
+
+      const result = await LoanModel.calculateLoanAmount(amount, rate, term);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Calculate loan schedule error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to calculate loan schedule'
+      });
+    }
+  }
+
+  static async checkGuarantorCapacity(req, res) {
+    try {
+      const { employeeId } = req.params;
+      const { loan_amount } = req.query;
+      const applicantId = req.userId;
+
+      if (!employeeId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Guarantor employee ID is required'
+        });
+      }
+
+      const result = await LoanModel.checkGuarantorCapacity(
+        employeeId, 
+        parseFloat(loan_amount || 0), 
+        applicantId
+      );
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Check guarantor capacity error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to validate guarantor capacity'
       });
     }
   }

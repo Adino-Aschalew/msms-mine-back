@@ -38,7 +38,7 @@ const Notifications = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,21 +62,19 @@ const Notifications = () => {
 
   const filters = [
     { value: 'all', label: 'All Notifications' },
-    { value: 'new_request', label: 'New Requests' },
-    { value: 'approved', label: 'Approvals' },
-    { value: 'rejected', label: 'Rejections' },
-    { value: 'suspended', label: 'Suspensions' },
-    { value: 'disbursed', label: 'Disbursements' },
-    { value: 'overdue', label: 'Overdue Payments' },
-    { value: 'system', label: 'System Alerts' }
+    { value: 'INFO', label: 'System Alerts' },
+    { value: 'SUCCESS', label: 'Success' },
+    { value: 'ERROR', label: 'Errors' },
+    { value: 'DANGER', label: 'Critical' },
+    { value: 'WARNING', label: 'Warnings' }
   ];
 
-  
+
 
   const filteredNotifications = notifications.filter(notification => {
-    const matchesFilter = selectedFilter === 'all' || notification.type === selectedFilter;
-    const matchesSearch = notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         notification.message.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = selectedFilter === 'all' || notification.notification_type === selectedFilter;
+    const matchesSearch = (notification.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (notification.message || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -118,11 +116,11 @@ const Notifications = () => {
 
   const handleAction = (notification, action) => {
     console.log('Action clicked:', action, notification.id);
-    
-    
+
+
     handleMarkAsRead(notification.id);
-    
-    
+
+
     switch (action) {
       case 'View Details':
         handleViewDetails(notification);
@@ -150,26 +148,26 @@ const Notifications = () => {
 
   const handleViewDetails = (notification) => {
     if (notification.loanId) {
-      
+
       navigate(`/loan-requests/${notification.loanId}`);
     } else if (notification.reportId) {
-      
+
       navigate(`/reports/${notification.reportId}`);
     } else {
-      
+
       navigate('/dashboard');
     }
   };
 
   const handleReview = (notification) => {
     if (notification.loanId) {
-      
+
       navigate(`/loan-requests/${notification.loanId}?action=review`);
     } else if (notification.user) {
-      
+
       navigate(`/account/profile?user=${notification.user}`);
     } else {
-      
+
       navigate('/dashboard');
     }
   };
@@ -177,7 +175,7 @@ const Notifications = () => {
   const handleDownloadReceipt = (notification) => {
     if (notification.loanId) {
       console.log('Downloading receipt for loan:', notification.loanId);
-      
+
       alert(`Downloading receipt for loan ${notification.loanId}`);
     }
   };
@@ -185,7 +183,7 @@ const Notifications = () => {
   const handleDownloadReport = (notification) => {
     if (notification.reportId) {
       console.log('Downloading report:', notification.reportId);
-      
+
       alert(`Downloading report ${notification.reportId}`);
     }
   };
@@ -194,17 +192,17 @@ const Notifications = () => {
     if (notification.applicant || notification.user) {
       const person = notification.applicant || notification.user;
       console.log('Contacting:', person);
-      
+
       alert(`Contact ${person} regarding ${notification.loanId || 'this matter'}`);
     }
   };
 
   const handleViewProfile = (notification) => {
     if (notification.user) {
-      
+
       navigate(`/account/profile?user=${notification.user}`);
     } else if (notification.applicant) {
-      
+
       navigate(`/account/profile?user=${notification.applicant}`);
     }
   };
@@ -237,7 +235,7 @@ const Notifications = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {}
+      { }
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -268,221 +266,219 @@ const Notifications = () => {
         </div>
       </div>
 
-      {}
+      { }
       <div className="px-4 sm:px-6 py-6">
         <div className="space-y-6">
 
-      {}
-      <div className="card p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search notifications..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input pl-10"
-              />
+          { }
+          <div className="card p-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+              { }
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search notifications..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="input pl-10"
+                  />
+                </div>
+              </div>
+
+              { }
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="btn btn-secondary"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+                <ChevronDown className={`w-4 h-4 ml-2 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              </button>
             </div>
+
+            { }
+            {showFilters && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setSelectedFilter(filter.value)}
+                      className={`px-4 py-2 text-sm rounded-lg border transition-colors ${selectedFilter === filter.value
+                          ? 'bg-primary-100 text-primary-700 border-primary-300'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                        }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="btn btn-secondary"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-            <ChevronDown className={`w-4 h-4 ml-2 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
+          { }
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {filteredNotifications.length} notifications
+              {unreadCount > 0 && (
+                <span className="ml-2 text-primary-600 font-medium">
+                  ({unreadCount} unread)
+                </span>
+              )}
+            </p>
+          </div>
 
-        {}
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {filters.map((filter) => (
-                <button
-                  key={filter.value}
-                  onClick={() => setSelectedFilter(filter.value)}
-                  className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-                    selectedFilter === filter.value
-                      ? 'bg-primary-100 text-primary-700 border-primary-300'
-                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+          { }
+          <div className="space-y-3">
+            {filteredNotifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`card p-4 transition-all ${!notification.is_read ? 'border-l-4 border-l-primary-500 bg-primary-50 dark:bg-primary-900/10' : ''
                   }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+              >
+                <div className="flex items-start space-x-4">
+                  { }
+                  <div className="p-2 rounded-lg text-primary-600 bg-primary-100 flex-shrink-0">
+                    <Bell className="w-4 h-4" />
+                  </div>
 
-      {}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Showing {filteredNotifications.length} notifications
-          {unreadCount > 0 && (
-            <span className="ml-2 text-primary-600 font-medium">
-              ({unreadCount} unread)
-            </span>
-          )}
-        </p>
-      </div>
+                  { }
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          {notification.title}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          {notification.message}
+                        </p>
 
-      {}
-      <div className="space-y-3">
-        {filteredNotifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={`card p-4 transition-all ${
-                            !notification.is_read ? 'border-l-4 border-l-primary-500 bg-primary-50 dark:bg-primary-900/10' : ''
-                          }`}
-                        >
-                          <div className="flex items-start space-x-4">
-                            {}
-                            <div className="p-2 rounded-lg text-primary-600 bg-primary-100 flex-shrink-0">
-                              <Bell className="w-4 h-4" />
-                            </div>
+                        { }
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                          {notification.loanId && (
+                            <div>Loan ID: <span className="font-medium">{notification.loanId}</span></div>
+                          )}
+                          {notification.amount && (
+                            <div>Amount: <span className="font-medium">${notification.amount.toLocaleString()}</span></div>
+                          )}
+                          {notification.applicant && (
+                            <div>Applicant: <span className="font-medium">{notification.applicant}</span></div>
+                          )}
+                          {notification.department && (
+                            <div>Department: <span className="font-medium">{notification.department}</span></div>
+                          )}
+                          {notification.reason && (
+                            <div>Reason: <span className="font-medium">{notification.reason}</span></div>
+                          )}
+                          {notification.overdueAmount && (
+                            <div>Overdue Amount: <span className="font-medium text-red-600">${notification.overdueAmount.toLocaleString()}</span></div>
+                          )}
+                          {notification.reportType && (
+                            <div>Report Type: <span className="font-medium">{notification.reportType}</span></div>
+                          )}
+                        </div>
 
-              {}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {notification.title}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {notification.message}
-                    </p>
-                    
-                    {}
-                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                      {notification.loanId && (
-                        <div>Loan ID: <span className="font-medium">{notification.loanId}</span></div>
-                      )}
-                      {notification.amount && (
-                        <div>Amount: <span className="font-medium">${notification.amount.toLocaleString()}</span></div>
-                      )}
-                      {notification.applicant && (
-                        <div>Applicant: <span className="font-medium">{notification.applicant}</span></div>
-                      )}
-                      {notification.department && (
-                        <div>Department: <span className="font-medium">{notification.department}</span></div>
-                      )}
-                      {notification.reason && (
-                        <div>Reason: <span className="font-medium">{notification.reason}</span></div>
-                      )}
-                      {notification.overdueAmount && (
-                        <div>Overdue Amount: <span className="font-medium text-red-600">${notification.overdueAmount.toLocaleString()}</span></div>
-                      )}
-                      {notification.reportType && (
-                        <div>Report Type: <span className="font-medium">{notification.reportType}</span></div>
-                      )}
+                        <div className="flex items-center mt-3 space-x-4">
+                          <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {new Date(notification.created_at).toLocaleString()}
+                          </span>
+                          {!notification.is_read && (
+                            <span className="text-xs font-medium text-primary-600">
+                              Unread
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      { }
+                      <div className="flex flex-col items-end space-y-2 ml-4">
+                        {!notification.is_read && (
+                          <button
+                            onClick={() => handleMarkAsRead(notification.id)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            title="Mark as read"
+                          >
+                            <Check className="w-4 h-4 text-gray-400" />
+                          </button>
+                        )}
+
+                        <div className="flex flex-col space-y-1">
+                          {(notification.actions || []).map((action, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleAction(notification, action)}
+                              className={`flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${getActionButtonClass(action)}`}
+                            >
+                              {getActionIcon(action)}
+                              <span>{action}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    
-                            <div className="flex items-center mt-3 space-x-4">
-                                <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {new Date(notification.created_at).toLocaleString()}
-                                </span>
-                                {!notification.is_read && (
-                                  <span className="text-xs font-medium text-primary-600">
-                                    Unread
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-          
-                            {}
-                            <div className="flex flex-col items-end space-y-2 ml-4">
-                              {!notification.is_read && (
-                                <button
-                                  onClick={() => handleMarkAsRead(notification.id)}
-                                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                  title="Mark as read"
-                                >
-                                  <Check className="w-4 h-4 text-gray-400" />
-                                </button>
-                              )}
-                    
-                  <div className="flex flex-col space-y-1">
-                                {(notification.actions || []).map((action, index) => (
-                                  <button
-                                    key={index}
-                                    onClick={() => handleAction(notification, action)}
-                                    className={`flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${getActionButtonClass(action)}`}
-                                  >
-                                    {getActionIcon(action)}
-                                    <span>{action}</span>
-                                  </button>
-                                ))}
-                              </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {}
-      {filteredNotifications.length === 0 && (
-        <div className="card p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Bell className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            No notifications found
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            {selectedFilter !== 'all' || searchTerm
-              ? 'Try adjusting your search or filter criteria'
-              : 'You\'re all caught up! No new notifications.'
-            }
-          </p>
-        </div>
-      )}
+          { }
+          {filteredNotifications.length === 0 && (
+            <div className="card p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bell className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                No notifications found
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {selectedFilter !== 'all' || searchTerm
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'You\'re all caught up! No new notifications.'
+                }
+              </p>
+            </div>
+          )}
 
-      {}
-      <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-          Notification Preferences
-        </h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100">Email Notifications</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Receive notifications via email</p>
+          { }
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Notification Preferences
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Email Notifications</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Receive notifications via email</p>
+                </div>
+                <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary-600">
+                  <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-6"></span>
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Push Notifications</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Receive browser push notifications</p>
+                </div>
+                <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200">
+                  <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1"></span>
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Critical Alerts Only</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Only notify for urgent matters</p>
+                </div>
+                <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200">
+                  <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1"></span>
+                </button>
+              </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary-600">
-              <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-6"></span>
-            </button>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100">Push Notifications</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Receive browser push notifications</p>
-            </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200">
-              <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1"></span>
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100">Critical Alerts Only</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Only notify for urgent matters</p>
-            </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200">
-              <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1"></span>
-            </button>
-          </div>
-        </div>
-      </div>
         </div>
       </div>
     </div>

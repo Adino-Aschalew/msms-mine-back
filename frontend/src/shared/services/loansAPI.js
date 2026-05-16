@@ -56,15 +56,26 @@ export const loansAPI = {
 
   
   getLoanEligibility: async () => {
-    const response = await apiClient.get('/loans/eligibility');
+    const response = await apiClient.get('/loans/check-eligibility');
+    return response.data;
+  },
+
+  
+  checkGuarantorCapacity: async (employeeId, loanAmount) => {
+    const response = await apiClient.get(`/loans/check-guarantor/${employeeId}`, {
+      params: { loan_amount: loanAmount }
+    });
     return response.data;
   },
 
   
   calculateLoanEstimate: async (amount, termMonths) => {
-    const response = await apiClient.post('/loans/calculate', {
-      amount,
-      term_months: termMonths
+    const response = await apiClient.get('/loans/calculate-schedule', {
+      params: { 
+        loan_amount: amount, 
+        loan_term_months: termMonths,
+        interest_rate: 5 
+      }
     });
     return response.data;
   }

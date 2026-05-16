@@ -1,11 +1,6 @@
 const isPasswordStrong = (password) => {
   const minLength = 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-  
-  return password.length >= minLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+  return password.length >= minLength;
 };
 
 const validateLogin = (req, res, next) => {
@@ -46,38 +41,27 @@ const validateLogin = (req, res, next) => {
   
   req.body.role = normalizedRole;
   
-  
-  if (normalizedRole !== 'EMPLOYEE') {
-    
-    if (!identifier.includes('@')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Staff and administrators must log in with their email or identifier containing @'
-      });
-    }
-  }
-  
   next();
 };
 
 const validateChangePassword = (req, res, next) => {
   const { currentPassword, newPassword, confirmPassword } = req.body;
   
-  if (!currentPassword || !newPassword || !confirmPassword) {
+  if (!currentPassword || !newPassword) {
     return res.status(400).json({
       success: false,
-      message: 'Current password, new password, and confirm password are required'
+      message: 'Current password and new password are required'
     });
   }
   
   if (!isPasswordStrong(newPassword)) {
     return res.status(400).json({
       success: false,
-      message: 'New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      message: 'New password must be at least 8 characters long'
     });
   }
   
-  if (newPassword !== confirmPassword) {
+  if (confirmPassword && newPassword !== confirmPassword) {
     return res.status(400).json({
       success: false,
       message: 'New password and confirm password do not match'

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { committeeAPI } from '../../services/committeeAPI';
 import {
   Clock,
   Search,
@@ -37,164 +38,33 @@ const Activity = () => {
     { value: 'year', label: 'Last Year' }
   ];
 
-  const activities = [
-    {
-      id: 1,
-      type: 'loan',
-      action: 'loan_approved',
-      description: 'Approved loan request LN-2024-002 for Jane Smith',
-      timestamp: '2024-03-15 14:30:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        loanId: 'LN-2024-002',
-        amount: '$8,000',
-        employee: 'Jane Smith',
-        department: 'Marketing'
-      }
-    },
-    {
-      id: 2,
-      type: 'loan',
-      action: 'loan_reviewed',
-      description: 'Reviewed loan request LN-2024-001 from John Doe',
-      timestamp: '2024-03-15 13:45:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        loanId: 'LN-2024-001',
-        amount: '$15,000',
-        employee: 'John Doe',
-        department: 'Engineering'
-      }
-    },
-    {
-      id: 3,
-      type: 'security',
-      action: 'password_changed',
-      description: 'Changed account password',
-      timestamp: '2024-03-15 12:00:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        method: 'web',
-        strength: 'strong'
-      }
-    },
-    {
-      id: 4,
-      type: 'login',
-      action: 'login_success',
-      description: 'Successfully logged in to the system',
-      timestamp: '2024-03-15 09:00:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        method: 'password',
-        location: 'New York, NY'
-      }
-    },
-    {
-      id: 5,
-      type: 'loan',
-      action: 'loan_rejected',
-      description: 'Rejected loan request LN-2024-004 for Sarah Williams',
-      timestamp: '2024-03-14 16:20:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        loanId: 'LN-2024-004',
-        amount: '$12,000',
-        employee: 'Sarah Williams',
-        reason: 'Insufficient savings balance'
-      }
-    },
-    {
-      id: 6,
-      type: 'system',
-      action: 'settings_updated',
-      description: 'Updated loan system settings',
-      timestamp: '2024-03-14 11:30:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        setting: 'Maximum loan amount',
-        oldValue: '$45,000',
-        newValue: '$50,000'
-      }
-    },
-    {
-      id: 7,
-      type: 'security',
-      action: 'two_factor_enabled',
-      description: 'Enabled two-factor authentication',
-      timestamp: '2024-03-13 15:45:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        method: 'authenticator_app'
-      }
-    },
-    {
-      id: 8,
-      type: 'loan',
-      action: 'disbursement_processed',
-      description: 'Processed loan disbursement for LN-2024-001',
-      timestamp: '2024-03-13 10:15:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        loanId: 'LN-2024-001',
-        amount: '$15,000',
-        employee: 'John Doe',
-        method: 'bank_transfer'
-      }
-    },
-    {
-      id: 9,
-      type: 'login',
-      action: 'login_failed',
-      description: 'Failed login attempt detected',
-      timestamp: '2024-03-12 18:30:00',
-      ip: '192.168.1.250',
-      device: 'Unknown',
-      user: 'Unknown',
-      details: {
-        reason: 'invalid_credentials',
-        attempts: 3
-      }
-    },
-    {
-      id: 10,
-      type: 'system',
-      action: 'report_generated',
-      description: 'Generated monthly loan report',
-      timestamp: '2024-03-10 14:00:00',
-      ip: '192.168.1.100',
-      device: 'Chrome on Windows',
-      user: 'John Committee',
-      details: {
-        reportType: 'monthly_summary',
-        period: 'February 2024',
-        format: 'PDF'
-      }
-    }
-  ];
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredActivities = activities.filter(activity => {
-    const matchesFilter = selectedFilter === 'all' || activity.type === selectedFilter;
-    const matchesSearch = activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         activity.user.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  useEffect(() => {
+    fetchActivities();
+  }, [selectedFilter, selectedPeriod, searchTerm]);
+
+  const fetchActivities = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        type: selectedFilter,
+        period: selectedPeriod,
+        search: searchTerm
+      };
+      const res = await committeeAPI.getActivityLog(params);
+      if (res.success && res.data) {
+        setActivities(res.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredActivities = activities; // Filtering is handled by backend now
 
   const getActivityIcon = (type, action) => {
     if (type === 'loan') {

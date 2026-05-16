@@ -64,14 +64,11 @@ class LoanController {
             : guarantor_details;
           
           await Guarantor.addGuarantor(applicationId, userId, {
-            guarantor_type: guarantorData.type === 'internal' ? 'INTERNAL' : 'EXTERNAL',
             guarantor_name: guarantorData.fullName || guarantorData.employeeId || 'Unknown',
             guarantor_id: guarantorData.employeeId || '',
             relationship: guarantorData.relationship || '',
-            monthly_income: 0,
             contact_phone: guarantorData.phoneNumber || '',
             contact_email: guarantorData.email || '',
-            address: ''
           });
         } catch (guarantorError) {
           console.error('Error saving guarantor:', guarantorError);

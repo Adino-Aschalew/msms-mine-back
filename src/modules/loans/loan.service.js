@@ -54,7 +54,24 @@ class LoanService {
       
       
       if (applicationData.guarantor_details) {
-        await this.saveGuarantorInformation(applicationId, userId, applicationData.guarantor_details);
+        const guarantorData = typeof applicationData.guarantor_details === 'string' 
+          ? JSON.parse(applicationData.guarantor_details) 
+          : applicationData.guarantor_details;
+
+        if (guarantorData.type !== 'internal') {
+          throw new Error('Only internal employee guarantors are allowed');
+        }
+
+        const capacity = await LoanModel.checkGuarantorCapacity(guarantorData.employeeId, loan_amount, userId);
+        if (!capacity.eligible) {
+          throw new Error(`Guarantor validation failed: ${capacity.reason}`);
+        }
+
+        await this.saveGuarantorInformation(applicationId, userId, {
+          ...guarantorData,
+          guarantor_user_id: capacity.guarantor_data.id,
+          fullName: capacity.guarantor_data.name
+        });
       }
       
       
@@ -613,61 +630,32 @@ class LoanService {
 
   static async saveGuarantorInformation(loanApplicationId, userId, guarantorDetails) {
     try {
-      
       const guarantorData = typeof guarantorDetails === 'string' 
         ? JSON.parse(guarantorDetails) 
         : guarantorDetails;
 
-      const { type, employeeId, fullName, email, phoneNumber, employer, relationship } = guarantorData;
-
-      
-      const guarantorRecord = {
-        loan_application_id: loanApplicationId,
-        user_id: userId,
-        guarantor_type: type.toUpperCase(), 
-        guarantor_name: fullName || '',
-        guarantor_id: employeeId || '',
-        relationship: relationship || '',
-        monthly_income: 0, 
-        contact_phone: phoneNumber || '',
-        contact_email: email || '',
-        address: '', 
-        is_approved: null, 
-        approved_by: null,
-        approval_date: null
-      };
+      const { employeeId, relationship, guarantor_user_id, fullName } = guarantorData;
 
       
       const insertQuery = `
         INSERT INTO guarantors (
           loan_application_id, user_id, guarantor_type, guarantor_name, 
-          guarantor_id, relationship, monthly_income, contact_phone, 
-          contact_email, address, is_approved, approved_by, approval_date, 
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          guarantor_id, relationship, status, created_at, updated_at
+        ) VALUES (?, ?, 'INTERNAL', ?, ?, ?, 'PENDING', NOW(), NOW())
       `;
 
       await query(insertQuery, [
-        guarantorRecord.loan_application_id,
-        guarantorRecord.user_id,
-        guarantorRecord.guarantor_type,
-        guarantorRecord.guarantor_name,
-        guarantorRecord.guarantor_id,
-        guarantorRecord.relationship,
-        guarantorRecord.monthly_income,
-        guarantorRecord.contact_phone,
-        guarantorRecord.contact_email,
-        guarantorRecord.address,
-        guarantorRecord.is_approved,
-        guarantorRecord.approved_by,
-        guarantorRecord.approval_date
+        loanApplicationId,
+        userId,
+        fullName || '',
+        employeeId,
+        relationship || ''
       ]);
 
       console.log('Guarantor information saved successfully for loan application:', loanApplicationId);
     } catch (error) {
       console.error('Error saving guarantor information:', error);
-      
-      
+      throw error;
     }
   }
 }

@@ -34,6 +34,13 @@ import {
   FiSquare
 } from 'react-icons/fi';
 
+const getProfilePictureUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:9999';
+  return `${baseUrl}${path}`;
+};
+
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -174,7 +181,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
     savingsRate: 25,
     loanProgress: 68,
     creditScore: 750,
-    memberSince: '2022'
+    memberSince: user?.created_at ? new Date(user.created_at).getFullYear() : '2022'
   };
 
   return (
@@ -355,11 +362,11 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
             >
               <div className="relative">
                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  {user?.profile_picture ? (
+                    <img src={getProfilePictureUrl(user.profile_picture)} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-white text-sm font-bold">
-                      {user?.name?.charAt(0) || 'U'}
+                      {user?.first_name?.charAt(0) || user?.name?.charAt(0) || 'U'}
                     </span>
                   )}
                 </div>
@@ -382,11 +389,11 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                 <div className="bg-blue-500 p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden">
-                      {user?.avatar ? (
-                        <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      {user?.profile_picture ? (
+                        <img src={getProfilePictureUrl(user.profile_picture)} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-white text-lg font-bold">
-                          {user?.name?.charAt(0) || 'U'}
+                          {user?.first_name?.charAt(0) || user?.name?.charAt(0) || 'U'}
                         </span>
                       )}
                     </div>
@@ -416,29 +423,15 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                       <p className="text-xs text-gray-500 dark:text-gray-400">Manage your information</p>
                     </div>
                   </Link>
-
-                  <Link
-                    to="/employee/settings"
-                    className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
-                    onClick={() => setProfileDropdownOpen(false)}
-                  >
-                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <FiSettings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Account Settings</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Preferences and security</p>
-                    </div>
-                  </Link>
                 </div>
 
                 {}
                 <div className="border-t border-gray-200 dark:border-gray-700 p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Member since {userStats.memberSince}</span>
-                    <div className="flex items-center space-x-1 text-xs text-green-600 dark:text-green-400">
+                    <div className={`flex items-center space-x-1 text-xs ${user?.email_verified ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                       <FiShield className="w-3 h-3" />
-                      <span>Verified</span>
+                      <span>{user?.email_verified ? 'Verified' : 'Unverified'}</span>
                     </div>
                   </div>
 

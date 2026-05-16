@@ -7,17 +7,18 @@ import { loansAPI } from '../../../shared/services/loansAPI';
 const PayrollPage = () => {
   
   const formatCompactNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'METB';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'KETB';
-    }
-    return num.toString();
+    const val = Number(num);
+    if (isNaN(val)) return '0.00 ETB';
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(val) + ' ETB';
   };
 
+  const currentYear = new Date().getFullYear();
   const [searchTerm, setSearchTerm] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
-  const [yearFilter, setYearFilter] = useState('2024');
+  const [yearFilter, setYearFilter] = useState(currentYear.toString());
 
   const [salaryData, setSalaryData] = useState({
     salary: 0,
@@ -50,30 +51,25 @@ const PayrollPage = () => {
           salary,
           savingsRate,
           loanDeduction,
+          activeLoans,
+          savingsData,
           loading: false
         });
 
+        const payrollRes = await employeeAPI.getPayrollHistory(1, 20);
+        const payrollHistory = payrollRes?.data?.history || payrollRes?.history || [];
         
-        const hireDate = new Date(eProfile.hire_date || new Date());
-        const monthsSinceHire = Math.min(12, Math.floor((new Date() - hireDate) / (1000 * 60 * 60 * 24 * 30)));
-        
-        const simulatedHistory = [];
-        for (let i = 0; i < monthsSinceHire; i++) {
-          const date = new Date();
-          date.setMonth(date.getMonth() - i);
-          simulatedHistory.push({
-            id: i,
-            month: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
-            salary,
-            savingsDeduction: (salary * savingsRate) / 100,
-            loanDeduction: i === 0 ? loanDeduction : 0, 
-            otherDeductions: 0,
-            netPay: salary - ((salary * savingsRate) / 100) - (i === 0 ? loanDeduction : 0),
-            payDate: new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0],
-            status: 'processed'
-          });
-        }
-        setHistory(simulatedHistory);
+        setHistory(payrollHistory.map(p => ({
+          id: p.id,
+          month: p.payroll_date ? new Date(p.payroll_date).toLocaleString('default', { month: 'long', year: 'numeric' }) : 'Unknown',
+          salary: parseFloat(p.gross_salary || 0),
+          savingsDeduction: parseFloat(p.savings_deduction || 0),
+          loanDeduction: parseFloat(p.loan_repayment_deduction || 0),
+          otherDeductions: 0,
+          netPay: parseFloat(p.net_salary || 0),
+          payDate: p.payroll_date || p.created_at,
+          status: p.batch_status?.toLowerCase() || 'processed'
+        })));
         
       } catch (error) {
         console.error('Error fetching payroll data:', error);
@@ -83,7 +79,15 @@ const PayrollPage = () => {
     fetchPayrollData();
   }, []);
 
-  const currentMonthStats = {
+  const latestPayroll = history.find(p => p.status === 'processed');
+  const currentMonthStats = latestPayroll ? {
+    salary: latestPayroll.salary,
+    savingsDeduction: latestPayroll.savingsDeduction,
+    loanDeduction: latestPayroll.loanDeduction,
+    otherDeductions: latestPayroll.otherDeductions,
+    totalDeductions: latestPayroll.savingsDeduction + latestPayroll.loanDeduction + latestPayroll.otherDeductions,
+    netPay: latestPayroll.netPay
+  } : {
     salary: salaryData.salary,
     savingsDeduction: (salaryData.salary * salaryData.savingsRate) / 100,
     loanDeduction: salaryData.loanDeduction,
@@ -92,11 +96,12 @@ const PayrollPage = () => {
     netPay: salaryData.salary - ((salaryData.salary * salaryData.savingsRate) / 100) - salaryData.loanDeduction,
   };
 
+  const payrollForYear = history.filter(p => p.month.includes(yearFilter) && p.status !== 'failed');
   const yearStats = {
-    totalSalary: salaryData.salary * 12,
-    totalSavings: ((salaryData.salary * salaryData.savingsRate) / 100) * 12,
-    totalLoanRepayments: salaryData.loanDeduction * 12,
-    totalNetPay: (salaryData.salary - ((salaryData.salary * salaryData.savingsRate) / 100) - salaryData.loanDeduction) * 12,
+    totalSalary: payrollForYear.reduce((sum, p) => sum + p.salary, 0),
+    totalSavings: payrollForYear.reduce((sum, p) => sum + p.savingsDeduction, 0),
+    totalLoanRepayments: payrollForYear.reduce((sum, p) => sum + p.loanDeduction, 0),
+    totalNetPay: payrollForYear.reduce((sum, p) => sum + p.netPay, 0),
   };
 
   const filteredPayrollData = history.filter(payroll => {
@@ -124,7 +129,8 @@ const PayrollPage = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const years = ['2024', '2023', '2022', '2021'];
+  const currentMonthLabel = latestPayroll ? latestPayroll.month : 'Current Month';
+  const years = Array.from({length: 5}, (_, i) => (currentYear - i).toString());
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -152,84 +158,9 @@ const PayrollPage = () => {
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         {}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="stat-card">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Monthly Salary</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {formatCompactNumber(currentMonthStats.salary)}
-                </p>
-                <div className="flex items-center mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium">
-                  <FiTrendingUp className="mr-1" />
-                  <span>Consistent income</span>
-                </div>
-              </div>
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                <FiDollarSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Deductions</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {formatCompactNumber(currentMonthStats.totalDeductions)}
-                </p>
-                <div className="flex items-center mt-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
-                  <FiActivity className="mr-1" />
-                  <span>{currentMonthStats.salary > 0 ? ((currentMonthStats.totalDeductions / currentMonthStats.salary) * 100).toFixed(1) : 0}% of salary</span>
-                </div>
-              </div>
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
-                <FiCreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Net Pay</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {formatCompactNumber(currentMonthStats.netPay)}
-                </p>
-                <div className="flex items-center mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
-                  <FiTarget className="mr-1" />
-                  <span>Take-home amount</span>
-                </div>
-              </div>
-              <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
-                <FiDollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Savings Rate</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {Math.round((currentMonthStats.savingsDeduction / currentMonthStats.salary) * 100)}%
-                </p>
-                <div className="flex items-center mt-2 text-purple-600 dark:text-purple-400 text-sm font-medium">
-                  <FiShield className="mr-1" />
-                  <span>Building wealth</span>
-                </div>
-              </div>
-              <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
-                <FiCalendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {}
-          <div className="lg:col-span-2">
+          <div className="w-full">
             <div className="card shadow-lg">
               <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-600">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -255,7 +186,7 @@ const PayrollPage = () => {
                     />
                   </div>
 
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 sm:ml-4">
                     <select
                       value={monthFilter}
                       onChange={(e) => setMonthFilter(e.target.value)}
@@ -326,12 +257,12 @@ const PayrollPage = () => {
           </div>
 
           {}
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {}
             <div className="card p-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                 <FiPieChart className="mr-2 text-blue-600 dark:text-blue-400" />
-                Current Month Breakdown
+                Breakdown ({currentMonthLabel})
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
@@ -417,32 +348,34 @@ const PayrollPage = () => {
                 </div>
               </div>
             </div>
+          </div>
 
-            {}
+          {}
+          <div className="w-full">
             <div className="card p-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                 <FiTrendingUp className="mr-2 text-indigo-600 dark:text-indigo-400" />
                 Financial Insights
               </h3>
-              <div className="space-y-4">
-                <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg p-4 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Savings Growth</span>
-                    <span className="text-sm font-bold text-green-600 dark:text-green-400">+12.5%</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg p-6 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Savings Balance</span>
+                    <span className="text-sm font-bold text-green-600 dark:text-green-400">{formatCompactNumber(salaryData.savingsData?.current_balance || 0)} ETB</span>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Your savings are growing steadily</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">From {salaryData.savingsRate}% monthly deduction</div>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg p-4 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Loan Progress</span>
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">68%</span>
+                <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg p-6 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Loans</span>
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{salaryData.activeLoans?.length || 0}</span>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">You're making good progress</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Monthly repayment: {formatCompactNumber(salaryData.loanDeduction)}</div>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg p-4 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Financial Health</span>
-                    <span className="text-sm font-bold text-purple-600 dark:text-purple-400">Excellent</span>
+                <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-lg p-6 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Repaid Year</span>
+                    <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{formatCompactNumber(yearStats.totalLoanRepayments)} ETB</span>
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Keep up the great work!</div>
                 </div>

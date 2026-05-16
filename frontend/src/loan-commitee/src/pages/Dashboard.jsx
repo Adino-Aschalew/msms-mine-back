@@ -175,6 +175,40 @@ const Dashboard = () => {
     handleButtonClick('changePeriod', period);
   };
 
+  const getActivityIcon = (type) => {
+    const icons = {
+      new_request: <FileText className="w-4 h-4" />,
+      approved: <CheckCircle className="w-4 h-4" />,
+      rejected: <XCircle className="w-4 h-4" />,
+      disbursed: <DollarSign className="w-4 h-4" />,
+      suspended: <AlertCircle className="w-4 h-4" />,
+      created: <User className="w-4 h-4" />,
+      updated: <RefreshCw className="w-4 h-4" />
+    };
+    return icons[type] || icons.new_request;
+  };
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      pending: 'status-pending',
+      approved: 'status-approved',
+      rejected: 'status-rejected',
+      suspended: 'status-suspended'
+    };
+    return badges[status] || 'status-pending';
+  };
+
+  const getActivityIconColor = (type) => {
+    const colors = {
+      new_request: 'text-primary-600 bg-primary-100',
+      approved: 'text-success-600 bg-success-100',
+      rejected: 'text-danger-600 bg-danger-100',
+      disbursed: 'text-warning-600 bg-warning-100',
+      suspended: 'text-gray-600 bg-gray-100'
+    };
+    return colors[type] || colors.new_request;
+  };
+
   const stats = [
     {
       title: 'Total Loan Requests',
@@ -336,40 +370,6 @@ const Dashboard = () => {
       icon: <FileText className="w-4 h-4" />
     }
   ];
-
-  const getActivityIcon = (type) => {
-    const icons = {
-      new_request: <FileText className="w-4 h-4" />,
-      approved: <CheckCircle className="w-4 h-4" />,
-      rejected: <XCircle className="w-4 h-4" />,
-      disbursed: <DollarSign className="w-4 h-4" />,
-      suspended: <AlertCircle className="w-4 h-4" />,
-      created: <User className="w-4 h-4" />,
-      updated: <RefreshCw className="w-4 h-4" />
-    };
-    return icons[type] || icons.new_request;
-  };
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: 'status-pending',
-      approved: 'status-approved',
-      rejected: 'status-rejected',
-      suspended: 'status-suspended'
-    };
-    return badges[status] || 'status-pending';
-  };
-
-  const getActivityIconColor = (type) => {
-    const colors = {
-      new_request: 'text-primary-600 bg-primary-100',
-      approved: 'text-success-600 bg-success-100',
-      rejected: 'text-danger-600 bg-danger-100',
-      disbursed: 'text-warning-600 bg-warning-100',
-      suspended: 'text-gray-600 bg-gray-100'
-    };
-    return colors[type] || colors.new_request;
-  };
 
   if (loading) {
     return (

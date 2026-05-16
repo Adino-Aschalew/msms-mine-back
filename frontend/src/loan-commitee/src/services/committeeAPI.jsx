@@ -65,6 +65,14 @@ export const committeeAPI = {
     return apiClient.get('/loan-committee/reports', { params });
   },
 
+  getGuarantorExposure: () => {
+    return apiClient.get('/loan-committee/guarantor-exposure');
+  },
+
+  getRepaymentSchedule: (loanId) => {
+    return apiClient.get(`/loan-committee/loans/${loanId}/repayment-schedule`);
+  },
+
   
   getCommitteeMeetings: (params = {}) => {
     return apiClient.get('/loan-committee/meetings', { params });
@@ -102,5 +110,13 @@ export const committeeAPI = {
   
   getApplicationHistory: (applicationId) => {
     return apiClient.get(`/loan-committee/applications/${applicationId}/history`);
+  },
+  
+  getSecurityOverview: () => {
+    return apiClient.get('/loan-committee/security/overview');
+  },
+
+  getActivityLog: (params = {}) => {
+    return apiClient.get('/loan-committee/activity-log', { params });
   }
 };

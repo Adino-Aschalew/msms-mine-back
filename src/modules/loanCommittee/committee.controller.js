@@ -14,11 +14,11 @@ class CommitteeController {
         risk_level: req.query.risk_level,
         search: req.query.search
       };
-      
+
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
-      
+
       const result = await CommitteeService.getPendingApplications(page, limit, filters);
-      
+
       res.json({
         success: true,
         data: result.applications,
@@ -37,21 +37,21 @@ class CommitteeController {
     try {
       const { applicationId } = req.params;
       const application = await CommitteeService.getApplicationById(applicationId);
-      
+
       res.json({
         success: true,
         data: application
       });
     } catch (error) {
       console.error('Get application error:', error);
-      
+
       if (error.message.includes('not found')) {
         return res.status(404).json({
           success: false,
           message: error.message
         });
       }
-      
+
       res.status(500).json({
         success: false,
         message: 'Failed to fetch application'
@@ -66,9 +66,9 @@ class CommitteeController {
       const reviewedBy = req.userId;
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
-      
+
       const result = await CommitteeService.reviewApplication(applicationId, reviewData, reviewedBy, ip, userAgent);
-      
+
       res.json({
         success: true,
         message: result.message,
@@ -76,14 +76,14 @@ class CommitteeController {
       });
     } catch (error) {
       console.error('Review application error:', error);
-      
+
       if (error.message.includes('not found') || error.message.includes('not pending') || error.message.includes('Invalid')) {
         return res.status(400).json({
           success: false,
           message: error.message
         });
       }
-      
+
       res.status(500).json({
         success: false,
         message: 'Failed to review application'
@@ -97,13 +97,13 @@ class CommitteeController {
       const reviewedBy = req.userId;
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
-      
+
       const results = {
         processed: 0,
         failed: 0,
         errors: []
       };
-      
+
       for (const applicationId of applications) {
         try {
           const reviewData = { decision, notes: common_notes };
@@ -117,7 +117,7 @@ class CommitteeController {
           });
         }
       }
-      
+
       res.json({
         success: true,
         message: `Bulk review completed. Processed: ${results.processed}, Failed: ${results.failed}`,
@@ -141,11 +141,11 @@ class CommitteeController {
         date_from: req.query.date_from,
         date_to: req.query.date_to
       };
-      
+
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
-      
+
       const result = await CommitteeService.getCommitteeMeetings(page, limit, filters);
-      
+
       res.json({
         success: true,
         data: result.meetings,
@@ -166,9 +166,9 @@ class CommitteeController {
       const createdBy = req.userId;
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
-      
+
       const result = await CommitteeService.createMeeting(meetingData, createdBy, ip, userAgent);
-      
+
       res.status(201).json({
         success: true,
         message: result.message,
@@ -186,7 +186,7 @@ class CommitteeController {
   static async getCommitteeMembers(req, res) {
     try {
       const members = await CommitteeService.getCommitteeMembers();
-      
+
       res.json({
         success: true,
         data: members
@@ -202,11 +202,15 @@ class CommitteeController {
 
   static async getCommitteeStats(req, res) {
     try {
-      const stats = await CommitteeService.getCommitteeStats();
-      
+      const globalStats = await CommitteeService.getCommitteeStats();
+      const personalWorkload = await CommitteeService.getCommitteeWorkload(req.userId, 'ALL_TIME');
+
       res.json({
         success: true,
-        data: stats
+        data: {
+          ...globalStats,
+          personal: personalWorkload
+        }
       });
     } catch (error) {
       console.error('Get committee stats error:', error);
@@ -221,7 +225,7 @@ class CommitteeController {
     try {
       const { applicationId } = req.params;
       const history = await CommitteeService.getApplicationHistory(applicationId);
-      
+
       res.json({
         success: true,
         data: history
@@ -239,9 +243,9 @@ class CommitteeController {
     try {
       const memberId = req.query.memberId || req.userId;
       const period = req.query.period || 'MONTHLY';
-      
+
       const workload = await CommitteeService.getCommitteeWorkload(memberId, period);
-      
+
       res.json({
         success: true,
         data: workload
@@ -258,19 +262,19 @@ class CommitteeController {
   static async getRiskAnalysis(req, res) {
     try {
       const applications = await CommitteeService.getPendingApplications(1, 100, {});
-      
-      
+
+
       const riskDistribution = {
         LOW: applications.applications.filter(app => app.risk_level === 'LOW').length,
         MEDIUM: applications.applications.filter(app => app.risk_level === 'MEDIUM').length,
         HIGH: applications.applications.filter(app => app.risk_level === 'HIGH').length,
         CRITICAL: applications.applications.filter(app => app.risk_level === 'CRITICAL').length
       };
-      
-      
+
+
       const avgRiskScore = applications.applications.reduce((sum, app) => sum + app.risk_score, 0) / applications.applications.length;
-      
-      
+
+
       const departmentRisks = {};
       applications.applications.forEach(app => {
         if (!departmentRisks[app.department]) {
@@ -278,7 +282,7 @@ class CommitteeController {
         }
         departmentRisks[app.department].push(app.risk_score);
       });
-      
+
       Object.keys(departmentRisks).forEach(dept => {
         const scores = departmentRisks[dept];
         departmentRisks[dept] = {
@@ -288,7 +292,7 @@ class CommitteeController {
           min_score: Math.min(...scores)
         };
       });
-      
+
       res.json({
         success: true,
         data: {
@@ -311,7 +315,7 @@ class CommitteeController {
   static async getApprovalTrends(req, res) {
     try {
       const period = req.query.period || 'MONTHLY';
-      
+
       const [trends] = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%Y-%m') as period,
@@ -324,14 +328,14 @@ class CommitteeController {
         GROUP BY DATE_FORMAT(created_at, '%Y-%m')
         ORDER BY period DESC
       `);
-      
-      
+
+
       const approvalTrends = trends.map(trend => ({
         ...trend,
         approval_rate: trend.total_applications > 0 ? (trend.approved_applications / trend.total_applications) * 100 : 0,
         rejection_rate: trend.total_applications > 0 ? (trend.rejected_applications / trend.total_applications) * 100 : 0
       }));
-      
+
       res.json({
         success: true,
         data: approvalTrends
@@ -348,8 +352,8 @@ class CommitteeController {
   static async getDashboardData(req, res) {
     try {
       console.log('=== FETCHING DASHBOARD DATA ===');
-      
-      
+
+
       const stats = await query(`
         SELECT 
           COUNT(*) as total_requests,
@@ -360,18 +364,18 @@ class CommitteeController {
         FROM loan_applications
       `);
       console.log('Stats query result:', stats);
-      
-      
+
+
       const allApplications = await query(`SELECT id, status, created_at FROM loan_applications LIMIT 5`);
       console.log('Sample loan applications:', allApplications);
-      
+
       const portfolio = await query(`
         SELECT COALESCE(SUM(outstanding_balance), 0) as total_portfolio 
         FROM loans WHERE status IN ('ACTIVE', 'DISBURSED', 'OVERDUE') AND outstanding_balance > 0
       `);
       console.log('Portfolio query result:', portfolio);
 
-      
+
       const trends = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%b') as label,
@@ -383,7 +387,7 @@ class CommitteeController {
         ORDER BY MONTH(created_at) ASC
       `);
 
-      
+
       const growth = await query(`
         SELECT 
           DATE_FORMAT(created_at, '%b') as label,
@@ -394,7 +398,7 @@ class CommitteeController {
         ORDER BY MONTH(created_at) ASC
       `);
 
-      
+
       const recentRequests = await query(`
         SELECT 
           la.id,
@@ -422,7 +426,7 @@ class CommitteeController {
         LIMIT 5
       `);
 
-      
+
       const sizeDistribution = await query(`
         SELECT 
           CASE 
@@ -437,6 +441,18 @@ class CommitteeController {
         GROUP BY category
       `);
 
+      const recentActivity = await query(`
+        SELECT 
+          al.action,
+          al.created_at,
+          u.username as user_name,
+          al.table_name as description
+        FROM audit_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+        ORDER BY al.created_at DESC
+        LIMIT 10
+      `);
+
       res.json({
         success: true,
         data: {
@@ -447,7 +463,8 @@ class CommitteeController {
           trends: trends || [],
           growth: growth || [],
           recentRequests: recentRequests || [],
-          sizeDistribution: sizeDistribution || []
+          sizeDistribution: sizeDistribution || [],
+          recentActivity: recentActivity || []
         }
       });
     } catch (error) {
@@ -564,11 +581,11 @@ class CommitteeController {
     try {
       const format = req.query.format || 'json';
       const applications = await CommitteeService.getPendingApplications(1, 1000, {});
-      
+
       if (format === 'csv') {
         const CsvUtils = require('../../utils/csv');
         const csvBuffer = await CsvUtils.generateCsvBuffer(applications.applications);
-        
+
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename="pending_applications.csv"');
         res.send(csvBuffer);
@@ -598,9 +615,9 @@ class CommitteeController {
             }
           ]
         };
-        
+
         const pdfBuffer = await PdfUtils.generatePdfBuffer(applications.applications, template);
-        
+
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="pending_applications.pdf"');
         res.send(pdfBuffer);
@@ -648,8 +665,8 @@ class CommitteeController {
   static async getProfile(req, res) {
     try {
       const userId = req.userId;
-      
-      
+
+
       const userData = await query(`
         SELECT 
           u.id,
@@ -683,7 +700,7 @@ class CommitteeController {
 
       const profile = userData[0];
 
-      
+
       const expertise = ['Risk Assessment', 'Corporate Finance', 'Financial Analysis'];
       const certifications = ['CFA Level III', 'Financial Risk Manager'];
 
@@ -716,7 +733,7 @@ class CommitteeController {
         bio
       } = req.body;
 
-      
+
       if (email) {
         await query(`
           UPDATE users 
@@ -727,9 +744,9 @@ class CommitteeController {
         `, [email, userId]);
       }
 
-      
+
       const existingProfile = await query(
-        'SELECT id FROM employee_profiles WHERE user_id = ?', 
+        'SELECT id FROM employee_profiles WHERE user_id = ?',
         [userId]
       );
 
@@ -767,8 +784,8 @@ class CommitteeController {
   static async getCommitteeStats(req, res) {
     try {
       const userId = req.userId;
-      
-      
+
+
       const stats = await query(`
         SELECT 
           COUNT(CASE WHEN la.status = 'APPROVED' AND la.reviewed_by = ? THEN 1 ELSE 0 END) as loans_approved,
@@ -782,7 +799,7 @@ class CommitteeController {
         WHERE la.reviewed_by = ? AND la.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
       `, [userId, userId, userId, userId, userId, userId]);
 
-      
+
       const workload = await query(`
         SELECT 
           COUNT(CASE WHEN la.status = 'PENDING' AND la.reviewed_by = ? THEN 1 ELSE 0 END) as current_workload,
@@ -791,7 +808,7 @@ class CommitteeController {
         WHERE la.reviewed_by = ? AND la.status IN ('PENDING', 'UNDER_REVIEW')
       `, [userId, userId, userId]);
 
-      const accuracyRate = stats[0]?.total_reviews > 0 
+      const accuracyRate = stats[0]?.total_reviews > 0
         ? ((stats[0]?.loans_approved / stats[0]?.total_reviews) * 100).toFixed(1)
         : '0.0';
 
@@ -814,6 +831,68 @@ class CommitteeController {
         success: false,
         message: 'Failed to fetch committee statistics'
       });
+    }
+  }
+  static async getRepaymentSchedule(req, res) {
+    try {
+      const { loanId } = req.params;
+      const result = await CommitteeService.getRepaymentSchedule(loanId);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Get repayment schedule error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch repayment schedule'
+      });
+    }
+  }
+
+  static async getGuarantorExposure(req, res) {
+    try {
+      const exposure = await CommitteeService.getGuarantorExposure();
+
+      res.json({
+        success: true,
+        data: exposure
+      });
+    } catch (error) {
+      console.error('Get guarantor exposure error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch guarantor exposure'
+      });
+    }
+  }
+  static async getSecurityOverview(req, res) {
+    try {
+      const userId = req.userId;
+      const result = await CommitteeService.getSecurityOverview(userId);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error('Get security overview error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch security overview' });
+    }
+  }
+
+  static async getActivityLog(req, res) {
+    try {
+      const userId = req.userId;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const filters = {
+        type: req.query.type,
+        search: req.query.search
+      };
+
+      const result = await CommitteeService.getActivityLog(userId, page, limit, filters);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error('Get activity log error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch activity log' });
     }
   }
 }

@@ -75,9 +75,9 @@ const LoginPage = () => {
       const inferredRole = isEmailMode ? 'admin' : 'employee';
       const loggedInUser = await login(formData, inferredRole);
       console.log('[login] user object received:', loggedInUser);
-      const redirectPath = from !== '/' ? from : getRoleRedirectPathFromUser(loggedInUser);
-      console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role, from });
-      console.log('[login] about to navigate to:', redirectPath);
+      // Always redirect based on the user's actual role to avoid cross-role stale path issues
+      const redirectPath = getRoleRedirectPathFromUser(loggedInUser);
+      console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role });
       navigate(redirectPath, { replace: true });
     } catch (err) {
       console.log('[login] error', err);
@@ -145,7 +145,7 @@ const LoginPage = () => {
             style={{
               width: '100px', height: '100px',
               border: '2px solid #ffffff',
-              backgroundImage: 'url("https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2070")',
+              backgroundImage: 'url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRYIGUtqx-VFEl_2arVCO7DLDPX_NgjOoiRKA&s")',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               boxShadow: '0 8px 32px rgba(59,130,246,0.35)'
@@ -172,24 +172,24 @@ const LoginPage = () => {
               className="block text-sm font-medium mb-2"
               style={{ color: 'rgba(203,213,225,1)' }}
             >
-              {isEmailMode ? 'Email Address' : 'Username / Employee ID'}
+              Email Address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <FiUser
                   className="w-4 h-4 transition-colors duration-200"
-                  style={{ color: isEmailMode ? '#60a5fa' : 'rgba(148,163,184,0.7)' }}
+                  style={{ color: '#60a5fa' }}
                 />
               </div>
               <input
                 id="identifier"
                 name="identifier"
-                type="text"
-                autoComplete="username"
+                type="email"
+                autoComplete="email"
                 required
                 value={formData.identifier}
                 onChange={handleChange}
-                placeholder="Employee ID or email address"
+                placeholder="Enter your email address"
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 44px',

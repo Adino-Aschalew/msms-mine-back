@@ -39,12 +39,27 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  // On app mount, refresh profile from backend so fresh fields (created_at, profile_picture, email_verified) are always available
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token && user) {
+      authAPI.getProfile()
+        .then(response => {
+          const data = response?.data || response;
+          if (data?.id) {
+            setUser(prev => ({ ...prev, ...data }));
+          }
+        })
+        .catch(() => { });
+    }
+  }, []);
+
   const login = async (credentials, role) => {
     const { identifier, password } = credentials;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       console.log('[auth] login start', { identifier, role });
       const response = await authAPI.login(identifier, password, role);
@@ -54,22 +69,25 @@ export const AuthProvider = ({ children }) => {
         userRole: response?.user?.role,
         userId: response?.user?.id,
       });
-      
-      
+
+
       const apiClient = (await import('../services/api')).default;
       apiClient.setTokens(response.token, response.refreshToken);
       console.log('[auth] tokens saved to api client + localStorage');
-      
-      
+
+
       setUser(response.user);
       console.log('[auth] user state scheduled', { role: response?.user?.role });
-      
-      
-      if (response.user.password_change_required) {
+
+
+      // Delay modal if employee needs verification
+      const needsVerification = response.user.role.toUpperCase() === 'EMPLOYEE' && !response.user.email_verified;
+
+      if (response.user.password_change_required && !needsVerification) {
         setIsForcedPasswordChange(true);
         setShowPasswordChangeModal(true);
       }
-      
+
       return response.user;
     } catch (err) {
       console.log('[auth] login error', err);
@@ -84,12 +102,12 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       console.log('[auth] logout called');
-      
+
       const apiClient = (await import('../services/api')).default;
       apiClient.clearTokens();
       console.log('[auth] tokens cleared');
-      
-      
+
+
       setUser(null);
       setError(null);
     } catch (err) {
@@ -101,22 +119,40 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.updateProfile(updates);
-      
-      
+
+
       if (response && response.data) {
-        
+
         setUser(response.data);
       } else if (response) {
-        
+
         setUser(response);
       } else {
-        
+
         await refreshUserProfile();
       }
-      
+
       return response;
     } catch (err) {
       const errorMessage = err.message || 'Profile update failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadProfilePicture = async (file) => {
+    try {
+      setLoading(true);
+      const response = await authAPI.uploadProfilePicture(file);
+
+      if (user && response?.profile_picture) {
+        setUser({ ...user, profile_picture: response.profile_picture });
+      }
+      return response;
+    } catch (err) {
+      const errorMessage = err.message || 'Profile picture upload failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -137,6 +173,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const requestOTP = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.requestOTP();
+      return response;
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to request verification code';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOTP = async (otpCode) => {
+    try {
+      setLoading(true);
+      const response = await authAPI.verifyOTP(otpCode);
+
+      // Update local user state as verified
+      if (user) {
+        const updatedUser = { ...user, email_verified: true };
+        setUser(updatedUser);
+
+        // Show password change modal now if it was delayed
+        if (updatedUser.password_change_required) {
+          setIsForcedPasswordChange(true);
+          setShowPasswordChangeModal(true);
+        }
+      }
+
+      return response;
+    } catch (err) {
+      const errorMessage = err.message || 'Verification failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshUserProfile = async () => {
     try {
       console.log('[auth] refreshUserProfile start');
@@ -147,27 +224,27 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Profile refresh error:', err);
       console.log('[auth] refreshUserProfile failed -> logout', err);
-      
+
       await logout();
     }
   };
 
   const hasPermission = (path) => {
     console.log('hasPermission check for path:', path, 'user role:', user?.role);
-    
+
     if (!user) {
       console.log('No user found, permission denied');
       return false;
     }
-    
+
     const allowedPaths = ROLE_PERMISSIONS[user.role.toLowerCase()];
     console.log('Allowed paths for role:', user.role, allowedPaths);
-    
+
     if (!allowedPaths) {
       console.log('No allowed paths found for role:', user.role);
       return false;
     }
-    
+
     const hasAccess = allowedPaths.some(allowedPath => {
       if (allowedPath.endsWith('/*')) {
         const matches = path.startsWith(allowedPath.slice(0, -2));
@@ -178,14 +255,14 @@ export const AuthProvider = ({ children }) => {
       console.log('Exact path check:', allowedPath, 'vs', path, 'matches:', matches);
       return matches;
     });
-    
+
     console.log('Final permission result for', path, ':', hasAccess);
     return hasAccess;
   };
 
   const getRoleRedirectPath = () => {
     if (!user) return '/login';
-    
+
     switch (user.role.toUpperCase()) {
       case 'ADMIN':
       case 'SUPER_ADMIN':
@@ -209,6 +286,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateProfile,
+    uploadProfilePicture,
     changePassword,
     refreshUserProfile,
     hasPermission,
@@ -221,6 +299,8 @@ export const AuthProvider = ({ children }) => {
     setShowPasswordChangeModal,
     isForcedPasswordChange,
     setIsForcedPasswordChange,
+    requestOTP,
+    verifyOTP,
     ROLES
   };
 

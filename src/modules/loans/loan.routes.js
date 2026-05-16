@@ -18,6 +18,7 @@ router.get('/my-loans/:loanId', LoanController.getUserLoanById);
 router.get('/check-eligibility', LoanController.checkEligibility);
 router.get('/eligibility-score', LoanController.getEligibilityScore);
 router.get('/calculate-schedule', LoanController.calculateLoanSchedule);
+router.get('/check-guarantor/:employeeId', LoanController.checkGuarantorCapacity);
 
 
 router.get('/', roleMiddleware(['ADMIN', 'LOAN_COMMITTEE', 'SUPER_ADMIN']), LoanController.getAllLoans);

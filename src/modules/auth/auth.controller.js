@@ -178,7 +178,37 @@ class AuthController {
     }
   }
 
-
+  static async uploadProfilePicture(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No image file provided'
+        });
+      }
+      
+      const userId = req.userId;
+      const profilePicturePath = `/uploads/profile-pictures/${req.file.filename}`;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const result = await AuthService.updateProfilePicture(userId, profilePicturePath, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: 'Profile picture uploaded successfully',
+        data: {
+          profile_picture: profilePicturePath
+        }
+      });
+    } catch (error) {
+      console.error('Upload profile picture error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload profile picture'
+      });
+    }
+  }
 
   static async forceChangePassword(req, res) {
     try {
@@ -206,6 +236,56 @@ class AuthController {
       res.status(500).json({
         success: false,
         message: 'Internal server error'
+      });
+    }
+  }
+
+  static async requestOTP(req, res) {
+    try {
+      const userId = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      const result = await AuthService.requestOTP(userId, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error('Request OTP error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to send verification code'
+      });
+    }
+  }
+
+  static async verifyOTP(req, res) {
+    try {
+      const { otpCode } = req.body;
+      const userId = req.userId;
+      const ip = req.ip;
+      const userAgent = req.get('User-Agent');
+      
+      if (!otpCode) {
+        return res.status(400).json({
+          success: false,
+          message: 'Verification code is required'
+        });
+      }
+      
+      const result = await AuthService.verifyOTP(userId, otpCode, ip, userAgent);
+      
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Verification failed'
       });
     }
   }

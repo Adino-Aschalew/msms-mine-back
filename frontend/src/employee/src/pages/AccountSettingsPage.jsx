@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../../../shared/contexts/AuthContext';
+import { authAPI } from '../../../shared/services/authAPI';
 
 
 const Section = ({ title, description, children, icon: Icon }) => (
@@ -82,6 +83,7 @@ const AccountSettingsPage = () => {
   const [showPasswords, setShowPasswords] = useState({ current: false, next: false, confirm: false });
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [activeTab, setActiveTab] = useState('appearance');
 
@@ -98,13 +100,11 @@ const AccountSettingsPage = () => {
     { id: 'system', label: 'System', icon: Monitor, desc: 'Follows OS setting', color: 'blue' },
   ];
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
     setPasswordError('');
-    if (passwords.current !== 'password') {
-      setPasswordError('Current password is incorrect.');
-      return;
-    }
+    setPasswordSuccess(false);
+
     if (passwords.next.length < 8) {
       setPasswordError('New password must be at least 8 characters.');
       return;
@@ -113,9 +113,27 @@ const AccountSettingsPage = () => {
       setPasswordError('New passwords do not match.');
       return;
     }
-    setPasswordSuccess(true);
-    setPasswords({ current: '', next: '', confirm: '' });
-    setTimeout(() => setPasswordSuccess(false), 4000);
+
+    try {
+      setPasswordLoading(true);
+      const res = await authAPI.changePassword({
+        currentPassword: passwords.current,
+        newPassword: passwords.next,
+        confirmPassword: passwords.confirm
+      });
+
+      if (res.success || res.message === 'Password changed successfully') {
+        setPasswordSuccess(true);
+        setPasswords({ current: '', next: '', confirm: '' });
+        setTimeout(() => setPasswordSuccess(false), 4000);
+      } else {
+        setPasswordError(res.message || 'Failed to change password');
+      }
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || error.message || 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   return (
@@ -183,7 +201,7 @@ const AccountSettingsPage = () => {
                       <p className={`text-sm font-bold ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-200'}`}>{opt.label}</p>
                       <p className="text-xs text-gray-400">{opt.desc}</p>
                     </div>
-                    {isActive && <FiCheck className="w-4 h-4 text-blue-600 ml-auto" />}
+                    {isActive && <Check className="w-4 h-4 text-blue-600 ml-auto" />}
                   </button>
                 );
               })}
@@ -217,13 +235,13 @@ const AccountSettingsPage = () => {
           <Section title="Change Password" description="Update your login credentials">
             {passwordSuccess && (
               <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2">
-                <FiCheck className="w-4 h-4 text-emerald-600" />
+                <Check className="w-4 h-4 text-emerald-600" />
                 <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Password changed successfully.</p>
               </div>
             )}
             {passwordError && (
               <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2">
-                <FiAlertCircle className="w-4 h-4 text-red-500" />
+                <AlertCircle className="w-4 h-4 text-red-500" />
                 <p className="text-sm font-bold text-red-600 dark:text-red-400">{passwordError}</p>
               </div>
             )}
@@ -248,18 +266,24 @@ const AccountSettingsPage = () => {
                       onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key] }))}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showPasswords[key] ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                      {showPasswords[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
               ))}
               <button
                 type="submit"
-                disabled={!passwords.current || !passwords.next || !passwords.confirm}
-                className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                disabled={!passwords.current || !passwords.next || !passwords.confirm || passwordLoading}
+                className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity flex items-center justify-center"
               >
-                <FiLock className="inline w-4 h-4 mr-2" />
-                Update Password
+                {passwordLoading ? (
+                  <div className="w-5 h-5 border-2 border-white dark:border-gray-900 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Lock className="inline w-4 h-4 mr-2" />
+                    Update Password
+                  </>
+                )}
               </button>
             </form>
           </Section>
@@ -300,7 +324,7 @@ const AccountSettingsPage = () => {
                     <p className="text-xs text-gray-400">{row.desc}</p>
                   </div>
                   <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-bold uppercase tracking-wider">
-                    <FiDownload className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5" />
                     {row.format}
                   </button>
                 </div>
@@ -312,7 +336,7 @@ const AccountSettingsPage = () => {
             <div className="space-y-4">
               <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl">
                 <div className="flex items-start gap-3 mb-4">
-                  <FiAlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-red-800 dark:text-red-400 uppercase tracking-tight">Delete Account</p>
                     <p className="text-xs text-red-600 dark:text-red-500 mt-1">
@@ -334,7 +358,7 @@ const AccountSettingsPage = () => {
                     onClick={logout}
                     className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black uppercase tracking-widest text-sm disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                   >
-                    <FiTrash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                     Delete My Account
                   </button>
                 </div>

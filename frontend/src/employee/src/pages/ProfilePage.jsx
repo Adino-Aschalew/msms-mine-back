@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 import { employeeAPI } from '../../../shared/services/employeeAPI';
+import { authAPI } from '../../../shared/services/authAPI';
 import { formatDate } from 'date-fns';
 
 
@@ -66,17 +67,25 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
+const getProfilePictureUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:9999';
+  return `${baseUrl}${path}`;
+};
+
 const ProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, uploadProfilePicture } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
   const avatarInputRef = useRef(null);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', address: '', dateOfBirth: '', emergencyContact: '', bio: '', department: '', position: '', employeeId: '', startDate: '', employmentType: '' });
+  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', department: '', position: '', employeeId: '', startDate: '', employmentType: '' });
 
   const showNotification = (message, type = 'success') => setToast({ message, type });
 
@@ -88,22 +97,44 @@ const ProfilePage = () => {
   const handleCancel = () => { loadProfileData(); setIsEditing(false); };
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file?.type.startsWith('image/')) { showNotification('Please select an image', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => { updateProfile({ avatar: ev.target.result }); showNotification('Avatar updated!'); };
-    reader.readAsDataURL(file);
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showNotification('Please select an image', 'error'); return; }
+    
+    try {
+      await uploadProfilePicture(file);
+      showNotification('Avatar updated successfully!');
+    } catch (error) {
+      showNotification('Failed to upload avatar', 'error');
+    }
   };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) { showNotification('Passwords do not match', 'error'); return; }
     if (passwordData.newPassword.length < 8) { showNotification('Password too short', 'error'); return; }
-    await new Promise(r => setTimeout(r, 1000));
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setShowPasswordModal(false);
-    showNotification('Password changed!');
+
+    try {
+      setPasswordLoading(true);
+      const res = await authAPI.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword
+      });
+
+      if (res.success || res.message === 'Password changed successfully') {
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordModal(false);
+        showNotification('Password changed successfully!');
+      } else {
+        showNotification(res.message || 'Failed to change password', 'error');
+      }
+    } catch (error) {
+      showNotification(error.response?.data?.message || error.message || 'Failed to change password', 'error');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const tabs = [
@@ -120,8 +151,8 @@ const ProfilePage = () => {
       setFormData({
         fullName: data.employeeProfile?.first_name ? `${data.employeeProfile.first_name} ${data.employeeProfile.last_name}` : data.user?.name || 'N/A',
         email: data.user?.email || 'N/A', phone: data.employeeProfile?.phone || 'Not provided',
-        address: data.employeeProfile?.address || 'Not provided', dateOfBirth: data.employeeProfile?.date_of_birth ? data.employeeProfile.date_of_birth.split('T')[0] : '',
-        emergencyContact: data.employeeProfile?.emergency_contact || 'Not provided', bio: data.employeeProfile?.bio || '',
+        dateOfBirth: data.employeeProfile?.date_of_birth ? data.employeeProfile.date_of_birth.split('T')[0] : '',
+        bio: data.employeeProfile?.bio || '',
         department: data.employeeProfile?.department || 'N/A', position: data.employeeProfile?.position || 'N/A',
         employeeId: data.employeeProfile?.employee_id || 'N/A', startDate: data.employeeProfile?.hire_date ? new Date(data.employeeProfile.hire_date).toLocaleDateString() : 'N/A',
         employmentType: data.employeeProfile?.employment_type || 'Full-time',
@@ -138,7 +169,7 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-12">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {}
+      { }
       <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -153,7 +184,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {}
+      { }
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div className="bg-gradient-to-br from-blue-500 via-blue-900 to-blue-600 rounded-3xl shadow-2xl overflow-hidden relative">
           <div className="absolute inset-0 bg-black/10" />
@@ -162,8 +193,8 @@ const ProfilePage = () => {
             <div className="absolute -top-16 left-1/2 -translate-x-1/2">
               <div className="relative">
                 <div className="w-36 h-36 bg-white rounded-full shadow-2xl">
-                  <div className="w-full h-full bg-gradient-to-br from-blue-800 to-blue-400 rounded-full flex items-center justify-center border-4 border-white">
-                    {user?.avatar ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" /> : <span className="text-5xl font-bold text-white">{formData.fullName.charAt(0)}</span>}
+                  <div className="w-full h-full bg-gradient-to-br from-blue-800 to-blue-400 rounded-full flex items-center justify-center border-4 border-white overflow-hidden">
+                    {user?.profile_picture ? <img src={getProfilePictureUrl(user.profile_picture)} alt="Profile" className="w-full h-full object-cover" /> : <span className="text-5xl font-bold text-white">{formData.fullName.charAt(0) || 'U'}</span>}
                   </div>
                 </div>
                 <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
@@ -176,20 +207,20 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {}
+      { }
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Department" value={formData.department} icon={Building} color="blue" />
-          <StatCard label="Employee ID" value={formData.employeeId} icon={BadgeCheck} color="green" />
-          <StatCard label="Start Date" value={formData.startDate} icon={Calendar} color="purple" />
-          <StatCard label="Employment" value={formData.employmentType} icon={Sparkles} color="orange" />
+          <StatCard label="Department" value={formData.department} icon={Building} color="gray" />
+          <StatCard label="Employee ID" value={formData.employeeId} icon={BadgeCheck} color="gray" />
+          <StatCard label="Start Date" value={formData.startDate} icon={Calendar} color="gray" />
+          <StatCard label="Employment" value={formData.employmentType} icon={Sparkles} color="gray" />
         </div>
       </div>
 
-      {}
+      { }
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-          {}
+          { }
           <div className="border-b border-gray-100">
             <div className="flex gap-1 p-2">
               {tabs.map((tab) => {
@@ -215,10 +246,6 @@ const ProfilePage = () => {
                     <InputField label="Full Name" value={formData.fullName} onChange={(v) => handleChange('fullName', v)} disabled={!isEditing} icon={User} />
                     <InputField label="Email" value={formData.email} onChange={(v) => handleChange('email', v)} disabled={!isEditing} icon={Mail} />
                     <InputField label="Phone" value={formData.phone} onChange={(v) => handleChange('phone', v)} disabled={!isEditing} icon={Phone} />
-                    <InputField label="Date of Birth" value={formData.dateOfBirth} onChange={(v) => handleChange('dateOfBirth', v)} disabled={!isEditing} type="date" icon={Calendar} />
-                    <div className="md:col-span-2"><InputField label="Address" value={formData.address} onChange={(v) => handleChange('address', v)} disabled={!isEditing} icon={MapPin} /></div>
-                    <div className="md:col-span-2"><InputField label="Bio" value={formData.bio} onChange={(v) => handleChange('bio', v)} disabled={!isEditing} textarea /></div>
-                    <div className="md:col-span-2"><InputField label="Emergency Contact" value={formData.emergencyContact} onChange={(v) => handleChange('emergencyContact', v)} disabled={!isEditing} icon={Phone} /></div>
                   </div>
                   {isEditing && (
                     <div className="flex justify-end gap-3 mt-6">
@@ -246,15 +273,6 @@ const ProfilePage = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-emerald-100 rounded-lg"><TrendingUp className="w-5 h-5 text-emerald-600" /></div>
-                    <h3 className="text-xl font-bold">Performance</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard label="Attendance" value="94%" icon={Activity} color="blue" />
-                    <StatCard label="Goals" value="112%" icon={Target} color="green" />
-                    <StatCard label="Rating" value="4.8/5" icon={Award} color="purple" />
-                  </div>
                 </div>
               </div>
             )}
@@ -265,7 +283,7 @@ const ProfilePage = () => {
                   <div className="p-2 bg-red-100 rounded-lg"><Shield className="w-5 h-5 text-red-600" /></div>
                   <h3 className="text-xl font-bold">Security</h3>
                 </div>
-                {[{ icon: Lock, title: 'Change Password', desc: 'Update your password', action: 'Change', onClick: () => setShowPasswordModal(true) }, { icon: Shield, title: '2FA', desc: 'Add extra security', action: 'Enable' }, { icon: Settings, title: 'Privacy', desc: 'Control preferences', action: <ChevronRight className="w-5 h-5" /> }].map((item, i) => (
+                {[{ icon: Lock, title: 'Change Password', desc: 'Update your password', action: 'Change', onClick: () => setShowPasswordModal(true) }].map((item, i) => (
                   <div key={i} className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-300 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-white rounded-xl"><item.icon className="w-6 h-6 text-gray-600" /></div>
@@ -280,7 +298,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {}
+      { }
       <Modal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} title="Change Password">
         <form onSubmit={handlePasswordSubmit} className="space-y-5">
           {[{ key: 'currentPassword', label: 'Current' }, { key: 'newPassword', label: 'New' }, { key: 'confirmPassword', label: 'Confirm' }].map(({ key, label }) => (
@@ -305,8 +323,10 @@ const ProfilePage = () => {
             </div>
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-gray-100">Cancel</button>
-            <button type="submit" className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium">Update</button>
+            <button type="button" onClick={() => setShowPasswordModal(false)} disabled={passwordLoading} className="flex-1 px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50">Cancel</button>
+            <button type="submit" disabled={passwordLoading} className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium disabled:opacity-50 flex items-center justify-center">
+              {passwordLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Update'}
+            </button>
           </div>
         </form>
       </Modal>

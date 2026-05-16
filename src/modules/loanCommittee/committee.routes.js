@@ -25,6 +25,8 @@ router.get('/applications/export', CommitteeController.exportApplications);
 
 router.get('/dashboard', CommitteeController.getDashboardData);
 router.get('/reports', CommitteeController.getReportsData);
+router.get('/guarantor-exposure', CommitteeController.getGuarantorExposure);
+router.get('/loans/:loanId/repayment-schedule', CommitteeController.getRepaymentSchedule);
 
 
 router.get('/meetings', CommitteeController.getCommitteeMeetings);
@@ -37,6 +39,8 @@ router.get('/profile', CommitteeController.getProfile);
 router.put('/profile', auditMiddleware('PROFILE_UPDATED'), CommitteeController.updateProfile);
 router.get('/stats', CommitteeController.getCommitteeStats);
 router.get('/workload', CommitteeController.getCommitteeWorkload);
+router.get('/security/overview', CommitteeController.getSecurityOverview);
+router.get('/activity-log', CommitteeController.getActivityLog);
 
 
 router.get('/applications/:applicationId/history', CommitteeController.getApplicationHistory);

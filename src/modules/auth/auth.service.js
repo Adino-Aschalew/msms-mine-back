@@ -85,7 +85,7 @@ class AuthService {
       
       await query(`
         UPDATE users 
-        SET password = ?, reset_token = NULL, reset_token_expiry = NULL, updated_at = NOW()
+        SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL, updated_at = NOW()
         WHERE id = ?
       `, [hashedPassword, user.id]);
 
@@ -103,7 +103,7 @@ class AuthService {
     }
   }
 
-  static async login(identifier, password, ip, userAgent) {
+  static async login(identifier, password, role, ip, userAgent) {
     try {
       console.log('Login attempt - identifier:', identifier);
       
@@ -120,23 +120,17 @@ class AuthService {
         user = await this.findByEmail(identifier);
         console.log('Email-based login, found user:', user ? `YES (role: ${user.role})` : 'NO');
         
-        if (user && user.role === 'EMPLOYEE') {
-          throw new Error('Employees must log in with their Employee ID, not email');
-        }
-        
-        
-        if (user && ['ADMIN', 'SUPER_ADMIN', 'HR', 'FINANCE_ADMIN', 'LOAN_COMMITTEE'].includes(user.role)) {
-          
-          console.log('Admin/Staff login successful with email');
-        }
+        // Employees are now allowed to login with email
       } else {
         
         console.log('Attempting employee ID login for:', identifier);
         user = await this.findByEmployeeId(identifier.toUpperCase());
         console.log('Employee ID login, found user:', user ? `YES (role: ${user.role})` : 'NO');
         
-        if (user && user.role !== 'EMPLOYEE') {
-          throw new Error('Staff and administrators must log in with their email address');
+        if (user && user.role === 'EMPLOYEE') {
+          console.log('Employee ID login successful for:', identifier);
+        } else if (user) {
+          console.log('Staff ID login successful for:', identifier);
         }
       }
       
@@ -186,7 +180,9 @@ class AuthService {
           last_name: user.last_name,
           department: user.department,
           job_grade: user.job_grade,
-          password_change_required: user.password_change_required || false
+          email_verified: user.email_verified || false,
+          password_change_required: user.password_change_required || false,
+          created_at: user.created_at
         },
         token,
         refreshToken
@@ -257,6 +253,7 @@ class AuthService {
         job_title: profile.job_title || '',
         job_grade: user.job_grade,
         employment_status: user.employment_status,
+        profile_picture: user.profile_picture || null,
         created_at: user.created_at,
         last_login: user.last_login
       };
@@ -265,29 +262,10 @@ class AuthService {
     }
   }
 
-  static async updateProfile(userId, profileData, ip, userAgent) {
-    try {
-      const { first_name, last_name, phone, address } = profileData;
-      
-      await this.updateUserProfile(userId, {
-        first_name,
-        last_name,
-        phone,
-        address
-      });
 
-      await auditLog(userId, 'PROFILE_UPDATE', 'employee_profiles', userId, null, { first_name, last_name, phone, address }, ip, userAgent);
-
-      return { message: 'Profile updated successfully' };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  
   static async findByEmployeeId(employee_id) {
     const selectQuery = `
-      SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
+      SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status, ep.profile_picture
       FROM users u
       LEFT JOIN employee_profiles ep ON u.id = ep.user_id
       WHERE u.employee_id = ?
@@ -300,7 +278,7 @@ class AuthService {
     try {
       console.log('Finding user by email:', email);
       const selectQuery = `
-        SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
+        SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status, ep.profile_picture
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         WHERE u.email = ?
@@ -316,7 +294,7 @@ class AuthService {
 
   static async findById(userId) {
     const selectQuery = `
-      SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
+      SELECT u.*, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status, ep.profile_picture
       FROM users u
       LEFT JOIN employee_profiles ep ON u.id = ep.user_id
       WHERE u.id = ?
@@ -407,37 +385,29 @@ class AuthService {
   }
 
   static async updateProfile(userId, profileData, ip, userAgent) {
-    const { 
-      first_name, 
-      last_name, 
-      phone_number,
-      address
-    } = profileData;
-
     try {
+      const { first_name, last_name, phone_number, address } = profileData;
       
       await query(`
         UPDATE users 
         SET first_name = ?, last_name = ?, updated_at = NOW()
         WHERE id = ?
       `, [first_name, last_name, userId]);
-
-      
       
       const profiles = await query('SELECT user_id FROM employee_profiles WHERE user_id = ?', [userId]);
       
       if (profiles.length > 0) {
         await query(`
           UPDATE employee_profiles 
-          SET first_name = ?, last_name = ?, phone_number = ?, address = ?, updated_at = NOW()
+          SET first_name = ?, last_name = ?, phone = ?, address = ?, updated_at = NOW()
           WHERE user_id = ?
-        `, [first_name, last_name, phone_number, address || null, userId]);
+        `, [first_name, last_name, phone_number || null, address || null, userId]);
       } else {
         
         await query(`
-          INSERT INTO employee_profiles (user_id, first_name, last_name, phone_number, address)
+          INSERT INTO employee_profiles (user_id, first_name, last_name, phone, address)
           VALUES (?, ?, ?, ?, ?)
-        `, [userId, first_name, last_name, phone_number, address || null]);
+        `, [userId, first_name, last_name, phone_number || null, address || null]);
       }
 
       
@@ -445,16 +415,34 @@ class AuthService {
         updated_fields: Object.keys(profileData) 
       }, ip, userAgent);
 
-      
-      const updatedUserData = await this.getProfile(userId);
-
       return {
         success: true,
-        message: 'Profile updated successfully',
-        data: updatedUserData
+        message: 'Profile updated successfully'
       };
     } catch (error) {
       console.error('Update profile service error:', error);
+      throw error;
+    }
+  }
+
+  static async updateProfilePicture(userId, profilePicturePath, ip, userAgent) {
+    try {
+      await query(`
+        UPDATE employee_profiles 
+        SET profile_picture = ?, updated_at = NOW()
+        WHERE user_id = ?
+      `, [profilePicturePath, userId]);
+
+      await auditLog(userId, 'PROFILE_PICTURE_UPDATED', 'employee_profiles', userId, null, { 
+        profile_picture: profilePicturePath 
+      }, ip, userAgent);
+
+      return {
+        success: true,
+        message: 'Profile picture updated successfully'
+      };
+    } catch (error) {
+      console.error('Update profile picture service error:', error);
       throw error;
     }
   }
@@ -498,6 +486,11 @@ class AuthService {
         SET password_hash = ?, password_change_required = FALSE, updated_at = NOW()
         WHERE id = ?
       `, [newPasswordHash, userId]);
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
 
     } catch (error) {
       console.error('Change password error:', error);
@@ -553,6 +546,88 @@ class AuthService {
 
     } catch (error) {
       console.error('Force change password error:', error);
+      throw error;
+    }
+  }
+
+  static async requestOTP(userId, ip, userAgent) {
+    try {
+      const user = await this.findById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.role !== 'EMPLOYEE') {
+        throw new Error('Verification is only required for employees');
+      }
+
+      // Generate 6-digit OTP
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 1 * 60 * 1000); // 1 minute expiry (60 seconds)
+
+      // Save to database
+      await query(`
+        INSERT INTO otp_verifications (user_id, otp_code, expires_at)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE otp_code = VALUES(otp_code), expires_at = VALUES(expires_at)
+      `, [userId, otpCode, expiresAt]);
+
+      // Send email
+      const NotificationService = require('../../services/notification.service');
+      const subject = 'Your MSMS Verification Code';
+      const message = `
+        <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+          <h2 style="color: #2563eb; text-align: center;">Email Verification</h2>
+          <p>Dear ${user.first_name},</p>
+          <p>Please use the following 6-digit verification code to verify your MSMS account:</p>
+          <div style="background: #f8fafc; padding: 15px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+            ${otpCode}
+          </div>
+          <p>This code will expire in 60 seconds.</p>
+          <p>If you did not request this code, please ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #64748b; text-align: center;">MSMS Team</p>
+        </div>
+      `;
+
+      await NotificationService.sendEmail(user.email, subject, message);
+      await auditLog(userId, 'OTP_REQUESTED', 'users', userId, null, { email: user.email }, ip, userAgent);
+
+      return { success: true, message: 'Verification code sent to your email' };
+    } catch (error) {
+      console.error('Request OTP error:', error);
+      throw error;
+    }
+  }
+
+  static async verifyOTP(userId, otpCode, ip, userAgent) {
+    try {
+      const [otpRecord] = await query(`
+        SELECT * FROM otp_verifications 
+        WHERE user_id = ? AND otp_code = ?
+        ORDER BY created_at DESC LIMIT 1
+      `, [userId, otpCode]);
+
+      if (!otpRecord) {
+        throw new Error('Invalid verification code');
+      }
+
+      const now = new Date();
+      if (new Date(otpRecord.expires_at) < now) {
+        throw new Error('Verification code has expired. Please request a new one.');
+      }
+
+      // Mark as verified
+      await query('UPDATE users SET email_verified = TRUE, updated_at = NOW() WHERE id = ?', [userId]);
+      
+      // Delete OTP records for this user
+      await query('DELETE FROM otp_verifications WHERE user_id = ?', [userId]);
+
+      await auditLog(userId, 'EMAIL_VERIFIED', 'users', userId, null, null, ip, userAgent);
+
+      return { success: true, message: 'Email verified successfully' };
+    } catch (error) {
+      console.error('Verify OTP error:', error);
       throw error;
     }
   }

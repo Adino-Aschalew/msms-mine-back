@@ -21,6 +21,7 @@ router.get('/stats', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.g
 router.get('/admins', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getAllAdmins);
 router.get('/activity', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getSystemActivity);
 router.get('/statistics', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getAdminStatistics);
+router.get('/overview', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.getAdminStatistics);
 
 
 router.put('/admins/:adminId', roleMiddleware(['SUPER_ADMIN', 'ADMIN']), AdminController.updateAdmin);

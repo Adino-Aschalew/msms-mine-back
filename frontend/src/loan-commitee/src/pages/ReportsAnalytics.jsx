@@ -13,6 +13,7 @@ import {
   ChevronDown,
   FileText
 } from 'lucide-react';
+import { formatETB } from '../utils/helpers';
 
 const ReportsAnalytics = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -49,6 +50,7 @@ const ReportsAnalytics = () => {
   ];
 
   const [reportsData, setReportsData] = useState(null);
+  const [guarantorExposure, setGuarantorExposure] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,9 +60,17 @@ const ReportsAnalytics = () => {
   const fetchReportsData = async () => {
     try {
       setLoading(true);
-      const res = await committeeAPI.getReportsData();
+      const [res, exposureRes] = await Promise.all([
+        committeeAPI.getReportsData(),
+        committeeAPI.getGuarantorExposure()
+      ]);
+      
       if (res && res.data) {
         setReportsData(res.data);
+      }
+      
+      if (exposureRes && exposureRes.data && exposureRes.data.success) {
+        setGuarantorExposure(exposureRes.data.data);
       }
     } catch (error) {
       console.error('Error fetching reports data:', error);
@@ -150,10 +160,21 @@ const ReportsAnalytics = () => {
 
   const calculateSizeDist = () => {
     if (!reportsData?.sizeDistribution) return { labels: [], dataset: [] };
-    const order = ['< $5K', '$5K-$10K', '$10K-$20K', '$20K-$50K', '> $50K'];
-    const distMap = { '< $5K': 0, '$5K-$10K': 0, '$10K-$20K': 0, '$20K-$50K': 0, '> $50K': 0 };
+    const order = ['< 5K ETB', '5K-10K ETB', '10K-20K ETB', '20K-50K ETB', '> 50K ETB'];
+    const distMap = { '< 5K ETB': 0, '5K-10K ETB': 0, '10K-20K ETB': 0, '20K-50K ETB': 0, '> 50K ETB': 0 };
     let total = 0;
-    reportsData.sizeDistribution.forEach(d => { distMap[d.category] = d.count; total += d.count; });
+    reportsData.sizeDistribution.forEach(d => {
+      const categoryMap = {
+        '< $5K': '< 5K ETB',
+        '$5K-$10K': '5K-10K ETB',
+        '$10K-$20K': '10K-20K ETB',
+        '$20K-$50K': '20K-50K ETB',
+        '> $50K': '> 50K ETB'
+      };
+      const mappedCategory = categoryMap[d.category] || d.category;
+      distMap[mappedCategory] = d.count; 
+      total += d.count; 
+    });
     return { labels: order, dataset: order.map(k => total > 0 ? Math.round((distMap[k] / total) * 100) : 0) };
   };
 
@@ -202,7 +223,7 @@ const ReportsAnalytics = () => {
     },
     {
       title: 'Total Portfolio Value',
-      value: `$${(parseFloat(reportsData?.summaryStats?.total_portfolio || 0)).toLocaleString()}`,
+      value: formatETB(reportsData?.summaryStats?.total_portfolio || 0),
       change: 'Tracked',
       changeType: 'neutral',
       icon: <DollarSign className="w-6 h-6" />,
@@ -210,7 +231,7 @@ const ReportsAnalytics = () => {
     },
     {
       title: 'Average Loan Size',
-      value: `$${(parseFloat(reportsData?.summaryStats?.avg_loan_size || 0)).toLocaleString()}`,
+      value: formatETB(reportsData?.summaryStats?.avg_loan_size || 0),
       change: 'Calculated',
       changeType: 'neutral',
       icon: <TrendingUp className="w-6 h-6" />,
@@ -234,11 +255,7 @@ const ReportsAnalytics = () => {
     totalAmount: tb.totalAmount
   })) || [];
 
-  
-  const guarantorExposure = [
-    { name: 'Jane Smith', department: 'Marketing', guaranteedAmount: 25000, activeGuarantees: 2 },
-    { name: 'Mike Johnson', department: 'Sales', guaranteedAmount: 30000, activeGuarantees: 3 }
-  ];
+
 
   const handleExport = (format) => {
     console.log(`Exporting report as ${format}`);
@@ -472,7 +489,7 @@ const ReportsAnalytics = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    ${borrower.totalAmount.toLocaleString()}
+                    {formatETB(borrower.totalAmount)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {borrower.totalLoans} loans
@@ -506,7 +523,7 @@ const ReportsAnalytics = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    ${guarantor.guaranteedAmount.toLocaleString()}
+                    {formatETB(guarantor.guaranteedAmount)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {guarantor.activeGuarantees} active

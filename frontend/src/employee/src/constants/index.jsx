@@ -65,12 +65,10 @@ export const WITHDRAWAL_STATUS_LABELS = {
 
 export const GUARANTOR_TYPES = {
   INTERNAL: 'internal',
-  EXTERNAL: 'external',
 };
 
 export const GUARANTOR_TYPE_LABELS = {
   [GUARANTOR_TYPES.INTERNAL]: 'Internal Employee',
-  [GUARANTOR_TYPES.EXTERNAL]: 'External Guarantor',
 };
 
 export const NOTIFICATION_TYPES = {

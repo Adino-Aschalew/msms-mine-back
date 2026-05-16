@@ -13,6 +13,9 @@ import AccountSecurity from './pages/account/Security';
 import AccountActivity from './pages/account/Activity';
 import AccountPreferences from './pages/account/Preferences';
 
+import { AuthProvider } from '../../../shared/contexts/AuthContext';
+import { ThemeProvider } from '../../../shared/contexts/ThemeContext';
+
 function App() {
   const [theme, setTheme] = useState('light');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -40,145 +43,149 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <Dashboard />
-            </Layout>
-          } />
-          <Route path="/loan-requests" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <LoanRequests />
-            </Layout>
-          } />
-          <Route path="/loan-requests/:id" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <LoanDetails />
-            </Layout>
-          } />
-          <Route path="/disbursements" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <Disbursements />
-            </Layout>
-          } />
-          <Route path="/reports" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <ReportsAnalytics />
-            </Layout>
-          } />
-          <Route path="/notifications" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <Notifications />
-            </Layout>
-          } />
-          <Route path="/settings" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <Settings />
-            </Layout>
-          } />
-          <Route path="/account/profile" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <AccountProfile />
-            </Layout>
-          } />
-          <Route path="/account/security" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <AccountSecurity />
-            </Layout>
-          } />
-          <Route path="/account/activity" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <AccountActivity />
-            </Layout>
-          } />
-          <Route path="/account/preferences" element={
-            <Layout
-              theme={theme}
-              toggleTheme={toggleTheme}
-              sidebarCollapsed={sidebarCollapsed}
-              toggleSidebar={toggleSidebar}
-              mobileSidebarOpen={mobileSidebarOpen}
-              toggleMobileSidebar={toggleMobileSidebar}
-            >
-              <AccountPreferences />
-            </Layout>
-          } />
-        </Routes>
-      </div>
-    </Router>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <Dashboard />
+                </Layout>
+              } />
+              <Route path="/loan-requests" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <LoanRequests />
+                </Layout>
+              } />
+              <Route path="/loan-requests/:id" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <LoanDetails />
+                </Layout>
+              } />
+              <Route path="/disbursements" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <Disbursements />
+                </Layout>
+              } />
+              <Route path="/reports" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <ReportsAnalytics />
+                </Layout>
+              } />
+              <Route path="/notifications" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <Notifications />
+                </Layout>
+              } />
+              <Route path="/settings" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <Settings />
+                </Layout>
+              } />
+              <Route path="/account/profile" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <AccountProfile />
+                </Layout>
+              } />
+              <Route path="/account/security" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <AccountSecurity />
+                </Layout>
+              } />
+              <Route path="/account/activity" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <AccountActivity />
+                </Layout>
+              } />
+              <Route path="/account/preferences" element={
+                <Layout
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  sidebarCollapsed={sidebarCollapsed}
+                  toggleSidebar={toggleSidebar}
+                  mobileSidebarOpen={mobileSidebarOpen}
+                  toggleMobileSidebar={toggleMobileSidebar}
+                >
+                  <AccountPreferences />
+                </Layout>
+              } />
+            </Routes>
+          </div>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
