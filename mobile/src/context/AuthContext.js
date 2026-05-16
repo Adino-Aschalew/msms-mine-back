@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import api from '../api/axios';
+import { API_BASE_URL } from '../api/axios';
 
 const AuthContext = createContext({});
 
@@ -47,9 +48,12 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Invalid credentials' };
     } catch (error) {
       console.error('Login error:', error.response?.data || error.message);
+      const isNetwork = !error.response || error.message === 'Network Error';
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Login failed. Check your network.' 
+        message: error.response?.data?.message || (isNetwork
+          ? `Cannot reach server. Ensure the API is running at ${API_BASE_URL}`
+          : 'Login failed.'),
       };
     }
   };
@@ -95,10 +99,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshProfile = async () => {
+    try {
+      const response = await api.get('/users/profile');
+      if (response.data?.success && response.data.data) {
+        const profile = response.data.data;
+        await SecureStore.setItemAsync('user', JSON.stringify(profile));
+        setUser(profile);
+        return profile;
+      }
+    } catch (error) {
+      console.warn('Profile refresh failed:', error.message);
+    }
+    return null;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, loading, login, logout, setUser,
-      requestOTP, verifyOTP 
+      requestOTP, verifyOTP, refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>
