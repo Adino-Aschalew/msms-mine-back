@@ -33,6 +33,17 @@ function AppContent() {
     isForcedPasswordChange
   } = useAuth();
 
+  // Wrapper for email verification page - requires login but not full verification
+  const EmailVerificationPageWrapper = () => {
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
+    if (user.email_verified) {
+      return <Navigate to={user.role?.toLowerCase() === 'employee' ? '/employee/dashboard' : '/'} replace />;
+    }
+    return <EmailVerificationPage />;
+  };
+
   return (
     <>
       <Router>
