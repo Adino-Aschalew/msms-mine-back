@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiUsers, FiSearch, FiTrash2, FiHome, FiCheck, FiAlertCircle, FiFilter, FiDownload, FiEye, FiShield } from 'react-icons/fi';
+import { FiUsers, FiSearch, FiTrash2, FiHome, FiCheck, FiAlertCircle, FiFilter, FiDownload, FiEye, FiShield, FiXCircle } from 'react-icons/fi';
 import { guarantorsAPI } from '../../../shared/services/guarantorsAPI';
 
 const GuarantorsPage = () => {
@@ -14,6 +14,7 @@ const GuarantorsPage = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const [internalGuarantors, setInternalGuarantors] = useState([]);
+  const [guarantorRequests, setGuarantorRequests] = useState([]);
   const [selectedGuarantor, setSelectedGuarantor] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -21,14 +22,30 @@ const GuarantorsPage = () => {
 
   useEffect(() => {
     loadGuarantors();
+    loadGuarantorRequests();
   }, []);
 
   const loadGuarantors = async () => {
     try {
       const response = await guarantorsAPI.getGuarantors();
-      setInternalGuarantors(response?.data || []);
+      console.log('🔍 Guarantors API Response:', response);
+      console.log('🔍 response.data:', response?.data);
+      console.log('🔍 response.success:', response?.success);
+      const guarantors = Array.isArray(response) ? response : response?.data?.data || response?.data || [];
+      setInternalGuarantors(guarantors);
     } catch (err) {
       console.error('Failed to load guarantors:', err);
+    }
+  };
+
+  const loadGuarantorRequests = async () => {
+    try {
+      const response = await guarantorsAPI.getGuarantors({ guarantorOnly: true });
+      console.log('🔍 Guarantor Requests API Response:', response);
+      const requests = Array.isArray(response) ? response : response?.data?.data || response?.data || [];
+      setGuarantorRequests(requests.filter(g => g.status === 'PENDING'));
+    } catch (err) {
+      console.error('Failed to load guarantor requests:', err);
     }
   };
 
@@ -40,6 +57,28 @@ const GuarantorsPage = () => {
       setInternalGuarantors(results?.data || []);
     } catch (err) {
       console.error('Failed to search guarantors:', err);
+    }
+  };
+
+  const handleApproveGuarantor = async (guarantorId) => {
+    try {
+      await guarantorsAPI.updateGuarantor(guarantorId, { status: 'APPROVED' });
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+      await loadGuarantorRequests();
+    } catch (err) {
+      console.error('Failed to approve guarantor:', err);
+    }
+  };
+
+  const handleRejectGuarantor = async (guarantorId) => {
+    try {
+      await guarantorsAPI.updateGuarantor(guarantorId, { status: 'REJECTED' });
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+      await loadGuarantorRequests();
+    } catch (err) {
+      console.error('Failed to reject guarantor:', err);
     }
   };
 
@@ -81,6 +120,7 @@ const GuarantorsPage = () => {
 
   const tabs = [
     { id: 'internal', label: 'Internal Employee', icon: FiHome, count: internalGuarantors.length },
+    { id: 'requests', label: 'Guarantor Requests', icon: FiAlertCircle, count: guarantorRequests.filter(g => g.status === 'PENDING').length },
   ];
 
   const exportGuarantors = () => {
@@ -201,14 +241,14 @@ const GuarantorsPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {internalGuarantors
+                {(activeTab === 'internal' ? internalGuarantors : guarantorRequests)
                   .filter(guarantor =>
                     !searchTerm ||
                     (guarantor.guarantor_name && guarantor.guarantor_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
                     (guarantor.guarantor_id && guarantor.guarantor_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
                     (guarantor.contact_email && guarantor.contact_email.toLowerCase().includes(searchTerm.toLowerCase()))
                   ).length > 0 ? (
-                  internalGuarantors
+                  (activeTab === 'internal' ? internalGuarantors : guarantorRequests)
                     .filter(guarantor =>
                       !searchTerm ||
                       (guarantor.guarantor_name && guarantor.guarantor_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -285,6 +325,24 @@ const GuarantorsPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-2">
+                            {activeTab === 'requests' && guarantor.status === 'PENDING' && (
+                              <>
+                                <button
+                                  onClick={() => handleApproveGuarantor(guarantor.id)}
+                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                                  title="Approve"
+                                >
+                                  <FiCheck className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleRejectGuarantor(guarantor.id)}
+                                  className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                                  title="Reject"
+                                >
+                                  <FiXCircle className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                             <button
                               onClick={() => { setSelectedGuarantor(guarantor); setShowDetailsModal(true); }}
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
@@ -293,13 +351,15 @@ const GuarantorsPage = () => {
                               <FiEye className="w-4 h-4" />
                             </button>
 
-                            <button
-                              onClick={() => handleDelete(guarantor.id, guarantor.guarantor_name || guarantor.guarantor_id)}
-                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                              title="Delete"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                            </button>
+                            {activeTab === 'internal' && (
+                              <button
+                                onClick={() => handleDelete(guarantor.id, guarantor.guarantor_name || guarantor.guarantor_id)}
+                                className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                                title="Delete"
+                              >
+                                <FiTrash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -363,6 +423,124 @@ const GuarantorsPage = () => {
             >
               Verify & Try Again
             </button>
+          </div>
+        </div>
+      )}
+
+      {showDetailsModal && selectedGuarantor && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Loan Request Details</h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <FiXCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Applicant Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Name</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.applicant_first_name} {selectedGuarantor.applicant_last_name}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Username</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.applicant_username || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Loan Details</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Requested Amount</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.requested_amount ? parseFloat(selectedGuarantor.requested_amount).toLocaleString() : 'N/A'} ETB
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Purpose</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.purpose || 'Not specified'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Guarantor Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Guarantor Name</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.guarantor_name || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Relationship</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.relationship || 'Not specified'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Contact Email</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.contact_email || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Contact Phone</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedGuarantor.contact_phone || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Status</h4>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${selectedGuarantor.status === 'APPROVED'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      : selectedGuarantor.status === 'REJECTED'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                    }`}>
+                    {selectedGuarantor.status || 'Pending'}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Requested on {new Date(selectedGuarantor.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              {activeTab === 'requests' && selectedGuarantor.status === 'PENDING' && (
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => { handleApproveGuarantor(selectedGuarantor.id); setShowDetailsModal(false); }}
+                    className="flex-1 px-6 py-3 rounded-xl bg-green-600 text-white font-bold shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all"
+                  >
+                    Approve Request
+                  </button>
+                  <button
+                    onClick={() => { handleRejectGuarantor(selectedGuarantor.id); setShowDetailsModal(false); }}
+                    className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all"
+                  >
+                    Reject Request
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

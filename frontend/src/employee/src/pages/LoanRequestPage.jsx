@@ -48,7 +48,8 @@ const LoanRequestPage = () => {
       isValid: false,
       validating: false,
       error: ''
-    }
+    },
+    guarantors: []
   });
 
   const [calcResult, setCalcResult] = useState({
@@ -62,13 +63,19 @@ const LoanRequestPage = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        console.log('🔍 Fetching initial data...');
         const [eligibilityRes, profileRes] = await Promise.all([
           loansAPI.getLoanEligibility(),
           employeeAPI.getProfile()
         ]);
 
-        if (eligibilityRes.success) {
-          const { financials: f, user_data: u } = eligibilityRes.data;
+        console.log('🔍 Eligibility response:', eligibilityRes);
+        console.log('🔍 Profile response:', profileRes);
+
+        if (eligibilityRes.eligible) {
+          const { financials: f, user_data: u } = eligibilityRes;
+          console.log('🔍 Financials data received:', f);
+          console.log('🔍 User data received:', u);
           setFinancials({
             salary: f.salary,
             savings_balance: f.savings_balance,
@@ -150,19 +157,22 @@ const LoanRequestPage = () => {
     setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, validating: true, error: '', isValid: false } }));
     try {
       const res = await loansAPI.checkGuarantorCapacity(employeeId, formData.requestedAmount);
-      if (res.success && res.data.eligible) {
+      console.log('🔍 Guarantor validation response:', res);
+
+      if (res.eligible) {
         setFormData(prev => ({
           ...prev,
           guarantor: {
             ...prev.guarantor,
             isValid: true,
             validating: false,
-            fullName: res.data.guarantor_data.name,
-            department: res.data.guarantor_data.department
+            fullName: res.guarantor_data?.name || '',
+            department: res.guarantor_data?.department || ''
           }
         }));
       } else {
-        setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, isValid: false, validating: false, error: res.data.reason || 'Invalid guarantor' } }));
+        console.log('❌ Guarantor validation failed:', res);
+        setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, isValid: false, validating: false, error: res.reason || 'Invalid guarantor' } }));
       }
     } catch (error) {
       console.error('Guarantor validation error:', error);
@@ -178,28 +188,70 @@ const LoanRequestPage = () => {
     }
   };
 
+  const addGuarantor = () => {
+    if (!formData.guarantor.isValid) {
+      return;
+    }
+    if (!formData.guarantor.relationship) {
+      setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, error: 'Please enter relationship' } }));
+      return;
+    }
+    const existingIndex = formData.guarantors.findIndex(g => g.employeeId === formData.guarantor.employeeId);
+    if (existingIndex !== -1) {
+      setFormData(prev => ({ ...prev, guarantor: { ...prev.guarantor, error: 'This guarantor is already added' } }));
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      guarantors: [...prev.guarantors, {
+        employeeId: prev.guarantor.employeeId,
+        fullName: prev.guarantor.fullName,
+        department: prev.guarantor.department,
+        relationship: prev.guarantor.relationship
+      }],
+      guarantor: {
+        employeeId: '',
+        fullName: '',
+        department: '',
+        relationship: '',
+        isValid: false,
+        validating: false,
+        error: ''
+      }
+    }));
+  };
+
+  const removeGuarantor = (employeeId) => {
+    setFormData(prev => ({
+      ...prev,
+      guarantors: prev.guarantors.filter(g => g.employeeId !== employeeId)
+    }));
+  };
+
   const isEligible =
     formData.requestedAmount > 0 &&
     formData.requestedAmount <= financials.max_loan_by_savings &&
     calcResult.monthlyPayment <= financials.max_monthly_repayment &&
-    !financials.has_active_loan;
+    !financials.has_active_loan &&
+    formData.guarantors.length > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isEligible || !formData.guarantor.isValid) return;
+    if (!isEligible || formData.guarantors.length === 0) return;
 
     setIsSubmitting(true);
     try {
+      const guarantorsData = formData.guarantors.map(g => ({
+        type: 'internal',
+        employeeId: g.employeeId,
+        relationship: g.relationship
+      }));
       await loansAPI.applyForLoan({
         loan_amount: parseFloat(formData.requestedAmount),
         loan_purpose: formData.loanPurpose,
         loan_term_months: parseInt(formData.loanDuration),
         start_deduction_date: formData.startDeductionDate,
-        guarantor_details: JSON.stringify({
-          type: 'internal',
-          employeeId: formData.guarantor.employeeId,
-          relationship: formData.guarantor.relationship
-        })
+        guarantor_details: JSON.stringify(guarantorsData)
       });
       setSubmitSuccess(true);
     } catch (error) {
@@ -236,7 +288,8 @@ const LoanRequestPage = () => {
           isValid: false,
           validating: false,
           error: ''
-        }
+        },
+        guarantors: []
       });
       setErrorMsg('');
     }
@@ -270,16 +323,18 @@ const LoanRequestPage = () => {
       });
 
       // Guarantor Info
-      if (formData.guarantor.isValid) {
+      if (formData.guarantors.length > 0) {
         doc.text('Guarantor Information', 14, (doc.lastAutoTable?.finalY || 80) + 10);
+        const guarantorRows = formData.guarantors.map((g, index) => [
+          `${index + 1}. ${g.fullName}`,
+          g.employeeId,
+          g.department,
+          g.relationship || 'N/A'
+        ]);
         autoTable(doc, {
           startY: (doc.lastAutoTable?.finalY || 80) + 13,
-          body: [
-            ['Name', formData.guarantor.fullName],
-            ['Employee ID', formData.guarantor.employeeId],
-            ['Department', formData.guarantor.department],
-            ['Relationship', formData.guarantor.relationship || 'N/A']
-          ],
+          head: [['Name', 'Employee ID', 'Department', 'Relationship']],
+          body: guarantorRows,
           theme: 'grid'
         });
       }
@@ -493,10 +548,43 @@ const LoanRequestPage = () => {
                     <p className="text-xs text-green-600 font-bold uppercase">Verified Employee Found</p>
                     <p className="text-sm font-bold text-gray-900 dark:text-white">{formData.guarantor.fullName} — {formData.guarantor.department}</p>
                   </div>
-                  <CheckCircle className="text-green-500 w-6 h-6" />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={addGuarantor}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all text-sm"
+                    >
+                      Add Guarantor
+                    </button>
+                    <CheckCircle className="text-green-500 w-6 h-6" />
+                  </div>
                 </div>
               )}
               {formData.guarantor.error && <p className="text-red-500 text-xs mt-1 md:col-span-2 flex items-center gap-1 font-medium"><XCircle className="w-3 h-3" /> {formData.guarantor.error}</p>}
+
+              {/* Added Guarantors List */}
+              {formData.guarantors.length > 0 && (
+                <div className="md:col-span-2 mt-4">
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Added Guarantors ({formData.guarantors.length})</p>
+                  <div className="space-y-2">
+                    {formData.guarantors.map((g, index) => (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex justify-between items-center border border-gray-200 dark:border-gray-700">
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{g.fullName}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">ID: {g.employeeId} • {g.relationship}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeGuarantor(g.employeeId)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <XCircle className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -591,8 +679,8 @@ const LoanRequestPage = () => {
                 {calcResult.monthlyPayment <= financials.max_monthly_repayment ? <CheckCircle className="text-green-500 w-4 h-4" /> : <XCircle className="text-red-400 w-4 h-4" />}
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Guarantor Verified</span>
-                {formData.guarantor.isValid ? <CheckCircle className="text-green-500 w-4 h-4" /> : <XCircle className="text-gray-300 w-4 h-4" />}
+                <span className="text-gray-500">Guarantors Added ({formData.guarantors.length})</span>
+                {formData.guarantors.length > 0 ? <CheckCircle className="text-green-500 w-4 h-4" /> : <XCircle className="text-gray-300 w-4 h-4" />}
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">No Active Loan Processes</span>
@@ -610,8 +698,8 @@ const LoanRequestPage = () => {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!isEligible || !formData.guarantor.isValid || isSubmitting}
-              className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${isEligible && formData.guarantor.isValid && !isSubmitting
+              disabled={!isEligible || formData.guarantors.length === 0 || isSubmitting}
+              className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${isEligible && formData.guarantors.length > 0 && !isSubmitting
                 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}

@@ -92,14 +92,15 @@ const DashboardPage = () => {
       let latestPayroll = null;
       try {
         const payrollRes = await apiClient.get('/users/me/payroll', { page: 1, limit: 1 });
-        const payrollList = payrollRes?.data?.data || payrollRes?.data || payrollRes || [];
+        const payrollData = payrollRes?.data?.data || payrollRes?.data || payrollRes || {};
+        const payrollList = payrollData.history || [];
         latestPayroll = Array.isArray(payrollList) ? payrollList[0] : null;
       } catch (err) { console.warn('Payroll fetch failed:', err.message); }
 
       // --- Compute stats ---
       const account = savingsDashboard?.account || {};
-      const savingsBalance = parseFloat(account.current_balance || savingsDashboard?.totalContributions || 0);
-      const savingRate = parseFloat(account.saving_percentage || 0);
+      const savingsBalance = parseFloat(account.currentBalance || account.current_balance || savingsDashboard?.totalContributions || 0);
+      const savingRate = parseFloat(account.currentValue || account.saving_percentage || 0);
       const grossSalary = parseFloat(latestPayroll?.gross_salary || account.salary || 0);
 
       const activeLoansCount = loansData.filter(l => ['ACTIVE', 'active'].includes(l.status)).length;
