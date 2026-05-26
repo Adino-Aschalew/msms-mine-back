@@ -79,11 +79,17 @@ export const AuthProvider = ({ children }) => {
       setUser(response.user);
       console.log('[auth] user state scheduled', { role: response?.user?.role });
 
-
-      // Delay modal if employee needs verification
+      // Check if employee needs email verification
       const needsVerification = response.user.role.toUpperCase() === 'EMPLOYEE' && !response.user.email_verified;
 
-      if (response.user.password_change_required && !needsVerification) {
+      if (needsVerification) {
+        // Don't show password change modal yet - wait for email verification
+        console.log('[auth] employee needs email verification');
+        return { ...response.user, needsVerification: true };
+      }
+
+      // Show password change modal if required
+      if (response.user.password_change_required) {
         setIsForcedPasswordChange(true);
         setShowPasswordChangeModal(true);
       }

@@ -22,7 +22,7 @@ export const guarantorsAPI = {
 
   
   updateGuarantor: async (guarantorId, guarantorData) => {
-    const response = await apiClient.put(`/guarantors/${guarantorId}`, guarantorData);
+    const response = await apiClient.put(`/guarantors/${guarantorId}/status`, guarantorData);
     return response.data;
   },
 

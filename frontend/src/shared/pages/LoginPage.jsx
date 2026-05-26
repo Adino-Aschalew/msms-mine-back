@@ -70,11 +70,19 @@ const LoginPage = () => {
 
     try {
       console.log('[login] submit', { identifier: formData.identifier, isEmailMode, from });
-      
-      
+
+
       const inferredRole = isEmailMode ? 'admin' : 'employee';
       const loggedInUser = await login(formData, inferredRole);
       console.log('[login] user object received:', loggedInUser);
+
+      // Check if employee needs email verification
+      if (loggedInUser.needsVerification) {
+        console.log('[login] redirecting to email verification');
+        navigate('/verify-email', { replace: true });
+        return;
+      }
+
       // Always redirect based on the user's actual role to avoid cross-role stale path issues
       const redirectPath = getRoleRedirectPathFromUser(loggedInUser);
       console.log('[login] redirect', { redirectPath, userRole: loggedInUser?.role });
@@ -325,12 +333,6 @@ const LoginPage = () => {
         <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center justify-between text-xs" style={{ color: 'rgba(100,116,139,1)' }}>
             <span>© 2026 MSMS · All rights reserved</span>
-            <span
-              className="px-2 py-1 rounded-md"
-              style={{ background: 'rgba(30,41,59,0.6)', color: 'rgba(148,163,184,0.8)' }}
-            >
-              Our Version 1.0.0
-            </span>
           </div>
         </div>
       </div>

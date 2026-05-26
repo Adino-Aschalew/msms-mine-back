@@ -63,7 +63,7 @@ export const loansAPI = {
   
   checkGuarantorCapacity: async (employeeId, loanAmount) => {
     const response = await apiClient.get(`/loans/check-guarantor/${employeeId}`, {
-      params: { loan_amount: loanAmount }
+      loan_amount: loanAmount
     });
     return response.data;
   },
@@ -71,11 +71,9 @@ export const loansAPI = {
   
   calculateLoanEstimate: async (amount, termMonths) => {
     const response = await apiClient.get('/loans/calculate-schedule', {
-      params: { 
-        loan_amount: amount, 
-        loan_term_months: termMonths,
-        interest_rate: 5 
-      }
+      loan_amount: amount,
+      loan_term_months: termMonths,
+      interest_rate: 5
     });
     return response.data;
   }
