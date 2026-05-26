@@ -1,3 +1,4 @@
+//Theme preference context for the admin panel
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
