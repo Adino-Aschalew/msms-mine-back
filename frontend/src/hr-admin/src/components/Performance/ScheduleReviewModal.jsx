@@ -25,7 +25,7 @@ export default function ScheduleReviewModal({ isOpen, onClose, onSchedule }) {
         className="absolute inset-0 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300"
         onClick={onClose}
       />
-      
+     
       {}
       <div className="relative w-full max-w-xl glass-card rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-600 via-primary-400 to-primary-600"></div>

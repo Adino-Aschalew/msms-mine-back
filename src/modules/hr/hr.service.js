@@ -167,6 +167,19 @@ class HrService {
 
       
       if (employmentStatus === 'TERMINATED') {
+        const [activeLoansResult] = await query(`
+          SELECT COUNT(*) as active_loans_count
+          FROM loans 
+          WHERE user_id = ? AND status IN ('ACTIVE', 'OVERDUE')
+        `, [userId]);
+
+        // activeLoansResult could be the count object or an array depending on how query() processes it
+        const activeLoansCount = activeLoansResult?.active_loans_count || 0;
+        
+        if (activeLoansCount > 0) {
+          throw new Error('Cannot terminate employee: User has active/unpaid loans.');
+        }
+
         await query(`
           UPDATE users 
           SET is_active = FALSE, updated_at = NOW()
@@ -224,7 +237,7 @@ class HrService {
       
       const userResult = await query(`
         INSERT INTO users (employee_id, username, email, password_hash, role, is_active, email_verified, password_change_required, created_at)
-        VALUES (?, ?, ?, ?, ?, TRUE, TRUE, TRUE, NOW())
+        VALUES (?, ?, ?, ?, ?, TRUE, FALSE, TRUE, NOW())
       `, [employee_id, username, email, password_hash, role]);
 
       const userId = userResult.insertId;
@@ -232,10 +245,17 @@ class HrService {
       
       const { first_name, last_name, grandfather_name, phone, address, department, job_grade, job_role, salary, employment_status, hire_date } = profileData;
 
+      const gradesMap = {
+        'EXECUTIVE': 6, 'MANAGER': 5, 'SENIOR': 4, 'MID': 3,
+        'JUNIOR': 2, 'ENTRY': 1, 'SPECIALIST': 4, 'SUPERVISOR': 4,
+        'OFFICER': 2, 'CLERK': 1
+      };
+      const salary_grade = job_grade ? (gradesMap[job_grade.toUpperCase()] || 1) : 1;
+
       await query(`
-        INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, grandfather_name, department, job_grade, job_role, salary, employment_status, hire_date, phone, address, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `, [userId, employee_id, first_name, last_name, grandfather_name || null, department || null, job_grade || null, job_role || null, salary || null, employment_status || 'ACTIVE', hire_date || null, phone || null, address || null]);
+        INSERT INTO employee_profiles (user_id, employee_id, first_name, last_name, grandfather_name, department, job_grade, salary_grade, job_role, salary, employment_status, hire_date, phone, address, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [userId, employee_id, first_name, last_name, grandfather_name || null, department || null, job_grade || null, salary_grade, job_role || null, salary || null, employment_status || 'ACTIVE', hire_date || null, phone || null, address || null]);
 
       
       await auditLog(createdBy, 'EMPLOYEE_CREATED', 'users', userId, null, {
@@ -429,6 +449,20 @@ class HrService {
         params.push(department);
       }
 
+      if (job_grade !== undefined) {
+        updateFields.push('job_grade = ?');
+        params.push(job_grade);
+        
+        const gradesMap = {
+          'EXECUTIVE': 6, 'MANAGER': 5, 'SENIOR': 4, 'MID': 3,
+          'JUNIOR': 2, 'ENTRY': 1, 'SPECIALIST': 4, 'SUPERVISOR': 4,
+          'OFFICER': 2, 'CLERK': 1
+        };
+        const salary_grade = job_grade ? (gradesMap[job_grade.toUpperCase()] || 1) : 1;
+        updateFields.push('salary_grade = ?');
+        params.push(salary_grade);
+      }
+
       if (job_role !== undefined) {
         updateFields.push('job_role = ?');
         params.push(job_role);
@@ -484,7 +518,7 @@ class HrService {
 
   static async getJobGrades() {
     try {
-      const [jobGrades] = await query(`
+      const jobGrades = await query(`
         SELECT 
           job_grade,
           COUNT(*) as employee_count,
@@ -503,7 +537,7 @@ class HrService {
 
   static async getEmployeeStats() {
     try {
-      const [stats] = await query(`
+      const stats = await query(`
         SELECT 
           COUNT(*) as total_employees,
           COUNT(CASE WHEN is_active = TRUE THEN 1 END) as active_employees,
@@ -826,7 +860,7 @@ class HrService {
         dateCondition = 'AND DATE(p.payroll_date) >= DATE_SUB(NOW(), INTERVAL 365 DAY)';
       }
 
-      const [attendanceData] = await query(`
+      const attendanceData = await query(`
         SELECT 
           DATE(p.payroll_date) as date,
           COUNT(*) as totalEmployees,
@@ -853,7 +887,7 @@ class HrService {
 
   static async getDepartmentData() {
     try {
-      const [departments] = await query(`
+      const departments = await query(`
         SELECT 
           ep.department,
           COUNT(*) as totalEmployees,
@@ -873,7 +907,7 @@ class HrService {
         activeEmployees: dept.activeEmployees,
         onLeave: dept.onLeave,
         terminated: dept.terminated,
-        avgSalary: Math.round(dept.avgSalary)
+        avgSalary: Math.round(dept.avgSalary * 100) / 100
       }));
     } catch (error) {
       throw error;
@@ -883,7 +917,7 @@ class HrService {
   static async getDiversityData() {
     try {
       
-      const [genderData] = await query(`
+      const genderData = await query(`
         SELECT 
           CASE 
             WHEN ep.first_name REGEXP '^(Mohammed|Ahmed|Ali|Hassan|Omar|Abdullah|Youssef|Ibrahim|Mohamed|Abdul|Said|Khalid|Mustafa|Hussein|Abubakar|Abdi|Mohamud|Ibrahim)' THEN 'Male'
@@ -897,7 +931,7 @@ class HrService {
       `);
 
       
-      const [ageData] = await query(`
+      const ageData = await query(`
         SELECT 
           CASE 
             WHEN TIMESTAMPDIFF(YEAR, ep.hire_date, NOW()) <= 2 THEN '0-2 years'
@@ -919,7 +953,7 @@ class HrService {
       `);
 
       
-      const [departmentData] = await query(`
+      const departmentData = await query(`
         SELECT 
           ep.department as category,
           COUNT(*) as count
@@ -930,7 +964,7 @@ class HrService {
       `);
 
       
-      const [jobGradeData] = await query(`
+      const jobGradeData = await query(`
         SELECT 
           ep.job_grade as category,
           COUNT(*) as count

@@ -147,12 +147,19 @@ const validateForgotPassword = (req, res, next) => {
 };
 
 const validateResetPassword = (req, res, next) => {
-  const { token, newPassword, confirmPassword } = req.body;
+  const { otp, newPassword, confirmPassword } = req.body;
   
-  if (!token || !newPassword || !confirmPassword) {
+  if (!otp || !newPassword || !confirmPassword) {
     return res.status(400).json({
       success: false,
-      message: 'Token, new password, and confirm password are required'
+      message: 'OTP, new password, and confirm password are required'
+    });
+  }
+  
+  if (!/^\d{6}$/.test(otp)) {
+    return res.status(400).json({
+      success: false,
+      message: 'OTP must be a 6-digit number'
     });
   }
   

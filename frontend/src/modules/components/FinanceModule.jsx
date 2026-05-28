@@ -10,14 +10,14 @@ import PayrollHistory from '../../finance/src/pages/payroll/PayrollHistory';
 import Payroll from '../../finance/src/pages/payroll/Payroll';
 import Employees from '../../finance/src/pages/employees/Employees';
 import Analytics from '../../finance/src/pages/analytics/Analytics';
-import Reports from '../../finance/src/pages/reports/Reports';
+
 import Users from '../../finance/src/pages/users/Users';
-import Settings from '../../finance/src/pages/settings/Settings';
+
 import AccountProfile from '../../finance/src/pages/account/AccountProfile';
 import AccountSecurity from '../../finance/src/pages/account/AccountSecurity';
 import Accounts from '../../finance/src/pages/accounts/Accounts';
 import Budgets from '../../finance/src/pages/budgets/Budgets';
-import Invoices from '../../finance/src/pages/invoices/Invoices';
+
 import PayrollReports from '../../finance/src/pages/payroll/PayrollReports';
 import Notifications from '../../finance/src/pages/notifications/Notifications';
 import SavingsRequests from '../../finance/src/pages/savings/SavingsRequests';
@@ -42,12 +42,12 @@ const FinanceModule = () => {
             <Route path="payroll/reports" element={<PayrollReports />} />
             <Route path="employees" element={<Employees />} />
             <Route path="budgets" element={<Budgets />} />
-            <Route path="invoices" element={<Invoices />} />
+
             <Route path="analytics" element={<Analytics />} />
-            <Route path="reports" element={<Reports />} />
+
             <Route path="users" element={<Users />} />
             <Route path="notifications" element={<Notifications />} />
-            <Route path="settings" element={<Settings />} />
+
             <Route path="account/profile" element={<AccountProfile />} />
             <Route path="account/security" element={<AccountSecurity />} />
             <Route path="savings/requests" element={<SavingsRequests />} />

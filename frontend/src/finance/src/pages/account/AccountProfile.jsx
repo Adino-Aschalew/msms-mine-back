@@ -58,7 +58,6 @@ const AccountProfile = () => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: User },
     { id: 'security', label: 'Security', icon: Lock },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'activity', label: 'Activity', icon: Activity },
   ];
 
@@ -98,7 +97,6 @@ const AccountProfile = () => {
       });
     } catch (err) {
       setError('Failed to load profile data');
-      console.error('Profile fetch error:', err);
       
       setProfile({
         firstName: user?.first_name || '',
@@ -131,13 +129,8 @@ const AccountProfile = () => {
         
       };
       
-      console.log('Sending update data:', updateData);
-      
       try {
         const response = await authAPI.updateProfile(updateData);
-        console.log('Update response received:', response);
-        console.log('Response type:', typeof response);
-        console.log('Response keys:', response ? Object.keys(response) : 'Response is null/undefined');
         
         
         if (response && (response.id || response.employee_id)) {
@@ -146,15 +139,12 @@ const AccountProfile = () => {
           
           await fetchProfile();
         } else {
-          console.log('Response indicates failure:', response);
           setError('Failed to update profile - invalid response structure');
         }
       } catch (apiError) {
-        console.error('API call failed:', apiError);
         setError(apiError.message || 'API call failed');
       }
     } catch (err) {
-      console.error('General update error:', err);
       setError(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);
@@ -509,54 +499,11 @@ const AccountProfile = () => {
                         Change Password
                       </button>
                     </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                      <div className="flex items-center space-x-3">
-                        <Shield className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">Two-Factor Authentication</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Add an extra layer of security</p>
-                        </div>
-                      </div>
-                      <button className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 rounded-lg transition-colors">
-                        Enable
-                      </button>
                     </div>
-                  </div>
-                </div>
+                    </div>
               </div>
             )}
 
-            {}
-            {activeTab === 'notifications' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Notification Preferences</h3>
-                  
-                  <div className="space-y-4">
-                    {[
-                      { label: 'Email Notifications', description: 'Receive updates via email' },
-                      { label: 'Transaction Alerts', description: 'Get notified for transactions' },
-                      { label: 'Security Alerts', description: 'Important security notifications' },
-                      { label: 'Marketing Emails', description: 'Promotional content and updates' },
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{item.label}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" defaultChecked={index < 3} />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {}
             {activeTab === 'activity' && (
               <div className="space-y-6">
                 <div>

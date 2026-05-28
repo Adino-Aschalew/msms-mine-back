@@ -13,6 +13,7 @@ const reportRoutes = require('./modules/reports/report.routes');
 const aiRoutes = require('./modules/ai/ai.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
 const notificationRoutes = require('./modules/notifications/notification.routes');
+const documentRoutes = require('./modules/documents/document.routes');
 
 
 const HrService = require('./modules/hr/hr.service');
@@ -62,5 +63,6 @@ router.use('/reports', reportRoutes);
 router.use('/ai', aiRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/documents', documentRoutes);
 
 module.exports = router;

@@ -5,33 +5,47 @@ const ThemeContext = createContext();
 export const THEMES = {
   light: {
     mode: 'light',
-    background: '#f8fafc',
-    card: '#fff',
-    text: '#1e293b',
-    textSecondary: '#64748b',
-    textMuted: '#94a3b8',
-    border: '#f1f5f9',
-    inputBg: '#f8fafc',
-    inputBorder: '#e2e8f0',
-    headerBg: '#0f172a',
-    primary: '#2563eb',
-    accent: '#059669',
+    background: '#F8FAFC',
+    card: '#FFFFFF',
+    cardElevated: '#FFFFFF',
+    text: '#0F172A',
+    textSecondary: '#475569',
+    textMuted: '#94A3B8',
+    border: '#E2E8F0',
+    inputBg: '#F1F5F9',
+    inputBorder: '#E2E8F0',
+    headerBg: '#0F172A',
+    primary: '#4F46E5', // Indigo 600
+    primaryLight: '#EEF2FF',
+    accent: '#10B981', // Emerald 500
+    success: '#10B981',
+    warning: '#F59E0B', // Amber 500
+    danger: '#EF4444', // Rose 500
+    glass: 'rgba(255, 255, 255, 0.7)',
     statusBar: 'light-content',
+    shadow: '#000000',
   },
   dark: {
     mode: 'dark',
-    background: '#0f172a',
-    card: '#1e293b',
-    text: '#f1f5f9',
-    textSecondary: '#94a3b8',
-    textMuted: '#64748b',
-    border: '#334155',
-    inputBg: '#1e293b',
+    background: '#020617', // Slate 950
+    card: '#0F172A', // Slate 900
+    cardElevated: '#1E293B', // Slate 800
+    text: '#F8FAFC',
+    textSecondary: '#94A3B8',
+    textMuted: '#64748B',
+    border: '#1E293B',
+    inputBg: '#0F172A',
     inputBorder: '#334155',
     headerBg: '#020617',
-    primary: '#3b82f6',
-    accent: '#10b981',
+    primary: '#6366F1', // Indigo 500
+    primaryLight: 'rgba(99, 102, 241, 0.1)',
+    accent: '#10B981',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#F43F5E',
+    glass: 'rgba(15, 23, 42, 0.7)',
     statusBar: 'light-content',
+    shadow: '#000000',
   },
 };
 

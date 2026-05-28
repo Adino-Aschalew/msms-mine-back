@@ -53,7 +53,6 @@ const SearchBar = ({ onOpen, isOpen, isModal = false }) => {
       e.preventDefault();
       
       const selectedResult = results[selectedIndex];
-      console.log('Navigating to:', selectedResult);
       
       
       if (selectedResult.type === 'employee') {
@@ -83,7 +82,6 @@ const SearchBar = ({ onOpen, isOpen, isModal = false }) => {
   };
 
   const handleResultClick = (result) => {
-    console.log('Navigate to:', result);
     
     
     if (result.type === 'employee') {

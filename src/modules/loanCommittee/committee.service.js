@@ -5,21 +5,22 @@ const NotificationService = require('../../services/notification.service');
 class CommitteeService {
   static async getPendingApplications(page = 1, limit = 10, filters = {}) {
     try {
+      console.log('🔍 getPendingApplications called with:', { page, limit, filters });
       const offset = (page - 1) * limit;
-      let whereClause = 'WHERE la.status = "PENDING"';
+      let whereClause = 'WHERE la.status IN ("PENDING", "UNDER_REVIEW")';
       const params = [];
 
-      if (filters.department) {
+      if (filters.department && filters.department !== 'undefined') {
         whereClause += ' AND ep.department = ?';
         params.push(filters.department);
       }
 
-      if (filters.min_amount) {
+      if (filters.min_amount && filters.min_amount !== 'undefined') {
         whereClause += ' AND la.requested_amount >= ?';
         params.push(filters.min_amount);
       }
 
-      if (filters.max_amount) {
+      if (filters.max_amount && filters.max_amount !== 'undefined') {
         whereClause += ' AND la.requested_amount <= ?';
         params.push(filters.max_amount);
       }
@@ -44,7 +45,7 @@ class CommitteeService {
       `;
 
       const selectQuery = `
-        SELECT 
+        SELECT
           la.*,
           u.username,
           u.email,
@@ -68,11 +69,16 @@ class CommitteeService {
         LIMIT ? OFFSET ?
       `;
 
+      console.log('🔍 SQL Query:', selectQuery);
+      console.log('🔍 SQL Params:', [...params, limit, offset]);
+
       const [countResult, applications] = await Promise.all([
         query(countQuery, params),
         query(selectQuery, [...params, limit, offset])
       ]);
 
+      console.log('🔍 Pending applications count:', countResult[0].total);
+      console.log('🔍 Pending applications found:', applications.length);
 
       const applicationsWithRisk = applications.length > 0 ? await Promise.all(
         applications.map(async (app) => {
@@ -116,15 +122,10 @@ class CommitteeService {
           (SELECT COUNT(*) FROM savings_transactions WHERE user_id = la.user_id AND transaction_type = 'WITHDRAWAL') as savings_withdrawals_count,
           (SELECT COUNT(*) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as existing_loans,
           (SELECT AVG(outstanding_balance) FROM loans WHERE user_id = la.user_id AND status IN ('ACTIVE', 'OVERDUE')) as avg_balance,
-          (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count,
-          g.guarantor_name,
-          g.guarantor_id as guarantor_employee_id,
-          g.monthly_income as guarantor_monthly_income,
-          (SELECT current_balance FROM savings_accounts WHERE user_id = g.user_id LIMIT 1) as guarantor_savings_balance
+          (SELECT COUNT(*) FROM loan_applications WHERE user_id = la.user_id AND status = 'APPROVED') as approved_count
         FROM loan_applications la
         LEFT JOIN users u ON la.user_id = u.id
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-        LEFT JOIN guarantors g ON la.id = g.loan_application_id
         WHERE la.id = ?
         LIMIT 1
       `;
@@ -136,6 +137,26 @@ class CommitteeService {
         throw new Error('Loan application not found');
       }
 
+      const guarantorsQuery = `
+        SELECT
+          g.id,
+          g.guarantor_name,
+          g.guarantor_id as guarantor_employee_id,
+          g.relationship,
+          g.status as guarantor_status,
+          g.contact_email,
+          g.contact_phone,
+          g.monthly_income as guarantor_monthly_income,
+          (SELECT current_balance FROM savings_accounts WHERE user_id = g.user_id LIMIT 1) as guarantor_savings_balance,
+          ep.first_name as guarantor_first_name,
+          ep.last_name as guarantor_last_name
+        FROM guarantors g
+        LEFT JOIN employee_profiles ep ON g.guarantor_id = ep.employee_id
+        WHERE g.loan_application_id = ?
+      `;
+
+      const guarantors = await query(guarantorsQuery, [applicationId]);
+      application.guarantors = guarantors;
 
       if (application.guarantor_details) {
         application.guarantor_details = JSON.parse(application.guarantor_details);
@@ -315,6 +336,18 @@ class CommitteeService {
           throw new Error('Application not found');
         }
 
+        const [guarantors] = await connection.execute(
+          'SELECT status FROM guarantors WHERE loan_application_id = ?',
+          [applicationId]
+        );
+
+        // Only block if a guarantor has explicitly REJECTED the request
+        const rejectedGuarantors = guarantors.filter(g => g.status === 'REJECTED');
+        if (rejectedGuarantors.length > 0) {
+          throw new Error('Cannot approve loan: One or more guarantors have rejected the request.');
+        }
+        // No guarantors, or pending guarantors — committee can still approve
+
 
         const finalAmount = approvedAmount || application.requested_amount;
         const finalTerm = approvedTerm || application.repayment_duration_months;
@@ -330,13 +363,20 @@ class CommitteeService {
 
 
         const updateQuery = `
-          UPDATE loan_applications 
-          SET status = 'APPROVED', reviewed_by = ?, review_date = NOW(), review_comments = ?
+          UPDATE loan_applications
+          SET status = 'APPROVED',
+              reviewed_by = ?,
+              review_date = NOW(),
+              review_comments = ?,
+              approved_amount = ?,
+              approved_term_months = ?
           WHERE id = ?
         `;
         const updateParams = [
           reviewedBy,
           JSON.stringify({ approved_amount: finalAmount, approved_term: finalTerm, approved_rate: finalRate, conditions: finalConditions }),
+          finalAmount,
+          finalTerm,
           applicationId
         ];
 
@@ -345,43 +385,12 @@ class CommitteeService {
 
         await connection.execute(updateQuery, updateParams);
 
-        console.log('Application found:', application);
-
-
-        const monthlyRepayment = finalAmount * (1 + finalRate / 100) / finalTerm;
-        const totalInterest = finalAmount * (finalRate / 100);
-        const totalRepayment = finalAmount + totalInterest;
-        const maturityDate = new Date();
-        maturityDate.setMonth(maturityDate.getMonth() + parseInt(finalTerm));
-
-        const loanQuery = `
-          INSERT INTO loans (
-            loan_application_id, user_id, employee_id, principal_amount, interest_rate,
-            total_interest, total_repayment, monthly_repayment, remaining_balance, 
-            disbursement_date, maturity_date, status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'ACTIVE', NOW())
-        `;
-        const loanParams = [
-          applicationId,
-          application.user_id,
-          application.employee_id,
-          finalAmount,
-          finalRate,
-          totalInterest,
-          totalRepayment,
-          monthlyRepayment,
-          finalAmount,
-          maturityDate.toISOString().split('T')[0]
-        ];
-
-        console.log('Loan query:', loanQuery);
-        console.log('Loan params:', loanParams);
-
-        const [loanResult] = await connection.execute(loanQuery, loanParams);
+        console.log('Application approved, ready for disbursement');
 
         return {
-          loanId: loanResult.insertId,
-          application
+          applicationId,
+          application,
+          message: 'Loan application approved successfully. Ready for disbursement.'
         };
       });
 
@@ -491,7 +500,7 @@ class CommitteeService {
         UPDATE loan_applications 
         SET status = 'UNDER_REVIEW', reviewed_by = ?, review_date = NOW(), review_comments = ?
         WHERE id = ?
-      `, [reviewedBy, JSON.stringify({ requested_info }), applicationId]);
+      `, [reviewedBy, JSON.stringify({ requested_info: requestedInfo }), applicationId]);
 
       if (!updated) {
         throw new Error('Failed to request more information');
@@ -609,7 +618,7 @@ class CommitteeService {
 
   static async getCommitteeMembers() {
     try {
-      const [members] = await query(`
+      const members = await query(`
         SELECT 
           u.id as user_id,
           u.username,
@@ -633,7 +642,7 @@ class CommitteeService {
 
   static async getCommitteeStats() {
     try {
-      const [stats] = await query(`
+      const stats = await query(`
         SELECT 
           COUNT(*) as total_members,
           COUNT(CASE WHEN u.is_active = TRUE THEN 1 END) as active_members
@@ -641,7 +650,7 @@ class CommitteeService {
         WHERE u.role = 'LOAN_COMMITTEE'
       `);
 
-      const [meetingStats] = await query(`
+      const meetingStats = await query(`
         SELECT 
           COUNT(*) as total_meetings,
           COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_meetings,
@@ -650,7 +659,7 @@ class CommitteeService {
         FROM committee_meetings
       `);
 
-      const [applicationStats] = await query(`
+      const applicationStats = await query(`
         SELECT 
           COUNT(*) as total_applications,
           COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_applications,
@@ -671,7 +680,7 @@ class CommitteeService {
 
   static async getApplicationHistory(applicationId) {
     try {
-      const [history] = await query(`
+      const history = await query(`
         SELECT 
           la.*,
           u.username as reviewer_name,
@@ -694,7 +703,7 @@ class CommitteeService {
     try {
       const dateFilter = this.getDateFilter(period);
 
-      const [workload] = await query(`
+      const workload = await query(`
         SELECT 
           COUNT(*) as applications_reviewed,
           COUNT(CASE WHEN la.action = 'APPROVED' THEN 1 END) as applications_approved,
@@ -760,25 +769,85 @@ class CommitteeService {
 
   static async disburseLoan(applicationId, reviewedBy, ip, userAgent) {
     try {
-      const connection = require('../../config/database').transaction();
-      try {
-        await connection.execute(`
-          UPDATE loan_applications SET status = 'DISBURSED' WHERE id = ?
-        `, [applicationId]);
+      const { query, transaction } = require('../../config/database');
+
+      const result = await transaction(async (connection) => {
+        const [applications] = await connection.execute(
+          'SELECT * FROM loan_applications WHERE id = ?',
+          [applicationId]
+        );
+        const application = applications[0];
+
+        if (!application) {
+          throw new Error('Application not found');
+        }
+
+        if (application.status !== 'APPROVED') {
+          throw new Error('Loan application must be approved before disbursement');
+        }
+
+        const approvedAmount = parseFloat(application.approved_amount || application.requested_amount || 0);
+        const approvedTerm = parseInt(application.approved_term_months || application.repayment_duration_months || 0);
+        const approvedRate = parseFloat(application.approved_interest_rate || 5.0);
+
+        if (approvedTerm <= 0) {
+          throw new Error('Invalid loan term (must be greater than 0)');
+        }
+
+        const monthlyRepayment = approvedAmount * (1 + approvedRate / 100) / approvedTerm;
+        const totalInterest = approvedAmount * (approvedRate / 100);
+        const totalRepayment = approvedAmount + totalInterest;
+        const maturityDate = new Date();
+        maturityDate.setMonth(maturityDate.getMonth() + approvedTerm);
+
+        const loanQuery = `
+          INSERT INTO loans (
+            loan_application_id, user_id, employee_id, principal_amount, interest_rate,
+            total_interest, total_repayment, monthly_repayment, remaining_balance,
+            disbursement_date, maturity_date, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'ACTIVE', NOW())
+        `;
+        const loanParams = [
+          applicationId,
+          application.user_id,
+          application.employee_id,
+          approvedAmount,
+          approvedRate,
+          totalInterest,
+          totalRepayment,
+          monthlyRepayment,
+          approvedAmount,
+          maturityDate.toISOString().split('T')[0]
+        ];
+
+        const [loanResult] = await connection.execute(loanQuery, loanParams);
 
         await connection.execute(`
-          UPDATE loans SET disbursement_date = NOW() WHERE loan_application_id = ?
+          UPDATE loan_applications SET status = 'DISBURSED', disbursement_date = NOW() WHERE id = ?
         `, [applicationId]);
 
-        await connection.commit();
+        return {
+          loanId: loanResult.insertId,
+          applicationId,
+          userId: application.user_id,
+          approvedAmount,
+          message: 'Loan disbursed successfully'
+        };
+      });
 
-        await auditLog(reviewedBy, 'LOAN_DISBURSED', 'loan_applications', applicationId, null, { action: 'DISBURSE' }, ip, userAgent);
+      await auditLog(reviewedBy, 'LOAN_DISBURSED', 'loan_applications', applicationId, null, {
+        loanId: result.loanId,
+        approvedAmount: result.approvedAmount
+      }, ip, userAgent);
 
-        return { message: 'Loan disbursed successfully' };
-      } catch (error) {
-        await connection.rollback();
-        throw error;
-      }
+      await NotificationService.createNotification(
+        result.userId,
+        'Loan Disbursed',
+        `Your loan of ${result.approvedAmount} ETB has been disbursed successfully.`,
+        'SUCCESS'
+      );
+
+      return result;
     } catch (error) {
       throw error;
     }

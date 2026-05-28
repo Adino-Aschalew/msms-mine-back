@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings,
   Bell,
@@ -13,14 +13,22 @@ import {
   Save,
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Percent
 } from 'lucide-react';
+import api from '../services/api';
 
 const FinanceSettings = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('interest-rates');
   const [saveStatus, setSaveStatus] = useState('idle');
+  const [interestRates, setInterestRates] = useState({
+    loanRate: 10,
+    savingsRate: 7
+  });
+  const [loadingRates, setLoadingRates] = useState(false);
 
   const tabs = [
+    { id: 'interest-rates', name: 'Interest Rates', icon: Percent },
     { id: 'general', name: 'General', icon: Settings },
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'security', name: 'Security', icon: Shield },
@@ -35,6 +43,117 @@ const FinanceSettings = () => {
       setTimeout(() => setSaveStatus('idle'), 2000);
     }, 1000);
   };
+
+  useEffect(() => {
+    fetchInterestRates();
+  }, []);
+
+  const fetchInterestRates = async () => {
+    try {
+      setLoadingRates(true);
+      const response = await api.get('/finance/interest-rates');
+      setInterestRates({
+        loanRate: response.data.loan_rate * 100,
+        savingsRate: response.data.savings_rate * 100
+      });
+    } catch (error) {
+      console.error('Error fetching interest rates:', error);
+    } finally {
+      setLoadingRates(false);
+    }
+  };
+
+  const handleSaveInterestRates = async () => {
+    try {
+      setLoadingRates(true);
+      await api.put('/finance/interest-rates', {
+        loan_rate: interestRates.loanRate / 100,
+        savings_rate: interestRates.savingsRate / 100
+      });
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Error saving interest rates:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } finally {
+      setLoadingRates(false);
+    }
+  };
+
+  const InterestRatesSettings = () => (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Interest Rates Configuration</h3>
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <Percent className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <div className="text-sm text-blue-800 dark:text-blue-300">
+              Configure the default interest rates for loans and savings. These rates will be applied to new loan applications and savings accounts.
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Loan Interest Rate (% yearly)
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={interestRates.loanRate}
+              onChange={(e) => setInterestRates({ ...interestRates, loanRate: parseFloat(e.target.value) || 0 })}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Applied to new loan applications</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Savings Interest Rate (% yearly)
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={interestRates.savingsRate}
+              onChange={(e) => setInterestRates({ ...interestRates, savingsRate: parseFloat(e.target.value) || 0 })}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Applied to new savings accounts</p>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            onClick={handleSaveInterestRates}
+            disabled={loadingRates}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {loadingRates ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {loadingRates ? 'Saving...' : 'Save Interest Rates'}
+          </button>
+          {saveStatus === 'success' && (
+            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-sm">Interest rates saved successfully</span>
+            </div>
+          )}
+          {saveStatus === 'error' && (
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm">Failed to save interest rates</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   const GeneralSettings = () => (
     <div className="space-y-6">
@@ -258,6 +377,8 @@ const FinanceSettings = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'interest-rates':
+        return <InterestRatesSettings />;
       case 'general':
         return <GeneralSettings />;
       case 'notifications':

@@ -1,5 +1,8 @@
 const { query, transaction } = require('../config/database');
 const NotificationService = require('./notification.service');
+const ExcelJS = require('exceljs');
+const path = require('path');
+const fs = require('fs');
 
 class SalarySyncService {
   static async processPayrollUpload(payrollData, uploadedBy) {
@@ -55,6 +58,12 @@ class SalarySyncService {
         SET status = ?, processed_date = NOW(), updated_at = NOW()
         WHERE id = ?
       `, [status, batchId]);
+
+      try {
+        await this.exportPayrollForBanking(batchId);
+      } catch (exportError) {
+        console.error('Automatic banking export failed:', exportError);
+      }
       
       return {
         success: true,
@@ -68,7 +77,7 @@ class SalarySyncService {
 
   static async processPayrollRecord(connection, record, batchId) {
     const employee_id = record['Employee ID'] || record.employee_id;
-    const gross_salary = parseFloat(record['Gross Salary'] || record.salary || record.gross_salary || 0);
+    const gross_salary = Math.round(parseFloat(record['Gross Salary'] || record.salary || record.gross_salary || 0) * 100) / 100;
     
     
     const [employees] = await connection.execute(
@@ -94,9 +103,9 @@ class SalarySyncService {
     if (savingsAccount && savingsAccount[0]) {
       const account = savingsAccount[0];
       if (account.savings_type === 'PERCENTAGE') {
-        savings_deduction = gross_salary * (account.saving_percentage / 100);
+        savings_deduction = Math.round((gross_salary * (account.saving_percentage / 100)) * 100) / 100;
       } else if (account.savings_type === 'FIXED_AMOUNT') {
-        savings_deduction = account.fixed_amount;
+        savings_deduction = Math.round(parseFloat(account.fixed_amount) * 100) / 100;
       }
     }
     
@@ -110,13 +119,14 @@ class SalarySyncService {
     if (activeLoans && activeLoans.length > 0) {
       
       loan_deduction = activeLoans.reduce((total, loan) => {
-        return total + parseFloat(loan.monthly_deduction || 0);
+        return total + Math.round(parseFloat(loan.monthly_deduction || 0) * 100) / 100;
       }, 0);
+      loan_deduction = Math.round(loan_deduction * 100) / 100;
     }
     
     
-    const total_deductions = savings_deduction + loan_deduction;
-    const net_salary = gross_salary - total_deductions;
+    const total_deductions = Math.round((savings_deduction + loan_deduction) * 100) / 100;
+    const net_salary = Math.round((gross_salary - total_deductions) * 100) / 100;
     
     
     const payrollInsertQuery = `
@@ -542,6 +552,111 @@ class SalarySyncService {
       content: buffer,
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     };
+  }
+
+  static async exportPayrollForBanking(batchId) {
+    try {
+      const payrollDetails = await query(`
+        SELECT 
+          pd.user_id,
+          pd.employee_id,
+          ep.first_name,
+          ep.last_name,
+          pd.gross_salary,
+          pd.savings_deduction,
+          pd.loan_repayment_deduction,
+          pd.total_deductions,
+          pd.final_amount,
+          pb.payroll_date,
+          pb.batch_name
+        FROM payroll_details pd
+        JOIN payroll_batches pb ON pd.payroll_batch_id = pb.id
+        LEFT JOIN employee_profiles ep ON pd.user_id = ep.user_id
+        WHERE pd.payroll_batch_id = ?
+        AND (
+          EXISTS (SELECT 1 FROM savings_accounts sa WHERE sa.user_id = pd.user_id AND sa.account_status = 'ACTIVE')
+          OR EXISTS (SELECT 1 FROM loans l WHERE l.user_id = pd.user_id AND l.status = 'ACTIVE')
+        )
+        ORDER BY ep.last_name, ep.first_name
+      `, [batchId]);
+
+      if (!payrollDetails || payrollDetails.length === 0) {
+        return {
+          success: false,
+          message: 'No employees with active savings or loans found in this payroll batch'
+        };
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Banking Export');
+
+      worksheet.columns = [
+        { header: 'Full Name', key: 'full_name', width: 30 },
+        { header: 'Gross Salary', key: 'gross_salary', width: 15 },
+        { header: 'Saving Deduction', key: 'saving_deduction', width: 18 },
+        { header: 'Loan Deduction', key: 'loan_deduction', width: 15 },
+        { header: 'Penalty', key: 'penalty', width: 12 },
+        { header: 'Total Pay', key: 'total_pay', width: 15 }
+      ];
+
+      worksheet.getRow(1).font = { bold: true, size: 12 };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' }
+      };
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+      for (const row of payrollDetails) {
+        const penalties = await query(`
+          SELECT COALESCE(SUM(amount), 0) as total_penalty
+          FROM penalties
+          WHERE user_id = ? AND status = 'ACTIVE'
+        `, [row.user_id]);
+
+        const penaltyAmount = penalties[0]?.total_penalty || 0;
+        const totalPay = parseFloat(row.final_amount) - penaltyAmount;
+
+        worksheet.addRow({
+          full_name: `${row.first_name} ${row.last_name}`,
+          gross_salary: parseFloat(row.gross_salary),
+          saving_deduction: parseFloat(row.savings_deduction),
+          loan_deduction: parseFloat(row.loan_repayment_deduction),
+          penalty: penaltyAmount,
+          total_pay: totalPay
+        });
+      }
+
+      ['gross_salary', 'saving_deduction', 'loan_deduction', 'penalty', 'total_pay'].forEach(key => {
+        worksheet.getColumn(key).numFmt = '#,##0.00';
+      });
+
+      const uploadsDir = path.join(__dirname, '../../uploads/exports');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const filename = `banking_export_${batchId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filepath = path.join(uploadsDir, filename);
+
+      await workbook.xlsx.writeFile(filepath);
+
+      await query(`
+        UPDATE payroll_batches
+        SET export_file_path = ?, export_generated_at = NOW()
+        WHERE id = ?
+      `, [filepath, batchId]);
+
+      return {
+        success: true,
+        filename,
+        filepath,
+        recordCount: payrollDetails.length
+      };
+    } catch (error) {
+      console.error('Export payroll for banking error:', error);
+      throw error;
+    }
   }
 }
 

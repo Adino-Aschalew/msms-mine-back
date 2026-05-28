@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert, StatusBar, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 
@@ -55,7 +56,9 @@ export default function ChangePasswordScreen({ route }) {
       
       if (response.data.success) {
         Alert.alert('Success', 'Password changed successfully!');
-        setUser({ ...user, password_change_required: false });
+        const updatedUser = { ...user, password_change_required: false };
+        await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
       }
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to change password');

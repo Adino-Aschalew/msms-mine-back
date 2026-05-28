@@ -44,7 +44,6 @@ const PayrollHistory = () => {
         title: 'Failed to Load',
         message: 'Could not load payroll history. Please try again.',
       });
-      console.error('Error fetching payroll batches:', error);
     } finally {
       setLoading(false);
     }

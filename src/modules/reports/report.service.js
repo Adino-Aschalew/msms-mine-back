@@ -175,12 +175,12 @@ class ReportService {
       const [summary] = await query(`
         SELECT 
           COUNT(*) as total_employees,
-          COUNT(CASE WHEN is_active = TRUE THEN 1 END) as active_employees,
-          COUNT(CASE WHEN is_verified = TRUE THEN 1 END) as verified_employees,
-          COUNT(CASE WHEN employment_status = 'ACTIVE' THEN 1 END) as active_employment,
-          COUNT(DISTINCT department) as departments,
-          COUNT(DISTINCT job_grade) as job_grades,
-          AVG(salary_grade) as average_salary_grade
+          COUNT(CASE WHEN u.is_active = TRUE THEN 1 END) as active_employees,
+          COUNT(CASE WHEN ep.hr_verified = TRUE THEN 1 END) as verified_employees,
+          COUNT(CASE WHEN ep.employment_status = 'ACTIVE' THEN 1 END) as active_employment,
+          COUNT(DISTINCT ep.department) as departments,
+          COUNT(DISTINCT ep.job_grade) as job_grades,
+          AVG(ep.salary) as average_salary
         FROM users u
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
       `);
@@ -368,7 +368,7 @@ class ReportService {
         LEFT JOIN users u ON gr.generated_by = u.id
         LEFT JOIN employee_profiles ep ON u.id = ep.user_id
         ${whereClause}
-        ORDER BY gr.generated_at DESC
+        ORDER BY gr.generation_date DESC
         LIMIT ? OFFSET ?
       `;
       

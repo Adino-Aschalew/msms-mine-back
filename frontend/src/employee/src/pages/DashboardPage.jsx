@@ -104,8 +104,8 @@ const DashboardPage = () => {
       const grossSalary = parseFloat(latestPayroll?.gross_salary || account.salary || 0);
 
       const activeLoansCount = loansData.filter(l => ['ACTIVE', 'active'].includes(l.status)).length;
-      const totalLoanBalance = loansData.reduce((s, l) => s + parseFloat(l.outstanding_balance || 0), 0);
-      const loanMonthlyDeduction = loansData.reduce((s, l) => s + parseFloat(l.monthly_deduction || 0), 0);
+      const totalLoanBalance = loansData.reduce((s, l) => s + (parseFloat(l.remaining_balance) || parseFloat(l.outstanding_balance) || 0), 0);
+      const loanMonthlyDeduction = loansData.reduce((s, l) => s + (parseFloat(l.monthly_repayment) || parseFloat(l.monthly_deduction) || 0), 0);
       const savingsMonthlyDeduction = grossSalary * savingRate / 100;
 
       // --- Recent Activity ---
@@ -122,7 +122,7 @@ const DashboardPage = () => {
           id: `loan-${loan.id}`,
           type: 'loan_approval',
           title: 'Active Loan',
-          description: `Disbursed ${formatCurrency(loan.loan_amount)}`,
+          description: `Disbursed ${formatCurrency(loan.loan_amount || loan.principal_amount)}`,
           date: loan.disbursement_date || loan.created_at,
           status: 'completed',
         }))

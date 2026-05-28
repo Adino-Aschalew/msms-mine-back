@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { employeeService } from '../../services/employeeService';
-import { ScreenScroll, LoadingState, ErrorState, EmptyState } from '../../components/ui';
+import { employeeService, formatAmount } from '../../services/employeeService';
+import {
+  ScreenScroll, Card, StatCard, Badge, Button, SectionLabel, LoadingState, ErrorState, EmptyState, ScreenHeader
+} from '../../components/ui';
 
 export default function GuarantorsScreen() {
   const { user } = useAuth();
@@ -30,82 +32,142 @@ export default function GuarantorsScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const activeCount = guarantors.filter((g) => g.is_approved === true || g.status === 'APPROVED' || g.status === 'ACTIVE').length;
-  const pendingCount = guarantors.length - activeCount;
+  const [tab, setTab] = useState('inbox');
+  const [submitting, setSubmitting] = useState(false);
 
-  const getStatusColor = (g) => {
-    if (g.is_approved === true || g.status === 'APPROVED' || g.status === 'ACTIVE') return theme.accent;
-    if (g.is_approved === false || g.status === 'REJECTED') return '#ef4444';
-    return '#f59e0b';
+  const handleAction = async (requestId, action) => {
+    setSubmitting(true);
+    try {
+      // Assuming these methods exist or can be inferred from the context
+      await employeeService.respondToGuarantorRequest(requestId, action);
+      Alert.alert('Success', `Request ${action}ed successfully.`);
+      load(true);
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.message || `Failed to ${action} request`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const getStatusLabel = (g) => {
-    if (g.is_approved === true) return 'Approved';
-    if (g.is_approved === false) return 'Rejected';
-    return g.status || 'Pending';
-  };
-
-  if (loading) return <LoadingState message="Loading guarantors..." />;
+  if (loading) return <LoadingState message="Loading inbox..." />;
   if (error && guarantors.length === 0) return <ErrorState message={error} onRetry={load} />;
 
-  return (
-    <ScreenScroll refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }}>
-      <View style={[styles.stats, { backgroundColor: theme.headerBg }]}>
-        <View style={styles.stat}>
-          <Text style={styles.statLabel}>Active</Text>
-          <Text style={styles.statValue}>{activeCount}</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.stat}>
-          <Text style={styles.statLabel}>Pending</Text>
-          <Text style={[styles.statValue, { color: '#fbbf24' }]}>{pendingCount}</Text>
+  const filteredGuarantors = guarantors.filter((g) => {
+    if (tab === 'inbox') return g.status === 'PENDING';
+    if (tab === 'active') return ['APPROVED', 'ACTIVE'].includes(g.status);
+    return true;
+  });
+
+  const content = (
+    <>
+      <ScreenHeader 
+        title="Guarantors" 
+        subtitle="Manage colleague requests" 
+      />
+
+      <View style={styles.tabWrap}>
+        <View style={[styles.tabs, { backgroundColor: theme.cardElevated }]}>
+          {[
+            { id: 'inbox', label: 'Inbox', icon: 'mail-unread' },
+            { id: 'active', label: 'Active', icon: 'shield-checkmark' },
+            { id: 'history', label: 'All', icon: 'list' },
+          ].map((item) => {
+            const active = tab === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => setTab(item.id)}
+                style={[styles.tabBtn, active && { backgroundColor: theme.primary }]}
+              >
+                <Ionicons 
+                  name={item.icon} 
+                  size={16} 
+                  color={active ? '#fff' : theme.textSecondary} 
+                />
+                <Text style={[styles.tabText, { color: active ? '#fff' : theme.textSecondary }]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
-      {guarantors.length === 0 ? (
-        <EmptyState
-          icon="people-outline"
-          title="No guarantors"
-          subtitle="Guarantors linked to your loan applications will appear here."
-        />
-      ) : (
-        guarantors.map((g, i) => (
-          <View key={g.id || i} style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <View style={[styles.avatar, { backgroundColor: theme.primary + '18' }]}>
-              <Text style={[styles.avatarText, { color: theme.primary }]}>
-                {(g.guarantor_name || g.guarantor_id || '?').charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.name, { color: theme.text }]}>{g.guarantor_name || g.guarantor_id}</Text>
-              <Text style={[styles.sub, { color: theme.textSecondary }]}>
-                {g.relationship || '—'} · {g.guarantor_id || 'N/A'}
-              </Text>
-            </View>
-            <Text style={[styles.status, { color: getStatusColor(g) }]}>{getStatusLabel(g)}</Text>
-          </View>
-        ))
-      )}
+      <View style={styles.scrollPadding}>
+        {filteredGuarantors.length === 0 ? (
+          <EmptyState 
+            icon={tab === 'inbox' ? 'mail-open-outline' : 'people-outline'} 
+            title={tab === 'inbox' ? 'Inbox is empty' : 'No guarantees found'} 
+            subtitle={tab === 'inbox' ? 'You have no pending requests to review.' : 'Your active guarantees will appear here.'}
+          />
+        ) : (
+          filteredGuarantors.map((g, i) => (
+            <Card key={g.id || i} style={styles.requestCard}>
+              <View style={styles.requestTop}>
+                <View style={[styles.avatar, { backgroundColor: theme.primary + '15' }]}>
+                  <Text style={[styles.avatarText, { color: theme.primary }]}>
+                    {(g.guarantor_name || g.guarantor_id || '?').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.requesterName, { color: theme.text }]}>
+                    {g.guarantor_name || 'Anonymous User'}
+                  </Text>
+                  <Text style={[styles.requestMeta, { color: theme.textSecondary }]}>
+                    Req. for Loan {formatAmount(g.loan_amount || 0)} ETB
+                  </Text>
+                </View>
+                <Badge 
+                  label={g.status || 'Pending'} 
+                  type={g.status === 'APPROVED' ? 'success' : g.status === 'REJECTED' ? 'danger' : 'warning'} 
+                />
+              </View>
+
+              {g.status === 'PENDING' && (
+                <View style={styles.actionRow}>
+                  <Button 
+                    title="Reject" 
+                    onPress={() => handleAction(g.id, 'reject')}
+                    type="secondary"
+                    style={{ flex: 1 }}
+                    outline
+                    loading={submitting}
+                  />
+                  <Button 
+                    title="Approve" 
+                    onPress={() => handleAction(g.id, 'approve')}
+                    type="primary"
+                    style={{ flex: 2 }}
+                    loading={submitting}
+                  />
+                </View>
+              )}
+            </Card>
+          ))
+        )}
+      </View>
+      <View style={{ height: 100 }} />
+    </>
+  );
+
+  return (
+    <ScreenScroll refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} contentStyle={{ padding: 0 }}>
+      {content}
     </ScreenScroll>
   );
 }
 
 const styles = StyleSheet.create({
-  stats: {
-    flexDirection: 'row', borderRadius: 20, padding: 20, marginBottom: 16,
-    justifyContent: 'space-around',
-  },
-  stat: { alignItems: 'center' },
-  statLabel: { color: '#94a3b8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  statValue: { color: '#fff', fontSize: 26, fontWeight: 'bold', marginTop: 4 },
-  divider: { width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.12)' },
-  card: {
-    flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 18,
-    borderWidth: 1, marginBottom: 10,
-  },
-  avatar: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarText: { fontSize: 18, fontWeight: 'bold' },
-  name: { fontSize: 15, fontWeight: 'bold' },
-  sub: { fontSize: 12, marginTop: 2 },
-  status: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  tabWrap: { paddingHorizontal: 20, marginBottom: 20, marginTop: -20 },
+  tabs: { flexDirection: 'row', padding: 6, borderRadius: 20 },
+  tabBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 16 },
+  tabText: { fontSize: 13, fontWeight: '700' },
+  scrollPadding: { paddingHorizontal: 20 },
+  requestCard: { padding: 16, marginBottom: 16 },
+  requestTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatar: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 18, fontWeight: '800' },
+  requesterName: { fontSize: 16, fontWeight: '800' },
+  requestMeta: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+  actionRow: { flexDirection: 'row', gap: 10, marginTop: 16, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 16 },
 });

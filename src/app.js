@@ -14,32 +14,30 @@ const app = express();
 
 const corsOptions = {
   origin: function (origin, callback) {
-    
+    // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    
+    // In development, allow localhost and common local network IP patterns
     if (process.env.NODE_ENV === 'development') {
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:5173'
-      ];
-      if (allowedOrigins.includes(origin)) {
+      const isLocalHost = origin.includes('localhost') || origin.includes('127.0.0.1');
+      const isLocalIP = /^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
+      
+      if (isLocalHost || isLocalIP) {
         return callback(null, true);
       }
     }
     
+    // Check ALLOWED_ORIGINS and CORS_ORIGIN from environment
+    const allowedFromEnv = [
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
+      ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [])
+    ];
     
-    const allowedProductionOrigins = process.env.ALLOWED_ORIGINS ? 
-      process.env.ALLOWED_ORIGINS.split(',') : [];
-    
-    if (allowedProductionOrigins.includes(origin)) {
+    if (allowedFromEnv.includes(origin)) {
       return callback(null, true);
     }
     
+    console.error(`CORS Reject: Origin [${origin}] not allowed`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true, 

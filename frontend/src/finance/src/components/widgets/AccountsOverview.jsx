@@ -13,7 +13,6 @@ const AccountsOverview = () => {
         const response = await financeAPI.getFinancialOverview('MONTHLY');
         setData(response);
       } catch (err) {
-        console.error('Failed to fetch accounts overview:', err);
       } finally {
         setLoading(false);
       }

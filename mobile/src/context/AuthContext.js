@@ -32,18 +32,20 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { 
         identifier, 
         password,
-        role: 'EMPLOYEE' // Mobile app is specifically for employees
+        role: 'EMPLOYEE'
       });
       
       if (response.data && response.data.success) {
         const { token, user: userData } = response.data.data;
         
-        // Save token and user info
-        await SecureStore.setItemAsync('token', token);
-        await SecureStore.setItemAsync('user', JSON.stringify(userData));
+        // Normalize user data if nested
+        const normalizedUser = userData.user ? { ...userData.user, ...userData.employeeProfile } : userData;
         
-        setUser(userData);
-        return { success: true, data: userData };
+        await SecureStore.setItemAsync('token', token);
+        await SecureStore.setItemAsync('user', JSON.stringify(normalizedUser));
+        
+        setUser(normalizedUser);
+        return { success: true, data: normalizedUser };
       }
       return { success: false, message: 'Invalid credentials' };
     } catch (error) {
@@ -84,7 +86,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/verify-otp', { otpCode });
       if (response.data && response.data.success) {
-        // Update local user state
         const updatedUser = { ...user, email_verified: true };
         await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
         setUser(updatedUser);
@@ -103,10 +104,27 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.get('/users/profile');
       if (response.data?.success && response.data.data) {
-        const profile = response.data.data;
-        await SecureStore.setItemAsync('user', JSON.stringify(profile));
-        setUser(profile);
-        return profile;
+        const profileData = response.data.data;
+        
+        // Flatten nested structure: { user: {...}, employeeProfile: {...} }
+        const normalizedUser = profileData.user ? { 
+          ...profileData.user, 
+          ...profileData.employeeProfile 
+        } : profileData;
+        
+        // Preserve locally-set auth flags if the backend doesn't return them
+        if (user) {
+          if (normalizedUser.email_verified === undefined && user.email_verified !== undefined) {
+            normalizedUser.email_verified = user.email_verified;
+          }
+          if (normalizedUser.password_change_required === undefined && user.password_change_required !== undefined) {
+            normalizedUser.password_change_required = user.password_change_required;
+          }
+        }
+        
+        await SecureStore.setItemAsync('user', JSON.stringify(normalizedUser));
+        setUser(normalizedUser);
+        return normalizedUser;
       }
     } catch (error) {
       console.warn('Profile refresh failed:', error.message);

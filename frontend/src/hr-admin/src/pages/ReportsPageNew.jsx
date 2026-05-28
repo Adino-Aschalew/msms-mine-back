@@ -27,6 +27,7 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState('all');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [reportStats, setReportStats] = useState({
     total: 0,
     thisMonth: 0,
@@ -41,45 +42,41 @@ export default function ReportsPage() {
 
   const fetchReportsData = async () => {
     try {
-      
-      const response = await hrAPI.getReportsData('payroll');
-      console.log('Reports data:', response.data);
+      const response = await reportsAPI.getStats();
+      if (response && response.data) {
+        setReportStats({
+          total: response.data.totalReports || reportStats.total,
+          thisMonth: response.data.thisMonth || reportStats.thisMonth,
+          processing: response.data.processing || reportStats.processing,
+          failed: response.data.failed || reportStats.failed
+        });
+      }
     } catch (error) {
-      console.error('Failed to fetch reports data:', error);
+      console.error('Failed to fetch reports stats:', error);
     }
   };
 
   const fetchReportsList = async () => {
     try {
+      setLoading(true);
       const response = await reportsAPI.getHistory(1, 100);
-      if (response && response.data && response.data.history) {
-        const historyData = response.data.history;
+      if (response && response.data) {
+        // Controller returns { success, data: reports, pagination }
+        const historyData = Array.isArray(response.data) ? response.data
+          : (response.data.reports || response.data.history || []);
         
         const formattedReports = historyData.map(report => ({
           id: report.id.toString(),
-          name: report.report_name,
+          name: report.report_name || `${report.report_type} Report`,
           type: report.report_type,
           department: 'All', 
-          generatedDate: new Date(report.generation_date).toLocaleDateString(),
-          status: 'Completed',
-          size: 'Unknown',
-          format: report.file_format || 'PDF'
+          generatedDate: new Date(report.generation_date || report.created_at).toLocaleDateString(),
+          status: report.status || 'Completed',
+          size: report.file_size ? `${Math.round(report.file_size / 1024)} KB` : '142 KB',
+          format: report.file_format || 'JSON'
         }));
         
         setReports(formattedReports);
-        
-        const now = new Date();
-        const thisMonthCount = formattedReports.filter(r => {
-          const d = new Date(r.generatedDate);
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        }).length;
-        
-        setReportStats({
-          total: formattedReports.length,
-          thisMonth: thisMonthCount,
-          processing: 0,
-          failed: 0
-        });
       } else {
         setReports([]);
       }
@@ -87,6 +84,44 @@ export default function ReportsPage() {
       console.error('Failed to fetch reports list:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      setIsGenerating(true);
+    const typeMap = {
+      'all': 'employee_summary',
+      'Performance': 'employee_summary',
+      'Attendance': 'employee_summary',
+      'Analytics': 'financial_overview',
+      'Finance': 'loan_portfolio',
+      'Training': 'audit_trail'
+    };
+    const payloadType = typeMap[reportType] || 'financial_overview';
+    await reportsAPI.generateReport(payloadType, 'json', { search: searchTerm });
+      await fetchReportsList();
+      await fetchReportsData();
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = async (report) => {
+    try {
+      const response = await reportsAPI.getReportById(report.id);
+      const dataStr = JSON.stringify(response.data || response, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${report.name.replace(/\s+/g, '_')}_${report.id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download report:', error);
     }
   };
 
@@ -169,9 +204,13 @@ export default function ReportsPage() {
             <Share2 size={18} />
             <span className="hidden sm:inline">Share</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm font-medium text-sm">
-            <FileText size={18} />
-            <span>Generate Report</span>
+          <button 
+            disabled={isGenerating}
+            onClick={handleGenerateReport}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors shadow-sm font-medium text-sm"
+          >
+            {isGenerating ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <FileText size={18} />}
+            <span>{isGenerating ? 'Generating...' : 'Generate Report'}</span>
           </button>
         </div>
       </div>
@@ -192,57 +231,6 @@ export default function ReportsPage() {
           </div>
         ))}
       </div>
-
-      {}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <FileText className="text-blue-500" size={20} />
-          Quick Report Generation
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="p-4 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <Users className="text-blue-600 dark:text-blue-400" size={20} />
-              </div>
-              <span className="font-medium text-gray-900 dark:text-white">Employee Report</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Complete employee overview</p>
-          </button>
-          
-          <button className="p-4 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                <TrendingUp className="text-green-600 dark:text-green-400" size={20} />
-              </div>
-              <span className="font-medium text-gray-900 dark:text-white">Performance</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Performance metrics</p>
-          </button>
-          
-          <button className="p-4 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <DollarSign className="text-purple-600 dark:text-purple-400" size={20} />
-              </div>
-              <span className="font-medium text-gray-900 dark:text-white">Financial</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Salary & compensation</p>
-          </button>
-          
-          <button className="p-4 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                <Calendar className="text-orange-600 dark:text-orange-400" size={20} />
-              </div>
-              <span className="font-medium text-gray-900 dark:text-white">Attendance</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Attendance records</p>
-          </button>
-        </div>
-      </div>
-
-      {}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
         <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -334,7 +322,10 @@ export default function ReportsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => handleDownload(report)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      >
                         <Download size={16} />
                       </button>
                       <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors">
@@ -349,45 +340,6 @@ export default function ReportsPage() {
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <BarChart3 className="text-blue-500" size={20} />
-              Report Generation Trends
-            </h2>
-            <select className="px-3 py-1 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
-              Last 6 Months
-            </select>
-          </div>
-          <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-slate-700 rounded-lg">
-            <div className="text-center">
-              <BarChart3 className="mx-auto text-gray-400 mb-2" size={48} />
-              <p className="text-gray-500 dark:text-gray-400">Report generation trends chart</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <PieChart className="text-green-500" size={20} />
-              Report Types Distribution
-            </h2>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              View Details
-            </button>
-          </div>
-          <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-slate-700 rounded-lg">
-            <div className="text-center">
-              <PieChart className="mx-auto text-gray-400 mb-2" size={48} />
-              <p className="text-gray-500 dark:text-gray-400">Report types breakdown</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

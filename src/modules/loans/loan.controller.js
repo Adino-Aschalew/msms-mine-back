@@ -115,7 +115,7 @@ class LoanController {
 
   static async getLoans(req, res) {
     try {
-      const loans = await LoanModel.getLoans();
+      const loans = await LoanModel.getAllLoans();
       res.json({
         success: true,
         data: loans
@@ -248,7 +248,15 @@ class LoanController {
   static async getLoanById(req, res) {
     try {
       const { loanId } = req.params;
-      const loan = await LoanService.getLoanById(loanId);
+      const userId = req.userId;
+      const loan = await LoanModel.getUserLoanById(loanId, userId);
+      
+      if (!loan) {
+        return res.status(404).json({
+          success: false,
+          message: 'Loan not found'
+        });
+      }
       
       res.json({
         success: true,
@@ -523,12 +531,7 @@ class LoanController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       
-      console.log('🔍 getUserLoans called for userId:', userId);
-      
       const result = await LoanService.getUserLoans(userId, page, limit);
-      
-      console.log('📊 LoanService result:', result);
-      console.log('📊 Loans count:', result.loans?.length);
       
       res.json({
         success: true,
@@ -536,7 +539,7 @@ class LoanController {
         pagination: result.pagination
       });
     } catch (error) {
-      console.error('❌ Get user loans error:', error);
+      console.error('Get user loans error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch user loans'
@@ -734,6 +737,8 @@ class LoanController {
       const { loan_amount } = req.query;
       const applicantId = req.userId;
 
+      console.log('🔍 checkGuarantorCapacity controller:', { employeeId, loan_amount, applicantId });
+
       if (!employeeId) {
         return res.status(400).json({
           success: false,
@@ -742,10 +747,12 @@ class LoanController {
       }
 
       const result = await LoanModel.checkGuarantorCapacity(
-        employeeId, 
-        parseFloat(loan_amount || 0), 
+        employeeId,
+        parseFloat(loan_amount || 0),
         applicantId
       );
+
+      console.log('✅ checkGuarantorCapacity result:', result);
 
       res.json({
         success: true,

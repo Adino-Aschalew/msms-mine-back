@@ -47,7 +47,6 @@ const Transactions = ({ filter = 'all' }) => {
 
     } catch (err) {
       setError('Failed to fetch transactions');
-      console.error(err);
     } finally {
       setLoading(false);
     }

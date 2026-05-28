@@ -56,5 +56,6 @@ router.put('/profile', authMiddleware, validateUpdateProfile, auditMiddleware('P
 router.post('/profile-picture', authMiddleware, profilePicUpload.single('profile_picture'), AuthController.uploadProfilePicture);
 router.post('/request-otp', authMiddleware, AuthController.requestOTP);
 router.post('/verify-otp', authMiddleware, AuthController.verifyOTP);
+router.get('/activity', authMiddleware, AuthController.getActivityLog);
 
 module.exports = router;

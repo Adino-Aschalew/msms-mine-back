@@ -27,7 +27,6 @@ const SavingsRequests = () => {
       const response = await savingsAPI.getSavingsRequests();
       setRequests(response.requests || []);
     } catch (error) {
-      console.error('Fetch savings requests error:', error);
       addNotification({
         type: 'error',
         title: 'Error',

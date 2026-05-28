@@ -8,12 +8,12 @@ class LoanService {
   static async applyForLoan(applicationData, userId, ip, userAgent) {
     try {
       console.log('📝 LoanService.applyForLoan called with:', { applicationData, userId });
-      
-      
+
+
       console.log('🔍 Checking eligibility...');
       const eligibility = await LoanModel.checkEligibility(userId);
       console.log('✅ Eligibility result:', eligibility);
-      
+
       if (!eligibility.eligible) {
         console.log('❌ User not eligible:', eligibility.reason);
         throw new Error(eligibility.reason);
@@ -54,24 +54,30 @@ class LoanService {
       
       
       if (applicationData.guarantor_details) {
-        const guarantorData = typeof applicationData.guarantor_details === 'string' 
+        let parsedGuarantors = typeof applicationData.guarantor_details === 'string' 
           ? JSON.parse(applicationData.guarantor_details) 
           : applicationData.guarantor_details;
 
-        if (guarantorData.type !== 'internal') {
-          throw new Error('Only internal employee guarantors are allowed');
+        if (!Array.isArray(parsedGuarantors)) {
+          parsedGuarantors = [parsedGuarantors];
         }
 
-        const capacity = await LoanModel.checkGuarantorCapacity(guarantorData.employeeId, loan_amount, userId);
-        if (!capacity.eligible) {
-          throw new Error(`Guarantor validation failed: ${capacity.reason}`);
-        }
+        for (const guarantor of parsedGuarantors) {
+          if (guarantor.type !== 'internal') {
+            throw new Error('Only internal employee guarantors are allowed');
+          }
 
-        await this.saveGuarantorInformation(applicationId, userId, {
-          ...guarantorData,
-          guarantor_user_id: capacity.guarantor_data.id,
-          fullName: capacity.guarantor_data.name
-        });
+          const capacity = await LoanModel.checkGuarantorCapacity(guarantor.employeeId, loan_amount, userId);
+          if (!capacity.eligible) {
+            throw new Error(`Guarantor validation failed: ${capacity.reason}`);
+          }
+
+          await this.saveGuarantorInformation(applicationId, userId, {
+            ...guarantor,
+            guarantor_user_id: capacity.guarantor_data.id,
+            fullName: capacity.guarantor_data.name
+          });
+        }
       }
       
       
@@ -636,7 +642,6 @@ class LoanService {
 
       const { employeeId, relationship, guarantor_user_id, fullName } = guarantorData;
 
-      
       const insertQuery = `
         INSERT INTO guarantors (
           loan_application_id, user_id, guarantor_type, guarantor_name, 
@@ -651,6 +656,32 @@ class LoanService {
         employeeId,
         relationship || ''
       ]);
+      
+      // Notify the guarantor via App Notification
+      if (guarantor_user_id) {
+        await NotificationService.createNotification(
+          guarantor_user_id,
+          'Guarantor Request',
+          `You have been requested to be a guarantor by a colleague.`,
+          'INFO'
+        );
+
+        // Fetch guarantor email to send an email notification
+        const [guarantorUser] = await query('SELECT email FROM users WHERE id = ?', [guarantor_user_id]);
+        if (guarantorUser && guarantorUser.email) {
+          await NotificationService.sendEmail(
+            guarantorUser.email,
+            'Guarantor Request - Microfinance System',
+            `
+              <h2>Guarantor Request</h2>
+              <p>Dear ${fullName || 'Colleague'},</p>
+              <p>You have been requested to act as a guarantor for a loan application in the microfinance system.</p>
+              <p>Please log in to your account and review the request under the Guarantor Requests tab.</p>
+              <p>Best regards,<br>Microfinance System</p>
+            `
+          );
+        }
+      }
 
       console.log('Guarantor information saved successfully for loan application:', loanApplicationId);
     } catch (error) {

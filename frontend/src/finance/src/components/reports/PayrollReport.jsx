@@ -46,7 +46,6 @@ const PayrollReport = () => {
         setReportData(response.data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching payroll report:', error);
       setReportData([]);
     } finally {
       setLoading(false);
@@ -81,7 +80,6 @@ const PayrollReport = () => {
       const defaultFilename = `payroll_report_${new Date().toISOString().split('T')[0]}.${format}`;
       downloadFromResponse(response, defaultFilename);
     } catch (error) {
-      console.error('Error downloading report:', error);
     } finally {
       setDownloading(false);
     }

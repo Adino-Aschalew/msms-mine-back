@@ -30,13 +30,15 @@ class GuarantorController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const filters = {
+        userId: req.userId,
+        guarantorOnly: req.query.guarantorOnly === 'true',
         status: req.query.status,
         loan_application_id: req.query.loan_application_id,
         search: req.query.search
       };
-      
+
       Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
-      
+
       const result = await GuarantorService.getGuarantors(page, limit, filters);
       
       res.json({

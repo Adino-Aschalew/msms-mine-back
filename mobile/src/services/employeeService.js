@@ -35,23 +35,58 @@ export const employeeService = {
   async getSavingsDashboard() {
     try {
       const res = await api.get('/savings/dashboard');
-      return unwrap(res.data);
+      const data = unwrap(res.data) || {};
+      
+      // Normalize Enterprise Dashboard Data (camelCase to snake_case)
+      if (data.account) {
+        const acc = data.account;
+        data.account = {
+          current_balance: acc.currentBalance || acc.current_balance || 0,
+          saving_percentage: acc.currentValue || acc.saving_percentage || 0,
+          account_status: acc.accountStatus || acc.account_status || 'ACTIVE',
+          interest_earned: data.insights?.ytdInterest || acc.interest_earned || 0,
+          salary: acc.salary || 0,
+          ...acc
+        };
+      }
+      
+      if (data.insights?.recentContributions) {
+        data.recentTransactions = data.insights.recentContributions.map(c => ({
+          transaction_date: c.date || c.transaction_date,
+          amount: c.amount,
+          transaction_type: 'CONTRIBUTION',
+          ...c
+        }));
+      }
+      
+      return data;
     } catch {
-      const [accountRes, txnRes] = await Promise.all([
-        api.get('/savings/account'),
-        api.get('/savings/transactions', { params: { page: 1, limit: 20 } }),
-      ]);
-      const account = unwrap(accountRes.data);
-      const txnPayload = unwrap(txnRes.data);
-      return {
-        account,
-        recentTransactions: asArray(txnPayload),
-      };
+      try {
+        const [accountRes, txnRes] = await Promise.all([
+          api.get('/savings/account'),
+          api.get('/savings/transactions', { params: { page: 1, limit: 20 } }),
+        ]);
+        const account = unwrap(accountRes.data);
+        const txnPayload = unwrap(txnRes.data);
+        return {
+          account: account || {},
+          recentTransactions: asArray(txnPayload),
+        };
+      } catch (err) {
+        console.warn('Savings fetch failed:', err.message);
+        return { account: {}, recentTransactions: [] };
+      }
     }
   },
 
   async getSavingsAccount() {
     const res = await api.get('/savings/account');
+    return unwrap(res.data);
+  },
+
+  async activateSavingsAccount(savingPercentage = null) {
+    const payload = savingPercentage ? { saving_percentage: savingPercentage } : {};
+    const res = await api.post('/savings/account', payload);
     return unwrap(res.data);
   },
 
@@ -87,7 +122,15 @@ export const employeeService = {
 
   async checkEligibility() {
     const res = await api.get('/loans/check-eligibility');
-    return unwrap(res.data);
+    const data = unwrap(res.data);
+    if (data && typeof data === 'object') {
+      return {
+        isEligible: data.eligible ?? data.isEligible ?? data.is_eligible ?? false,
+        max_loan_amount: data.financials?.max_loan_by_savings ?? data.max_loan_by_savings ?? data.max_loan_amount ?? data.maxLoanAmount ?? 0,
+        ...data
+      };
+    }
+    return data;
   },
 
   async applyForLoan(payload) {
@@ -118,6 +161,13 @@ export const employeeService = {
     return list.filter((g) => String(g.user_id) === String(userId));
   },
 
+  async checkGuarantorCapacity(employeeId, loanAmount) {
+    const res = await api.get(`/loans/check-guarantor/${employeeId}`, {
+      params: { loan_amount: loanAmount }
+    });
+    return unwrap(res.data);
+  },
+
   async getNotifications() {
     const res = await api.get('/notifications');
     return asArray(unwrap(res.data));
@@ -137,6 +187,17 @@ export const employeeService = {
     await api.put('/notifications/mark-all-read');
   },
 
+  // Document Center
+  getPayslipPdfUrl(detailId) {
+    const baseURL = api.defaults.baseURL;
+    return `${baseURL}/documents/payslip/${detailId}`;
+  },
+
+  getLoanAgreementPdfUrl(loanId) {
+    const baseURL = api.defaults.baseURL;
+    return `${baseURL}/documents/loan-agreement/${loanId}`;
+  },
+
   async getDashboardBundle(userId) {
     const results = await Promise.allSettled([
       this.getSavingsDashboard(),
@@ -150,14 +211,15 @@ export const employeeService = {
     const pick = (index, fallback = null) =>
       results[index].status === 'fulfilled' ? results[index].value : fallback;
 
-    const savingsDashboard = pick(0, {});
-    const loanDashboard = pick(1, {});
-    const loans = pick(2, []);
-    const payroll = pick(3, []);
+    const savingsDashboard = pick(0) || {};
+    const loanDashboard = pick(1) || {};
+    const loans = pick(2) || [];
+    const payroll = pick(3) || [];
     const unreadCount = pick(4, 0);
-    const guarantors = pick(5, []);
+    const guarantors = pick(5) || [];
 
-    const account = savingsDashboard?.account || savingsDashboard || {};
+    // Ensure we have a valid savings object even if pick returns null
+    const account = savingsDashboard?.account || (savingsDashboard?.current_balance !== undefined ? savingsDashboard : {});
     const latestPayroll = payroll[0] || null;
     const activeLoan =
       loanDashboard?.activeLoan ||
@@ -165,7 +227,12 @@ export const employeeService = {
       null;
 
     return {
-      savings: account,
+      savings: {
+        current_balance: account.current_balance || 0,
+        interest_earned: account.interest_earned || 0,
+        saving_percentage: account.saving_percentage || 0,
+        ...account
+      },
       transactions: savingsDashboard?.recentTransactions || [],
       loanDashboard,
       loans,

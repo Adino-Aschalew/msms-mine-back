@@ -94,6 +94,7 @@ const handleMulterError = (error, req, res, next) => {
 router.get('/overview', FinanceController.getFinancialOverview);
 router.get('/transactions', FinanceController.getRecentTransactions);
 router.get('/employees', FinanceController.getEmployees);
+router.get('/employees/export', auditMiddleware('EMPLOYEES_EXPORT'), FinanceController.exportEmployees);
 router.get('/transactions-list', FinanceController.getTransactionsList);
 router.get('/analytics', FinanceController.getAnalytics);
 router.get('/budgets/overview', FinanceController.getBudgetOverview);
@@ -108,9 +109,13 @@ router.get('/payroll/batches', PayrollController.getBatches);
 router.get('/payroll/batches/:batchId', PayrollController.getBatch);
 router.get('/payroll/batches/:batchId/details', PayrollController.getBatchDetails);
 router.get('/payroll/batches/:batchId/export', auditMiddleware('PAYROLL_BATCH_EXPORT'), PayrollController.exportBatch);
+router.post('/payroll/batches/:batchId/banking-export', auditMiddleware('BANKING_EXPORT_GENERATED'), FinanceController.exportPayrollForBanking);
 router.get('/payroll/history/:userId', PayrollController.getEmployeePayrollHistory);
 router.get('/payroll/stats', PayrollController.getPayrollStats);
 router.get('/payroll/template', PayrollController.downloadBatchTemplate);
+router.get('/payroll/preparation/employees', FinanceController.getPayrollPreparationEmployees);
+router.get('/interest-rates', FinanceController.getInterestRates);
+router.put('/interest-rates', FinanceController.updateInterestRates);
 
 
 router.get('/reports/cash-flow', FinanceController.getCashFlowReport);

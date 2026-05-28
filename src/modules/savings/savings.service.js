@@ -1,5 +1,7 @@
 const SavingsModel = require('./savings.model');
 const { auditLog } = require('../../middleware/audit');
+const NotificationService = require('../../services/notification.service');
+const { query } = require('../../config/database');
 
 class SavingsService {
   static async createAccount(userId, employeeId, savingPercentage, ip, userAgent) {
@@ -26,6 +28,33 @@ class SavingsService {
       const accountId = await SavingsModel.createSavingsAccount(userId, employeeId, finalSavingPercentage);
       
       await auditLog(userId, 'SAVINGS_ACCOUNT_CREATE', 'savings_accounts', accountId, null, { saving_percentage: finalSavingPercentage }, ip, userAgent);
+      
+      const employeeRows = await query(`
+        SELECT ep.first_name, ep.last_name, ep.department, u.email
+        FROM employee_profiles ep
+        JOIN users u ON ep.user_id = u.id
+        WHERE u.id = ?
+      `, [userId]);
+      
+      if (employeeRows && employeeRows.length > 0) {
+        const employee = employeeRows[0];
+        const financeAdmins = await query(`
+          SELECT DISTINCT id, email
+          FROM users
+          WHERE is_active = 1
+          AND role IN ('FINANCE_ADMIN', 'SUPER_ADMIN', 'FINANCE', 'ADMIN')
+        `);
+        
+        for (const admin of financeAdmins || []) {
+          await NotificationService.createNotification(
+            admin.id,
+            'Savings Account Activated',
+            `Employee ${employee.first_name} ${employee.last_name} (${employee.department}) has activated their savings account with ${finalSavingPercentage}% deduction.`,
+            'INFO',
+            { employee_id: employeeId, account_id: accountId }
+          );
+        }
+      }
       
       return { 
         accountId, 

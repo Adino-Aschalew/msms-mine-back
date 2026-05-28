@@ -484,29 +484,36 @@ class FinanceService {
 
   static async getEmployees(page = 1, limit = 10, filters = {}) {
     try {
+      console.log('getEmployees called with filters:', filters);
       const offset = (page - 1) * limit;
-      let whereClause = 'WHERE 1=1';
-      const params = [];
+      let whereClause = 'WHERE u.is_active = ? AND ep.employment_status = ?';
+      const params = [1, 'ACTIVE'];
       
-      if (filters.department) {
+      if (filters.department && filters.department !== 'undefined' && filters.department !== 'all') {
         whereClause += ' AND ep.department = ?';
         params.push(filters.department);
       }
       
-      if (filters.search) {
+      if (filters.search && filters.search !== 'undefined') {
         whereClause += ' AND (u.username LIKE ? OR u.email LIKE ? OR ep.first_name LIKE ? OR ep.last_name LIKE ? OR u.employee_id LIKE ?)';
         const searchTerm = `%${filters.search}%`;
         params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
       }
       
-      const [countResult] = await query(`
+      console.log('Query params:', params);
+      console.log('Where clause:', whereClause);
+      
+      const countRows = await query(`
         SELECT COUNT(*) as total
         FROM users u
-        LEFT JOIN employee_profiles ep ON u.id = ep.user_id
+        INNER JOIN employee_profiles ep ON u.id = ep.user_id
+        INNER JOIN savings_accounts sa ON u.id = sa.user_id AND sa.account_status = 'ACTIVE'
         ${whereClause}
       `, params);
       
-      const [employees] = await query(`
+      console.log('Count result:', countRows);
+      
+      const employees = await query(`
         SELECT 
           u.id,
           u.employee_id,
@@ -524,28 +531,92 @@ class FinanceService {
           ep.hire_date,
           sa.current_balance as savingsBalance,
           sa.saving_percentage,
-          0 as salary -- Salary is not directly in employee_profiles in this schema
+          sa.account_status,
+          sa.created_at as savingsActivatedDate,
+          ep.salary
         FROM users u
-        LEFT JOIN employee_profiles ep ON u.id = ep.user_id
-        LEFT JOIN savings_accounts sa ON u.id = sa.user_id
+        INNER JOIN employee_profiles ep ON u.id = ep.user_id
+        INNER JOIN savings_accounts sa ON u.id = sa.user_id AND sa.account_status = 'ACTIVE'
         ${whereClause}
-        ORDER BY u.created_at DESC
+        ORDER BY sa.created_at DESC
         LIMIT ? OFFSET ?
       `, [...params, parseInt(limit), parseInt(offset)]);
       
+      console.log('Employees found:', employees ? employees.length : 0);
+      console.log('Employees data:', employees);
+      
+      const total = countRows[0]?.total || 0;
+      
       return {
-        employees: employees.map(emp => ({
+        employees: (employees || []).map(emp => ({
           ...emp,
           name: `${emp.first_name} ${emp.last_name}`,
-          salary: emp.salary || 50000 
+          salary: parseFloat(emp.salary) || 0,
+          savingsBalance: parseFloat(emp.savingsBalance) || 0,
+          joinDate: emp.savingsActivatedDate
+            ? new Date(emp.savingsActivatedDate).toLocaleDateString()
+            : (emp.hire_date ? new Date(emp.hire_date).toLocaleDateString() : '—'),
+          position: emp.job_grade || 'Employee',
+          payrollHistory: emp.payrollHistory || []
         })),
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: countResult[0].total,
-          pages: Math.ceil(countResult[0].total / limit)
+          total,
+          pages: Math.ceil(total / limit)
         }
       };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getEmployeesExport(filters = {}) {
+    try {
+      let whereClause = 'WHERE u.is_active = ? AND ep.employment_status = ?';
+      const params = [1, 'ACTIVE'];
+      
+      if (filters.department && filters.department !== 'all') {
+        whereClause += ' AND ep.department = ?';
+        params.push(filters.department);
+      }
+      
+      if (filters.search) {
+        whereClause += ' AND (u.username LIKE ? OR u.email LIKE ? OR ep.first_name LIKE ? OR ep.last_name LIKE ? OR u.employee_id LIKE ?)';
+        const searchTerm = `%${filters.search}%`;
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      }
+
+      const employees = await query(`
+        SELECT 
+          u.employee_id,
+          ep.first_name,
+          ep.last_name,
+          ep.department,
+          ep.job_grade,
+          ep.employment_status,
+          ep.salary,
+          sa.current_balance as savingsBalance,
+          sa.saving_percentage,
+          sa.created_at as savingsActivatedDate
+        FROM users u
+        INNER JOIN employee_profiles ep ON u.id = ep.user_id
+        INNER JOIN savings_accounts sa ON u.id = sa.user_id AND sa.account_status = 'ACTIVE'
+        ${whereClause}
+        ORDER BY ep.last_name, ep.first_name
+      `, params);
+
+      return (employees || []).map(emp => ({
+        'Employee ID': emp.employee_id,
+        'Name': `${emp.first_name} ${emp.last_name}`,
+        'Department': emp.department,
+        'Position': emp.job_grade || 'Employee',
+        'Status': emp.employment_status,
+        'Salary': parseFloat(emp.salary || 0).toFixed(2),
+        'Savings Balance': parseFloat(emp.savingsBalance || 0).toFixed(2),
+        'Savings %': emp.saving_percentage,
+        'Join Date': emp.savingsActivatedDate ? new Date(emp.savingsActivatedDate).toLocaleDateString() : '—'
+      }));
     } catch (error) {
       throw error;
     }
@@ -932,6 +1003,55 @@ class FinanceService {
         database_status: 'error',
         error: error.message
       };
+    }
+  }
+
+  static async getPayrollPreparationEmployees(filters = {}) {
+    try {
+      let queryStr = `
+        SELECT 
+          u.id as user_id,
+          u.employee_id,
+          ep.first_name,
+          ep.last_name,
+          ep.department,
+          ep.salary,
+          sa.saving_percentage,
+          sa.current_balance,
+          sa.account_status,
+          COUNT(DISTINCT l.id) as active_loans_count,
+          COALESCE(SUM(l.monthly_deduction), 0) as total_monthly_loan_deduction
+        FROM users u
+        JOIN employee_profiles ep ON u.id = ep.user_id
+        LEFT JOIN savings_accounts sa ON u.id = sa.user_id AND sa.account_status = 'ACTIVE'
+        LEFT JOIN loans l ON u.id = l.user_id AND l.status = 'ACTIVE'
+        WHERE u.status = 'ACTIVE'
+        AND ep.employment_status = 'ACTIVE'
+        AND (sa.account_status = 'ACTIVE' OR l.status = 'ACTIVE')
+      `;
+
+      const params = [];
+
+      if (filters.department) {
+        queryStr += ' AND ep.department = ?';
+        params.push(filters.department);
+      }
+
+      queryStr += `
+        GROUP BY u.id, u.employee_id, ep.first_name, ep.last_name, ep.department, ep.salary, sa.saving_percentage, sa.current_balance, sa.account_status
+        ORDER BY ep.department, ep.last_name, ep.first_name
+      `;
+
+      const employees = await query(queryStr, params);
+
+      return {
+        success: true,
+        data: employees,
+        count: employees.length
+      };
+    } catch (error) {
+      console.error('Get payroll preparation employees error:', error);
+      throw error;
     }
   }
 }

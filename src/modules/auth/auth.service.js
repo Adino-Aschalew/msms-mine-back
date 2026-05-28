@@ -5,6 +5,7 @@ const path = require('path');
 const { query } = require('../../config/database');
 const { auditLog } = require('../../middleware/audit');
 const HrService = require('../hr/hr.service');
+const NotificationService = require('../../services/notification.service');
 
 
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
@@ -16,38 +17,43 @@ class AuthService {
         throw new Error('Email address is required');
       }
 
-      
       const user = await this.findByEmail(email);
       if (!user) {
-        
         return {
           success: true,
           message: 'If an account with this email exists, password reset instructions have been sent.'
         };
       }
 
-      
-      const resetToken = crypto.randomBytes(32).toString('hex');
-      const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); 
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
 
-      
       await query(`
         UPDATE users 
         SET reset_token = ?, reset_token_expiry = ? 
         WHERE id = ?
-      `, [resetToken, resetTokenExpiry, user.id]);
+      `, [otp, otpExpiry, user.id]);
 
-      
-      
-      console.log(`Password reset token for ${email}: ${resetToken}`);
-      console.log(`Reset link: http://localhost:3000/reset-password?token=${resetToken}`);
+      const emailSubject = 'Password Reset OTP';
+      const emailMessage = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Password Reset Request</h2>
+          <p style="color: #666;">You have requested to reset your password. Use the following OTP to proceed:</p>
+          <div style="background: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+            <span style="font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 5px;">${otp}</span>
+          </div>
+          <p style="color: #666;">This OTP will expire in 2 minutes for security reasons.</p>
+          <p style="color: #999; font-size: 12px;">If you did not request this password reset, please ignore this email.</p>
+        </div>
+      `;
 
-      
+      await NotificationService.sendEmail(email, emailSubject, emailMessage);
+
       await auditLog(user.id, 'PASSWORD_RESET_REQUEST', 'users', user.id, null, { email }, ip, userAgent);
 
       return {
         success: true,
-        message: 'Password reset instructions have been sent to your email.'
+        message: 'Password reset OTP has been sent to your email.'
       };
 
     } catch (error) {
@@ -56,40 +62,36 @@ class AuthService {
     }
   }
 
-  static async resetPassword(token, newPassword, ip, userAgent) {
+  static async resetPassword(otp, newPassword, ip, userAgent) {
     try {
-      if (!token || !newPassword) {
-        throw new Error('Reset token and new password are required');
+      if (!otp || !newPassword) {
+        throw new Error('OTP and new password are required');
       }
 
       if (newPassword.length < 8) {
         throw new Error('Password must be at least 8 characters long');
       }
 
-      
       const users = await query(`
         SELECT id, email, reset_token_expiry 
         FROM users 
         WHERE reset_token = ? AND reset_token_expiry > NOW()
-      `, [token]);
+      `, [otp]);
 
       if (users.length === 0) {
-        throw new Error('Invalid or expired reset token');
+        throw new Error('Invalid or expired OTP');
       }
 
       const user = users[0];
 
-      
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      
       await query(`
         UPDATE users 
         SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL, updated_at = NOW()
         WHERE id = ?
       `, [hashedPassword, user.id]);
 
-      
       await auditLog(user.id, 'PASSWORD_RESET', 'users', user.id, null, { email: user.email }, ip, userAgent);
 
       return {
@@ -139,7 +141,6 @@ class AuthService {
         await auditLog(null, 'LOGIN_FAILED', 'users', null, null, { identifier }, ip, userAgent);
         throw new Error('Invalid credentials. Please check your username/ID and password.');
       }
-      
       
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
       

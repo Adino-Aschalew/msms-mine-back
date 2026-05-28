@@ -83,9 +83,9 @@ const LoanRequests = () => {
         max_amount: amountRange.max || undefined
       });
       
-      if (res && res.data && res.data.success) {
+      if (res && res.success) {
         
-        const mappedData = res.data.data.map(app => ({
+        const mappedData = res.data.map(app => ({
           id: app.id,
           employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
           employeeId: app.employee_id || 'N/A',
@@ -95,7 +95,7 @@ const LoanRequests = () => {
           monthlyInstallment: parseFloat(app.monthly_repayment || 0),
           tenure: app.approved_term_months || app.repayment_duration_months || 0,
           approvalDate: app.review_date?.split('T')[0] || new Date().toISOString().split('T')[0],
-          status: app.status?.toLowerCase() || 'approved',
+          status: app.status?.toLowerCase() || 'pending',
           nextPaymentDate: app.next_payment_date || 'N/A',
           outstandingBalance: parseFloat(app.outstanding_balance || 0)
         }));
@@ -1009,7 +1009,7 @@ const LoanRequests = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                           
-                          {request.status === 'pending' && (
+                          {(request.status === 'pending' || request.status === 'under_review') && (
                             <>
                               <button
                                 onClick={() => handleApprove(request.id)}
@@ -1134,7 +1134,7 @@ const LoanRequests = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                     
-                    {request.status === 'pending' && (
+                    {(request.status === 'pending' || request.status === 'under_review') && (
                       <>
                         <button
                           onClick={() => handleApprove(request.id)}

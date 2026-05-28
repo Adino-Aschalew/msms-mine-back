@@ -4,7 +4,6 @@ import HrLayout from '../../hr-admin/src/components/Shared/Layout';
 import { ThemeProvider } from '../../hr-admin/src/contexts/ThemeContext';
 import DashboardPage from '../../hr-admin/src/pages/DashboardPage';
 import EmployeesPage from '../../hr-admin/src/pages/EmployeesPage';
-import PerformancePage from '../../hr-admin/src/pages/PerformancePageSystem';
 import ReportsPage from '../../hr-admin/src/pages/ReportsPageNew';
 import NotificationsPage from '../../hr-admin/src/pages/NotificationsPage';
 import SettingsPage from '../../hr-admin/src/pages/SettingsPageNew';
@@ -18,7 +17,6 @@ const HrModule = () => {
           <Route index element={<DashboardPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="employees" element={<EmployeesPage />} />
-          <Route path="performance" element={<PerformancePage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="settings" element={<SettingsPage />} />

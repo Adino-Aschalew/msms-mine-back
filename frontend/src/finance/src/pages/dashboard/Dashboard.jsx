@@ -15,9 +15,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import KPICard from '../../components/widgets/KPICard';
-import RevenueChart from '../../components/charts/RevenueChart';
 import SavingAnalyzer from '../../components/charts/SavingAnalyzer';
-import CashFlowChart from '../../components/charts/CashFlowChart';
 import RecentTransactionsTable from '../../components/tables/RecentTransactionsTable';
 import AccountsOverview from '../../components/widgets/AccountsOverview';
 import DateFilter from '../../components/widgets/DateFilter';
@@ -48,7 +46,6 @@ const Dashboard = () => {
     
     
     const handlePayrollUpdate = (payrollData) => {
-      console.log('Finance Dashboard: Payroll data updated, refreshing...', payrollData);
       fetchDashboardData();
     };
     
@@ -64,20 +61,10 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Finance Dashboard: Fetching data...');
       const response = await financeAPI.getFinancialOverview(dateRange);
-      console.log('📊 Finance Dashboard Response:', response);
-      console.log('📊 Response structure:', JSON.stringify(response, null, 2));
       
       
       const data = response.data || response;
-      console.log('✅ Processed Overview Data:', data);
-      console.log('💰 Revenue:', data?.revenue);
-      console.log('💸 Expenses:', data?.expenses);
-      console.log('📈 Net Profit:', data?.netProfit);
-      console.log('💵 Cash Balance:', data?.cashBalance);
-      console.log('💳 Accounts Receivable:', data?.accountsReceivable);
-      console.log('💼 Accounts Payable:', data?.accountsPayable);
       setDashboardData(data);
       setOverviewData(data);
     } catch (err) {
@@ -87,14 +74,11 @@ const Dashboard = () => {
       } else {
         setError('Failed to fetch finance dashboard data');
       }
-      console.error('Finance Dashboard error:', err);
       
       
       setDashboardData({
-        revenue: 0,
         expenses: 0,
         netProfit: 0,
-        revenueGrowth: 0,
         expensesGrowth: 0,
         profitGrowth: 0,
         cashBalance: 0,
@@ -103,9 +87,8 @@ const Dashboard = () => {
         receivableChange: 0,
         accountsPayable: 0,
         payableChange: 0,
-        expenseBreakdown: [],
-        monthlyCashFlow: []
-      });
+        expenseBreakdown: []
+            });
     } finally {
       setLoading(false);
     }
@@ -261,28 +244,9 @@ const Dashboard = () => {
       </motion.div>
 
       {}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="card p-4 sm:p-6"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Revenue vs Expenses
-            </h2>
-            <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-              <Eye className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="h-48 sm:h-64">
-            <RevenueChart dateRange={dateRange} dashboardData={dashboardData} />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: 0 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="card p-4 sm:p-6"
@@ -300,28 +264,6 @@ const Dashboard = () => {
           </div>
         </motion.div>
       </div>
-
-      {}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="card p-4 sm:p-6"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Cash Flow Analysis
-          </h2>
-          <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-            <Eye className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="h-48 sm:h-64">
-          <CashFlowChart dateRange={dateRange} dashboardData={dashboardData} />
-        </div>
-      </motion.div>
-
-      {}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {}
         <motion.div

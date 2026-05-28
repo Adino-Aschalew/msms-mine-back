@@ -40,14 +40,20 @@ const FinanceEmployees = () => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
+      const departmentParam = (!filterDepartment || filterDepartment === 'all' || filterDepartment === 'undefined') ? '' : filterDepartment;
+      console.log('Fetching employees with department:', departmentParam, 'filterDepartment:', filterDepartment);
+      
       const response = await financeAPI.getEmployees({
         search: searchQuery,
-        department: filterDepartment === 'all' ? '' : filterDepartment
+        department: departmentParam,
+        page: 1,
+        limit: 500
       });
       
-      if (response.success) {
-        setEmployees(response.data.employees || []);
-      }
+      console.log('Employees response:', response);
+      
+      const payload = response?.employees != null ? response : response?.data;
+      setEmployees(payload?.employees || []);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching employees:', err);
@@ -59,6 +65,25 @@ const FinanceEmployees = () => {
   const totalSavings = employees.reduce((sum, emp) => sum + (parseFloat(emp.savingsBalance) || 0), 0);
   const totalPayroll = employees.reduce((sum, emp) => sum + (parseFloat(emp.salary) || 0), 0);
   const averageSavings = employees.length > 0 ? totalSavings / employees.length : 0;
+
+  const handleExport = () => {
+    const csvContent = [
+      ['Employee ID', 'Gross Salary'],
+      ...employees.map(emp => [emp.employee_id || emp.id, emp.salary || 0])
+    ]
+      .map(row => row.join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `employees_payroll_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const EmployeeCard = ({ employee }) => {
     const contributionRate = ((employee.savingsBalance / (employee.salary * 2)) * 100).toFixed(1);
@@ -138,8 +163,8 @@ const FinanceEmployees = () => {
       {}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employees</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage employee financial profiles and savings</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employees with Active Savings</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage employees who have activated their savings accounts</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 rounded-lg text-sm font-medium text-white hover:bg-blue-600">
@@ -231,6 +256,14 @@ const FinanceEmployees = () => {
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
+
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </button>
 
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
               <Filter className="h-4 w-4" />

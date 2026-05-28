@@ -4,7 +4,7 @@ const { query } = require('../config/database');
 class NotificationService {
   static async sendEmail(to, subject, message, options = {}) {
     try {
-      
+
       if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.log('Email configuration not found, skipping email send');
         return { success: false, message: 'Email not configured' };
@@ -14,10 +14,13 @@ class NotificationService {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         secure: process.env.SMTP_SECURE === 'true',
+        requireTLS: true, // Enable STARTTLS for port 587
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
-        }
+        },
+        // Force IPv4 to avoid IPv6 network unreachable errors
+        family: 4
       });
 
       const mailOptions = {
@@ -29,18 +32,30 @@ class NotificationService {
       };
 
       const result = await transporter.sendMail(mailOptions);
-      
-      
+
+
       await this.logNotification('EMAIL', to, subject, message, 'SENT');
-      
+
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error('Email send error:', error);
-      
-      
+
+      // For development, log OTP code if it's in the message
+      if (process.env.NODE_ENV === 'development') {
+        const otpMatch = message.match(/\b\d{6}\b/);
+        if (otpMatch) {
+          console.log('═══════════════════════════════════════════════════════════════');
+          console.log('📧 EMAIL VERIFICATION CODE (Development Mode):');
+          console.log(`🔑 OTP: ${otpMatch[0]}`);
+          console.log(`📧 To: ${to}`);
+          console.log('═══════════════════════════════════════════════════════════════');
+        }
+      }
+
+
       await this.logNotification('EMAIL', to, subject, message, 'FAILED', error.message);
-      
-      
+
+
       return { success: false, message: `Failed to send email: ${error.message}` };
     }
   }

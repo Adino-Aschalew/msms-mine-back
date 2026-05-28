@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { financeAPI } from '../../../../shared/services/financeAPI';
 import {
   FiGrid,
   FiUsers,
@@ -67,24 +68,9 @@ const navigation = [
     icon: FiUsers,
   },
   {
-    name: 'Invoices',
-    href: '/finance/invoices',
-    icon: FiCreditCard,
-  },
-  {
-    name: 'Reports',
-    href: '/finance/reports',
-    icon: FiFileText,
-  },
-  {
     name: 'Notifications',
     href: '/finance/notifications',
     icon: FiBell,
-  },
-  {
-    name: 'Settings',
-    href: '/finance/settings',
-    icon: FiSettings,
   },
 ];
 
@@ -92,6 +78,21 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const { logout } = useAuth();
   const [expandedItems, setExpandedItems] = React.useState(new Set(['Payroll']));
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const response = await financeAPI.getUnreadNotificationsCount();
+        const count = response?.unreadCount ?? response?.data?.unreadCount ?? 0;
+        setUnreadNotifications(count);
+      } catch (err) {
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => clearInterval(interval);
+  }, [location.pathname]);
 
   const toggleExpanded = (name) => {
     const newExpanded = new Set(expandedItems);
@@ -105,18 +106,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
 
   const handleCloseSidebar = () => {
-    console.log('Closing sidebar, current state:', isOpen);
     if (setIsOpen && typeof setIsOpen === 'function') {
       setIsOpen(false);
     } else {
-      console.error('setIsOpen is not a function:', setIsOpen);
     }
   };
 
   const handleTopCloseClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Top close button clicked');
     handleCloseSidebar();
   };
 
@@ -183,6 +181,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   >
                     <Icon className="h-5 w-5 flex-shrink-0" />
                     <span className="ml-3 flex-1 text-left hidden sm:block">{item.name}</span>
+                    {item.name === 'Notifications' && unreadNotifications > 0 && (
+                      <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                        {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                      </span>
+                    )}
                     {hasChildren && (
                       <div className={`transform text-center justify-center flex transition-transform duration-200 ${isExpanded ? 'rotate-270' : ''}`}>
                         <FiChevronLeft className="h-4 w-4 text-center hidden sm:block" />

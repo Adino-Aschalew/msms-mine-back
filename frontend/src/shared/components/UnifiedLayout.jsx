@@ -59,9 +59,6 @@ const UnifiedLayout = () => {
                   <a href="/hr/employees" className="block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">
                     Employees
                   </a>
-                  <a href="/hr/performance" className="block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    Performance
-                  </a>
                   <a href="/hr/reports" className="block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">
                     Reports
                   </a>

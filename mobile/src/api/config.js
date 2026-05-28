@@ -13,10 +13,6 @@ function getDebuggerHost() {
   return null;
 }
 
-/**
- * Resolves the API base URL for the current runtime.
- * Priority: EXPO_PUBLIC_API_URL > Expo debugger host > platform defaults.
- */
 export function getApiBaseUrl() {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/$/, '');

@@ -10,14 +10,14 @@ import PayrollHistory from './pages/payroll/PayrollHistory.jsx';
 import Payroll from './pages/payroll/Payroll.jsx';
 import Employees from './pages/employees/Employees.jsx';
 import Analytics from './pages/analytics/Analytics.jsx';
-import Reports from './pages/reports/Reports.jsx';
+
 import Users from './pages/users/Users.jsx';
-import Settings from './pages/settings/Settings.jsx';
+
 import AccountProfile from './pages/account/AccountProfile.jsx';
 import AccountSecurity from './pages/account/AccountSecurity.jsx';
 import Accounts from './pages/accounts/Accounts.jsx';
  import Budgets from './pages/budgets/Budgets.jsx';
- import Invoices from './pages/invoices/Invoices.jsx';
+
  import PayrollReports from './pages/payroll/PayrollReports.jsx';
  import SavingsRequests from './pages/savings/SavingsRequests.jsx';
  import Notifications from './pages/notifications/Notifications.jsx';
@@ -27,7 +27,6 @@ import { AuthProvider } from '../../../shared/contexts/AuthContext';
 import { ThemeProvider } from '../../../shared/contexts/ThemeContext';
 
 function FinanceApp() {
-  console.log('FinanceApp component is rendering');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   return (
@@ -54,12 +53,12 @@ function FinanceApp() {
                     <Route path="/payroll/reports" element={<PayrollReports />} />
                     <Route path="/employees" element={<Employees />} />
                     <Route path="/budgets" element={<Budgets />} />
-                    <Route path="/invoices" element={<Invoices />} />
+
                     <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/reports" element={<Reports />} />
+
                     <Route path="/users" element={<Users />} />
                     <Route path="/notifications" element={<Notifications />} />
-                    <Route path="/settings" element={<Settings />} />
+
                      <Route path="/account/profile" element={<AccountProfile />} />
                      <Route path="/account/security" element={<AccountSecurity />} />
                      <Route path="/savings/requests" element={<SavingsRequests />} />

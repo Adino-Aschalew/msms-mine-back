@@ -90,28 +90,47 @@ class GuarantorService {
 
   static async getGuarantors(page = 1, limit = 10, filters = {}) {
     try {
+      console.log('🔍 getGuarantors called with:', { page, limit, filters });
       const offset = (page - 1) * limit;
       let whereClause = 'WHERE 1=1';
       const params = [];
-      
+
+      if (filters.userId) {
+        if (filters.guarantorOnly) {
+          whereClause += ' AND g.guarantor_id IN (SELECT employee_id FROM employee_profiles WHERE user_id = ?)';
+          params.push(filters.userId);
+        } else {
+          whereClause += ' AND la.user_id = ?';
+          params.push(filters.userId);
+        }
+      }
+
       if (filters.status) {
-        whereClause += ' AND status = ?';
+        whereClause += ' AND g.status = ?';
         params.push(filters.status);
       }
-      
+
       if (filters.loan_application_id) {
         whereClause += ' AND loan_application_id = ?';
         params.push(filters.loan_application_id);
       }
-      
+
       if (filters.search) {
         whereClause += ' AND (guarantor_name LIKE ? OR guarantor_email LIKE ? OR guarantor_phone LIKE ?)';
         const searchTerm = `%${filters.search}%`;
         params.push(searchTerm, searchTerm, searchTerm);
       }
-      
-      const countQuery = `SELECT COUNT(*) as total FROM guarantors ${whereClause}`;
-      
+
+      console.log('🔍 SQL Query:', whereClause);
+      console.log('🔍 SQL Params:', params);
+
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM guarantors g
+        LEFT JOIN loan_applications la ON g.loan_application_id = la.id
+        ${whereClause}
+      `;
+
       const selectQuery = `
         SELECT 
           g.*,
@@ -166,7 +185,7 @@ class GuarantorService {
         WHERE g.id = ?
       `;
       
-      const [guarantors] = await query(selectQuery, [guarantorId]);
+      const guarantors = await query(selectQuery, [guarantorId]);
       
       return guarantors[0] || null;
     } catch (error) {
@@ -221,6 +240,32 @@ class GuarantorService {
         
         await NotificationService.sendEmail(guarantor.guarantor_email, emailSubject, emailContent);
       }
+
+      // If a guarantor accepted, check if ALL guarantors for this application have approved
+      // If so, promote the loan application to UNDER_REVIEW so the committee can see it
+      if (status === 'APPROVED') {
+        const [pendingGuarantors] = await query(`
+          SELECT COUNT(*) as pending_count
+          FROM guarantors
+          WHERE loan_application_id = ? AND status = 'PENDING'
+        `, [guarantor.loan_application_id]);
+        
+        const [rejectedGuarantors] = await query(`
+          SELECT COUNT(*) as rejected_count
+          FROM guarantors
+          WHERE loan_application_id = ? AND status = 'REJECTED'
+        `, [guarantor.loan_application_id]);
+
+        // No pending and no rejected guarantors means all have approved
+        if (pendingGuarantors.pending_count === 0 && rejectedGuarantors.rejected_count === 0) {
+          await query(`
+            UPDATE loan_applications
+            SET status = 'UNDER_REVIEW'
+            WHERE id = ? AND status = 'PENDING'
+          `, [guarantor.loan_application_id]);
+          console.log(`✅ All guarantors approved for application ${guarantor.loan_application_id}. Promoted to UNDER_REVIEW.`);
+        }
+      }
       
       return { message: 'Guarantor status updated successfully' };
     } catch (error) {
@@ -228,9 +273,9 @@ class GuarantorService {
     }
   }
 
-  static async getGuantorStats() {
+  static async getGuarantorStats() {
     try {
-      const [stats] = await query(`
+      const stats = await query(`
         SELECT 
           COUNT(*) as total_guarantors,
           COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_guarantors,
@@ -269,7 +314,7 @@ class GuarantorService {
         errors.push('Guarantor address is required');
       }
       
-      if (!guarantorDetails.guarantor_relationship || guarantor_details.guarantor_relationship.trim() === '') {
+      if (!guarantorDetails.guarantor_relationship || guarantorDetails.guarantor_relationship.trim() === '') {
         errors.push('Guarantor relationship is required');
       }
       
@@ -442,7 +487,7 @@ class GuarantorService {
 
   static async sendGuarantorReminder(guarantorId, daysBeforeExpiry) {
     try {
-      const guarantor = await this.getGuantorById(guarantorId);
+      const guarantor = await this.getGuarantorById(guarantorId);
       
       if (!guarantor) {
         throw new Error('Guarantor not found');

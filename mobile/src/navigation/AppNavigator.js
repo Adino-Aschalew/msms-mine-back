@@ -13,12 +13,18 @@ import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
 import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
 
 import HomeScreen from '../screens/dashboard/HomeScreen';
-import FinanceScreen from '../screens/dashboard/FinanceScreen';
+import SavingsScreen from '../screens/dashboard/SavingsScreen';
+import LoansScreen from '../screens/dashboard/LoansScreen';
+import PayrollScreen from '../screens/dashboard/PayrollScreen';
 import ProfileScreen from '../screens/dashboard/ProfileScreen';
 import NotificationsScreen from '../screens/dashboard/NotificationsScreen';
 import LoanCalculatorScreen from '../screens/dashboard/LoanCalculatorScreen';
 import GuarantorsScreen from '../screens/dashboard/GuarantorsScreen';
-import PayrollScreen from '../screens/dashboard/PayrollScreen';
+import RepayScreen from '../screens/dashboard/RepayScreen';
+import SupportScreen from '../screens/dashboard/SupportScreen';
+import SessionsScreen from '../screens/dashboard/SessionsScreen';
+
+import { StyleSheet } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -26,7 +32,9 @@ const Tab = createBottomTabNavigator();
 function DashboardTabs() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const tabBarHeight = 58 + Math.max(insets.bottom, Platform.OS === 'android' ? 10 : 0);
+  
+  // Adjusted height for a more "floating" look
+  const tabBarHeight = 70 + (Platform.OS === 'ios' ? insets.bottom : 12);
 
   return (
     <Tab.Navigator
@@ -34,33 +42,53 @@ function DashboardTabs() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName = 'ellipse-outline';
           if (route.name === 'Home') iconName = focused ? 'grid' : 'grid-outline';
-          if (route.name === 'Finance') iconName = focused ? 'wallet' : 'wallet-outline';
+          if (route.name === 'Savings') iconName = focused ? 'wallet' : 'wallet-outline';
+          if (route.name === 'Loans') iconName = focused ? 'cash' : 'cash-outline';
+          if (route.name === 'Payroll') iconName = focused ? 'receipt' : 'receipt-outline';
           if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
-          return <Ionicons name={iconName} size={size} color={color} />;
+          
+          return (
+            <View style={[
+              styles.iconContainer, 
+              focused && { backgroundColor: theme.primary + '15' }
+            ]}>
+              <Ionicons name={iconName} size={22} color={color} />
+            </View>
+          );
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textMuted,
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
           height: tabBarHeight,
-          paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 6,
-          borderTopWidth: 1,
-          borderTopColor: theme.border,
+          position: 'absolute',
+          bottom: Platform.OS === 'ios' ? insets.bottom : 20,
+          left: 16,
+          right: 16,
+          borderRadius: 24,
           backgroundColor: theme.card,
-          elevation: 12,
+          borderTopWidth: 0,
+          paddingTop: 8,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 14,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.1,
+          shadowRadius: 20,
+          elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 2,
+          fontSize: 10,
+          fontWeight: '700',
+          marginTop: 2,
         },
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
-      <Tab.Screen name="Finance" component={FinanceScreen} options={{ title: 'Finance' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Savings" component={SavingsScreen} />
+      <Tab.Screen name="Loans" component={LoansScreen} />
+      <Tab.Screen name="Payroll" component={PayrollScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -81,7 +109,10 @@ function MainStack() {
       <Stack.Screen name="Payroll" component={PayrollScreen} options={{ title: 'Payroll History' }} />
       <Stack.Screen name="LoanCalculator" component={LoanCalculatorScreen} options={{ title: 'Loan Calculator' }} />
       <Stack.Screen name="Guarantors" component={GuarantorsScreen} options={{ title: 'Guarantors' }} />
+      <Stack.Screen name="Repay" component={RepayScreen} options={{ title: 'Loan Repayment' }} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: 'Change Password' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Sessions" component={SessionsScreen} options={{ title: 'Active Sessions' }} />
     </Stack.Navigator>
   );
 }
@@ -132,3 +163,13 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

@@ -87,7 +87,6 @@ const AccountProfile = () => {
       });
     } catch (err) {
       setError('Failed to load profile data');
-      console.error('Profile fetch error:', err);
       
       setProfile({
         firstName: user?.first_name || '',

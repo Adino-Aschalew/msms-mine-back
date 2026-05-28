@@ -146,5 +146,25 @@ export const hrAPI = {
   getJobGrades: async () => {
     const response = await apiClient.get('/hr/employees/job-grades');
     return response.data;
+  },
+
+  getNotifications: async (filters = {}) => {
+    const response = await apiClient.get('/notifications', { params: filters });
+    return response.data;
+  },
+
+  markNotificationAsRead: async (id) => {
+    const response = await apiClient.put(`/notifications/${id}/read`);
+    return response.data;
+  },
+
+  markAllNotificationsAsRead: async () => {
+    const response = await apiClient.put('/notifications/mark-all-read');
+    return response.data;
+  },
+
+  deleteNotification: async (id) => {
+    const response = await apiClient.delete(`/notifications/${id}`);
+    return response.data;
   }
 };

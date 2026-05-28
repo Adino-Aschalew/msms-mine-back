@@ -26,7 +26,6 @@ const RecentTransactionsTable = ({ limit = 10 }) => {
         const transactionData = response?.data || response || [];
         setTransactions(Array.isArray(transactionData) ? transactionData : []);
       } catch (err) {
-        console.error('Failed to fetch transactions:', err);
         setTransactions([]); 
       } finally {
         setLoading(false);

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FiEye, FiEyeOff, FiLock, FiUser, FiAlertCircle, FiShield } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiLock, FiUser, FiAlertCircle, FiShield, FiX } from 'react-icons/fi';
+import api from '../services/api';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -15,6 +16,15 @@ const LoginPage = () => {
     identifier: '',
     password: ''
   });
+  
+  const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetStep, setResetStep] = useState(1);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   const from = location.state?.from?.pathname || '/';
 
@@ -92,6 +102,62 @@ const LoginPage = () => {
       setError(err.message || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      setResetError('Please enter your email address');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetError('');
+    try {
+      const response = await api.post('/auth/forgot-password', { email: resetEmail });
+      setResetStep(2);
+    } catch (error) {
+      setResetError(error.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetOtp || !newPassword || !confirmPassword) {
+      setResetError('Please fill in all fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setResetError('Password must be at least 8 characters');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetError('');
+    try {
+      const response = await api.post('/auth/reset-password', {
+        otp: resetOtp,
+        newPassword,
+        confirmPassword
+      });
+      setForgotPasswordModal(false);
+      setResetStep(1);
+      setResetEmail('');
+      setResetOtp('');
+      setNewPassword('');
+      setConfirmPassword('');
+      alert('Password has been reset successfully');
+    } catch (error) {
+      setResetError(error.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -274,6 +340,21 @@ const LoginPage = () => {
             </div>
           </div>
 
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => {
+                setForgotPasswordModal(true);
+                setResetStep(1);
+                setResetError('');
+              }}
+              className="text-sm font-medium hover:underline"
+              style={{ color: '#60a5fa' }}
+            >
+              Forgot Password?
+            </button>
+          </div>
+
           {}
           {error && (
             <div
@@ -332,10 +413,184 @@ const LoginPage = () => {
         {}
         <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center justify-between text-xs" style={{ color: 'rgba(100,116,139,1)' }}>
-            <span>© 2026 MSMS · All rights reserved</span>
+            <span>{new Date().getFullYear()}· All rights reserved</span>
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {forgotPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div
+            className="relative w-full max-w-md mx-4 rounded-2xl"
+            style={{
+              background: 'rgba(15, 23, 42, 0.95)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              padding: '32px'
+            }}
+          >
+            <button
+              onClick={() => {
+                setForgotPasswordModal(false);
+                setResetStep(1);
+                setResetEmail('');
+                setResetOtp('');
+                setNewPassword('');
+                setConfirmPassword('');
+                setResetError('');
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <FiX className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {resetStep === 1 ? 'Forgot Password' : 'Reset Password'}
+            </h2>
+            <p className="text-sm mb-6" style={{ color: 'rgba(148,163,184,1)' }}>
+              {resetStep === 1 
+                ? 'Enter your email to receive a 6-digit OTP' 
+                : 'Enter the OTP and your new password'}
+            </p>
+
+            {resetError && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm mb-4"
+                style={{
+                  background: 'rgba(239,68,68,0.10)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  color: '#fca5a5'
+                }}
+              >
+                <FiAlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#f87171' }} />
+                {resetError}
+              </div>
+            )}
+
+            {resetStep === 1 ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(203,213,225,1)' }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="e.g. employee@msms.com"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      background: 'rgba(30,41,59,0.70)',
+                      border: '1.5px solid rgba(255,255,255,0.08)',
+                      color: 'white',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  className="w-full font-semibold text-sm text-white relative overflow-hidden"
+                  style={{
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: resetLoading ? 'rgba(59,130,246,0.4)' : 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                    border: 'none',
+                    cursor: resetLoading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {resetLoading ? 'Sending OTP...' : 'Send OTP'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(203,213,225,1)' }}>
+                    OTP (6-digit code)
+                  </label>
+                  <input
+                    type="text"
+                    value={resetOtp}
+                    onChange={(e) => setResetOtp(e.target.value)}
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      background: 'rgba(30,41,59,0.70)',
+                      border: '1.5px solid rgba(255,255,255,0.08)',
+                      color: 'white',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(203,213,225,1)' }}>
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      background: 'rgba(30,41,59,0.70)',
+                      border: '1.5px solid rgba(255,255,255,0.08)',
+                      color: 'white',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(203,213,225,1)' }}>
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      background: 'rgba(30,41,59,0.70)',
+                      border: '1.5px solid rgba(255,255,255,0.08)',
+                      color: 'white',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={handleResetPassword}
+                  disabled={resetLoading}
+                  className="w-full font-semibold text-sm text-white relative overflow-hidden"
+                  style={{
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: resetLoading ? 'rgba(59,130,246,0.4)' : 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                    border: 'none',
+                    cursor: resetLoading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {resetLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

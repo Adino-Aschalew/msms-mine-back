@@ -90,7 +90,9 @@ class FinanceController {
 
   static async getEmployees(req, res) {
     try {
-      const { page, limit, department, search } = req.query;
+      const page = parseInt(req.query.page, 10) || 1;
+      const limit = parseInt(req.query.limit, 10) || 500;
+      const { department, search } = req.query;
       const result = await FinanceService.getEmployees(page, limit, { department, search });
       
       res.json({
@@ -102,6 +104,31 @@ class FinanceController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch employees'
+      });
+    }
+  }
+
+  static async exportEmployees(req, res) {
+    try {
+      const { department, search } = req.query;
+      const data = await FinanceService.getEmployeesExport({ department, search });
+      
+      const { Parser } = require('json2csv');
+      const fields = [
+        'Employee ID', 'Name', 'Department', 'Position', 'Status', 
+        'Salary', 'Savings Balance', 'Savings %', 'Join Date'
+      ];
+      const json2csvParser = new Parser({ fields });
+      const csv = json2csvParser.parse(data);
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="employees_export_${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csv);
+    } catch (error) {
+      console.error('Export employees error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to export employees'
       });
     }
   }
@@ -221,6 +248,110 @@ class FinanceController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch payroll batches'
+      });
+    }
+  }
+
+  static async exportPayrollForBanking(req, res) {
+    try {
+      const { batchId } = req.params;
+      const SalarySyncService = require('../../services/salarySync.service');
+      
+      const result = await SalarySyncService.exportPayrollForBanking(batchId);
+      
+      if (!result.success) {
+        return res.status(404).json({
+          success: false,
+          message: result.message
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Banking export generated successfully',
+        data: {
+          filename: result.filename,
+          filepath: result.filepath,
+          recordCount: result.recordCount
+        }
+      });
+    } catch (error) {
+      console.error('Export payroll for banking error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate banking export'
+      });
+    }
+  }
+
+  static async getPayrollPreparationEmployees(req, res) {
+    try {
+      const filters = {
+        department: req.query.department
+      };
+      
+      Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
+      
+      const result = await FinanceService.getPayrollPreparationEmployees(filters);
+      
+      res.json({
+        success: true,
+        data: result.data,
+        count: result.count
+      });
+    } catch (error) {
+      console.error('Get payroll preparation employees error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch payroll preparation employees'
+      });
+    }
+  }
+
+  static async getInterestRates(req, res) {
+    try {
+      const InterestService = require('../../services/interest.service');
+      const rates = await InterestService.getInterestRates();
+      
+      res.json({
+        success: true,
+        data: rates
+      });
+    } catch (error) {
+      console.error('Get interest rates error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch interest rates'
+      });
+    }
+  }
+
+  static async updateInterestRates(req, res) {
+    try {
+      const { loan_rate, savings_rate } = req.body;
+      const { query } = require('../../config/database');
+      
+      await query(`
+        INSERT INTO system_settings (setting_key, setting_value, setting_type, description, created_at, updated_at)
+        VALUES ('DEFAULT_LOAN_INTEREST_RATE', ?, 'PERCENTAGE', 'Default loan interest rate (yearly)', NOW(), NOW())
+        ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()
+      `, [loan_rate, loan_rate]);
+      
+      await query(`
+        INSERT INTO system_settings (setting_key, setting_value, setting_type, description, created_at, updated_at)
+        VALUES ('DEFAULT_SAVINGS_INTEREST_RATE', ?, 'PERCENTAGE', 'Default savings interest rate (yearly)', NOW(), NOW())
+        ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()
+      `, [savings_rate, savings_rate]);
+      
+      res.json({
+        success: true,
+        message: 'Interest rates updated successfully'
+      });
+    } catch (error) {
+      console.error('Update interest rates error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update interest rates'
       });
     }
   }

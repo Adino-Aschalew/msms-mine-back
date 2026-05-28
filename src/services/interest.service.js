@@ -1,7 +1,7 @@
 const { query, transaction } = require('../config/database');
 
 class InterestService {
-  static async calculateSavingsInterest(accountId, interestRate = 0.05) {
+  static async calculateSavingsInterest(accountId, interestRate = 0.07) {
     const connection = await transaction();
     
     try {
@@ -104,7 +104,7 @@ class InterestService {
     }
   }
 
-  static async applyInterestToAllSavingsAccounts(interestRate = 0.05) {
+  static async applyInterestToAllSavingsAccounts(interestRate = 0.07) {
     const connection = await transaction();
     
     try {
@@ -404,8 +404,8 @@ class InterestService {
       });
       
       return {
-        savings_rate: rates.DEFAULT_SAVINGS_INTEREST_RATE || 0.05,
-        loan_rate: rates.DEFAULT_LOAN_INTEREST_RATE || 0.15
+        savings_rate: rates.DEFAULT_SAVINGS_INTEREST_RATE || 0.07,
+        loan_rate: rates.DEFAULT_LOAN_INTEREST_RATE || 0.10
       };
     } catch (error) {
       throw error;

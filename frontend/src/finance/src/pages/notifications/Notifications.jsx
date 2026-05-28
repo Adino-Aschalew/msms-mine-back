@@ -1,112 +1,16 @@
 import React, { useState } from 'react';
 import { Bell, CheckCircle, AlertCircle, Info, X, Settings, Filter, Search, Trash2, Mail, Smartphone, Globe, Clock, TrendingUp, DollarSign, Users } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNotifications } from '../../contexts/NotificationContext';
+import { format } from 'date-fns';
 
 const Notifications = () => {
   const { theme } = useTheme();
+  const { notifications, markAsRead, markAllAsRead, deleteNotification, clearNotifications } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('notifications');
-
-  const notifications = [
-    {
-      id: 1,
-      title: 'Budget Alert: Marketing Budget',
-      message: 'Marketing budget has reached 85% of allocated amount',
-      type: 'warning',
-      category: 'budget',
-      timestamp: '2024-03-15 10:30 AM',
-      read: false,
-      priority: 'high',
-      icon: AlertCircle,
-      actionUrl: '/budgets'
-    },
-    {
-      id: 2,
-      title: 'Invoice Payment Received',
-      message: 'Tech Solutions Inc. paid invoice INV-2024-001 ($15,000)',
-      type: 'success',
-      category: 'invoice',
-      timestamp: '2024-03-15 09:45 AM',
-      read: false,
-      priority: 'medium',
-      icon: CheckCircle,
-      actionUrl: '/invoices'
-    },
-    {
-      id: 3,
-      title: 'Payroll Import Completed',
-      message: 'March payroll data has been successfully processed',
-      type: 'success',
-      category: 'payroll',
-      timestamp: '2024-03-15 08:20 AM',
-      read: true,
-      priority: 'medium',
-      icon: CheckCircle,
-      actionUrl: '/payroll/import'
-    },
-    {
-      id: 4,
-      title: 'System Maintenance Scheduled',
-      message: 'System will be down for maintenance on March 20, 2024',
-      type: 'info',
-      category: 'system',
-      timestamp: '2024-03-14 04:15 PM',
-      read: true,
-      priority: 'low',
-      icon: Info,
-      actionUrl: null
-    },
-    {
-      id: 5,
-      title: 'Overdue Invoice Alert',
-      message: 'Invoice INV-2024-003 is 5 days overdue ($25,000)',
-      type: 'error',
-      category: 'invoice',
-      timestamp: '2024-03-14 02:30 PM',
-      read: false,
-      priority: 'high',
-      icon: AlertCircle,
-      actionUrl: '/invoices'
-    },
-    {
-      id: 6,
-      title: 'New User Registration',
-      message: 'David Kim has been added as a Viewer role',
-      type: 'info',
-      category: 'user',
-      timestamp: '2024-03-14 11:00 AM',
-      read: true,
-      priority: 'low',
-      icon: Users,
-      actionUrl: '/users'
-    },
-    {
-      id: 7,
-      title: 'Monthly Report Available',
-      message: 'February financial report is ready for review',
-      type: 'info',
-      category: 'report',
-      timestamp: '2024-03-13 03:45 PM',
-      read: true,
-      priority: 'medium',
-      icon: TrendingUp,
-      actionUrl: '/reports'
-    },
-    {
-      id: 8,
-      title: 'Expense Limit Warning',
-      message: 'Operations expenses exceeded monthly budget by 8%',
-      type: 'warning',
-      category: 'expense',
-      timestamp: '2024-03-13 01:20 PM',
-      read: true,
-      priority: 'medium',
-      icon: AlertCircle,
-      actionUrl: '/expenses'
-    }
-  ];
 
   const notificationSettings = [
     {
@@ -201,15 +105,7 @@ const Notifications = () => {
     }
   };
 
-  const markAsRead = (id) => {
-    
-    console.log('Mark as read:', id);
-  };
-
-  const deleteNotification = (id) => {
-    
-    console.log('Delete notification:', id);
-  };
+  // Local handlers removed, as they are taken from context
 
   return (
     <div className="space-y-6">
@@ -247,7 +143,15 @@ const Notifications = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Today</p>
-              <p className="text-2xl font-bold text-green-600">{notifications.filter(n => n.timestamp.includes('2024-03-15')).length}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {notifications.filter(n => {
+                  try {
+                    return new Date(n.timestamp).toDateString() === new Date().toDateString();
+                  } catch (e) {
+                    return false;
+                  }
+                }).length}
+              </p>
             </div>
             <Clock className="h-8 w-8 text-green-500" />
           </div>
@@ -276,17 +180,6 @@ const Notifications = () => {
           >
             <Bell className="h-4 w-4 mr-2 inline" />
             Notifications
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              activeTab === 'settings'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                : 'text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Settings className="h-4 w-4 mr-2 inline" />
-            Settings
           </button>
         </div>
       </div>
@@ -336,11 +229,17 @@ const Notifications = () => {
                 <Filter className="h-4 w-4 mr-2" />
                 Advanced Filter
               </button>
-              <button className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors">
+              <button 
+                onClick={clearNotifications}
+                className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors"
+              >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear All
               </button>
-              <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors">
+              <button 
+                onClick={markAllAsRead}
+                className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+              >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Mark All Read
               </button>
@@ -351,7 +250,7 @@ const Notifications = () => {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredNotifications.map((notification) => {
-                const Icon = notification.icon;
+                const Icon = getTypeIcon(notification.type);
                 const typeColor = getTypeColor(notification.type);
                 
                 return (
@@ -394,7 +293,13 @@ const Notifications = () => {
                               {notification.priority}
                             </span>
                             <span className="text-xs text-gray-500 dark:text-gray-500">
-                              {notification.timestamp}
+                              {(() => {
+                                try {
+                                  return format(new Date(notification.timestamp), 'MMM dd, yyyy hh:mm a');
+                                } catch (e) {
+                                  return 'Unknown time';
+                                }
+                              })()}
                             </span>
                           </div>
                         </div>

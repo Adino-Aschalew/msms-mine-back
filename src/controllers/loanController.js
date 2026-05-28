@@ -63,13 +63,18 @@ class LoanController {
             ? JSON.parse(guarantor_details) 
             : guarantor_details;
           
-          await Guarantor.addGuarantor(applicationId, userId, {
-            guarantor_name: guarantorData.fullName || guarantorData.employeeId || 'Unknown',
-            guarantor_id: guarantorData.employeeId || '',
-            relationship: guarantorData.relationship || '',
-            contact_phone: guarantorData.phoneNumber || '',
-            contact_email: guarantorData.email || '',
-          });
+          // Handle both single guarantor object and array of guarantors
+          const guarantorsArray = Array.isArray(guarantorData) ? guarantorData : [guarantorData];
+          
+          for (const guarantor of guarantorsArray) {
+            await Guarantor.addGuarantor(applicationId, userId, {
+              guarantor_name: guarantor.fullName || guarantor.employeeId || 'Unknown',
+              guarantor_id: guarantor.employeeId || '',
+              relationship: guarantor.relationship || '',
+              contact_phone: guarantor.phoneNumber || '',
+              contact_email: guarantor.email || '',
+            });
+          }
         } catch (guarantorError) {
           console.error('Error saving guarantor:', guarantorError);
           

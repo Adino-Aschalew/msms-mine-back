@@ -135,8 +135,27 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
     setIsDeleteOpen(false);
   };
 
-  const departments = ['All', 'Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Design', 'Product', 'Operations', 'Customer Support', 'Legal'];
-  const statuses = ['All', 'Active', 'On Leave', 'Probation', 'Inactive'];
+  const departments = ['All', ...Array.from(new Set(employees.map(e => e.department).filter(Boolean)))];
+  const statuses = ['All', 'ACTIVE', 'INACTIVE', 'ON_LEAVE', 'PROBATION', 'TERMINATED'];
+
+  const handleExport = () => {
+    const cols = ['employee_id', 'first_name', 'last_name', 'email', 'phone', 'department', 'job_role', 'employment_status', 'salary', 'hire_date'];
+    const header = cols.join(',');
+    const rows = filteredData.map(emp =>
+      cols.map(c => {
+        const v = emp[c] ?? '';
+        return `"${String(v).replace(/"/g, '""')}"`;
+      }).join(',')
+    );
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `employees_${statusFilter !== 'All' ? statusFilter + '_' : ''}${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden">
@@ -171,13 +190,13 @@ export default function EmployeeTable({ employees, onDelete, onUpdate }) {
               className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             >
               {statuses.map(status => (
-                <option key={status} value={status}>{status === 'All' ? 'All Statuses' : status}</option>
+                <option key={status} value={status}>{status === 'All' ? 'All Statuses' : status.replace(/_/g, ' ')}</option>
               ))}
             </select>
 
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Export ({filteredData.length})</span>
             </button>
           </div>
         </div>

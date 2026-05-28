@@ -52,6 +52,11 @@ export const financeAPI = {
     return response.data;
   },
 
+  exportPayrollBatch: async (batchId) => {
+    const response = await apiClient.get(`/finance/payroll/batches/${batchId}/export`, {}, { responseType: 'blob' });
+    return response;
+  },
+
   
   getPayrollReport: async (filters = {}) => {
     const response = await apiClient.get('/finance/reports/payroll', filters);
@@ -87,7 +92,15 @@ export const financeAPI = {
 
   getEmployees: async (params = {}) => {
     const response = await apiClient.get('/finance/employees', params);
-    return response.data;
+    const payload = response?.data ?? response;
+    if (payload?.employees) return payload;
+    if (response?.success && response?.data?.employees) return response.data;
+    return { employees: [], pagination: { page: 1, limit: 0, total: 0, pages: 0 } };
+  },
+
+  exportEmployees: async (params = {}) => {
+    const response = await apiClient.get('/finance/employees/export', params, { responseType: 'blob' });
+    return response;
   },
 
   getTransactionsList: async (params = {}) => {
@@ -106,7 +119,7 @@ export const financeAPI = {
   },
 
   getDepartments: async () => {
-    const response = await apiClient.get('/hr/departments'); 
+    const response = await apiClient.get('/hr/employees/departments'); 
     return response.data;
   },
 
@@ -153,6 +166,26 @@ export const financeAPI = {
   
   getSystemHealth: async () => {
     const response = await apiClient.get('/finance/health');
+    return response.data;
+  },
+
+  getUnreadNotificationsCount: async () => {
+    const response = await apiClient.get('/notifications/unread-count');
+    return response.data;
+  },
+
+  getNotifications: async (params = {}) => {
+    const response = await apiClient.get('/notifications', params);
+    return response.data;
+  },
+
+  markNotificationAsRead: async (id) => {
+    const response = await apiClient.put(`/notifications/${id}/read`);
+    return response.data;
+  },
+
+  markAllNotificationsAsRead: async () => {
+    const response = await apiClient.put('/notifications/mark-all-read');
     return response.data;
   }
 };

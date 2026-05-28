@@ -57,17 +57,12 @@ const Payroll = () => {
         financeAPI.getPayrollBatches({ limit: 10 })
       ]);
       
-      console.log('Payroll Stats Response:', statsRes);
-      console.log('Payroll Batches Response:', batchesRes);
-      
       
       if (statsRes.success) {
         const backendStats = statsRes.data || {};
-        console.log('Backend Stats:', backendStats);
         
         
         const statsData = backendStats.data || backendStats; 
-        console.log('Stats Data:', statsData);
         
         
         let totalAmount = parseFloat(statsData.total_amount) || 0;
@@ -78,31 +73,19 @@ const Payroll = () => {
         
         if ((totalAmount === 0 || isNaN(totalAmount)) && batchesRes.success && batchesRes.data.batches.length > 0) {
           const batches = batchesRes.data.batches;
-          console.log('Calculating fallback from batches:', batches);
           
           totalAmount = batches.reduce((sum, batch) => {
             const amount = parseFloat(batch.total_amount || 0);
-            console.log(`Batch ${batch.id}: ${amount}`);
             return sum + amount;
           }, 0);
           
           totalEmployees = batches.reduce((sum, batch) => {
             const employees = parseInt(batch.total_employees || 0);
-            console.log(`Batch ${batch.id}: ${employees} employees`);
             return sum + employees;
           }, 0);
           
           avgBatchAmount = totalAmount / batches.length;
-          
-          console.log('Calculated from batches:', { 
-            totalAmount, 
-            totalEmployees, 
-            avgBatchAmount,
-            batchesCount: batches.length 
-          });
         }
-        
-        console.log('Final values:', { totalAmount, totalEmployees, avgBatchAmount, totalDeductions });
         
         setStats({
           currentMonth: {
@@ -124,12 +107,10 @@ const Payroll = () => {
       }
       if (batchesRes.success) {
         const allBatches = batchesRes.data.batches || [];
-        console.log('All Batches:', allBatches);
         setRecentPayrollsList(allBatches.filter(b => b.status === 'PROCESSED' || b.status === 'REVERSED'));
         setUpcomingPayrollsList(allBatches.filter(b => ['UPLOADED', 'VALIDATED', 'CONFIRMED'].includes(b.status)));
       }
     } catch (error) {
-      console.error('Payroll fetch error:', error);
       addNotification({ type: 'error', title: 'Error', message: 'Failed to fetch payroll data' });
     } finally {
       setLoading(false);

@@ -54,10 +54,14 @@ const sliderStyles = StyleSheet.create({
   },
 });
 
+import { ScreenHeader, Card, SectionLabel, Button } from '../../components/ui';
+import { useTheme } from '../../context/ThemeContext';
+
 export default function LoanCalculatorScreen({ navigation }) {
+  const { theme } = useTheme();
   const [amount, setAmount] = useState(10000);
   const [months, setMonths] = useState(12);
-  const [rate, setRate] = useState(5);
+  const [rate, setRate] = useState(12);
 
   const results = useMemo(() => {
     const principal = amount;
@@ -91,195 +95,150 @@ export default function LoanCalculatorScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Result Card */}
-      <View style={styles.resultCard}>
-        <Text style={styles.resultLabel}>Monthly Payment</Text>
-        <Text style={styles.resultAmount}>
-          {formatAmount(results.monthlyPayment)} <Text style={styles.resultCurrency}>ETB</Text>
-        </Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
+      <ScreenHeader 
+        title="Loan Calculator" 
+        subtitle="Estimate your monthly repayments" 
+      />
 
-        <View style={styles.breakdownBar}>
-          <View style={[styles.barPrincipal, { flex: results.principalPercent }]} />
-          <View style={[styles.barInterest, { flex: results.interestPercent || 1 }]} />
-        </View>
+      <View style={styles.scrollPadding}>
+        <Card style={styles.resultCard} elevated>
+          <Text style={[styles.resultLabel, { color: theme.textSecondary }]}>Estimated Monthly Payment</Text>
+          <Text style={[styles.resultAmount, { color: theme.primary }]}>
+            {formatAmount(results.monthlyPayment)} <Text style={styles.resultCurrency}>ETB</Text>
+          </Text>
 
-        <View style={styles.breakdownRow}>
-          <View style={styles.breakdownItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
-            <View>
-              <Text style={styles.breakdownLabel}>Principal</Text>
-              <Text style={styles.breakdownValue}>{formatAmount(amount)} ETB</Text>
+          <View style={[styles.breakdownBar, { backgroundColor: theme.border + '20' }]}>
+            <View style={[styles.barPrincipal, { flex: results.principalPercent, backgroundColor: theme.primary }]}>
+              <View style={[styles.barGlow, { backgroundColor: theme.primary }]} />
+            </View>
+            <View style={[styles.barInterest, { flex: results.interestPercent || 1, backgroundColor: theme.accent }]}>
+              <View style={[styles.barGlow, { backgroundColor: theme.accent }]} />
             </View>
           </View>
-          <View style={styles.breakdownItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
-            <View>
-              <Text style={styles.breakdownLabel}>Total Interest</Text>
-              <Text style={styles.breakdownValue}>{formatAmount(results.totalInterest)} ETB</Text>
-            </View>
-          </View>
-        </View>
 
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total Repayment</Text>
-          <Text style={styles.totalValue}>{formatAmount(results.totalPayment)} ETB</Text>
-        </View>
-      </View>
-
-      {/* Sliders Section */}
-      <View style={styles.slidersCard}>
-        {/* Loan Amount Slider */}
-        <View style={styles.sliderSection}>
-          <View style={styles.sliderHeader}>
-            <View style={styles.sliderTitleRow}>
-              <View style={[styles.sliderIconBg, { backgroundColor: '#eff6ff' }]}>
-                <Ionicons name="cash" size={18} color="#2563eb" />
+          <View style={styles.breakdownRow}>
+            <View style={styles.breakdownItem}>
+              <View style={[styles.legendDot, { backgroundColor: theme.primary }]} />
+              <View>
+                <Text style={[styles.breakdownLabel, { color: theme.textSecondary }]}>Principal</Text>
+                <Text style={[styles.breakdownValue, { color: theme.text }]}>{formatAmount(amount)}</Text>
               </View>
-              <Text style={styles.sliderTitle}>Loan Amount</Text>
             </View>
-            <View style={styles.valueBadge}>
-              <Text style={styles.valueBadgeText}>{formatAmount(amount)} ETB</Text>
-            </View>
-          </View>
-          <CustomSlider 
-            min={1000} max={100000} step={1000} 
-            value={amount} onValueChange={setAmount}
-            color="#2563eb"
-          />
-          <View style={styles.sliderRange}>
-            <Text style={styles.rangeText}>1,000</Text>
-            <Text style={styles.rangeText}>100,000</Text>
-          </View>
-        </View>
-
-        {/* Duration Slider */}
-        <View style={styles.sliderSection}>
-          <View style={styles.sliderHeader}>
-            <View style={styles.sliderTitleRow}>
-              <View style={[styles.sliderIconBg, { backgroundColor: '#ecfdf5' }]}>
-                <Ionicons name="calendar" size={18} color="#10b981" />
+            <View style={styles.breakdownItem}>
+              <View style={[styles.legendDot, { backgroundColor: theme.accent }]} />
+              <View>
+                <Text style={[styles.breakdownLabel, { color: theme.textSecondary }]}>Interest</Text>
+                <Text style={[styles.breakdownValue, { color: theme.text }]}>{formatAmount(results.totalInterest)}</Text>
               </View>
-              <Text style={styles.sliderTitle}>Duration</Text>
-            </View>
-            <View style={[styles.valueBadge, { backgroundColor: '#ecfdf5' }]}>
-              <Text style={[styles.valueBadgeText, { color: '#10b981' }]}>{months} months</Text>
             </View>
           </View>
-          <CustomSlider 
-            min={3} max={60} step={3} 
-            value={months} onValueChange={setMonths}
-            color="#10b981"
-          />
-          <View style={styles.sliderRange}>
-            <Text style={styles.rangeText}>3 mo</Text>
-            <Text style={styles.rangeText}>60 mo</Text>
-          </View>
-        </View>
 
-        {/* Interest Rate Slider */}
-        <View style={[styles.sliderSection, { borderBottomWidth: 0 }]}>
-          <View style={styles.sliderHeader}>
-            <View style={styles.sliderTitleRow}>
-              <View style={[styles.sliderIconBg, { backgroundColor: '#fef3c7' }]}>
-                <Ionicons name="trending-up" size={18} color="#f59e0b" />
+          <View style={[styles.totalRow, { borderTopColor: theme.border + '20' }]}>
+            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>Total Repayment</Text>
+            <Text style={[styles.totalValue, { color: theme.text }]}>{formatAmount(results.totalPayment)} ETB</Text>
+          </View>
+        </Card>
+
+        <SectionLabel>Adjust Parameters</SectionLabel>
+        
+        <Card style={styles.slidersCard}>
+          <View style={styles.sliderSection}>
+            <View style={styles.sliderHeader}>
+              <View style={styles.sliderTitleRow}>
+                <View style={[styles.sliderIconBg, { backgroundColor: theme.primary + '10' }]}>
+                  <Ionicons name="cash" size={18} color={theme.primary} />
+                </View>
+                <Text style={[styles.sliderTitle, { color: theme.text }]}>Loan Amount</Text>
               </View>
-              <Text style={styles.sliderTitle}>Interest Rate</Text>
+              <Text style={[styles.valueText, { color: theme.primary }]}>{formatAmount(amount)} ETB</Text>
             </View>
-            <View style={[styles.valueBadge, { backgroundColor: '#fef3c7' }]}>
-              <Text style={[styles.valueBadgeText, { color: '#f59e0b' }]}>{rate}% / year</Text>
-            </View>
+            <CustomSlider 
+              min={1000} max={500000} step={5000} 
+              value={amount} onValueChange={setAmount}
+              color={theme.primary}
+            />
           </View>
-          <CustomSlider 
-            min={1} max={20} step={1} 
-            value={rate} onValueChange={setRate}
-            color="#f59e0b"
-          />
-          <View style={styles.sliderRange}>
-            <Text style={styles.rangeText}>1%</Text>
-            <Text style={styles.rangeText}>20%</Text>
-          </View>
-        </View>
-      </View>
 
-      {/* Amortization Preview */}
-      <View style={styles.amortCard}>
-        <Text style={styles.amortTitle}>Payment Schedule Preview</Text>
-        <View style={styles.amortHeader}>
-          <Text style={[styles.amortColHead, { flex: 0.8 }]}>Month</Text>
-          <Text style={styles.amortColHead}>Payment</Text>
-          <Text style={styles.amortColHead}>Principal</Text>
-          <Text style={styles.amortColHead}>Interest</Text>
-        </View>
-        {[1, 2, 3, Math.ceil(months / 2), months].map((m, i) => {
-          const monthlyRate = rate / 100 / 12;
-          const mp = monthlyRate === 0 
-            ? amount / months 
-            : amount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
-          const interestPart = amount * Math.pow(1 + monthlyRate, m - 1) * monthlyRate || 0;
-          const principalPart = mp - interestPart;
-          
-          return (
-            <View key={i} style={[styles.amortRow, i % 2 === 0 && { backgroundColor: '#f8fafc' }]}>
-              <Text style={[styles.amortCell, { flex: 0.8, color: '#64748b' }]}>#{m}</Text>
-              <Text style={styles.amortCell}>{formatAmount(mp)}</Text>
-              <Text style={[styles.amortCell, { color: '#2563eb' }]}>{formatAmount(Math.max(0, principalPart))}</Text>
-              <Text style={[styles.amortCell, { color: '#f59e0b' }]}>{formatAmount(Math.max(0, interestPart))}</Text>
+          <View style={styles.sliderSection}>
+            <View style={styles.sliderHeader}>
+              <View style={styles.sliderTitleRow}>
+                <View style={[styles.sliderIconBg, { backgroundColor: theme.accent + '10' }]}>
+                  <Ionicons name="calendar" size={18} color={theme.accent} />
+                </View>
+                <Text style={[styles.sliderTitle, { color: theme.text }]}>Repayment Duration</Text>
+              </View>
+              <Text style={[styles.valueText, { color: theme.accent }]}>{months} Months</Text>
             </View>
-          );
-        })}
-      </View>
+            <CustomSlider 
+              min={3} max={48} step={3} 
+              value={months} onValueChange={setMonths}
+              color={theme.accent}
+            />
+          </View>
 
-      <View style={{ height: 40 }} />
+          <View style={[styles.sliderSection, { borderBottomWidth: 0 }]}>
+            <View style={styles.sliderHeader}>
+              <View style={styles.sliderTitleRow}>
+                <View style={[styles.sliderIconBg, { backgroundColor: '#f59e0b15' }]}>
+                  <Ionicons name="trending-up" size={18} color="#f59e0b" />
+                </View>
+                <Text style={[styles.sliderTitle, { color: theme.text }]}>Annual Interest Rate</Text>
+              </View>
+              <Text style={[styles.valueText, { color: '#f59e0b' }]}>{rate}%</Text>
+            </View>
+            <CustomSlider 
+              min={1} max={20} step={0.5} 
+              value={rate} onValueChange={setRate}
+              color="#f59e0b"
+            />
+          </View>
+        </Card>
+
+        <Button 
+          title="Apply for this Loan" 
+          onPress={() => navigation.navigate('Loans')}
+          type="primary"
+          style={{ marginTop: 24 }}
+          icon="arrow-forward"
+        />
+        
+        <View style={{ height: 100 }} />
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  resultCard: {
-    backgroundColor: '#0f172a', margin: 16, padding: 24, borderRadius: 28,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 10,
-  },
-  resultLabel: { color: '#94a3b8', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-  resultAmount: { color: '#fff', fontSize: 36, fontWeight: 'bold', marginTop: 8 },
-  resultCurrency: { fontSize: 18, color: '#64748b' },
+  container: { flex: 1 },
+  scrollPadding: { paddingHorizontal: 20 },
+  resultCard: { padding: 24, marginTop: -20 },
+  resultLabel: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  resultAmount: { fontSize: 36, fontWeight: '900', marginTop: 8 },
+  resultCurrency: { fontSize: 18, fontWeight: '600', opacity: 0.6 },
   breakdownBar: {
-    flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 24,
+    flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', marginTop: 24,
+    position: 'relative'
   },
-  barPrincipal: { backgroundColor: '#2563eb', borderTopLeftRadius: 4, borderBottomLeftRadius: 4 },
-  barInterest: { backgroundColor: '#f59e0b', borderTopRightRadius: 4, borderBottomRightRadius: 4 },
-  breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
+  barPrincipal: { borderTopLeftRadius: 5, borderBottomLeftRadius: 5, position: 'relative' },
+  barInterest: { borderTopRightRadius: 5, borderBottomRightRadius: 5, position: 'relative' },
+  barGlow: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3 },
+  breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   breakdownItem: { flexDirection: 'row', alignItems: 'center' },
   legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  breakdownLabel: { color: '#94a3b8', fontSize: 11, fontWeight: '600' },
-  breakdownValue: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 1 },
+  breakdownLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  breakdownValue: { fontSize: 15, fontWeight: '800', marginTop: 2 },
   totalRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
+    marginTop: 24, paddingTop: 16, borderTopWidth: 1
   },
-  totalLabel: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
-  totalValue: { color: '#4ade80', fontSize: 18, fontWeight: 'bold' },
-  slidersCard: {
-    backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 24, padding: 20,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 3,
-  },
-  sliderSection: { paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  totalLabel: { fontSize: 14, fontWeight: '700' },
+  totalValue: { fontSize: 18, fontWeight: '900' },
+  slidersCard: { padding: 20 },
+  sliderSection: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f908' },
   sliderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sliderTitleRow: { flexDirection: 'row', alignItems: 'center' },
-  sliderIconBg: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-  sliderTitle: { fontSize: 15, fontWeight: 'bold', color: '#1e293b' },
-  valueBadge: { backgroundColor: '#eff6ff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
-  valueBadgeText: { fontSize: 13, fontWeight: 'bold', color: '#2563eb' },
-  sliderRange: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  rangeText: { fontSize: 11, color: '#94a3b8', fontWeight: '600' },
-  amortCard: {
-    backgroundColor: '#fff', marginHorizontal: 16, marginTop: 16, borderRadius: 24, padding: 20,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 3,
-  },
-  amortTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 16 },
-  amortHeader: { flexDirection: 'row', paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  amortColHead: { flex: 1, fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' },
-  amortRow: { flexDirection: 'row', paddingVertical: 10, borderRadius: 8 },
-  amortCell: { flex: 1, fontSize: 13, fontWeight: '600', color: '#1e293b' },
+  sliderIconBg: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  sliderTitle: { fontSize: 15, fontWeight: '700' },
+  valueText: { fontSize: 16, fontWeight: '800' },
 });

@@ -544,8 +544,8 @@ class Payroll {
     const selectQuery = `
       SELECT pd.*, u.username, u.email, ep.first_name, ep.last_name, ep.department, ep.job_grade, ep.employment_status
       FROM payroll_details pd
-      JOIN users u ON pd.user_id = u.id
-      JOIN employee_profiles ep ON pd.user_id = ep.user_id
+      LEFT JOIN users u ON pd.user_id = u.id
+      LEFT JOIN employee_profiles ep ON pd.user_id = ep.user_id
       WHERE pd.payroll_batch_id = ?
       ORDER BY pd.employee_id ASC
       LIMIT ? OFFSET ?
@@ -607,46 +607,59 @@ class Payroll {
 
       for (const detail of details.details) {
         console.log(` Processing employee ${detail.employee_id} - Savings: ${detail.savings_deduction}, Loan: ${detail.loan_repayment_deduction}`);
-        
-        
-        if (detail.savings_deduction > 0) {
-          console.log(` Adding ${detail.savings_deduction} to savings account for employee ${detail.employee_id}`);
-          
-          const savingsAccountQuery = 'SELECT id, current_balance FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"';
-          const [savingsAccount] = await connection.query(savingsAccountQuery, [detail.user_id]);
 
-          if (savingsAccount && savingsAccount.length > 0) {
-            const balanceBefore = savingsAccount[0].current_balance || 0;
-            const balanceAfter = balanceBefore + detail.savings_deduction;
+        // Get employee's savings account with saving_percentage
+        const savingsAccountQuery = 'SELECT id, current_balance, saving_percentage FROM savings_accounts WHERE user_id = ? AND account_status = "ACTIVE"';
+        const [savingsAccount] = await connection.query(savingsAccountQuery, [detail.user_id]);
 
-            const [transactionResult] = await connection.query(`
-              INSERT INTO savings_transactions 
-              (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, payroll_batch_id)
-              VALUES (?, ?, 'CONTRIBUTION', ?, ?, ?, ?, ?, ?)
-            `, [
-              savingsAccount[0].id, detail.user_id, detail.savings_deduction,
-              balanceBefore, balanceAfter,
-              `PAYROLL-${batchId}`, 'Automatic savings deduction from payroll', batchId
-            ]);
+        let savingsContribution = 0;
 
-            if (!transactionResult || !transactionResult.insertId) {
-              throw new Error(`Failed to create savings transaction for employee ${detail.employee_id}`);
-            }
+        if (savingsAccount && savingsAccount.length > 0) {
+          // Calculate savings contribution based on employee's saving_percentage
+          const netSalary = parseFloat(detail.net_salary);
+          const savingPercentage = parseFloat(savingsAccount[0].saving_percentage) || 15;
+          // saving_percentage is stored as percentage (e.g., 15 for 15%), so divide by 100
+          savingsContribution = (netSalary * savingPercentage) / 100;
 
-            const [updateResult] = await connection.query(`
-              UPDATE savings_accounts 
-              SET current_balance = ?, last_contribution_date = NOW(), updated_at = NOW()
-              WHERE id = ?
-            `, [balanceAfter, savingsAccount[0].id]);
+          // Apply minimum contribution of 100
+          savingsContribution = Math.max(savingsContribution, 100);
 
-            if (!updateResult || updateResult.affectedRows === 0) {
-              throw new Error(`Failed to update savings account for employee ${detail.employee_id}`);
-            }
-            
-            console.log(` Savings account updated: ${balanceBefore} → ${balanceAfter}`);
-          } else {
-            console.log(` No active savings account found for employee ${detail.employee_id}`);
+          console.log(` Savings calculation for employee ${detail.employee_id}:`);
+          console.log(`   Net Salary: ${netSalary}`);
+          console.log(`   Saving Percentage: ${savingPercentage}%`);
+          console.log(`   Calculated: (${netSalary} × ${savingPercentage}) / 100 = ${savingsContribution}`);
+          console.log(`   Final Contribution: ${savingsContribution}`);
+
+          const balanceBefore = parseFloat(savingsAccount[0].current_balance) || 0;
+          const balanceAfter = balanceBefore + savingsContribution;
+
+          const [transactionResult] = await connection.query(`
+            INSERT INTO savings_transactions
+            (savings_account_id, user_id, transaction_type, amount, balance_before, balance_after, reference_id, description, payroll_batch_id)
+            VALUES (?, ?, 'CONTRIBUTION', ?, ?, ?, ?, ?, ?)
+          `, [
+            savingsAccount[0].id, detail.user_id, savingsContribution,
+            balanceBefore, balanceAfter,
+            `PAYROLL-${batchId}`, 'Automatic savings deduction from payroll', batchId
+          ]);
+
+          if (!transactionResult || !transactionResult.insertId) {
+            throw new Error(`Failed to create savings transaction for employee ${detail.employee_id}`);
           }
+
+          const [updateResult] = await connection.query(`
+            UPDATE savings_accounts
+            SET current_balance = ?, last_contribution_date = NOW(), updated_at = NOW()
+            WHERE id = ?
+          `, [balanceAfter, savingsAccount[0].id]);
+
+          if (!updateResult || updateResult.affectedRows === 0) {
+            throw new Error(`Failed to update savings account for employee ${detail.employee_id}`);
+          }
+
+          console.log(` Savings account updated: ${balanceBefore} → ${balanceAfter}`);
+        } else {
+          console.log(` No active savings account found for employee ${detail.employee_id}`);
         }
 
         

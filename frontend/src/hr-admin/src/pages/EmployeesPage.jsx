@@ -54,8 +54,12 @@ export default function EmployeesPage() {
         alert(`Employee created successfully!\n\nDefault Password: ${defaultPassword}`);
       }
     } catch (err) {
-      console.error('Error adding employee:', err);
-      setError('Failed to add employee. Please try again.');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to add employee. Please try again.';
+      // Friendly human-readable version
+      const friendly = msg.includes('Duplicate entry')
+        ? `An employee with that email already exists in the system.`
+        : msg;
+      setError(friendly);
     }
   };
 

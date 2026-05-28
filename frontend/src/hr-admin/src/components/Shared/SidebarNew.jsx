@@ -2,9 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   FiGrid,
   FiUsers,
-  FiActivity,
   FiFileText,
-  FiSettings,
   FiUser,
   FiLogOut,
   FiChevronLeft,
@@ -15,9 +13,8 @@ import {
 const navItems = [
   { name: 'Dashboard', path: '/hr', icon: FiGrid },
   { name: 'Employees', path: '/hr/employees', icon: FiUsers },
-  { name: 'Performance System', path: '/hr/performance', icon: FiActivity },
   { name: 'Reports', path: '/hr/reports', icon: FiFileText },
-  { name: 'Settings', path: '/hr/settings', icon: FiSettings },
+  { name: 'Notifications', path: '/hr/notifications', icon: FiUser },
   { name: 'Account', path: '/hr/account', icon: FiUser },
 ];
 

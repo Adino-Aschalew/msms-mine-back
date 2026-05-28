@@ -4,15 +4,25 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { financeAPI } from '../../../../shared/services/financeAPI';
 import { useNotifications } from '../../contexts/NotificationContext';
 
+const fmt = (n) => {
+  if (n === null || n === undefined || n === '') return '—';
+  const num = parseFloat(n);
+  if (isNaN(num)) return '—';
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M ETB`;
+  if (num >= 1_000)     return `${(num / 1_000).toFixed(1)}K ETB`;
+  return `${num.toFixed(2)} ETB`;
+};
+
 const Employees = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const { addNotification } = useNotifications();
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [exporting, setExporting] = useState(false);
   const [stats, setStats] = useState({ totalSalaries: 0, totalSavings: 0, activeCount: 0 });
   const [departments, setDepartments] = useState(['all']);
 
@@ -28,10 +38,9 @@ const Employees = () => {
     try {
       const response = await financeAPI.getDepartments();
       if (response && response.length > 0) {
-        setDepartments(['all', ...response.map(d => d.name)]);
+        setDepartments(['all', ...response.map(d => d.name || d.department)]);
       }
     } catch (err) {
-      console.warn('Failed to fetch departments, using defaults');
       setDepartments(['all', 'Engineering', 'Sales', 'Marketing', 'HR', 'Finance']);
     }
   };
@@ -39,20 +48,21 @@ const Employees = () => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await financeAPI.getEmployees({
-        search: searchTerm,
+        search: searchTerm || undefined,
         department: selectedDepartment === 'all' ? undefined : selectedDepartment,
         page: 1,
-        limit: 100
+        limit: 500
       });
       
-      const list = response.employees || response.data?.employees || [];
+      const list = response?.employees || [];
       setEmployees(list);
       
       
       const salary = list.reduce((sum, emp) => sum + parseFloat(emp.salary || 0), 0);
       const savings = list.reduce((sum, emp) => sum + parseFloat(emp.savingsBalance || 0), 0);
-      const active = list.filter(emp => emp.status === 'active' || emp.is_active).length;
+      const active = list.filter(emp => emp.status === 'active' || emp.is_active || emp.account_status === 'ACTIVE').length;
       
       setStats({ totalSalaries: salary, totalSavings: savings, activeCount: active });
     } catch (err) {
@@ -60,6 +70,33 @@ const Employees = () => {
       addNotification({ type: 'error', title: 'Error', message: 'Failed to synchronize employee data' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const response = await financeAPI.exportEmployees({
+        search: searchTerm || undefined,
+        department: selectedDepartment === 'all' ? undefined : selectedDepartment
+      });
+      
+      
+      const blob = new Blob([response.data || response], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `employees_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      addNotification({ type: 'success', title: 'Success', message: 'Employee list exported successfully' });
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Error', message: 'Failed to export employee list' });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -73,11 +110,14 @@ const Employees = () => {
       {}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Employees
+          Employees with Active Savings
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-400">
-          Manage employee profiles and savings balances
+          Employees who have activated their savings account in the employee portal
         </p>
+        {error && (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+        )}
       </div>
 
       {}
@@ -95,7 +135,7 @@ const Employees = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Salaries</p>
-              <p className="text-2xl font-bold text-emerald-600 font-black">{totalSalaries.toLocaleString()} ETB</p>
+              <p className="text-2xl font-bold text-emerald-600 font-black">{fmt(totalSalaries)}</p>
             </div>
             <DollarSign className="h-8 w-8 text-green-500" />
           </div>
@@ -104,7 +144,7 @@ const Employees = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Savings</p>
-              <p className="text-2xl font-bold text-blue-600 font-black">{totalSavings.toLocaleString()} ETB</p>
+              <p className="text-2xl font-bold text-blue-600 font-black">{fmt(totalSavings)}</p>
             </div>
             <TrendingUp className="h-8 w-8 text-blue-500" />
           </div>
@@ -153,13 +193,17 @@ const Employees = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </button>
-            <button className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors">
-              <Download className="h-4 w-4 mr-2" />
+            <button 
+              onClick={handleExport}
+              disabled={exporting || loading}
+              className="flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50"
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
               Export
-            </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-lg shadow-blue-500/20">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Employee
             </button>
           </div>
         </div>
@@ -214,7 +258,7 @@ const Employees = () => {
                          </div>
                          <div className="ml-4">
                            <div className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase">
-                             {employee.name}
+                             {employee.name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim()}
                            </div>
                            <div className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">
                              {employee.job_grade || employee.position || 'Employee'}
@@ -227,21 +271,25 @@ const Employees = () => {
                      </td>
                      <td className="px-6 py-4 whitespace-nowrap text-[9px] font-black uppercase">
                        <span className={`px-2 py-1 rounded-full ${
-                         employee.status === 'active' || employee.is_active
+                         employee.status === 'ACTIVE' || employee.status === 'active' || employee.is_active
                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
                        }`}>
-                         {employee.status || 'Active'}
+                         {employee.account_status === 'ACTIVE' ? 'Savings active' : (employee.status || 'Active')}
                        </span>
                      </td>
                      <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900 dark:text-gray-100 tracking-tighter">
-                       {parseFloat(employee.salary || 0).toLocaleString()} ETB
+                       {fmt(employee.salary || 0)}
                      </td>
                      <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-blue-600 dark:text-blue-400 tracking-tighter">
-                       {parseFloat(employee.savingsBalance || 0).toLocaleString()} ETB
+                       {fmt(employee.savingsBalance || 0)}
                      </td>
                      <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-400 dark:text-gray-500">
-                       {new Date(employee.joinDate).toLocaleDateString()}
+                       {employee.joinDate
+                         ? (Number.isNaN(new Date(employee.joinDate).getTime())
+                           ? employee.joinDate
+                           : new Date(employee.joinDate).toLocaleDateString())
+                         : '—'}
                      </td>
                    </tr>
                  ))

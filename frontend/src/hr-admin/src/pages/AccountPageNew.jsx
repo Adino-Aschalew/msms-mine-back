@@ -31,6 +31,8 @@ export default function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState({ text: '', type: '' });
   const [formData, setFormData] = useState({
@@ -98,10 +100,68 @@ export default function AccountPage() {
       }
     };
 
+    const fetchSessions = async () => {
+      try {
+        setSessionsLoading(true);
+        const res = await authAPI.getActivityLog(50);
+        if (res.data?.success && res.data?.data) {
+          const logs = res.data.data;
+          // Group by UA + IP to find unique "Sessions"
+          const uniqueSessionsMap = new Map();
+          logs.forEach(log => {
+            const key = `${log.ip_address}-${log.user_agent}`;
+            if (!uniqueSessionsMap.has(key)) {
+              uniqueSessionsMap.set(key, log);
+            }
+          });
+          setSessions(Array.from(uniqueSessionsMap.values()).slice(0, 5));
+        }
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      } finally {
+        setSessionsLoading(false);
+      }
+    };
+
     if (user) {
       fetchProfile();
+      fetchSessions();
     }
   }, [user]);
+
+  const parseUserAgent = (ua) => {
+    if (!ua) return 'Unknown Device';
+    let device = 'Desktop';
+    if (/Mobile|Android|iP(hone|od|ad)/i.test(ua)) {
+      device = /iP(hone|od|ad)/i.test(ua) ? 'iOS Device' : 'Android Device';
+    } else if (/Mac/i.test(ua)) device = 'Mac';
+    else if (/Win/i.test(ua)) device = 'Windows PC';
+    
+    let browser = 'Unknown Browser';
+    if (/Edg/i.test(ua)) browser = 'Edge';
+    else if (/Chrome/i.test(ua)) browser = 'Chrome';
+    else if (/Firefox/i.test(ua)) browser = 'Firefox';
+    else if (/Safari/i.test(ua)) browser = 'Safari';
+
+    return `${device} - ${browser}`;
+  };
+
+  const timeAgo = (dateStr) => {
+    if (!dateStr) return 'Unknown';
+    const seconds = Math.floor((new Date() - new Date(dateStr)) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " minutes ago";
+    if (seconds < 10) return "just now";
+    return Math.floor(seconds) + " seconds ago";
+  };
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -109,26 +169,10 @@ export default function AccountPage() {
     confirmPassword: ''
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    weeklyReports: false,
-    systemUpdates: true,
-    securityAlerts: true
-  });
-
-  const [appearanceSettings, setAppearanceSettings] = useState({
-    theme: 'light',
-    language: 'English',
-    timezone: 'UTC',
-    dateFormat: 'MM/DD/YYYY'
-  });
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'preferences', label: 'Preferences', icon: Palette }
+    { id: 'security', label: 'Security', icon: Shield }
   ];
 
   const handleInputChange = (field, value) => {
@@ -445,103 +489,39 @@ export default function AccountPage() {
                 </button>
               </form>
             </div>
-
             {}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Two-Factor Authentication</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-600 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="text-blue-500" size={24} />
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">Authenticator App</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Use Google Authenticator or similar app</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                    Setup
-                  </button>
-                </div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-600 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Mail className="text-green-500" size={24} />
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">Email Authentication</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Receive codes via email</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                    Setup
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Active Sessions</h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-600 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Monitor className="text-blue-500" size={20} />
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">Windows PC - Chrome</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">192.168.1.1 • Last active 2 minutes ago</p>
-                    </div>
+                {sessionsLoading ? (
+                  <div className="flex justify-center p-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
-                  <button className="text-red-600 hover:text-red-700 text-sm font-medium">
-                    Revoke
-                  </button>
-                </div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-600 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="text-green-500" size={20} />
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">iPhone - Safari</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">192.168.1.2 • Last active 1 hour ago</p>
+                ) : sessions.length === 0 ? (
+                  <p className="text-sm text-gray-500">No recent sessions found.</p>
+                ) : (
+                  sessions.map((session, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-600 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {/Mobile|iP(hone|od|ad)|Android/i.test(session.user_agent) ? (
+                          <Smartphone className="text-green-500" size={20} />
+                        ) : (
+                          <Monitor className="text-blue-500" size={20} />
+                        )}
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white">{parseUserAgent(session.user_agent)}</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {session.ip_address || 'Unknown IP'} • Last active {timeAgo(session.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <button className="text-red-600 hover:text-red-700 text-sm font-medium">
+                        Revoke
+                      </button>
                     </div>
-                  </div>
-                  <button className="text-red-600 hover:text-red-700 text-sm font-medium">
-                    Revoke
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'notifications':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Notification Preferences</h3>
-              <div className="space-y-6">
-                {Object.entries({
-                  emailNotifications: { label: 'Email Notifications', description: 'Receive notifications via email' },
-                  pushNotifications: { label: 'Push Notifications', description: 'Browser push notifications' },
-                  weeklyReports: { label: 'Weekly Reports', description: 'Summary of weekly activities' },
-                  systemUpdates: { label: 'System Updates', description: 'Important system updates' },
-                  securityAlerts: { label: 'Security Alerts', description: 'Security-related notifications' }
-                }).map(([key, config]) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">{config.label}</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{config.description}</p>
-                    </div>
-                    <button
-                      onClick={() => handleNotificationChange(key, !notificationSettings[key])}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        notificationSettings[key] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-600'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          notificationSettings[key] ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

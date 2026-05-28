@@ -65,6 +65,7 @@ class AiService {
           ep.last_name,
           ep.department,
           ep.job_grade,
+          ep.salary_grade,
           ep.employment_status,
           ep.hire_date,
           DATEDIFF(NOW(), ep.hire_date) as days_employed,

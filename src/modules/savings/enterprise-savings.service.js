@@ -70,12 +70,12 @@ class EnterpriseSavingsService {
       try {
         const loanQuery = `
           SELECT 
-            COALESCE(SUM(monthly_payment), 0) as total_loan_deductions
+            COALESCE(SUM(monthly_deduction), 0) as total_loan_deductions
           FROM loans 
           WHERE user_id = ? 
           AND status IN ('ACTIVE', 'APPROVED')
         `;
-        
+
         const loanData = await query(loanQuery, [userId]);
         loanDeductions = parseFloat(loanData[0]?.total_loan_deductions || 0);
       } catch (error) {
@@ -91,19 +91,19 @@ class EnterpriseSavingsService {
           SELECT 
             gross_salary,
             net_salary
-          FROM payroll_history 
-          WHERE user_id = ? 
-          ORDER BY payroll_date DESC 
+          FROM payroll_details
+          WHERE user_id = ?
+          ORDER BY created_at DESC
           LIMIT 1
         `;
-        
+
         const salaryData = await query(salaryQuery, [userId]);
         if (salaryData && salaryData.length > 0) {
           grossSalary = parseFloat(salaryData[0]?.gross_salary || 0);
           netSalary = parseFloat(salaryData[0]?.net_salary || 0);
         }
       } catch (error) {
-        console.log('Payroll history table not found or error, using fallback:', error.message);
+        console.log('Payroll details table not found or error, using fallback:', error.message);
       }
       
       
@@ -159,14 +159,15 @@ class EnterpriseSavingsService {
           id: accountData.id,
           employeeId: accountData.employee_id,
           savingsType: accountData.savings_type,
-          currentValue: accountData.savings_type === 'PERCENTAGE' 
-            ? accountData.saving_percentage 
+          currentValue: accountData.savings_type === 'PERCENTAGE'
+            ? accountData.saving_percentage
             : accountData.fixed_amount,
           currentBalance: parseFloat(accountData.current_balance),
           accountStatus: accountData.account_status,
           isPaused: accountData.is_paused,
           effectiveDate: accountData.version_effective_date,
-          versionNumber: accountData.version_number
+          versionNumber: accountData.version_number,
+          salary: grossSalary
         },
         insights: {
           ytdContributions: parseFloat(ytdData[0]?.ytd_contributions || 0),

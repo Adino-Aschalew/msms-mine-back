@@ -12,7 +12,7 @@ router.use(authMiddleware);
 router.get('/validate/:employeeId', HrController.validateEmployee);
 
 
-router.use(roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR']));
+router.use(roleMiddleware(['SUPER_ADMIN', 'ADMIN', 'HR', 'FINANCE_ADMIN']));
 
 
 router.get('/employees', HrController.getEmployees);

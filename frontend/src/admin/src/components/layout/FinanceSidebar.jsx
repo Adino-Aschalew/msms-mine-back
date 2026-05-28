@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { financeAPI } from '../../../../shared/services/financeAPI';
 import { 
   Home,
   ArrowUpDown,
@@ -24,6 +25,26 @@ import {
 
 const FinanceSidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await financeAPI.getUnreadNotificationsCount();
+      const count =
+        response?.unreadCount ??
+        response?.data?.unreadCount ??
+        0;
+      setUnreadNotifications(count);
+    } catch (err) {
+      console.error('Failed to fetch unread notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [location.pathname]);
 
   const navigation = [
     {
@@ -64,6 +85,12 @@ const FinanceSidebar = ({ sidebarOpen, setSidebarOpen }) => {
       href: '/finance/employees',
       icon: Building,
       current: location.pathname === '/finance/employees'
+    },
+    {
+      name: 'Payroll Preparation',
+      href: '/finance/payroll/preparation',
+      icon: FileSpreadsheet,
+      current: location.pathname === '/finance/payroll/preparation'
     },
     {
       name: 'Budgets',
@@ -142,8 +169,9 @@ const FinanceSidebar = ({ sidebarOpen, setSidebarOpen }) => {
     }
   ];
 
-  const NavLink = ({ item, isChild = false }) => {
+  const NavLink = ({ item, isChild = false, badgeCount = 0 }) => {
     const isActive = item.current;
+    const showBadge = badgeCount > 0;
     
     if (item.children) {
       return (
@@ -184,8 +212,13 @@ const FinanceSidebar = ({ sidebarOpen, setSidebarOpen }) => {
             : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
         } ${isChild ? 'ml-6' : ''}`}
       >
-        <item.icon className="h-5 w-5" />
-        {item.name}
+        <item.icon className="h-5 w-5 shrink-0" />
+        <span className="flex-1">{item.name}</span>
+        {showBadge && (
+          <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        )}
       </Link>
     );
   };
@@ -221,7 +254,11 @@ const FinanceSidebar = ({ sidebarOpen, setSidebarOpen }) => {
           <nav className="flex-1 space-y-6 px-4 py-6 overflow-y-auto">
             <div className="space-y-1">
               {navigation.map((item) => (
-                <NavLink key={item.name} item={item} />
+                <NavLink
+                  key={item.name}
+                  item={item}
+                  badgeCount={item.name === 'Notifications' ? unreadNotifications : 0}
+                />
               ))}
             </div>
 

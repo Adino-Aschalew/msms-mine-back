@@ -1,24 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Modal, TextInput, Alert, TouchableOpacity, ActivityIndicator,
+  View, Text, StyleSheet, Modal, TextInput, Alert, TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { employeeService, formatAmount, formatDate } from '../../services/employeeService';
-import { ScreenScroll, LoadingState, ErrorState, EmptyState } from '../../components/ui';
+import {
+  ScreenScroll, Card, Button, SectionLabel, LoadingState, ErrorState, EmptyState, ScreenHeader, Badge
+} from '../../components/ui';
 
-export default function SavingsScreen({ embedded = false }) {
+export default function SavingsScreen({ navigation, embedded = false }) {
   const { theme } = useTheme();
   const [account, setAccount] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [showPercentageModal, setShowPercentageModal] = useState(false);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [newPercentage, setNewPercentage] = useState('');
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [withdrawReason, setWithdrawReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async (isRefresh = false) => {
@@ -26,9 +24,24 @@ export default function SavingsScreen({ embedded = false }) {
     setError(null);
     try {
       const dashboard = await employeeService.getSavingsDashboard();
-      const acc = dashboard?.account || dashboard || {};
-      const txns = dashboard?.recentTransactions || await employeeService.getSavingsTransactions(1, 20);
-      setAccount(acc);
+      const acc = dashboard?.account || (dashboard?.current_balance !== undefined ? dashboard : {});
+      const txns = dashboard?.recentTransactions || (Array.isArray(dashboard) ? dashboard : []);
+
+      // Rely on backend's explicit flag if present, otherwise check if the account object has actual properties
+      const isAccountEmpty = Object.keys(acc).length === 0 || (acc.saving_percentage === undefined && acc.currentValue === undefined);
+
+      if (dashboard?.hasAccount === false || (dashboard?.hasAccount === undefined && isAccountEmpty)) {
+        setAccount(null);
+      } else {
+        setAccount({
+          current_balance: acc.current_balance || 0,
+          interest_earned: acc.interest_earned || 0,
+          saving_percentage: acc.saving_percentage || 0,
+          account_status: acc.account_status || 'ACTIVE',
+          salary: acc.salary || 0,
+          ...acc
+        });
+      }
       setTransactions(txns);
     } catch (err) {
       setError(err.message || 'Network Error');
@@ -50,7 +63,6 @@ export default function SavingsScreen({ embedded = false }) {
     try {
       await employeeService.updateSavingPercentage(pct);
       Alert.alert('Success', 'Savings percentage update requested.');
-      setShowPercentageModal(false);
       setNewPercentage('');
       load(true);
     } catch (err) {
@@ -60,188 +72,185 @@ export default function SavingsScreen({ embedded = false }) {
     }
   };
 
-  const handleWithdraw = async () => {
-    const amt = parseFloat(withdrawAmount);
-    if (Number.isNaN(amt) || amt <= 0) {
-      Alert.alert('Error', 'Enter a valid amount');
-      return;
-    }
-    if (amt > parseFloat(account?.current_balance || 0)) {
-      Alert.alert('Error', 'Insufficient balance');
-      return;
-    }
+
+  if (loading) return <LoadingState message="Loading savings..." />;
+  if (error && !account) return <ErrorState message={error} onRetry={load} />;
+
+  const handleActivate = async () => {
     setSubmitting(true);
     try {
-      await employeeService.withdrawSavings(amt, withdrawReason);
-      Alert.alert('Success', 'Withdrawal request submitted.');
-      setShowWithdrawModal(false);
-      setWithdrawAmount('');
-      setWithdrawReason('');
+      await employeeService.activateSavingsAccount();
+      Alert.alert('Success', 'Savings account activated successfully!');
       load(true);
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Withdrawal failed');
+      Alert.alert('Error', err.response?.data?.message || 'Failed to activate account');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <LoadingState message="Loading savings..." />;
-  if (error && !account) return <ErrorState message={error} onRetry={load} />;
+  if (!account && !error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: theme.background }}>
+        <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: theme.primary + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+          <Ionicons name="wallet-outline" size={40} color={theme.primary} />
+        </View>
+        <Text style={{ fontSize: 24, fontWeight: '800', color: theme.text, marginBottom: 12 }}>Setup Savings</Text>
+        <Text style={{ fontSize: 16, color: theme.textSecondary, textAlign: 'center', marginBottom: 32, lineHeight: 24 }}>
+          You haven't activated your payroll-deducted savings account yet. Activate it now to start saving automatically.
+        </Text>
+        <Button
+          title="Activate Now"
+          onPress={handleActivate}
+          loading={submitting}
+          style={{ width: '100%', maxWidth: 300, height: 56, borderRadius: 16 }}
+        />
+      </View>
+    );
+  }
+
+
+  const salary = account?.salary || 0;
+  const currentPct = account?.saving_percentage || 0;
+  const simulatedPct = parseFloat(newPercentage) || currentPct;
+  const currentDeduction = (salary * currentPct) / 100;
+  const simulatedDeduction = (salary * simulatedPct) / 100;
+  const deductionDiff = simulatedDeduction - currentDeduction;
 
   const content = (
     <>
-      <View style={[styles.balanceCard, { backgroundColor: theme.headerBg }]}>
-        <Text style={styles.balanceLabel}>Current balance</Text>
-        <Text style={styles.balanceAmount}>{formatAmount(account?.current_balance)} <Text style={styles.balanceUnit}>ETB</Text></Text>
-        <View style={styles.balanceMeta}>
-          <Meta label="Interest" value={`+${formatAmount(account?.interest_earned)}`} />
-          <Meta label="Rate" value={`${account?.saving_percentage || 0}%`} />
-          <Meta label="Status" value={account?.account_status || 'N/A'} />
-        </View>
-        <View style={styles.actions}>
-          <TouchableOpacity style={[styles.btn, { backgroundColor: theme.accent }]} onPress={() => setShowWithdrawModal(true)}>
-            <Ionicons name="arrow-down-circle-outline" size={18} color="#fff" />
-            <Text style={styles.btnText}>Withdraw</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, { backgroundColor: theme.primary }]} onPress={() => setShowPercentageModal(true)}>
-            <Ionicons name="options-outline" size={18} color="#fff" />
-            <Text style={styles.btnText}>Adjust rate</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ScreenHeader
+        title="Savings"
+        subtitle={account?.account_status || 'ACTIVE'}
+        backAction={embedded ? null : () => navigation.goBack()}
+      />
 
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Transactions</Text>
-      {transactions.length === 0 ? (
-        <EmptyState title="No transactions" subtitle="Your savings activity will appear here." />
-      ) : (
-        transactions.slice(0, 20).map((txn, index) => {
-          const isCredit = txn.transaction_type === 'CONTRIBUTION';
-          return (
-            <View key={txn.id || txn.transaction_id || index} style={[styles.txn, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <View style={[styles.txnIcon, { backgroundColor: isCredit ? '#ecfdf5' : '#fef2f2' }]}>
-                <Ionicons name={isCredit ? 'add-circle' : 'remove-circle'} size={22} color={isCredit ? theme.accent : '#ef4444'} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.txnType, { color: theme.text }]}>{txn.transaction_type}</Text>
-                <Text style={[styles.txnDate, { color: theme.textSecondary }]}>{formatDate(txn.transaction_date)}</Text>
-              </View>
-              <Text style={{ color: isCredit ? theme.accent : '#ef4444', fontWeight: 'bold' }}>
-                {isCredit ? '+' : '-'}{formatAmount(txn.amount)}
+      <View style={styles.scrollPadding}>
+        <View style={[styles.heroCompact, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={styles.heroRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.heroAmount, { color: theme.text }]}>
+                {formatAmount(account?.current_balance)} <Text style={styles.currency}>ETB</Text>
               </Text>
+              <Text style={[styles.heroLabel, { color: theme.textSecondary }]}>Total Savings Balance</Text>
             </View>
-          );
-        })
-      )}
+            <Badge label={account?.account_status || 'ACTIVE'} type="success" />
+          </View>
 
-      <Modal visible={showPercentageModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modal, { backgroundColor: theme.card }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Change saving rate</Text>
-            <Text style={[styles.modalSub, { color: theme.textSecondary }]}>Between 15% and 65% of salary</Text>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStatItem}>
+              <Text style={[styles.heroStatLabel, { color: theme.textMuted }]}>Interest earned</Text>
+              <Text style={[styles.heroStatValue, { color: theme.success }]}>+{formatAmount(account?.interest_earned)}</Text>
+            </View>
+            <View style={styles.heroStatItem}>
+              <Text style={[styles.heroStatLabel, { color: theme.textMuted }]}>Current Rate</Text>
+              <Text style={[styles.heroStatValue, { color: theme.primary }]}>{currentPct}%</Text>
+            </View>
+          </View>
+        </View>
+
+        <SectionLabel>Simulator</SectionLabel>
+        <Card style={styles.simCardRefined}>
+          <View style={styles.inputRow}>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+              style={[styles.simInputCompact, { backgroundColor: theme.cardElevated, borderColor: theme.border, color: theme.text }]}
               keyboardType="numeric"
-              placeholder="e.g. 25"
+              placeholder="Set New %"
               placeholderTextColor={theme.textMuted}
               value={newPercentage}
               onChangeText={setNewPercentage}
             />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.border }]} onPress={() => setShowPercentageModal(false)}>
-                <Text style={{ color: theme.textSecondary, fontWeight: 'bold' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.primary }]} onPress={handleUpdatePercentage} disabled={submitting}>
-                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Submit</Text>}
-              </TouchableOpacity>
-            </View>
+            <Button
+              title="Apply Change"
+              onPress={handleUpdatePercentage}
+              loading={submitting}
+              disabled={!newPercentage || submitting}
+              style={{ flex: 1, height: 44 }}
+            />
           </View>
-        </View>
-      </Modal>
 
-      <Modal visible={showWithdrawModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modal, { backgroundColor: theme.card }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Withdraw savings</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-              keyboardType="numeric"
-              placeholder="Amount (ETB)"
-              placeholderTextColor={theme.textMuted}
-              value={withdrawAmount}
-              onChangeText={setWithdrawAmount}
-            />
-            <TextInput
-              style={[styles.input, styles.textArea, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-              multiline
-              placeholder="Reason (optional)"
-              placeholderTextColor={theme.textMuted}
-              value={withdrawReason}
-              onChangeText={setWithdrawReason}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.border }]} onPress={() => setShowWithdrawModal(false)}>
-                <Text style={{ color: theme.textSecondary, fontWeight: 'bold' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.accent }]} onPress={handleWithdraw} disabled={submitting}>
-                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Confirm</Text>}
-              </TouchableOpacity>
+          {newPercentage ? (
+            <View style={styles.simResult}>
+              <Text style={[styles.simLabelRefined, { color: theme.textSecondary }]}>
+                Monthly Impact: <Text style={{ color: deductionDiff > 0 ? theme.danger : theme.success, fontWeight: '700' }}>
+                  {deductionDiff > 0 ? '-' : '+'}{formatAmount(Math.abs(deductionDiff))}
+                </Text> from salary
+              </Text>
             </View>
-          </View>
-        </View>
-      </Modal>
+          ) : null}
+        </Card>
+
+        <SectionLabel
+        >
+          Recent Activity
+        </SectionLabel>
+
+        {transactions.length === 0 ? (
+          <EmptyState title="No transactions" subtitle="Activity will appear here." />
+        ) : (
+          transactions.slice(0, 10).map((txn, index) => {
+            const isCredit = txn.transaction_type === 'CONTRIBUTION' || txn.transaction_type === 'INTEREST';
+            return (
+              <View key={txn.id || txn.transaction_id || index} style={[styles.txnRowRefined, { borderBottomColor: theme.border }]}>
+                <View style={[styles.miniIconBg, { backgroundColor: isCredit ? theme.success + '10' : theme.danger + '10' }]}>
+                  <Ionicons
+                    name={isCredit ? 'arrow-down-outline' : 'arrow-up-outline'}
+                    size={18}
+                    color={isCredit ? theme.success : theme.danger}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.txnTypeRefined, { color: theme.text }]}>
+                    {txn.transaction_type.replace('_', ' ')}
+                  </Text>
+                  <Text style={[styles.txnDateRefined, { color: theme.textMuted }]}>
+                    {formatDate(txn.transaction_date)}
+                  </Text>
+                </View>
+                <Text style={[styles.txnAmountRefined, { color: isCredit ? theme.success : theme.danger }]}>
+                  {isCredit ? '+' : '-'}{formatAmount(txn.amount)}
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
+      <View style={{ height: 100 }} />
     </>
   );
 
-  if (embedded) {
-    return (
-      <ScreenScroll refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} contentStyle={{ paddingTop: 8 }}>
-        {content}
-      </ScreenScroll>
-    );
-  }
-
   return (
-    <ScreenScroll refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }}>
+    <ScreenScroll refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} contentStyle={{ padding: 0 }}>
       {content}
     </ScreenScroll>
   );
 }
 
-function Meta({ label, value }) {
-  return (
-    <View style={styles.metaItem}>
-      <Text style={styles.metaLabel}>{label}</Text>
-      <Text style={styles.metaValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  balanceCard: { borderRadius: 22, padding: 20, marginBottom: 16 },
-  balanceLabel: { color: '#94a3b8', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
-  balanceAmount: { color: '#fff', fontSize: 30, fontWeight: 'bold', marginTop: 4 },
-  balanceUnit: { fontSize: 14, color: '#94a3b8' },
-  balanceMeta: { flexDirection: 'row', marginTop: 16, gap: 12 },
-  metaItem: { flex: 1 },
-  metaLabel: { color: '#64748b', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  metaValue: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 2 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  btn: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, borderRadius: 12 },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  txn: {
-    flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16,
-    marginBottom: 8, borderWidth: 1,
-  },
-  txnIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  txnType: { fontSize: 14, fontWeight: 'bold' },
-  txnDate: { fontSize: 12, marginTop: 2 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  modal: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold' },
-  modalSub: { fontSize: 13, marginTop: 4, marginBottom: 16 },
-  input: { borderWidth: 1.5, borderRadius: 14, padding: 14, fontSize: 16, marginBottom: 12 },
-  textArea: { minHeight: 72, textAlignVertical: 'top' },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  modalBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center' },
+  scrollPadding: { paddingHorizontal: 20 },
+  heroCompact: { padding: 24, borderRadius: 24, borderWidth: 1, marginTop: -24 },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+  heroAmount: { fontSize: 32, fontWeight: '800' },
+  currency: { fontSize: 16, fontWeight: '600', opacity: 0.5 },
+  heroLabel: { fontSize: 13, fontWeight: '600', marginTop: 4 },
+  heroStats: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 20 },
+  heroStatItem: { flex: 1 },
+  heroStatLabel: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', marginBottom: 4 },
+  heroStatValue: { fontSize: 15, fontWeight: '700' },
+  simCardRefined: { padding: 12, borderRadius: 20, borderWidth: 1 },
+  inputRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  simInputCompact: { flex: 0.4, height: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, fontSize: 14 },
+  simResult: { marginTop: 10, paddingLeft: 4 },
+  simLabelRefined: { fontSize: 12, fontWeight: '500' },
+  txnRowRefined: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1 },
+  miniIconBg: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  txnTypeRefined: { fontSize: 14, fontWeight: '700', textTransform: 'capitalize' },
+  txnDateRefined: { fontSize: 11, fontWeight: '500', marginTop: 1 },
+  txnAmountRefined: { fontSize: 14, fontWeight: '800' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '800' },
+  input: { height: 52, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16, fontSize: 16, marginBottom: 12 },
+  textArea: { height: 80, textAlignVertical: 'top', paddingTop: 14 },
 });

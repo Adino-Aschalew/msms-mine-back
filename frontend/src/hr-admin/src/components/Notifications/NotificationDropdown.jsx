@@ -2,13 +2,42 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Settings, X, ChevronRight, AlertCircle } from 'lucide-react';
 import NotificationItem from './NotificationItem';
-import { notificationsData } from './NotificationData';
-
+import { hrAPI } from '../../../../shared/services/hrAPI';
+import { format } from 'date-fns';
 export default function NotificationDropdown({ isOpen, onClose }) {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(notificationsData);
+  const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [loading, setLoading] = useState(true);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen]);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await hrAPI.getNotifications();
+      const data = res.data?.notifications || res.notifications || res.data || [];
+      const mapped = data.map(n => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        type: (n.notification_type || n.type || 'info').toLowerCase(),
+        time: n.created_at ? format(new Date(n.created_at), 'hh:mm a') : 'Just now',
+        detail: n.detail,
+        isRead: n.is_read || n.isRead === 1 || n.isRead === true
+      })).slice(0, 5); // Just show top 5 in dropdown
+      setNotifications(mapped);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -77,7 +106,11 @@ export default function NotificationDropdown({ isOpen, onClose }) {
 
       {}
       <div className="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-white/5">
-        {notifications.length > 0 ? (
+        {loading ? (
+          <div className="p-12 flex justify-center">
+             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+          </div>
+        ) : notifications.length > 0 ? (
           notifications.map(notif => (
             <NotificationItem 
               key={notif.id} 

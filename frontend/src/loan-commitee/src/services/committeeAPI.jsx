@@ -3,11 +3,11 @@ import apiClient from '../../../shared/services/api';
 export const committeeAPI = {
   
   getPendingApplications: (params = {}) => {
-    return apiClient.get('/loan-committee/applications/pending', { params });
+    return apiClient.get('/loan-committee/applications/pending', params);
   },
 
   getApprovedApplications: (params = {}) => {
-    return apiClient.get('/loan-committee/applications/approved', { params });
+    return apiClient.get('/loan-committee/applications/approved', params);
   },
 
   getApplicationById: (applicationId) => {

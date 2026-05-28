@@ -1,12 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, CheckCheck, Trash2, Filter, Search, MoreHorizontal, CheckCircle, Info, AlertTriangle, MessageSquare } from 'lucide-react';
-import { notificationsData } from '../components/Notifications/NotificationData';
 import { format } from 'date-fns';
+import { hrAPI } from '../../../shared/services/hrAPI';
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(notificationsData);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await hrAPI.getNotifications();
+      // Handle the API response structure
+      const data = res.data?.notifications || res.notifications || res.data || [];
+      const mapped = data.map(n => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        type: (n.notification_type || n.type || 'info').toLowerCase(),
+        time: n.created_at ? format(new Date(n.created_at), 'hh:mm a') : 'Just now',
+        createdAt: n.created_at,
+        isRead: n.is_read || n.isRead === 1 || n.isRead === true
+      }));
+      setNotifications(mapped);
+    } catch (e) {
+      console.error('Failed to fetch notifications:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredNotifications = notifications.filter(notif => {
     const matchesFilter = 
@@ -21,16 +49,31 @@ export default function NotificationsPage() {
     return matchesFilter && matchesSearch;
   });
 
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const handleMarkAllRead = async () => {
+    try {
+      await hrAPI.markAllNotificationsAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleMarkRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const handleMarkRead = async (id) => {
+    try {
+      await hrAPI.markNotificationAsRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleDelete = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await hrAPI.deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const getIcon = (type) => {
@@ -91,9 +134,13 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {}
         <div className="divide-y divide-white/5">
-          {filteredNotifications.length > 0 ? (
+          {loading ? (
+            <div className="p-24 flex flex-col items-center justify-center text-slate-500">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Fetching real-time updates...</p>
+            </div>
+          ) : filteredNotifications.length > 0 ? (
             filteredNotifications.map(notif => (
               <div 
                 key={notif.id} 

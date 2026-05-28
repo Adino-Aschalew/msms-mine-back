@@ -87,9 +87,9 @@ const Disbursements = () => {
     try {
       setLoading(true);
       const res = await committeeAPI.getApprovedApplications();
-      if (res && res.data && res.data.success) {
+      if (res && res.success) {
         
-        const mappedData = res.data.data.map(app => ({
+        const mappedData = res.data.map(app => ({
           id: app.id,
           employeeName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown',
           employeeId: app.employee_id || 'N/A',
@@ -600,7 +600,7 @@ const Disbursements = () => {
                           >
                             <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
-                          {disbursement.status === 'pending' && (
+                          {disbursement.status === 'approved' && (
                             <button
                               onClick={() => handleDisburse(disbursement.id)}
                               disabled={processingActions.has(`${disbursement.id}-disburse`)}
@@ -702,7 +702,7 @@ const Disbursements = () => {
                     >
                       <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
-                    {disbursement.status === 'pending' && (
+                    {disbursement.status === 'approved' && (
                       <button
                         onClick={() => handleDisburse(disbursement.id)}
                         disabled={processingActions.has(`${disbursement.id}-disburse`)}

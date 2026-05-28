@@ -29,11 +29,12 @@ class ApiClient {
 
   
   async request(endpoint, options = {}) {
+    const { responseType, ...fetchOptions } = options;
     const url = `${this.baseURL}${endpoint}`;
     const config = {
-      ...options,
+      ...fetchOptions,
       headers: {
-        ...options.headers,
+        ...fetchOptions.headers,
       },
     };
 
@@ -76,7 +77,19 @@ class ApiClient {
         throw error;
       }
       
-      const data = await response.json();
+      let data;
+      if (responseType === 'blob') {
+        data = await response.blob();
+      } else if (responseType === 'text') {
+        data = await response.text();
+      } else {
+        const text = await response.text();
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (e) {
+          data = text;
+        }
+      }
 
       
       if (response.status === 401 && data.message?.includes('token')) {
@@ -159,10 +172,17 @@ class ApiClient {
   }
 
   
-  async get(endpoint, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
+  async get(endpoint, params = {}, options = {}) {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => {
+        if (value === undefined || value === null) return false;
+        if (value === '' || value === 'undefined' || value === 'all') return false;
+        return true;
+      })
+    );
+    const queryString = new URLSearchParams(cleanParams).toString();
     const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-    return this.request(url);
+    return this.request(url, options);
   }
 
   async post(endpoint, data = {}) {

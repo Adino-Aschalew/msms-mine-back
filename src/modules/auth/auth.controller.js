@@ -108,11 +108,11 @@ class AuthController {
   
   static async resetPassword(req, res) {
     try {
-      const { token, newPassword } = req.body;
+      const { otp, newPassword } = req.body;
       const ip = req.ip;
       const userAgent = req.get('User-Agent');
       
-      const result = await AuthService.resetPassword(token, newPassword, ip, userAgent);
+      const result = await AuthService.resetPassword(otp, newPassword, ip, userAgent);
       
       res.json({
         success: true,
@@ -287,6 +287,27 @@ class AuthController {
         success: false,
         message: error.message || 'Verification failed'
       });
+    }
+  }
+  static async getActivityLog(req, res) {
+    try {
+      const userId = req.userId;
+      const limit = parseInt(req.query.limit) || 20;
+      const { query } = require('../../config/database');
+
+      const rows = await query(
+        `SELECT action, table_name, created_at, ip_address, user_agent
+         FROM audit_logs
+         WHERE user_id = ?
+         ORDER BY created_at DESC
+         LIMIT ?`,
+        [userId, limit]
+      );
+
+      res.json({ success: true, data: rows });
+    } catch (error) {
+      console.error('Activity log error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch activity log' });
     }
   }
 }

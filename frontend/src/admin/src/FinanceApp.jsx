@@ -15,6 +15,8 @@ import Reports from './pages/FinanceReports';
 import Users from './pages/FinanceUsers';
 import Settings from './pages/FinanceSettings';
 import AccountProfile from './pages/FinanceAccountProfile';
+import PayrollPreparation from './pages/PayrollPreparation';
+import FinanceNotifications from './pages/FinanceNotifications';
 
 function FinanceApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,6 +41,7 @@ function FinanceApp() {
               <Route path="/finance/payroll/import" element={<PayrollImport />} />
               <Route path="/finance/payroll/history" element={<div className="p-8"><h1 className="text-2xl font-bold">Payroll History</h1></div>} />
               <Route path="/finance/payroll/reports" element={<div className="p-8"><h1 className="text-2xl font-bold">Payroll Reports</h1></div>} />
+              <Route path="/finance/payroll/preparation" element={<PayrollPreparation />} />
               <Route path="/finance/employees" element={<Employees />} />
               <Route path="/finance/budgets" element={<Budgets />} />
               <Route path="/finance/invoices" element={<Invoices />} />
@@ -46,7 +49,7 @@ function FinanceApp() {
               <Route path="/finance/reports" element={<Reports />} />
               <Route path="/finance/users" element={<Users />} />
               <Route path="/finance/settings" element={<Settings />} />
-              <Route path="/finance/notifications" element={<div className="p-8"><h1 className="text-2xl font-bold">Notifications</h1></div>} />
+              <Route path="/finance/notifications" element={<FinanceNotifications />} />
               <Route path="/finance/account/profile" element={<AccountProfile />} />
               <Route path="/finance/account/security" element={<div className="p-8"><h1 className="text-2xl font-bold">Security</h1></div>} />
               <Route path="/finance/account/sessions" element={<div className="p-8"><h1 className="text-2xl font-bold">Sessions</h1></div>} />

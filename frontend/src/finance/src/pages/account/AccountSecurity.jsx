@@ -104,7 +104,6 @@ const AccountSecurity = () => {
   };
 
   const handleRevokeSession = (sessionId) => {
-    console.log('Revoking session:', sessionId);
   };
 
   const getPasswordStrength = (password) => {

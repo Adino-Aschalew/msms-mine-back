@@ -9,6 +9,7 @@ router.post('/upload', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN'
 router.get('/batches', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), PayrollController.getBatches);
 router.get('/batch/:batchId', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), PayrollController.getBatch);
 router.get('/batch/:batchId/details', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), PayrollController.getBatchDetails);
+router.get('/batch/:batchId/export', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), PayrollController.exportBatch);
 router.put('/batch/:batchId/validate', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), auditMiddleware('PAYROLL_BATCH_VALIDATE', 'payroll_batches'), PayrollController.validateBatch);
 router.put('/batch/:batchId/approve', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), auditMiddleware('PAYROLL_BATCH_APPROVE', 'payroll_batches'), PayrollController.approveBatch);
 router.put('/batch/:batchId/process', authMiddleware, roleCheck(['SUPER_ADMIN', 'FINANCE_ADMIN']), auditMiddleware('PAYROLL_BATCH_PROCESS', 'payroll_batches'), PayrollController.processBatch);

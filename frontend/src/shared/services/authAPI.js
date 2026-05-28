@@ -80,5 +80,10 @@ export const authAPI = {
   verifyOTP: async (otpCode) => {
     const response = await apiClient.post('/auth/verify-otp', { otpCode });
     return response;
+  },
+
+  getActivityLog: async (limit = 20) => {
+    const response = await apiClient.get('/auth/activity', { limit });
+    return response;
   }
 };
